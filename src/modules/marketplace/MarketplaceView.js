@@ -164,7 +164,7 @@ export function renderMarketplaceView(container) {
           <div style="flex: 1;">
 
           <!-- HERO BANNER (GSAP & SplitType Staggered Text Bounce Entrance) -->
-          <section style="background: #034B04; padding: 5.5rem 2rem 6.5rem 2rem; position: relative; overflow: hidden;">
+          <section style="background: #034B04; padding: 5.5rem 2rem 7rem 2rem; position: relative; overflow: hidden;">
             <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: center;">
               <div>
                 <h1 class="hero-title-line1" aria-label="${escapeHtml(t('hero_title1'))}">
@@ -204,7 +204,7 @@ export function renderMarketplaceView(container) {
 
           <!-- FLOATING PILL SEARCH BAR: one seamless rounded pill, borderless segments,
                each segment picks up a green "active" highlight once it has a value -->
-          <div style="max-width: 1100px; margin: -48px auto 5rem auto; padding: 0 1.25rem; position: relative; z-index: 20;">
+          <div style="max-width: 1100px; margin: -90px auto 5rem auto; padding: 0 1.25rem; position: relative; z-index: 20;">
             <div class="search-pill-bar">
 
               <!-- Segment 1: Search Query -->
@@ -236,9 +236,11 @@ export function renderMarketplaceView(container) {
                 </select>
               </div>
 
-              <!-- Segment 4: Search CTA -->
+              <!-- Segment 4: Search CTA (no icon here - the search field to its
+                   left already has the magnifying-glass icon, so a second one
+                   on the button just read as a duplicate). -->
               <button id="hero-search-btn" class="search-pill-cta">
-                🔍 ${t('search_button')}
+                ${t('search_button')}
               </button>
             </div>
           </div>

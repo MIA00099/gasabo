@@ -8,13 +8,19 @@ export function renderRealEstateAdmin(container) {
     const state = stateEngine.getState();
     const reData = state.realEstate;
 
+    if (!reData.hero) {
+      stateEngine.loadRealEstate().catch(() => {});
+      container.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-muted);">Loading real estate content...</div>`;
+      return;
+    }
+
     container.innerHTML = `
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
             <h2 style="color: #fff; font-size: 1.5rem;">🏢 Gasabo Real Estate Content Management</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem;">
-              Manage company homepage, services showcase, flagship real estate developments, gallery assets, and office contact information.
+              Manage the company homepage hero content and flagship real estate development portfolio.
             </p>
           </div>
 
@@ -22,6 +28,12 @@ export function renderRealEstateAdmin(container) {
             ➕ Add Portfolio Project
           </button>
         </div>
+
+        ${state.error ? `
+          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
+            ⚠️ ${escapeHtml(state.error)}
+          </div>
+        ` : ''}
 
         <!-- HERO & ABOUT EDITORS -->
         <div class="glass-panel" style="padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 2rem;">
@@ -43,7 +55,7 @@ export function renderRealEstateAdmin(container) {
 
         <!-- PORTFOLIO PROJECTS TABLE -->
         <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">Active Real Estate Development Projects (${reData.projects.length})</h3>
-        
+
         <div class="custom-table-container">
           <table class="custom-table">
             <thead>
@@ -53,7 +65,6 @@ export function renderRealEstateAdmin(container) {
                 <th>District Location</th>
                 <th>Units / Specs</th>
                 <th>Development Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -68,13 +79,10 @@ export function renderRealEstateAdmin(container) {
                       </div>
                     </div>
                   </td>
-                  <td>${p.category}</td>
+                  <td>${escapeHtml(p.category)}</td>
                   <td>${escapeHtml(p.district)}</td>
                   <td>${escapeHtml(p.units)}</td>
-                  <td><span class="badge badge-active">${p.status}</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-secondary">Edit</button>
-                  </td>
+                  <td><span class="badge badge-active">${escapeHtml(p.status)}</span></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -84,33 +92,28 @@ export function renderRealEstateAdmin(container) {
     `;
 
     // Event Handlers
-    container.querySelector('#save-re-hero')?.addEventListener('click', () => {
-      reData.hero.title = container.querySelector('#re-hero-title').value;
-      reData.hero.subtitle = container.querySelector('#re-hero-sub').value;
-      stateEngine.saveState();
-      stateEngine.logAudit(state.currentUser.name, 'REALESTATE_CMS_UPDATE', 'Real Estate Admin', 'Updated hero headline & subtitle content.');
-      alert('Gasabo Real Estate Hero Content updated successfully!');
+    container.querySelector('#save-re-hero')?.addEventListener('click', async () => {
+      const title = container.querySelector('#re-hero-title').value;
+      const subtitle = container.querySelector('#re-hero-sub').value;
+      try {
+        await stateEngine.saveRealEstateHero({ title, subtitle });
+        alert('Gasabo Real Estate Hero Content updated successfully!');
+      } catch (err) {
+        render();
+      }
     });
 
-    container.querySelector('#admin-add-proj-btn')?.addEventListener('click', () => {
+    container.querySelector('#admin-add-proj-btn')?.addEventListener('click', async () => {
       const title = prompt('Enter Project Title (e.g. Kigali Eco Residences):');
       if (title) {
         const district = prompt('District (e.g. Gasabo, Musanze, Rubavu):') || 'Gasabo';
         const category = prompt('Category (Residential / Commercial / Industrial & Land):') || 'Residential';
         const units = prompt('Units/Capacity (e.g. 30 Luxury Condos):') || '20 Units';
-        const image = '/real-estate-hero.png';
-        reData.projects.push({
-          id: 're_' + Date.now(),
-          title,
-          category,
-          district,
-          units,
-          status: 'Under Development',
-          image,
-          description: 'Newly announced flagship development by Gasabo Real Estate.'
-        });
-        stateEngine.saveState();
-        render();
+        try {
+          await stateEngine.addRealEstateProject({ title, district, category, units });
+        } catch (err) {
+          render();
+        }
       }
     });
   }

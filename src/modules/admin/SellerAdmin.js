@@ -6,7 +6,12 @@ import { stateEngine } from '../../store/stateEngine.js';
 export function renderSellerAdmin(container) {
   function render() {
     const state = stateEngine.getState();
+    const attempted = state.loading.sellers !== undefined;
+
+    if (!attempted) stateEngine.loadSellers().catch(() => {});
+
     const sellers = state.sellers;
+    const loading = !!state.loading.sellers || !attempted;
 
     container.innerHTML = `
       <div>
@@ -18,6 +23,12 @@ export function renderSellerAdmin(container) {
             </p>
           </div>
         </div>
+
+        ${state.error ? `
+          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
+            ⚠️ ${escapeHtml(state.error)}
+          </div>
+        ` : ''}
 
         <div class="custom-table-container">
           <table class="custom-table">
@@ -33,7 +44,11 @@ export function renderSellerAdmin(container) {
               </tr>
             </thead>
             <tbody>
-              ${sellers.map(s => `
+              ${loading ? `
+                <tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading sellers...</td></tr>
+              ` : sellers.length === 0 ? `
+                <tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">No sellers registered yet.</td></tr>
+              ` : sellers.map(s => `
                 <tr>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -47,17 +62,17 @@ export function renderSellerAdmin(container) {
                     </div>
                   </td>
                   <td>
-                    <div style="font-size: 0.85rem; color: #fff;">📞 ${escapeHtml(s.phone)}</div>
+                    <div style="font-size: 0.85rem; color: #fff;">📞 ${escapeHtml(s.phone || '-')}</div>
                     <div style="font-size: 0.78rem; color: var(--text-muted);">✉️ ${escapeHtml(s.email)}</div>
                   </td>
-                  <td>${escapeHtml(s.district)}</td>
-                  <td><strong style="color: var(--primary);">${state.products.filter(p => p.sellerId === s.id || p.sellerName.includes(s.name)).length} Products</strong></td>
+                  <td>${escapeHtml(s.district || '-')}</td>
+                  <td><strong style="color: var(--primary);">${s.productsCount} Products</strong></td>
                   <td>
                     <span class="badge ${s.status==='active'?'badge-active':'badge-expired'}">
                       ${s.status.toUpperCase()}
                     </span>
                   </td>
-                  <td>${s.joinedDate}</td>
+                  <td>${new Date(s.joinedDate).toLocaleDateString()}</td>
                   <td>
                     <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                       <button class="btn btn-sm btn-secondary reset-pass-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
@@ -78,25 +93,25 @@ export function renderSellerAdmin(container) {
 
     // Event Handlers
     container.querySelectorAll('.reset-pass-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        alert(`Temporary password reset link generated for ${btn.dataset.name}. Sent to registered phone/email.`);
-        stateEngine.logAudit(state.currentUser.name, 'SELLER_PASSWORD_RESET', 'Seller Admin', `Reset password for seller ${btn.dataset.name}.`);
+      btn.addEventListener('click', async () => {
+        try {
+          const result = await stateEngine.resetSellerPassword(btn.dataset.id);
+          alert(`Temporary password for ${btn.dataset.name}: ${result.tempPassword}\n\n(In production this would be emailed/SMS'd to the seller instead of shown here.)`);
+        } catch (err) {
+          render();
+        }
       });
     });
 
     container.querySelectorAll('.del-seller-req-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const reason = prompt(`Enter reason for deleting seller account (${btn.dataset.name}):`) || 'Account deletion initiated by administrator.';
-        stateEngine.createApprovalRequest(
-          'DELETE_SELLER_ACCOUNT',
-          `Seller: ${btn.dataset.name} (ID: ${btn.dataset.id})`,
-          btn.dataset.id,
-          reason,
-          'HIGH',
-          'super_admin'
-        );
-        alert(`Critical Approval Request created to delete seller ${btn.dataset.name}. Another Administrator must review and approve this action before deletion occurs.`);
-        render();
+        try {
+          await stateEngine.requestDeleteSeller(btn.dataset.id, reason);
+          alert(`Critical Approval Request created to delete seller ${btn.dataset.name}. Another Administrator must review and approve this action before deletion occurs.`);
+        } catch (err) {
+          render();
+        }
       });
     });
   }

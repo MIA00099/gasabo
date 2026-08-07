@@ -1,29 +1,27 @@
 import { stateEngine } from '../store/stateEngine.js';
 
 /**
- * Redesigned Glassmorphism Auth View (Login & Sign Up)
- * - Responsive full-viewport background with rolling green hills
- * - Translucent container with backdrop blur & thin frosted border
- * - Clean sans-serif typography with white text
- * - Compact 2-column grid layout for Sign Up form to prevent long scrolling
- * - Transparent input fields with right-aligned SVG icons
- * - Dual mode support for Login and Sign Up
- * - Lime/Green gradient action button
+ * Glassmorphism Auth View (Login & Sign Up)
+ * Login authenticates against the real backend (works for admins, sub-admins,
+ * sellers, and platform users - the server tries each account type in turn).
+ * Sign Up registers a new seller account, matching how "Start Selling" already
+ * onboards sellers elsewhere in the app.
  */
 export function renderLoginView(container, initialMode = 'login') {
   let mode = initialMode; // 'login' | 'signup'
   let showPassword = false;
   let showConfirmPassword = false;
+  let errorMessage = '';
+  let submitting = false;
 
-  // Form field state preservation during password toggles
   let formData = {
-    username: 'eric.m@rwandaagri.rw',
-    password: 'password123',
-    fullName: 'Eric Mugisha',
-    email: 'eric.m@rwandaagri.rw',
-    phone: '+250 788 345 678',
+    username: '',
+    password: '',
+    fullName: '',
+    email: '',
+    phone: '',
     district: 'Gasabo',
-    confirmPassword: 'password123'
+    confirmPassword: '',
   };
 
   function captureInputs() {
@@ -61,20 +59,25 @@ export function renderLoginView(container, initialMode = 'login') {
           <div class="glass-login-header">
             <h1 class="glass-login-title">${isLogin ? 'Login' : 'Sign Up'}</h1>
             <p class="glass-login-subtitle">
-              ${isLogin ? 'Welcome back please login to your account' : 'Create your new account to join Kigali Market'}
+              ${isLogin ? 'Welcome back - please login to your account' : 'Create a seller account to start selling on Kigali Market'}
             </p>
           </div>
+
+          ${errorMessage ? `
+            <div style="background: rgba(220,38,38,0.15); border: 1px solid rgba(248,113,113,0.5); color: #fecaca; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">
+              ⚠️ ${escapeHtml(errorMessage)}
+            </div>
+          ` : ''}
 
           <form id="glass-auth-form" autocomplete="off">
             ${isLogin ? `
               <!-- LOGIN MODE FORM FIELDS -->
-              <!-- User Name Input -->
               <div class="glass-input-group">
-                <input 
-                  type="text" 
-                  id="glass-username" 
-                  class="glass-input-field" 
-                  placeholder="User Name" 
+                <input
+                  type="text"
+                  id="glass-username"
+                  class="glass-input-field"
+                  placeholder="Email Address"
                   value="${escapeHtml(formData.username)}"
                   required
                 />
@@ -86,20 +89,19 @@ export function renderLoginView(container, initialMode = 'login') {
                 </div>
               </div>
 
-              <!-- Password Input with Toggleable Eye Icon -->
               <div class="glass-input-group">
-                <input 
-                  type="${showPassword ? 'text' : 'password'}" 
-                  id="glass-password" 
-                  class="glass-input-field" 
-                  placeholder="Password" 
+                <input
+                  type="${showPassword ? 'text' : 'password'}"
+                  id="glass-password"
+                  class="glass-input-field"
+                  placeholder="Password"
                   value="${escapeHtml(formData.password)}"
                   required
                 />
-                <button 
-                  type="button" 
-                  id="toggle-password-btn" 
-                  class="glass-input-icon clickable" 
+                <button
+                  type="button"
+                  id="toggle-password-btn"
+                  class="glass-input-icon clickable"
                   title="${showPassword ? 'Hide password' : 'Show password'}"
                   aria-label="${showPassword ? 'Hide password' : 'Show password'}"
                 >
@@ -117,26 +119,18 @@ export function renderLoginView(container, initialMode = 'login') {
                 </button>
               </div>
 
-              <!-- Custom Green Accent Checkbox -->
-              <label class="glass-checkbox-row" for="glass-remember">
-                <input type="checkbox" id="glass-remember" class="glass-checkbox" checked />
-                <span class="glass-checkbox-label">Remember me</span>
-              </label>
-
-              <!-- Login Action Button -->
-              <button type="submit" class="glass-btn-primary">
-                Login
+              <button type="submit" class="glass-btn-primary" ${submitting ? 'disabled' : ''}>
+                ${submitting ? 'Logging in...' : 'Login'}
               </button>
             ` : `
               <!-- COMPACT SIGN UP GRID (2 COLUMNS) -->
               <div class="glass-form-grid">
-                <!-- Full Name -->
                 <div class="glass-input-group">
-                  <input 
-                    type="text" 
-                    id="glass-fullname" 
-                    class="glass-input-field" 
-                    placeholder="Full Name" 
+                  <input
+                    type="text"
+                    id="glass-fullname"
+                    class="glass-input-field"
+                    placeholder="Full Name"
                     value="${escapeHtml(formData.fullName)}"
                     required
                   />
@@ -148,13 +142,12 @@ export function renderLoginView(container, initialMode = 'login') {
                   </div>
                 </div>
 
-                <!-- Email Address -->
                 <div class="glass-input-group">
-                  <input 
-                    type="email" 
-                    id="glass-email" 
-                    class="glass-input-field" 
-                    placeholder="Email Address" 
+                  <input
+                    type="email"
+                    id="glass-email"
+                    class="glass-input-field"
+                    placeholder="Email Address"
                     value="${escapeHtml(formData.email)}"
                     required
                   />
@@ -166,13 +159,12 @@ export function renderLoginView(container, initialMode = 'login') {
                   </div>
                 </div>
 
-                <!-- Phone Number -->
                 <div class="glass-input-group">
-                  <input 
-                    type="tel" 
-                    id="glass-phone" 
-                    class="glass-input-field" 
-                    placeholder="Phone Number" 
+                  <input
+                    type="tel"
+                    id="glass-phone"
+                    class="glass-input-field"
+                    placeholder="Phone Number"
                     value="${escapeHtml(formData.phone)}"
                     required
                   />
@@ -183,7 +175,6 @@ export function renderLoginView(container, initialMode = 'login') {
                   </div>
                 </div>
 
-                <!-- District Select -->
                 <div class="glass-input-group">
                   <select id="glass-district" class="glass-input-field" required>
                     ${districts.map(d => `<option value="${d}" ${d === formData.district ? 'selected' : ''}>District: ${d}</option>`).join('')}
@@ -196,20 +187,20 @@ export function renderLoginView(container, initialMode = 'login') {
                   </div>
                 </div>
 
-                <!-- Password -->
                 <div class="glass-input-group">
-                  <input 
-                    type="${showPassword ? 'text' : 'password'}" 
-                    id="glass-password" 
-                    class="glass-input-field" 
-                    placeholder="Password" 
+                  <input
+                    type="${showPassword ? 'text' : 'password'}"
+                    id="glass-password"
+                    class="glass-input-field"
+                    placeholder="Password (min. 6 characters)"
                     value="${escapeHtml(formData.password)}"
                     required
+                    minlength="6"
                   />
-                  <button 
-                    type="button" 
-                    id="toggle-password-btn" 
-                    class="glass-input-icon clickable" 
+                  <button
+                    type="button"
+                    id="toggle-password-btn"
+                    class="glass-input-icon clickable"
                     title="${showPassword ? 'Hide password' : 'Show password'}"
                     aria-label="${showPassword ? 'Hide password' : 'Show password'}"
                   >
@@ -227,20 +218,19 @@ export function renderLoginView(container, initialMode = 'login') {
                   </button>
                 </div>
 
-                <!-- Confirm Password -->
                 <div class="glass-input-group">
-                  <input 
-                    type="${showConfirmPassword ? 'text' : 'password'}" 
-                    id="glass-confirm-password" 
-                    class="glass-input-field" 
-                    placeholder="Confirm Password" 
+                  <input
+                    type="${showConfirmPassword ? 'text' : 'password'}"
+                    id="glass-confirm-password"
+                    class="glass-input-field"
+                    placeholder="Confirm Password"
                     value="${escapeHtml(formData.confirmPassword)}"
                     required
                   />
-                  <button 
-                    type="button" 
-                    id="toggle-confirm-password-btn" 
-                    class="glass-input-icon clickable" 
+                  <button
+                    type="button"
+                    id="toggle-confirm-password-btn"
+                    class="glass-input-icon clickable"
                     title="${showConfirmPassword ? 'Hide password' : 'Show password'}"
                     aria-label="${showConfirmPassword ? 'Hide password' : 'Show password'}"
                   >
@@ -259,15 +249,13 @@ export function renderLoginView(container, initialMode = 'login') {
                 </div>
               </div>
 
-              <!-- Custom Green Accent Checkbox for Terms -->
               <label class="glass-checkbox-row" for="glass-terms">
                 <input type="checkbox" id="glass-terms" class="glass-checkbox" checked required />
                 <span class="glass-checkbox-label">I agree to the Terms & Privacy Policy</span>
               </label>
 
-              <!-- Sign Up Action Button -->
-              <button type="submit" class="glass-btn-primary">
-                Sign Up
+              <button type="submit" class="glass-btn-primary" ${submitting ? 'disabled' : ''}>
+                ${submitting ? 'Creating account...' : 'Sign Up'}
               </button>
             `}
 
@@ -286,7 +274,6 @@ export function renderLoginView(container, initialMode = 'login') {
       </div>
     `;
 
-    // Toggle password visibility listener
     const toggleBtn = container.querySelector('#toggle-password-btn');
     if (toggleBtn) {
       toggleBtn.addEventListener('click', (e) => {
@@ -297,7 +284,6 @@ export function renderLoginView(container, initialMode = 'login') {
       });
     }
 
-    // Toggle confirm password listener
     const toggleConfirmBtn = container.querySelector('#toggle-confirm-password-btn');
     if (toggleConfirmBtn) {
       toggleConfirmBtn.addEventListener('click', (e) => {
@@ -308,12 +294,12 @@ export function renderLoginView(container, initialMode = 'login') {
       });
     }
 
-    // Mode Switcher listeners (Login <-> Sign Up)
     const signupLink = container.querySelector('#glass-signup-link');
     if (signupLink) {
       signupLink.addEventListener('click', (e) => {
         e.preventDefault();
         captureInputs();
+        errorMessage = '';
         mode = 'signup';
         stateEngine.setPortal('signup');
       });
@@ -324,30 +310,39 @@ export function renderLoginView(container, initialMode = 'login') {
       loginLink.addEventListener('click', (e) => {
         e.preventDefault();
         captureInputs();
+        errorMessage = '';
         mode = 'login';
         stateEngine.setPortal('login');
       });
     }
 
-    // Form submit listener
     const form = container.querySelector('#glass-auth-form');
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         captureInputs();
+        errorMessage = '';
 
-        if (mode === 'login') {
-          stateEngine.setCurrentUserRole('seller');
+        if (mode === 'signup' && formData.password !== formData.confirmPassword) {
+          errorMessage = 'Passwords do not match.';
+          update();
+          return;
+        }
+
+        submitting = true;
+        update();
+
+        try {
+          if (mode === 'login') {
+            await stateEngine.login(formData.username, formData.password);
+          } else {
+            await stateEngine.registerSeller(formData);
+          }
           stateEngine.setPortal('marketplace');
-        } else {
-          // Register seller/user and enter platform
-          stateEngine.registerSeller({
-            fullName: formData.fullName || 'Eric Mugisha',
-            email: formData.email || 'eric.m@rwandaagri.rw',
-            phone: formData.phone || '+250 788 345 678',
-            district: formData.district || 'Gasabo'
-          });
-          stateEngine.setPortal('marketplace');
+        } catch (err) {
+          submitting = false;
+          errorMessage = err.message || 'Something went wrong. Please try again.';
+          update();
         }
       });
     }

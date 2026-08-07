@@ -11,11 +11,20 @@ import { renderUserRBACAdmin } from './UserRBACAdmin.js';
 import { renderSecurityAuditAdmin } from './SecurityAuditAdmin.js';
 
 export function renderAdminDashboardView(container) {
-  let activeTab = 'approvals'; // 'approvals' | 'marketplace' | 'sellers' | 'realestate' | 'rbac' | 'audit'
+  const state = stateEngine.getState();
+
+  // The admin panel used to be reachable with zero authentication - anyone who
+  // navigated here got full access. It now requires a real Administrator or
+  // Sub-Administrator session before rendering anything sensitive.
+  if (!stateEngine.isAdmin()) {
+    renderAdminLoginGate(container);
+    return;
+  }
 
   function render() {
     const state = stateEngine.getState();
     const currentUser = state.currentUser;
+    const activeTab = state.ui.adminTab || 'approvals';
     const pendingReqs = state.approvalRequests.filter(r => r.status === 'pending');
     const highRiskCount = pendingReqs.filter(r => r.riskLevel === 'HIGH').length;
     const completedTodayCount = state.approvalRequests.filter(r => r.status !== 'pending').length;
@@ -23,10 +32,10 @@ export function renderAdminDashboardView(container) {
     container.innerHTML = `
       <div class="adm-layout-wrap">
         <div style="max-width: 1440px; margin: 0 auto; padding: 2.5rem 1.5rem;">
-          
+
           <!-- OVERVIEW CARDS (4 Grid Layout matching Enterprise Spec) -->
           <div class="grid-4" style="margin-bottom: 2rem; gap: 1.25rem;">
-            
+
             <!-- Card 1: Pending Approvals -->
             <div class="adm-card-white">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
@@ -71,13 +80,13 @@ export function renderAdminDashboardView(container) {
 
           <!-- MAIN LAYOUT: DARK CHARCOAL SIDEBAR + PURE WHITE CONTENT CARD -->
           <div class="grid-4" style="grid-template-columns: 280px 1fr; gap: 1.75rem; align-items: start;">
-            
+
             <!-- SIDEBAR: DARK CHARCOAL (#0f172a) WITH MINIMAL THIN ACTIVE INDICATOR -->
             <div class="adm-sidebar-dark">
               <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; padding: 0 0.5rem;">
                 Administration Control
               </div>
-              
+
               <div style="display: flex; flex-direction: column; gap: 0.35rem;">
                 <button class="adm-side-btn ${activeTab==='approvals'?'active':''}" data-tab="approvals">
                   <span>🛡️ Multi-Admin Approvals</span>
@@ -110,6 +119,9 @@ export function renderAdminDashboardView(container) {
               <div style="margin-top: 2rem; padding: 1rem 0.5rem 0 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: #64748b;">
                 <div style="font-weight: 700; color: #94a3b8; margin-bottom: 2px;">${escapeHtml(currentUser.name)}</div>
                 <div style="text-transform: uppercase; font-size: 10px; font-weight: 800; color: #10b981;">● ${currentUser.role.replace('_', ' ')}</div>
+                <button id="adm-logout-btn" style="margin-top: 0.75rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; padding: 6px 0; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                  ↪ Log Out
+                </button>
               </div>
             </div>
 
@@ -130,9 +142,13 @@ export function renderAdminDashboardView(container) {
     // Tab switcher handlers
     container.querySelectorAll('.adm-side-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        activeTab = btn.dataset.tab;
-        render();
+        stateEngine.setUI({ adminTab: btn.dataset.tab });
       });
+    });
+
+    container.querySelector('#adm-logout-btn')?.addEventListener('click', () => {
+      stateEngine.logout();
+      stateEngine.setPortal('marketplace');
     });
 
     // Mount sub-module
@@ -146,6 +162,67 @@ export function renderAdminDashboardView(container) {
   }
 
   render();
+}
+
+function renderAdminLoginGate(container) {
+  function update() {
+    const state = stateEngine.getState();
+    const submitting = !!state.loading.auth;
+    const errorMessage = state.error;
+
+    container.innerHTML = `
+      <div style="max-width: 440px; margin: 4rem auto; padding: 0 1rem;">
+        <div class="glass-panel" style="padding: 2.2rem; border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.12); background: #0f172a;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔐</div>
+            <h2 style="font-size: 1.5rem; color: #fff; margin-bottom: 0.4rem;">Administration Access</h2>
+            <p style="color: #94a3b8; font-size: 0.88rem;">Sign in with your Administrator or Sub-Administrator credentials.</p>
+          </div>
+
+          ${errorMessage ? `
+            <div style="background: rgba(220,38,38,0.15); border: 1px solid rgba(248,113,113,0.5); color: #fecaca; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
+              ⚠️ ${escapeHtml(errorMessage)}
+            </div>
+          ` : ''}
+
+          <form id="admin-login-form">
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <label style="display:block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Email Address</label>
+              <input type="email" id="adm-email" class="form-control" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
+            </div>
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label style="display:block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Password</label>
+              <input type="password" id="adm-password" class="form-control" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 700;" ${submitting ? 'disabled' : ''}>
+              ${submitting ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    container.querySelector('#admin-login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = container.querySelector('#adm-email').value;
+      const password = container.querySelector('#adm-password').value;
+      try {
+        await stateEngine.login(email, password);
+        // A successful login updates currentUser; if it's not an admin role,
+        // stateEngine.isAdmin() will be false and re-entering this view next
+        // render will show the gate again rather than granting access.
+        if (!stateEngine.isAdmin()) {
+          stateEngine.logout();
+          stateEngine.data.error = 'That account does not have administrator access.';
+          stateEngine.notify();
+        }
+      } catch (err) {
+        update();
+      }
+    });
+  }
+
+  update();
 }
 
 function escapeHtml(str) {

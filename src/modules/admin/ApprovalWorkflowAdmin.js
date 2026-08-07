@@ -6,13 +6,18 @@ import { stateEngine } from '../../store/stateEngine.js';
 export function renderApprovalWorkflowAdmin(container) {
   function render() {
     const state = stateEngine.getState();
+    const attempted = state.loading.approvalRequests !== undefined;
+
+    if (!attempted) stateEngine.loadApprovals().catch(() => {});
+
     const requests = state.approvalRequests;
-    const pendingRequests = requests.filter(r => r.status === 'pending');
-    const recentActivity = requests.filter(r => r.status !== 'pending');
+    const loading = !!state.loading.approvalRequests || !attempted;
+    const pendingRequests = requests.filter(r => r.status === 'PENDING');
+    const recentActivity = requests.filter(r => r.status !== 'PENDING');
 
     container.innerHTML = `
       <div>
-        
+
         <!-- BREADCRUMB -->
         <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;">
           <span>Admin</span>
@@ -37,6 +42,12 @@ export function renderApprovalWorkflowAdmin(container) {
           </div>
         </div>
 
+        ${state.error ? `
+          <div style="background: #fff5f5; border: 1px solid #fecaca; color: #991b1b; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
+            ⚠️ ${escapeHtml(state.error)}
+          </div>
+        ` : ''}
+
         <!-- CRITICAL SECURITY ALERT BANNER -->
         <div style="background: #fff5f5; border: 1px solid #fed7d7; border-left: 5px solid #ef4444; padding: 1.25rem 1.5rem; border-radius: 12px; margin-bottom: 2.25rem; display: flex; align-items: center; gap: 1rem;">
           <div style="font-size: 1.75rem;">🚨</div>
@@ -45,7 +56,7 @@ export function renderApprovalWorkflowAdmin(container) {
               Dual-Administrator Security Policy Active
             </div>
             <div style="font-size: 13px; color: #7f1d1d;">
-              High-risk actions are locked in a pending state until confirmed by a secondary administrator with Super Admin clearance.
+              High-risk actions are locked in a pending state until confirmed by a secondary administrator with Full Administrator clearance.
             </div>
           </div>
         </div>
@@ -56,7 +67,9 @@ export function renderApprovalWorkflowAdmin(container) {
             <h2 class="adm-section-title">Pending Authorization Requests (${pendingRequests.length})</h2>
           </div>
 
-          ${pendingRequests.length === 0 ? `
+          ${loading ? `
+            <div style="text-align: center; padding: 3rem; color: #64748b;">Loading approval requests...</div>
+          ` : pendingRequests.length === 0 ? `
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 3.5rem 2rem; text-align: center;">
               <div style="font-size: 2.75rem; margin-bottom: 0.75rem;">✅</div>
               <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 0.35rem;">Authorization Queue Clear</h3>
@@ -65,12 +78,12 @@ export function renderApprovalWorkflowAdmin(container) {
           ` : pendingRequests.map(req => `
             <!-- REDESIGNED STRUCTURED APPROVAL REQUEST CARD (ENTERPRISE FOCAL POINT) -->
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 25px rgba(15, 23, 42, 0.06); padding: 2rem; margin-bottom: 1.5rem; transition: all 0.2s ease;">
-              
+
               <!-- CARD TOP BAR: RISK BADGE + ACTION NAME + TICKET ID -->
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                   <span class="adm-badge-risk">
-                    ⚠️ HIGH RISK
+                    ⚠️ ${escapeHtml(req.riskLevel)} RISK
                   </span>
                   <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0;">
                     ${formatActionTitle(req.actionType)}
@@ -78,24 +91,26 @@ export function renderApprovalWorkflowAdmin(container) {
                 </div>
 
                 <span style="font-family: monospace; font-size: 13px; font-weight: 700; background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                  Ticket #${req.id.replace('appr_req_', '')}
+                  Ticket #${req.id.slice(0, 8).toUpperCase()}
                 </span>
               </div>
 
               <!-- CARD BODY GRID: TARGET RESOURCE + INITIATOR DETAILS -->
               <div class="grid-2" style="gap: 1.5rem; margin-bottom: 1.5rem;">
-                
+
                 <!-- Target Resource Info Box -->
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.25rem; border-radius: 12px;">
                   <div class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 0.5rem;">
                     Target Resource
                   </div>
                   <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem;">
-                    ${req.targetName.split('(')[0].trim()}
+                    ${escapeHtml(req.targetName.split('(')[0].trim())}
                   </div>
-                  <div style="font-size: 13px; color: #64748b;">
-                    Seller ID: <code style="background: #e2e8f0; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${req.targetId || 'seller_3'}</code>
-                  </div>
+                  ${req.targetId ? `
+                    <div style="font-size: 13px; color: #64748b;">
+                      ID: <code style="background: #e2e8f0; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${escapeHtml(req.targetId)}</code>
+                    </div>
+                  ` : ''}
                 </div>
 
                 <!-- Initiator Info Box -->
@@ -104,10 +119,10 @@ export function renderApprovalWorkflowAdmin(container) {
                     Requested By
                   </div>
                   <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem;">
-                    ${escapeHtml(req.requestedBy)}
+                    ${escapeHtml(req.requestedByName)}
                   </div>
                   <div style="font-size: 13px; color: #64748b;">
-                    Requested: <strong style="color: #334155;">${req.date}</strong>
+                    Requested: <strong style="color: #334155;">${new Date(req.createdAt).toLocaleString()}</strong>
                   </div>
                 </div>
 
@@ -123,43 +138,8 @@ export function renderApprovalWorkflowAdmin(container) {
                 </div>
               </div>
 
-              <!-- DUAL-ADMIN APPROVAL PROGRESS TIMELINE -->
-              <div style="margin-bottom: 1.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem;">
-                <div class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 0.75rem;">
-                  Approval Progress
-                </div>
-
-                <div class="grid-2" style="gap: 1rem;">
-                  <!-- Admin One: Approved -->
-                  <div class="adm-timeline-step" style="border-color: #bbf7d0; background: #f0fdf4;">
-                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #16a34a; color: #fff; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center;">
-                      ✓
-                    </div>
-                    <div>
-                      <div style="font-weight: 700; font-size: 14px; color: #166534;">Admin One (Primary Initiator)</div>
-                      <div style="font-size: 12px; color: #15803d;">✓ Approved by ${escapeHtml(req.requestedBy.split(' ')[0])}</div>
-                    </div>
-                  </div>
-
-                  <!-- Admin Two: Waiting -->
-                  <div class="adm-timeline-step" style="border-color: #fde68a; background: #fffbeb;">
-                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #d97706; color: #fff; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center;">
-                      ⌛
-                    </div>
-                    <div>
-                      <div style="font-weight: 700; font-size: 14px; color: #92400e;">Admin Two (Secondary Authorization)</div>
-                      <div style="font-size: 12px; color: #b45309;">Waiting for your approval</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ACTION BUTTONS BAR: APPROVE / REJECT / AUDIT TRAIL -->
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
-                <button class="view-audit-btn" data-id="${req.id}" style="height: 44px; padding: 0 20px; border-radius: 10px; font-weight: 700; font-size: 14px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; cursor: pointer; transition: all 0.2s ease;">
-                  🔍 View Audit Trail
-                </button>
-
+              <!-- ACTION BUTTONS BAR: APPROVE / REJECT -->
+              <div style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
                 <div style="display: flex; gap: 0.75rem;">
                   <button class="reject-req-btn" data-id="${req.id}" style="height: 44px; padding: 0 24px; border-radius: 10px; font-weight: 800; font-size: 14px; background: #dc2626; border: none; color: #ffffff; cursor: pointer; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25); transition: all 0.2s ease;">
                     ❌ Reject Request
@@ -200,13 +180,13 @@ export function renderApprovalWorkflowAdmin(container) {
                   </tr>
                 ` : recentActivity.map(req => `
                   <tr style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding: 1rem 1.25rem; font-family: monospace; font-weight: 700; color: #475569;">#${req.id.replace('appr_req_', '')}</td>
+                    <td style="padding: 1rem 1.25rem; font-family: monospace; font-weight: 700; color: #475569;">#${req.id.slice(0, 8).toUpperCase()}</td>
                     <td style="padding: 1rem 1.25rem; font-weight: 700; color: #0f172a;">${formatActionTitle(req.actionType)}</td>
                     <td style="padding: 1rem 1.25rem; color: #334155;">${escapeHtml(req.targetName)}</td>
-                    <td style="padding: 1rem 1.25rem; color: #334155;">${escapeHtml(req.requestedBy)}</td>
-                    <td style="padding: 1rem 1.25rem; color: #64748b; font-size: 13px;">${req.date}</td>
+                    <td style="padding: 1rem 1.25rem; color: #334155;">${escapeHtml(req.requestedByName)}</td>
+                    <td style="padding: 1rem 1.25rem; color: #64748b; font-size: 13px;">${new Date(req.createdAt).toLocaleString()}</td>
                     <td style="padding: 1rem 1.25rem;">
-                      ${req.status === 'approved' ? `<span class="adm-badge-success">✓ AUTHORIZED</span>` : `<span class="adm-badge-risk">❌ REJECTED</span>`}
+                      ${req.status === 'APPROVED' ? `<span class="adm-badge-success">✓ AUTHORIZED</span>` : `<span class="adm-badge-risk">❌ REJECTED</span>`}
                     </td>
                   </tr>
                 `).join('')}
@@ -220,32 +200,32 @@ export function renderApprovalWorkflowAdmin(container) {
 
     // EVENT LISTENERS
     container.querySelectorAll('.approve-req-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const reqId = btn.dataset.id;
         const req = requests.find(r => r.id === reqId);
         if (confirm(`Authorize execution of action "${formatActionTitle(req?.actionType)}"? This action will be executed immediately.`)) {
-          stateEngine.approveRequest(reqId);
-          alert('Action authorized and executed successfully! Audit log entry recorded.');
-          render();
+          try {
+            await stateEngine.approveRequest(reqId);
+            alert('Action authorized and executed successfully! Audit log entry recorded.');
+          } catch (err) {
+            render();
+          }
         }
       });
     });
 
     container.querySelectorAll('.reject-req-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const reqId = btn.dataset.id;
         const req = requests.find(r => r.id === reqId);
         if (confirm(`Reject authorization request "${formatActionTitle(req?.actionType)}"?`)) {
-          stateEngine.rejectRequest(reqId);
-          alert('Authorization request rejected.');
-          render();
+          try {
+            await stateEngine.rejectRequest(reqId);
+            alert('Authorization request rejected.');
+          } catch (err) {
+            render();
+          }
         }
-      });
-    });
-
-    container.querySelectorAll('.view-audit-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        alert('Viewing complete cryptographic audit trail for Ticket #' + btn.dataset.id.replace('appr_req_', ''));
       });
     });
   }

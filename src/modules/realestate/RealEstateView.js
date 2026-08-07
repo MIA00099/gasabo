@@ -5,15 +5,46 @@ import { stateEngine } from '../../store/stateEngine.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
 export function renderRealEstateView(container) {
-  let activeFilter = 'All'; // 'All' | 'Residential' | 'Commercial' | 'Industrial & Land'
-  let activeTab = 'home'; // 'home' | 'about' | 'services' | 'projects' | 'gallery' | 'contact'
-
   function render() {
     const state = stateEngine.getState();
     const reData = state.realEstate;
+    const hasAttempted = state.loading.realEstate !== undefined;
+    const loading = !!state.loading.realEstate;
 
-    const filteredProjects = activeFilter === 'All' 
-      ? reData.projects 
+    // Kick off the fetch on first render only. Note this must NOT be gated behind
+    // a separate stateEngine.setUI() call: setUI() notifies synchronously, which
+    // would re-enter this render function (main.js remounts on every notify)
+    // *before* the fetch below even starts, while reData is still empty - reading
+    // straight off state.loading here instead avoids that reentrancy trap.
+    if (!hasAttempted && !loading) {
+      stateEngine.loadRealEstate().catch(() => {});
+    }
+
+    if (!hasAttempted || (loading && !reData.hero)) {
+      container.innerHTML = `
+        <div style="min-height: 60vh; display: flex; align-items: center; justify-content: center; color: #64748B; font-size: 1.1rem;">
+          Loading Gasabo Real Estate...
+        </div>
+      `;
+      return;
+    }
+
+    if (state.error && !reData.hero) {
+      container.innerHTML = `
+        <div style="min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: #991B1B;">
+          <div>⚠️ ${escapeHtml(state.error)}</div>
+          <button id="re-retry-btn" class="btn btn-primary">Retry</button>
+        </div>
+      `;
+      container.querySelector('#re-retry-btn')?.addEventListener('click', () => stateEngine.loadRealEstate().catch(() => {}));
+      return;
+    }
+
+    const activeFilter = state.ui.realEstateFilter || 'All'; // 'All' | 'Residential' | 'Commercial' | 'Industrial & Land'
+    const activeTab = state.ui.realEstateTab || 'home'; // 'home' | 'about' | 'services' | 'projects' | 'gallery' | 'contact'
+
+    const filteredProjects = activeFilter === 'All'
+      ? reData.projects
       : reData.projects.filter(p => p.category === activeFilter);
 
     container.innerHTML = `
@@ -68,7 +99,7 @@ export function renderRealEstateView(container) {
               <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem;">
                 ${escapeHtml(reData.about.text)}
               </p>
-              
+
               <div class="grid-2" style="gap: 1rem;">
                 ${reData.about.stats.map(s => `
                   <div class="glass-card" style="padding: 1.25rem; border-left: 5px solid #2563eb; background: #ffffff;">
@@ -123,33 +154,39 @@ export function renderRealEstateView(container) {
             </div>
           </div>
 
-          <div class="grid-3">
-            ${filteredProjects.map(proj => `
-              <div class="glass-card" style="overflow: hidden; display: flex; flex-direction: column; background: #ffffff;">
-                <div style="height: 220px; overflow: hidden; position: relative;">
-                  <img src="${proj.image}" alt="${escapeHtml(proj.title)}" style="width: 100%; height: 100%; object-fit: cover;">
-                  <span class="badge" style="position: absolute; top: 12px; left: 12px; background: rgba(15,23,42,0.85); color: #ffffff; backdrop-filter: blur(4px); font-weight: 800;">
-                    ${proj.category}
-                  </span>
-                </div>
-                
-                <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-                  <div>
-                    <div style="font-size: 0.8rem; font-weight: 700; color: #2563eb; margin-bottom: 0.25rem;">📍 ${escapeHtml(proj.district)} District</div>
-                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">${escapeHtml(proj.title)}</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
-                      ${escapeHtml(proj.description)}
-                    </p>
+          ${filteredProjects.length === 0 ? `
+            <div style="text-align: center; padding: 3rem; background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border-color); color: var(--text-secondary);">
+              No projects in this category yet.
+            </div>
+          ` : `
+            <div class="grid-3">
+              ${filteredProjects.map(proj => `
+                <div class="glass-card" style="overflow: hidden; display: flex; flex-direction: column; background: #ffffff;">
+                  <div style="height: 220px; overflow: hidden; position: relative;">
+                    <img src="${proj.image}" alt="${escapeHtml(proj.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <span class="badge" style="position: absolute; top: 12px; left: 12px; background: rgba(15,23,42,0.85); color: #ffffff; backdrop-filter: blur(4px); font-weight: 800;">
+                      ${proj.category}
+                    </span>
                   </div>
 
-                  <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">🏢 ${escapeHtml(proj.units)}</span>
-                    <span class="badge badge-active">${proj.status}</span>
+                  <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                      <div style="font-size: 0.8rem; font-weight: 700; color: #2563eb; margin-bottom: 0.25rem;">📍 ${escapeHtml(proj.district)} District</div>
+                      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">${escapeHtml(proj.title)}</h3>
+                      <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
+                        ${escapeHtml(proj.description)}
+                      </p>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">🏢 ${escapeHtml(proj.units)}</span>
+                      <span class="badge badge-active">${proj.status}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            `).join('')}
-          </div>
+              `).join('')}
+            </div>
+          `}
         </div>
 
         <!-- SECTION 4: GALLERY ASSETS -->
@@ -242,29 +279,25 @@ export function renderRealEstateView(container) {
     // Event Handlers
     container.querySelectorAll('.re-nav-tab').forEach(btn => {
       btn.addEventListener('click', () => {
-        activeTab = btn.dataset.tab;
-        render();
-        const sec = container.querySelector(`#section-${activeTab}`);
+        stateEngine.setUI({ realEstateTab: btn.dataset.tab });
+        const sec = container.querySelector(`#section-${btn.dataset.tab}`);
         if (sec) sec.scrollIntoView({ behavior: 'smooth' });
       });
     });
 
     container.querySelectorAll('.re-filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        activeFilter = btn.dataset.filter;
-        render();
+        stateEngine.setUI({ realEstateFilter: btn.dataset.filter });
       });
     });
 
     container.querySelector('#re-explore-proj-btn')?.addEventListener('click', () => {
-      activeTab = 'projects';
-      render();
+      stateEngine.setUI({ realEstateTab: 'projects' });
       container.querySelector('#section-projects')?.scrollIntoView({ behavior: 'smooth' });
     });
 
     container.querySelector('#re-contact-top-btn')?.addEventListener('click', () => {
-      activeTab = 'contact';
-      render();
+      stateEngine.setUI({ realEstateTab: 'contact' });
       container.querySelector('#section-contact')?.scrollIntoView({ behavior: 'smooth' });
     });
 

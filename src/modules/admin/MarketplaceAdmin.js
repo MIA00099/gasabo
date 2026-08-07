@@ -4,10 +4,13 @@
 import { stateEngine } from '../../store/stateEngine.js';
 
 export function renderMarketplaceAdmin(container) {
-  let activeTab = 'products'; // 'products' | 'categories' | 'banners'
-
   function render() {
     const state = stateEngine.getState();
+    const activeTab = state.ui.marketplaceAdminTab || 'products';
+
+    if (state.loading.products === undefined) stateEngine.loadProducts().catch(() => {});
+    if (state.loading.categories === undefined) stateEngine.loadCategories().catch(() => {});
+    if (state.loading.banners === undefined) stateEngine.loadBanners().catch(() => {});
 
     container.innerHTML = `
       <div>
@@ -31,6 +34,12 @@ export function renderMarketplaceAdmin(container) {
             </button>
           </div>
         </div>
+
+        ${state.error ? `
+          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
+            ⚠️ ${escapeHtml(state.error)}
+          </div>
+        ` : ''}
 
         ${activeTab === 'products' ? `
           <!-- PRODUCTS MANAGEMENT -->
@@ -56,11 +65,11 @@ export function renderMarketplaceAdmin(container) {
                         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
                         <div>
                           <div style="font-weight: 600; color: #fff;">${escapeHtml(prod.title)}</div>
-                          <div style="font-size: 0.78rem; color: var(--text-muted);">Posted: ${prod.postedDate}</div>
+                          <div style="font-size: 0.78rem; color: var(--text-muted);">Posted: ${new Date(prod.postedDate).toLocaleDateString()}</div>
                         </div>
                       </div>
                     </td>
-                    <td>${escapeHtml(state.categories.find(c => c.id === prod.category)?.name || 'General')}</td>
+                    <td>${escapeHtml(prod.category || 'General')}</td>
                     <td><strong style="color: var(--primary);">${prod.price.toLocaleString()} RWF</strong></td>
                     <td>${escapeHtml(prod.district)}</td>
                     <td>${escapeHtml(prod.sellerName)}</td>
@@ -115,7 +124,7 @@ export function renderMarketplaceAdmin(container) {
                     <td style="font-size: 1.5rem;">${cat.icon}</td>
                     <td><strong style="color: #fff;">${escapeHtml(cat.name)}</strong></td>
                     <td>${cat.order}</td>
-                    <td>${state.products.filter(p => p.category === cat.id).length} Products</td>
+                    <td>${cat.count} Products</td>
                     <td>
                       <span class="badge badge-active">ENABLED</span>
                     </td>
@@ -131,60 +140,69 @@ export function renderMarketplaceAdmin(container) {
           </div>
         ` : `
           <!-- BANNERS MANAGEMENT -->
-          <div class="grid-2">
-            ${state.banners.map(b => `
-              <div class="glass-card" style="padding: 1.5rem;">
-                <div style="height: 140px; border-radius: var(--radius-sm); overflow: hidden; background: #000; margin-bottom: 1rem;">
-                  <img src="${b.image}" alt="${escapeHtml(b.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+          ${state.banners.length === 0 ? `
+            <div style="text-align: center; padding: 3rem; background: rgba(255,255,255,0.03); border-radius: var(--radius-md); border: 1px dashed var(--navy-border); color: var(--text-muted);">
+              No promotional banners configured yet.
+            </div>
+          ` : `
+            <div class="grid-2">
+              ${state.banners.map(b => `
+                <div class="glass-card" style="padding: 1.5rem;">
+                  <div style="height: 140px; border-radius: var(--radius-sm); overflow: hidden; background: #000; margin-bottom: 1rem;">
+                    <img src="${b.image}" alt="${escapeHtml(b.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                  </div>
+                  <h4 style="color: #fff; margin-bottom: 0.25rem;">${escapeHtml(b.title)}</h4>
+                  <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">${escapeHtml(b.subtitle)}</p>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="badge badge-active">${b.status}</span>
+                  </div>
                 </div>
-                <h4 style="color: #fff; margin-bottom: 0.25rem;">${escapeHtml(b.title)}</h4>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">${escapeHtml(b.subtitle)}</p>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span class="badge badge-active">ACTIVE SLIDER</span>
-                  <button class="btn btn-sm btn-secondary">Edit Banner</button>
-                </div>
-              </div>
-            `).join('')}
-          </div>
+              `).join('')}
+            </div>
+          `}
         `}
       </div>
     `;
 
     // Event Handlers
-    container.querySelector('#mkt-adm-products')?.addEventListener('click', () => { activeTab = 'products'; render(); });
-    container.querySelector('#mkt-adm-categories')?.addEventListener('click', () => { activeTab = 'categories'; render(); });
-    container.querySelector('#mkt-adm-banners')?.addEventListener('click', () => { activeTab = 'banners'; render(); });
+    container.querySelector('#mkt-adm-products')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'products' }));
+    container.querySelector('#mkt-adm-categories')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'categories' }));
+    container.querySelector('#mkt-adm-banners')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'banners' }));
 
     container.querySelectorAll('.flag-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        stateEngine.toggleProductFlag(btn.dataset.id, btn.dataset.flag);
-        render();
+      btn.addEventListener('click', async () => {
+        try {
+          await stateEngine.toggleProductFlag(btn.dataset.id, btn.dataset.flag);
+        } catch (err) { /* state.error already set, re-render shows it */ }
       });
     });
 
     container.querySelectorAll('.del-prod-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         if (confirm('Are you sure you want to delete this product?')) {
-          stateEngine.deleteProduct(btn.dataset.id);
-          render();
+          try {
+            await stateEngine.deleteProduct(btn.dataset.id);
+          } catch (err) { /* handled via state.error */ }
         }
       });
     });
 
     container.querySelectorAll('.req-del-cat-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        stateEngine.requestDeleteCategory(btn.dataset.id);
-        alert('Created Critical Approval Request for Category Deletion. A second Administrator must approve this request before deletion.');
-        render();
+      btn.addEventListener('click', async () => {
+        try {
+          await stateEngine.requestDeleteCategory(btn.dataset.id);
+          alert('Created Critical Approval Request for Category Deletion. A second Administrator must approve this request before deletion.');
+        } catch (err) { /* handled via state.error */ }
       });
     });
 
-    container.querySelector('#add-cat-btn')?.addEventListener('click', () => {
+    container.querySelector('#add-cat-btn')?.addEventListener('click', async () => {
       const name = prompt('Enter New Category Name:');
       if (name) {
         const icon = prompt('Enter Category Emoji/Icon (e.g. 📦, 💻, 🌾):') || '📦';
-        stateEngine.addCategory(name, icon);
-        render();
+        try {
+          await stateEngine.addCategory(name, icon);
+        } catch (err) { /* handled via state.error */ }
       }
     });
   }
@@ -198,4 +216,3 @@ function escapeHtml(str) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
   });
 }
-

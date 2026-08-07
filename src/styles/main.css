@@ -1,5 +1,6 @@
 /* KIGALI MARKET PLATFORM - Stripe/Apple-Grade World Class Design System */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* Fonts (Plus Jakarta Sans + Inter) are loaded once via <link> in index.html -
+   intentionally not re-imported here to avoid a second, duplicate font request. */
 
 :root {
   /* Exact Specified Color Palette */
@@ -1050,7 +1051,13 @@ footer a:hover {
   bottom: 0;
   left: 0;
   right: 0;
-  width: 100%;
+  /* left:0 + right:0 already pins this to the full viewport width; a separate
+     width:100% here was redundant and, combined with box-sizing, was resolving
+     wider than the visual viewport on mobile and pushing the whole page into
+     horizontal scroll. max-width + box-sizing below is a hard backstop. */
+  max-width: 100vw;
+  box-sizing: border-box;
+  overflow-x: hidden;
   background: rgba(3, 34, 2, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -1072,6 +1079,7 @@ footer a:hover {
   max-width: 1280px;
   margin: 0 auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
@@ -1180,6 +1188,22 @@ footer a:hover {
   }
   .sticky-val {
     font-size: 0.82rem;
+  }
+}
+
+/* At very narrow widths (e.g. small phones) the sticky bar's three items -
+   brand, phone number, and the Gasabo CMS link - no longer fit on one line
+   even with the wrapping above, and used to push the whole page wider than
+   the viewport. Trim to icons + short labels only so it stays within bounds. */
+@media (max-width: 420px) {
+  .slim-sticky-bar {
+    padding: 0.55rem 0.75rem;
+  }
+  .slim-sticky-inner {
+    gap: 0.5rem;
+  }
+  .sticky-val {
+    display: none;
   }
 }
 

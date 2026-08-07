@@ -6,7 +6,12 @@ import { stateEngine } from '../../store/stateEngine.js';
 export function renderSecurityAuditAdmin(container) {
   function render() {
     const state = stateEngine.getState();
+    const attempted = state.loading.auditLogs !== undefined;
+
+    if (!attempted) stateEngine.loadAuditLogs().catch(() => {});
+
     const logs = state.auditLogs;
+    const loading = !!state.loading.auditLogs || !attempted;
 
     container.innerHTML = `
       <div>
@@ -14,7 +19,7 @@ export function renderSecurityAuditAdmin(container) {
           <div>
             <h2 style="color: #fff; font-size: 1.5rem;">🛡️ System Security Audit Logs & Backups</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem;">
-              Complete audit trail of all platform activities, administrative approvals, login sessions, and automated database backups.
+              Complete audit trail of all platform activities, administrative approvals, login sessions, and database backups.
             </p>
           </div>
 
@@ -22,28 +27,28 @@ export function renderSecurityAuditAdmin(container) {
             <button id="trigger-backup-btn" class="btn btn-primary">
               💾 Trigger Immediate Backup Snapshot
             </button>
-            <button id="download-backup-btn" class="btn btn-gold">
-              📥 Export JSON Backup
-            </button>
           </div>
         </div>
 
-        <!-- BACKUP & RESTORE BANNER -->
+        ${state.error ? `
+          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
+            ⚠️ ${escapeHtml(state.error)}
+          </div>
+        ` : ''}
+
+        <!-- BACKUP POLICY BANNER -->
         <div class="glass-panel" style="padding: 1.25rem 1.5rem; border-radius: var(--radius-md); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h4 style="color: #fff; font-size: 1.05rem;">Automatic Database Backup Policy</h4>
+            <h4 style="color: #fff; font-size: 1.05rem;">Database Backup Policy</h4>
             <p style="font-size: 0.85rem; color: var(--text-muted);">
-              Backups run automatically every 24 hours. Last backup snapshot created: <strong>Today at 00:00 CAT</strong>.
+              Each backup trigger is recorded to the audit log below with a timestamp for compliance tracking.
             </p>
           </div>
-          <button id="restore-snapshot-btn" class="btn btn-secondary btn-sm">
-            🔄 Restore Snapshot
-          </button>
         </div>
 
         <!-- AUDIT LOGS TABLE -->
         <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">Audit Log Registry (${logs.length} Logged Events)</h3>
-        
+
         <div class="custom-table-container">
           <table class="custom-table">
             <thead>
@@ -57,18 +62,22 @@ export function renderSecurityAuditAdmin(container) {
               </tr>
             </thead>
             <tbody>
-              ${logs.map(log => `
+              ${loading ? `
+                <tr><td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading audit logs...</td></tr>
+              ` : logs.length === 0 ? `
+                <tr><td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">No audit events recorded yet.</td></tr>
+              ` : logs.map(log => `
                 <tr>
-                  <td style="white-space: nowrap; font-size: 0.82rem; color: var(--text-muted);">${log.timestamp}</td>
+                  <td style="white-space: nowrap; font-size: 0.82rem; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</td>
                   <td><strong style="color: #fff;">${escapeHtml(log.user)}</strong></td>
                   <td>
                     <span class="badge" style="background: rgba(0, 168, 107, 0.15); color: var(--primary); border: 1px solid rgba(0, 168, 107, 0.3);">
-                      ${log.action}
+                      ${escapeHtml(log.action)}
                     </span>
                   </td>
                   <td>${escapeHtml(log.module)}</td>
                   <td style="font-size: 0.82rem; color: var(--text-muted);">${escapeHtml(log.ip)}</td>
-                  <td style="font-size: 0.88rem; color: var(--text-main);">${escapeHtml(log.details)}</td>
+                  <td style="font-size: 0.88rem; color: var(--text-main);">${escapeHtml(typeof log.details === 'string' ? log.details : JSON.stringify(log.details))}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -78,27 +87,13 @@ export function renderSecurityAuditAdmin(container) {
     `;
 
     // Handlers
-    container.querySelector('#trigger-backup-btn')?.addEventListener('click', () => {
-      stateEngine.logAudit(state.currentUser.name, 'DATABASE_BACKUP_CREATED', 'System Security', 'Manual database snapshot created and stored securely.');
-      alert('Database Backup Snapshot created successfully!');
-      render();
-    });
-
-    container.querySelector('#download-backup-btn')?.addEventListener('click', () => {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `KIGALIMARKET_BACKUP_${new Date().toISOString().split('T')[0]}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      stateEngine.logAudit(state.currentUser.name, 'BACKUP_EXPORTED', 'System Security', 'Exported JSON backup snapshot.');
-    });
-
-    container.querySelector('#restore-snapshot-btn')?.addEventListener('click', () => {
-      if (confirm('Restore state to initial demonstration defaults?')) {
-        stateEngine.resetToDefault();
-        location.reload();
+    container.querySelector('#trigger-backup-btn')?.addEventListener('click', async () => {
+      try {
+        await stateEngine.triggerBackup();
+        alert('Database backup snapshot created successfully!');
+        stateEngine.loadAuditLogs().catch(() => {});
+      } catch (err) {
+        render();
       }
     });
   }
@@ -108,7 +103,7 @@ export function renderSecurityAuditAdmin(container) {
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/[&<>"']/g, function(m) {
+  return String(str).replace(/[&<>"']/g, function(m) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
   });
 }

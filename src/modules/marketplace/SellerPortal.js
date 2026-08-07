@@ -1,8 +1,7 @@
 /**
- * URWAGASABO MARKETPLACE - Seller Registration, Authentication & Seller Dashboard
+ * KIGALI MARKET - Seller Registration, Authentication & Seller Dashboard
  */
 import { stateEngine } from '../../store/stateEngine.js';
-import { renderLoginView } from '../../components/LoginView.js';
 
 export function renderSellerPortal(container) {
   const state = stateEngine.getState();
@@ -17,19 +16,12 @@ export function renderSellerPortal(container) {
 }
 
 function renderSellerAuthView(container) {
-  let step = 'register'; // 'register' | 'created' | 'login'
-  let registeredSellerData = null;
-
   function update() {
     const state = stateEngine.getState();
-
-    // Step progress indicators matching the diagram
-    const stepsConfig = [
-      { key: 'register', label: '1. Register & Form' },
-      { key: 'created', label: '2. Account Created' },
-      { key: 'login', label: '3. Login' },
-      { key: 'dashboard', label: '4. Seller Dashboard' }
-    ];
+    const step = state.ui.sellerAuthStep || 'register'; // 'register' | 'created' | 'login'
+    const registeredSellerData = state.ui.registeredSellerData || null;
+    const submitting = !!state.loading.auth;
+    const errorMessage = state.error;
 
     container.innerHTML = `
       <div style="max-width: 600px; margin: 2rem auto; padding: 0 1rem;">
@@ -60,6 +52,12 @@ function renderSellerAuthView(container) {
         </div>
 
         <div class="glass-panel" style="padding: 2.2rem; border-radius: var(--radius-lg); border: 1px solid rgba(255, 255, 255, 0.12);">
+          ${errorMessage ? `
+            <div style="background: rgba(220,38,38,0.15); border: 1px solid rgba(248,113,113,0.5); color: #fecaca; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
+              ⚠️ ${escapeHtml(errorMessage)}
+            </div>
+          ` : ''}
+
           ${step === 'register' ? `
             <div style="text-align: center; margin-bottom: 1.5rem;">
               <h3 style="font-size: 1.4rem; color: #fff; margin-bottom: 0.3rem;">Register Seller Account</h3>
@@ -91,11 +89,11 @@ function renderSellerAuthView(container) {
 
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Password</label>
-                <input type="password" id="reg-password" class="form-control" placeholder="••••••••" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
+                <input type="password" id="reg-password" class="form-control" placeholder="Min. 6 characters" required minlength="6" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
               </div>
 
-              <button type="submit" class="btn btn-gold" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                Complete Form & Create Account
+              <button type="submit" class="btn btn-gold" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; font-weight: 700; cursor: pointer;" ${submitting ? 'disabled' : ''}>
+                ${submitting ? 'Creating account...' : 'Complete Form & Create Account'}
               </button>
             </form>
             <div style="text-align: center; margin-top: 1rem;">
@@ -110,7 +108,7 @@ function renderSellerAuthView(container) {
               </div>
               <h3 style="font-size: 1.6rem; color: #fff; margin-bottom: 0.5rem;">Account Created!</h3>
               <p style="color: #94A3B8; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5;">
-                Congratulations <strong style="color: #fff;">${escapeHtml(registeredSellerData?.name || 'Seller')}</strong>! Your seller account has been successfully created.
+                Congratulations <strong style="color: #fff;">${escapeHtml(registeredSellerData?.name || 'Seller')}</strong>! Your seller account has been successfully created and you are now logged in.
               </p>
               <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1rem; text-align: left; margin-bottom: 1.5rem; font-size: 0.85rem; color: #CBD5E1;">
                 <div>📍 <strong>District:</strong> ${escapeHtml(registeredSellerData?.district || 'Gasabo')}</div>
@@ -118,7 +116,7 @@ function renderSellerAuthView(container) {
                 <div style="margin-top: 4px;">📞 <strong>Phone:</strong> ${escapeHtml(registeredSellerData?.phone || '')}</div>
               </div>
               <button id="btn-proceed-login" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                Proceed to Login →
+                Go to My Dashboard →
               </button>
             </div>
           ` : `
@@ -129,48 +127,69 @@ function renderSellerAuthView(container) {
 
             <form id="seller-login-form">
               <div class="form-group" style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Email or Phone Number</label>
-                <input type="text" id="login-id" class="form-control" placeholder="e.g. +250 788 345 678" value="${escapeHtml(registeredSellerData?.email || 'eric.m@rwandaagri.rw')}" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Email Address</label>
+                <input type="email" id="login-email" class="form-control" placeholder="e.g. eric.m@rwandaagri.rw" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
               </div>
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Password</label>
-                <input type="password" class="form-control" placeholder="••••••••" value="password123" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
+                <input type="password" id="login-password" class="form-control" placeholder="••••••••" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
               </div>
-              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                Login to Seller Dashboard
+              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; font-weight: 700; cursor: pointer;" ${submitting ? 'disabled' : ''}>
+                ${submitting ? 'Logging in...' : 'Login to Seller Dashboard'}
               </button>
             </form>
+            <div style="text-align: center; margin-top: 1rem;">
+              <button id="btn-goto-register" style="background: none; border: none; color: #94A3B8; cursor: pointer; font-size: 0.85rem; text-decoration: underline;">
+                Don't have an account? Register
+              </button>
+            </div>
           `}
         </div>
       </div>
     `;
 
-    container.querySelector('#seller-reg-form')?.addEventListener('submit', (e) => {
+    container.querySelector('#seller-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = container.querySelector('#reg-fullname').value;
       const email = container.querySelector('#reg-email').value;
       const phone = container.querySelector('#reg-phone').value;
       const district = container.querySelector('#reg-district').value;
+      const password = container.querySelector('#reg-password').value;
 
-      registeredSellerData = { name, email, phone, district };
-      stateEngine.registerSeller(registeredSellerData);
-      step = 'created';
-      update();
+      try {
+        await stateEngine.registerSeller({ fullName: name, email, phone, district, password });
+        stateEngine.setUI({ sellerAuthStep: 'created', registeredSellerData: { name, email, phone, district } });
+      } catch (err) {
+        // stateEngine already recorded state.error - re-render picks it up.
+        update();
+      }
     });
 
     container.querySelector('#btn-goto-login')?.addEventListener('click', () => {
-      step = 'login';
-      update();
+      stateEngine.clearError();
+      stateEngine.setUI({ sellerAuthStep: 'login' });
+    });
+
+    container.querySelector('#btn-goto-register')?.addEventListener('click', () => {
+      stateEngine.clearError();
+      stateEngine.setUI({ sellerAuthStep: 'register' });
     });
 
     container.querySelector('#btn-proceed-login')?.addEventListener('click', () => {
-      step = 'login';
-      update();
+      // Registration already logged the seller in - this just moves past the
+      // confirmation screen into the dashboard on the next render.
+      stateEngine.setUI({ sellerAuthStep: 'login' });
     });
 
-    container.querySelector('#seller-login-form')?.addEventListener('submit', (e) => {
+    container.querySelector('#seller-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      stateEngine.switchRole('seller');
+      const email = container.querySelector('#login-email').value;
+      const password = container.querySelector('#login-password').value;
+      try {
+        await stateEngine.login(email, password);
+      } catch (err) {
+        update();
+      }
     });
   }
 
@@ -178,12 +197,18 @@ function renderSellerAuthView(container) {
 }
 
 function renderSellerDashboardView(container, sellerUser) {
-  let activeTab = 'active'; // 'active' | 'expiring' | 'expired' | 'new_product'
-
   function render() {
     const state = stateEngine.getState();
-    const myProducts = state.products.filter(p => p.sellerId === sellerUser.id || p.sellerName.includes(sellerUser.name));
+    const activeTab = state.ui.sellerDashboardTab || 'active';
+    const formSubmitting = !!state.loading.productForm;
+    const myProductsAttempted = state.loading.myProducts !== undefined;
+    const productsLoading = !!state.loading.myProducts || !myProductsAttempted;
 
+    if (!myProductsAttempted) {
+      stateEngine.loadMyProducts().catch(() => {});
+    }
+
+    const myProducts = state.myProducts;
     const activeProds = myProducts.filter(p => p.status === 'active');
     const expiringProds = myProducts.filter(p => p.status === 'expiring_soon');
     const expiredProds = myProducts.filter(p => p.status === 'expired');
@@ -215,6 +240,12 @@ function renderSellerDashboardView(container, sellerUser) {
           </div>
         </div>
 
+        ${state.error ? `
+          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
+            ⚠️ ${escapeHtml(state.error)}
+          </div>
+        ` : ''}
+
         ${activeTab === 'new_product' ? `
           <!-- POST NEW PRODUCT FORM -->
           <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg); margin-bottom: 3rem;">
@@ -241,7 +272,7 @@ function renderSellerDashboardView(container, sellerUser) {
               <div class="grid-3">
                 <div class="form-group">
                   <label>Price (RWF)</label>
-                  <input type="number" id="p-price" class="form-control" placeholder="15000" required>
+                  <input type="number" id="p-price" class="form-control" placeholder="15000" min="1" required>
                 </div>
 
                 <div class="form-group">
@@ -263,12 +294,12 @@ function renderSellerDashboardView(container, sellerUser) {
               </div>
 
               <div class="form-group">
-                <label>Image URL (or unspash preview image)</label>
+                <label>Image URL (or unsplash preview image)</label>
                 <input type="url" id="p-image" class="form-control" value="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1000&q=80" required>
               </div>
 
-              <button type="submit" class="btn btn-primary" style="padding: 0.95rem 2rem; font-size: 1rem; margin-top: 1rem;">
-                🚀 Publish Product Listing Now
+              <button type="submit" class="btn btn-primary" style="padding: 0.95rem 2rem; font-size: 1rem; margin-top: 1rem;" ${formSubmitting ? 'disabled' : ''}>
+                ${formSubmitting ? 'Publishing...' : '🚀 Publish Product Listing Now'}
               </button>
             </form>
           </div>
@@ -304,7 +335,9 @@ function renderSellerDashboardView(container, sellerUser) {
               </tr>
             </thead>
             <tbody>
-              ${currentTabProds.length === 0 ? `
+              ${productsLoading ? `
+                <tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading your products...</td></tr>
+              ` : currentTabProds.length === 0 ? `
                 <tr>
                   <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
                     No products found in this section.
@@ -321,10 +354,10 @@ function renderSellerDashboardView(container, sellerUser) {
                       </div>
                     </div>
                   </td>
-                  <td>${escapeHtml(state.categories.find(c => c.id === prod.category)?.name || 'General')}</td>
+                  <td>${escapeHtml(prod.category || 'General')}</td>
                   <td><strong style="color: var(--accent-gold);">${prod.price.toLocaleString()} RWF</strong></td>
-                  <td>${prod.postedDate}</td>
-                  <td>${prod.expiryDate}</td>
+                  <td>${new Date(prod.postedDate).toLocaleDateString()}</td>
+                  <td>${new Date(prod.expiryDate).toLocaleDateString()}</td>
                   <td>
                     <span class="badge badge-${prod.status}">${prod.status.replace('_', ' ').toUpperCase()}</span>
                   </td>
@@ -349,49 +382,59 @@ function renderSellerDashboardView(container, sellerUser) {
     `;
 
     // Event Handlers
-    container.querySelector('#add-new-prod-btn')?.addEventListener('click', () => { activeTab = 'new_product'; render(); });
-    container.querySelector('#cancel-add-btn')?.addEventListener('click', () => { activeTab = 'active'; render(); });
+    container.querySelector('#add-new-prod-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'new_product' }));
+    container.querySelector('#cancel-add-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'active' }));
 
-    container.querySelector('#tab-active-btn')?.addEventListener('click', () => { activeTab = 'active'; render(); });
-    container.querySelector('#tab-expiring-btn')?.addEventListener('click', () => { activeTab = 'expiring'; render(); });
-    container.querySelector('#tab-expired-btn')?.addEventListener('click', () => { activeTab = 'expired'; render(); });
+    container.querySelector('#tab-active-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'active' }));
+    container.querySelector('#tab-expiring-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'expiring' }));
+    container.querySelector('#tab-expired-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'expired' }));
 
-    container.querySelector('#create-product-form')?.addEventListener('submit', (e) => {
+    container.querySelector('#create-product-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = container.querySelector('#p-title').value;
       const category = container.querySelector('#p-category').value;
-      const price = parseFloat(container.querySelector('#p-price').value);
+      const price = container.querySelector('#p-price').value;
       const district = container.querySelector('#p-district').value;
       const condition = container.querySelector('#p-condition').value;
       const description = container.querySelector('#p-desc').value;
       const image = container.querySelector('#p-image').value;
 
-      stateEngine.createProduct({
-        title, category, price, district, condition, description, image,
-        sellerId: sellerUser.id, sellerName: sellerUser.name, sellerPhone: sellerUser.phone
-      });
-
-      alert('Product published successfully to Kigali Marketplace!');
-      activeTab = 'active';
-      render();
+      try {
+        await stateEngine.createProduct({ title, category, price, district, condition, description, image });
+        alert('Product published successfully to Kigali Marketplace!');
+        stateEngine.setUI({ sellerDashboardTab: 'active' });
+      } catch (err) {
+        render();
+      }
     });
 
     container.querySelectorAll('.renew-prod-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        stateEngine.renewProductListing(btn.dataset.id);
-        alert('Product listing renewed for another 6 months!');
-        render();
-      });
-    });
-
-    container.querySelectorAll('.del-prod-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to delete this product?')) {
-          stateEngine.deleteProduct(btn.dataset.id);
+      btn.addEventListener('click', async () => {
+        try {
+          await stateEngine.renewProduct(btn.dataset.id);
+          alert('Product listing renewed for another 6 months!');
+        } catch (err) {
           render();
         }
       });
     });
+
+    container.querySelectorAll('.del-prod-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to delete this product?')) {
+          try {
+            await stateEngine.deleteProduct(btn.dataset.id);
+          } catch (err) {
+            render();
+          }
+        }
+      });
+    });
+  }
+
+  const state = stateEngine.getState();
+  if (state.loading.categories === undefined) {
+    stateEngine.loadCategories().catch(() => {});
   }
 
   render();

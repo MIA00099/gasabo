@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const activePortal = state.activePortal;
     const currentUser = state.currentUser;
     const currentLang = state.currentLang || 'en';
+    const isLoggedIn = currentUser.role !== 'guest';
     const pendingApprovals = state.approvalRequests.filter(r => r.status === 'pending').length;
 
     const t = (key) => getTranslation(currentLang, key);
@@ -27,6 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Header Mount
     const headerMount = document.getElementById('header-mount');
     if (headerMount) {
+      const roleLabel = {
+        admin: 'Administrator',
+        sub_admin: 'Sub-Administrator',
+        seller: 'Seller',
+        user: 'Member',
+      }[currentUser.role] || '';
+
       headerMount.innerHTML = `
         <header class="main-navbar">
           <div class="nav-top-bar">
@@ -51,9 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
               <button class="nav-tab-btn ${activePortal==='realestate'?'active':''}" id="nav-link-re" title="Gasabo Real Estate" style="padding: 3px 12px; display: inline-flex; align-items: center; justify-content: center; height: 38px; border-radius: 9999px; vertical-align: middle;">
                 <img src="/real-estate-logo.png" alt="Gasabo Real Estate" style="height: 32px; width: auto; max-height: 100%; object-fit: contain; display: block;">
               </button>
+              <button class="nav-tab-btn ${activePortal==='admin'?'active':''}" id="nav-link-admin">
+                ${t('nav_admin')}
+              </button>
             </div>
 
-            <!-- Right Actions: Language Switcher, Search Icon, Notifications, Profile Dropdown -->
+            <!-- Right Actions: Language Switcher, Notifications, Account -->
             <div class="nav-actions-group">
               <!-- BILINGUAL LANGUAGE SWITCHER TOGGLE PILL -->
               <div style="display: flex; align-items: center; background: #F1F5F9; border: 1.5px solid #CBD5E1; border-radius: 9999px; padding: 3px;">
@@ -65,26 +76,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
               </div>
 
-              <button class="nav-circle-btn" id="header-search-btn" title="Search">
-                🔍
-              </button>
+              ${isLoggedIn ? `
+                <button class="nav-circle-btn" id="header-notif-btn" title="Notifications" style="position: relative;">
+                  🔔
+                  ${pendingApprovals > 0 ? `<span class="action-count-badge">${pendingApprovals}</span>` : ''}
+                </button>
 
-              <button class="nav-circle-btn" id="header-notif-btn" title="Notifications" style="position: relative;">
-                🔔
-                ${pendingApprovals > 0 ? `<span class="action-count-badge">${pendingApprovals}</span>` : ''}
-              </button>
-
-              <!-- Profile / Role Select -->
-              <div style="display: flex; align-items: center; gap: 6px; background: #F1F5F9; border: 1px solid #E2E8F0; padding: 6px 14px; border-radius: 9999px;">
-                <span style="font-size: 1rem;">👤</span>
-                <select id="global-role-select" style="background: transparent; border: none; font-size: 0.85rem; font-weight: 700; color: #1E293B; cursor: pointer; outline: none;">
-                  <option value="super_admin" ${currentUser.role==='super_admin'?'selected':''}>Super Admin (${escapeHtml(currentUser.name.split(' ')[0])})</option>
-                  <option value="admin" ${currentUser.role==='admin'?'selected':''}>Admin</option>
-                  <option value="sub_admin" ${currentUser.role==='sub_admin'?'selected':''}>Sub-Admin</option>
-                  <option value="seller" ${currentUser.role==='seller'?'selected':''}>Seller (Eric)</option>
-                  <option value="guest" ${currentUser.role==='guest'?'selected':''}>Visitor / Guest</option>
-                </select>
-              </div>
+                <!-- Signed-in Account Chip -->
+                <div style="display: flex; align-items: center; gap: 8px; background: #F1F5F9; border: 1px solid #E2E8F0; padding: 6px 8px 6px 14px; border-radius: 9999px;">
+                  <div style="line-height: 1.1;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #1E293B;">${escapeHtml(currentUser.name.split(' ')[0])}</div>
+                    <div style="font-size: 0.68rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">${roleLabel}</div>
+                  </div>
+                  <button id="header-logout-btn" class="nav-circle-btn" title="Log out" style="width: 34px; height: 34px; font-size: 0.9rem;">
+                    ↪
+                  </button>
+                </div>
+              ` : `
+                <button class="nav-tab-btn" id="header-login-btn" style="border: 1.5px solid #034B04; color: #034B04; font-weight: 700;">
+                  Login
+                </button>
+                <button class="nav-tab-btn" id="header-signup-btn" style="background: #034B04; color: #fff;">
+                  Sign Up
+                </button>
+              `}
             </div>
           </div>
         </header>
@@ -95,14 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
       headerMount.querySelector('#nav-link-mkt')?.addEventListener('click', () => stateEngine.setPortal('marketplace'));
       headerMount.querySelector('#nav-link-re')?.addEventListener('click', () => stateEngine.setPortal('realestate'));
       headerMount.querySelector('#nav-link-admin')?.addEventListener('click', () => stateEngine.setPortal('admin'));
-      headerMount.querySelector('#nav-link-login')?.addEventListener('click', () => stateEngine.setPortal('login'));
+      headerMount.querySelector('#header-login-btn')?.addEventListener('click', () => stateEngine.setPortal('login'));
+      headerMount.querySelector('#header-signup-btn')?.addEventListener('click', () => stateEngine.setPortal('signup'));
+      headerMount.querySelector('#header-logout-btn')?.addEventListener('click', () => {
+        stateEngine.logout();
+        stateEngine.setPortal('marketplace');
+      });
 
       headerMount.querySelector('#lang-toggle-en')?.addEventListener('click', () => stateEngine.setLanguage('en'));
       headerMount.querySelector('#lang-toggle-rw')?.addEventListener('click', () => stateEngine.setLanguage('rw'));
-
-      headerMount.querySelector('#global-role-select')?.addEventListener('change', (e) => {
-        stateEngine.switchRole(e.target.value);
-      });
     }
 
     // Main Portal Rendering

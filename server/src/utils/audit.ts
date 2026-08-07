@@ -2,7 +2,8 @@ import { prisma } from '../config/db.js';
 
 export async function logAudit(opts: {
   actorId: string;
-  actorType: 'ADMINISTRATOR' | 'SUB_ADMINISTRATOR' | 'SYSTEM';
+  actorName: string;
+  actorType: 'ADMINISTRATOR' | 'SUB_ADMINISTRATOR' | 'SELLER' | 'USER' | 'SYSTEM';
   action: string;
   module: string;
   targetId?: string;
@@ -12,6 +13,7 @@ export async function logAudit(opts: {
   await prisma.auditLog.create({
     data: {
       actorId: opts.actorId,
+      actorName: opts.actorName,
       actorType: opts.actorType,
       action: opts.action,
       module: opts.module,

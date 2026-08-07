@@ -134,34 +134,24 @@ function triggerHeroAnimation(container) {
 }
 
 export function renderMarketplaceView(container) {
-  let searchQuery = '';
-  let selectedCategory = 'all';
-  let selectedDistrict = 'all';
-  let activeTab = 'products'; // 'products' | 'seller_portal'
-
   function render() {
     const state = stateEngine.getState();
     const currentLang = state.currentLang || 'en';
     const t = (key) => getTranslation(currentLang, key);
 
-    let filtered = state.products.filter(p => p.status === 'active');
+    const activeTab = state.ui.marketplaceTab || 'products';
+    const filters = state.ui.marketplaceFilters || { searchQuery: '', selectedCategory: 'all', selectedDistrict: 'all' };
+    const productsAttempted = state.loading.products !== undefined;
+    const categoriesAttempted = state.loading.categories !== undefined;
+    const productsLoading = !!state.loading.products || !productsAttempted;
+    const categoriesLoading = !!state.loading.categories || !categoriesAttempted;
 
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.title.toLowerCase().includes(q) || 
-        p.description.toLowerCase().includes(q) ||
-        p.sellerName.toLowerCase().includes(q)
-      );
-    }
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p => p.category === selectedCategory);
-    }
-
-    if (selectedDistrict !== 'all') {
-      filtered = filtered.filter(p => p.district === selectedDistrict);
-    }
+    // Kick off the initial data fetch once. Read straight off state.loading rather
+    // than a separate stateEngine.setUI() flag - setUI() notifies synchronously,
+    // which would otherwise re-enter this render function mid-call, before the
+    // fetch below even starts.
+    if (!productsAttempted) stateEngine.loadProducts(filters).catch(() => {});
+    if (!categoriesAttempted) stateEngine.loadCategories().catch(() => {});
 
     container.innerHTML = `
       <div style="min-height: 100vh; display: flex; flex-direction: column;">
@@ -169,7 +159,7 @@ export function renderMarketplaceView(container) {
           <div style="padding: 2.5rem; flex: 1;" id="seller-portal-mount"></div>
         ` : `
           <div style="flex: 1;">
-          
+
           <!-- HERO BANNER (GSAP & SplitType Staggered Text Bounce Entrance) -->
           <section style="background: #034B04; padding: 5.5rem 2rem 6.5rem 2rem; position: relative; overflow: hidden;">
             <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: center;">
@@ -206,12 +196,12 @@ export function renderMarketplaceView(container) {
           <div style="max-width: 1200px; margin: -48px auto 5rem auto; padding: 0 1.25rem; position: relative; z-index: 20;">
             <div style="background: #FFFFFF; border-radius: 24px; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(226, 232, 240, 0.9); padding: 12px; transition: all 0.25s ease;">
               <div style="display: grid; grid-template-columns: 2.2fr 1.1fr 1.1fr auto; gap: 0.75rem; align-items: center;">
-                
+
                 <!-- Input Segment 1: Search Query -->
                 <div style="position: relative; display: flex; align-items: center; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 0 16px; height: 48px; transition: all 0.2s ease;">
                   <span style="font-size: 1.15rem; color: #334155; margin-right: 10px; display: flex; align-items: center;">🔍</span>
-                  <input type="text" id="hero-search-input" value="${escapeHtml(searchQuery)}" placeholder="${t('search_placeholder')}" style="width: 100%; border: none; background: transparent; font-size: 0.98rem; font-weight: 600; outline: none; color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif;">
-                  ${searchQuery ? `<button id="clear-search-btn" style="border:none; background:transparent; font-size:1.1rem; color:#94A3B8; cursor:pointer;">&times;</button>` : ''}
+                  <input type="text" id="hero-search-input" value="${escapeHtml(filters.searchQuery)}" placeholder="${t('search_placeholder')}" style="width: 100%; border: none; background: transparent; font-size: 0.98rem; font-weight: 600; outline: none; color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif;">
+                  ${filters.searchQuery ? `<button id="clear-search-btn" style="border:none; background:transparent; font-size:1.1rem; color:#94A3B8; cursor:pointer;">&times;</button>` : ''}
                 </div>
 
                 <!-- Select Segment 2: Category Filter -->
@@ -219,7 +209,7 @@ export function renderMarketplaceView(container) {
                   <span style="font-size: 1.1rem; color: #334155; margin-right: 8px;">📁</span>
                   <select id="hero-cat-select" style="width: 100%; border: none; background: transparent; font-size: 0.92rem; font-weight: 700; color: #1E293B; outline: none; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;">
                     <option value="all">${t('all_categories')}</option>
-                    ${state.categories.map(c => `<option value="${c.id}" ${selectedCategory===c.id?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
+                    ${state.categories.map(c => `<option value="${c.id}" ${filters.selectedCategory===c.id?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
                   </select>
                 </div>
 
@@ -228,7 +218,7 @@ export function renderMarketplaceView(container) {
                   <span style="font-size: 1.1rem; color: #334155; margin-right: 8px;">📍</span>
                   <select id="hero-district-select" style="width: 100%; border: none; background: transparent; font-size: 0.92rem; font-weight: 700; color: #1E293B; outline: none; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;">
                     <option value="all">${t('all_districts')}</option>
-                    ${state.districts.map(d => `<option value="${d}" ${selectedDistrict===d?'selected':''}>${d} District</option>`).join('')}
+                    ${state.districts.map(d => `<option value="${d}" ${filters.selectedDistrict===d?'selected':''}>${d} District</option>`).join('')}
                   </select>
                 </div>
 
@@ -249,15 +239,19 @@ export function renderMarketplaceView(container) {
               </div>
             </div>
 
-            <div class="grid-3" style="grid-template-columns: repeat(6, 1fr); gap: 1rem;">
-              ${state.categories.map(c => `
-                <div class="category-card-item ${selectedCategory===c.id?'active':''}" data-cat="${c.id}" style="background: #FFFFFF; border: 1.5px solid ${selectedCategory===c.id?'#034B04':'#E2E8F0'}; padding: 1.25rem 1rem; border-radius: 16px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
-                  <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">${c.icon}</div>
-                  <div style="font-weight: 700; font-size: 0.9rem; color: #0F172A; margin-bottom: 0.2rem;">${escapeHtml(c.name)}</div>
-                  <div style="font-size: 0.78rem; color: #64748B;">${c.count} items</div>
-                </div>
-              `).join('')}
-            </div>
+            ${categoriesLoading && state.categories.length === 0 ? `
+              <div style="text-align: center; padding: 2rem; color: #94A3B8;">Loading categories...</div>
+            ` : `
+              <div class="grid-3" style="grid-template-columns: repeat(6, 1fr); gap: 1rem;">
+                ${state.categories.map(c => `
+                  <div class="category-card-item ${filters.selectedCategory===c.id?'active':''}" data-cat="${c.id}" style="background: #FFFFFF; border: 1.5px solid ${filters.selectedCategory===c.id?'#034B04':'#E2E8F0'}; padding: 1.25rem 1rem; border-radius: 16px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
+                    <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">${c.icon}</div>
+                    <div style="font-weight: 700; font-size: 0.9rem; color: #0F172A; margin-bottom: 0.2rem;">${escapeHtml(c.name)}</div>
+                    <div style="font-size: 0.78rem; color: #64748B;">${c.count} items</div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
           </div>
 
           <!-- MAIN PRODUCTS GRID SECTION -->
@@ -268,11 +262,21 @@ export function renderMarketplaceView(container) {
                 <p style="font-size: 0.95rem; color: #64748B;">Verified listings from trusted sellers across Rwanda</p>
               </div>
               <div style="font-size: 0.9rem; font-weight: 700; color: #034B04;">
-                Showing ${filtered.length} listings
+                ${productsLoading ? 'Loading...' : `Showing ${state.products.length} listings`}
               </div>
             </div>
 
-            ${filtered.length === 0 ? `
+            ${state.error ? `
+              <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
+                ⚠️ ${escapeHtml(state.error)}
+              </div>
+            ` : ''}
+
+            ${productsLoading && state.products.length === 0 ? `
+              <div style="text-align: center; padding: 4rem 2rem; background: #FFFFFF; border-radius: 20px; border: 1px solid #E2E8F0; color: #64748B;">
+                Loading products...
+              </div>
+            ` : state.products.length === 0 ? `
               <div style="text-align: center; padding: 4rem 2rem; background: #FFFFFF; border-radius: 20px; border: 1px solid #E2E8F0;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
                 <h3 style="font-size: 1.4rem; color: #0F172A; margin-bottom: 0.5rem;">No products match your search criteria</h3>
@@ -280,7 +284,7 @@ export function renderMarketplaceView(container) {
               </div>
             ` : `
               <div class="grid-4" style="gap: 1.5rem;">
-                ${filtered.map(prod => `
+                ${state.products.map(prod => `
                   <div class="main-prod-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease;">
                     <div>
                       <div style="height: 200px; overflow: hidden; position: relative; background: #F8FAFC;">
@@ -336,10 +340,6 @@ export function renderMarketplaceView(container) {
     bindLargeFooterEvents(container);
     initSlimStickyFooter();
 
-    // Event Listeners
-    container.querySelector('#tab-mkt-browse')?.addEventListener('click', () => { activeTab = 'products'; render(); });
-    container.querySelector('#tab-mkt-seller')?.addEventListener('click', () => { activeTab = 'seller_portal'; render(); });
-
     if (activeTab === 'seller_portal') {
       cleanupHeroAnimation();
       const sellerMount = container.querySelector('#seller-portal-mount');
@@ -358,8 +358,7 @@ export function renderMarketplaceView(container) {
     });
 
     container.querySelector('#hero-start-selling-btn')?.addEventListener('click', () => {
-      activeTab = 'seller_portal';
-      render();
+      stateEngine.setUI({ marketplaceTab: 'seller_portal' });
     });
 
     const searchInput = container.querySelector('#hero-search-input');
@@ -367,32 +366,36 @@ export function renderMarketplaceView(container) {
     const districtSelect = container.querySelector('#hero-district-select');
     const searchBtn = container.querySelector('#hero-search-btn');
 
-    searchBtn?.addEventListener('click', () => {
-      searchQuery = searchInput.value;
-      selectedCategory = catSelect.value;
-      selectedDistrict = districtSelect.value;
-      render();
-    });
+    function runSearch() {
+      const newFilters = {
+        searchQuery: searchInput.value,
+        selectedCategory: catSelect.value,
+        selectedDistrict: districtSelect.value,
+      };
+      stateEngine.setUI({ marketplaceFilters: newFilters });
+      stateEngine.loadProducts({
+        search: newFilters.searchQuery,
+        category: newFilters.selectedCategory,
+        district: newFilters.selectedDistrict,
+      }).catch(() => {});
+    }
 
+    searchBtn?.addEventListener('click', runSearch);
     searchInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        searchQuery = searchInput.value;
-        selectedCategory = catSelect.value;
-        selectedDistrict = districtSelect.value;
-        render();
-      }
+      if (e.key === 'Enter') runSearch();
     });
 
     container.querySelector('#clear-search-btn')?.addEventListener('click', () => {
-      searchQuery = '';
-      render();
+      stateEngine.setUI({ marketplaceFilters: { ...filters, searchQuery: '' } });
+      stateEngine.loadProducts({ search: '', category: filters.selectedCategory, district: filters.selectedDistrict }).catch(() => {});
     });
 
     container.querySelectorAll('.category-card-item').forEach(card => {
       card.addEventListener('click', () => {
         const cat = card.dataset.cat;
-        selectedCategory = selectedCategory === cat ? 'all' : cat;
-        render();
+        const nextCategory = filters.selectedCategory === cat ? 'all' : cat;
+        stateEngine.setUI({ marketplaceFilters: { ...filters, selectedCategory: nextCategory } });
+        stateEngine.loadProducts({ search: filters.searchQuery, category: nextCategory, district: filters.selectedDistrict }).catch(() => {});
       });
     });
 

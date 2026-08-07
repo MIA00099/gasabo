@@ -10,9 +10,14 @@
     "server": "npx tsx server/src/index.ts",
     "test": "vitest run",
     "prisma:generate": "npx prisma generate",
-    "prisma:db:push": "npx prisma db push"
+    "prisma:db:push": "npx prisma db push",
+    "db:seed": "npx tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.62.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

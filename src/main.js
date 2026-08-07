@@ -10,8 +10,22 @@ import { renderRealEstateView } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
 import { renderLoginView } from './components/LoginView.js';
 
+// The admin portal is intentionally NOT linked from any public nav/footer - it's
+// only reachable by visiting this exact URL directly (bookmark it). This is on
+// top of, not instead of, the real Administrator/Sub-Administrator login gate
+// inside AdminDashboardView - the URL just keeps it off the public UI.
+const ADMIN_URL_HASH = '#/admin-portal';
+
 document.addEventListener('DOMContentLoaded', () => {
   const appElement = document.getElementById('app');
+
+  function checkAdminRoute() {
+    if (window.location.hash === ADMIN_URL_HASH) {
+      stateEngine.setPortal('admin');
+    }
+  }
+  window.addEventListener('hashchange', checkAdminRoute);
+  checkAdminRoute();
 
   function renderApp() {
     const state = stateEngine.getState();
@@ -58,9 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
               </button>
               <button class="nav-tab-btn ${activePortal==='realestate'?'active':''}" id="nav-link-re" title="Gasabo Real Estate" style="padding: 3px 12px; display: inline-flex; align-items: center; justify-content: center; height: 38px; border-radius: 9999px; vertical-align: middle;">
                 <img src="/real-estate-logo.png" alt="Gasabo Real Estate" style="height: 32px; width: auto; max-height: 100%; object-fit: contain; display: block;">
-              </button>
-              <button class="nav-tab-btn ${activePortal==='admin'?'active':''}" id="nav-link-admin">
-                ${t('nav_admin')}
               </button>
             </div>
 
@@ -109,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
       headerMount.querySelector('#nav-brand-home')?.addEventListener('click', () => stateEngine.setPortal('marketplace'));
       headerMount.querySelector('#nav-link-mkt')?.addEventListener('click', () => stateEngine.setPortal('marketplace'));
       headerMount.querySelector('#nav-link-re')?.addEventListener('click', () => stateEngine.setPortal('realestate'));
-      headerMount.querySelector('#nav-link-admin')?.addEventListener('click', () => stateEngine.setPortal('admin'));
       headerMount.querySelector('#header-login-btn')?.addEventListener('click', () => stateEngine.setPortal('login'));
       headerMount.querySelector('#header-signup-btn')?.addEventListener('click', () => stateEngine.setPortal('signup'));
       headerMount.querySelector('#header-logout-btn')?.addEventListener('click', () => {
@@ -119,6 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       headerMount.querySelector('#lang-toggle-en')?.addEventListener('click', () => stateEngine.setLanguage('en'));
       headerMount.querySelector('#lang-toggle-rw')?.addEventListener('click', () => stateEngine.setLanguage('rw'));
+    }
+
+    // Keep the address bar in sync with the admin portal's dedicated URL, without
+    // triggering an extra hashchange/scroll jump (replaceState, not location.hash=).
+    const onAdminRoute = window.location.hash === ADMIN_URL_HASH;
+    if (activePortal === 'admin' && !onAdminRoute) {
+      history.replaceState(null, '', ADMIN_URL_HASH);
+    } else if (activePortal !== 'admin' && onAdminRoute) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
     // Main Portal Rendering

@@ -165,36 +165,87 @@ export function renderAdminDashboardView(container) {
 }
 
 function renderAdminLoginGate(container) {
+  // Reuses the same glass-login-* visual language as the public Login/Sign Up
+  // page (LoginView.js) rather than a separately-styled dark panel, so admins
+  // land on a UI that's visually consistent with the rest of the site.
+  let showPassword = false;
+  let formData = { email: '', password: '' };
+
+  function captureInputs() {
+    const emailInput = container.querySelector('#adm-email');
+    if (emailInput) formData.email = emailInput.value;
+    const passInput = container.querySelector('#adm-password');
+    if (passInput) formData.password = passInput.value;
+  }
+
   function update() {
     const state = stateEngine.getState();
     const submitting = !!state.loading.auth;
     const errorMessage = state.error;
 
     container.innerHTML = `
-      <div style="max-width: 440px; margin: 4rem auto; padding: 0 1rem;">
-        <div class="glass-panel" style="padding: 2.2rem; border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.12); background: #0f172a;">
-          <div style="text-align: center; margin-bottom: 1.5rem;">
-            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔐</div>
-            <h2 style="font-size: 1.5rem; color: #fff; margin-bottom: 0.4rem;">Administration Access</h2>
-            <p style="color: #94a3b8; font-size: 0.88rem;">Sign in with your Administrator or Sub-Administrator credentials.</p>
+      <div class="glass-login-viewport">
+        <div class="glass-login-card">
+          <div class="glass-login-header">
+            <h1 class="glass-login-title">Admin Access</h1>
+            <p class="glass-login-subtitle">Sign in with your Administrator or Sub-Administrator credentials.</p>
           </div>
 
           ${errorMessage ? `
-            <div style="background: rgba(220,38,38,0.15); border: 1px solid rgba(248,113,113,0.5); color: #fecaca; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
+            <div style="background: rgba(220,38,38,0.25); border: 1px solid rgba(248,113,113,0.6); color: #ffffff; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
               ⚠️ ${escapeHtml(errorMessage)}
             </div>
           ` : ''}
 
-          <form id="admin-login-form">
-            <div class="form-group" style="margin-bottom: 1rem;">
-              <label style="display:block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Email Address</label>
-              <input type="email" id="adm-email" class="form-control" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
+          <form id="admin-login-form" autocomplete="off">
+            <div class="glass-input-group">
+              <input
+                type="email"
+                id="adm-email"
+                class="glass-input-field"
+                placeholder="Email Address"
+                value="${escapeHtml(formData.email)}"
+                required
+              />
+              <div class="glass-input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </div>
             </div>
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-              <label style="display:block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Password</label>
-              <input type="password" id="adm-password" class="form-control" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
+
+            <div class="glass-input-group">
+              <input
+                type="${showPassword ? 'text' : 'password'}"
+                id="adm-password"
+                class="glass-input-field"
+                placeholder="Password"
+                value="${escapeHtml(formData.password)}"
+                required
+              />
+              <button
+                type="button"
+                id="toggle-admin-password-btn"
+                class="glass-input-icon clickable"
+                title="${showPassword ? 'Hide password' : 'Show password'}"
+                aria-label="${showPassword ? 'Hide password' : 'Show password'}"
+              >
+                ${showPassword ? `
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                ` : `
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                `}
+              </button>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 700;" ${submitting ? 'disabled' : ''}>
+
+            <button type="submit" class="glass-btn-primary" ${submitting ? 'disabled' : ''}>
               ${submitting ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
@@ -202,12 +253,18 @@ function renderAdminLoginGate(container) {
       </div>
     `;
 
+    container.querySelector('#toggle-admin-password-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      captureInputs();
+      showPassword = !showPassword;
+      update();
+    });
+
     container.querySelector('#admin-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = container.querySelector('#adm-email').value;
-      const password = container.querySelector('#adm-password').value;
+      captureInputs();
       try {
-        await stateEngine.login(email, password);
+        await stateEngine.login(formData.email, formData.password);
         // A successful login updates currentUser; if it's not an admin role,
         // stateEngine.isAdmin() will be false and re-entering this view next
         // render will show the gate again rather than granting access.

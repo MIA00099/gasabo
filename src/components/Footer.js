@@ -29,7 +29,6 @@ export function getLargeFooterHtml(currentLang = 'en') {
             <li><a href="#" id="foot-link-mkt" class="foot-nav-link">${t('link_catalog') || 'Marketplace Catalog'}</a></li>
             <li><a href="#" id="foot-link-re" class="foot-nav-link">${t('link_re') || 'Gasabo Real Estate'}</a></li>
             <li><a href="#" id="foot-link-sell" class="foot-nav-link">${t('link_sell') || 'Start Selling'}</a></li>
-            <li><a href="#" id="foot-link-admin" class="foot-nav-link">${t('link_admin') || 'Admin Portal'}</a></li>
           </ul>
         </div>
 
@@ -74,11 +73,6 @@ export function bindLargeFooterEvents(container) {
   container.querySelector('#foot-link-sell')?.addEventListener('click', (e) => {
     e.preventDefault();
     stateEngine.setPortal('marketplace');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-  container.querySelector('#foot-link-admin')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    stateEngine.setPortal('admin');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }

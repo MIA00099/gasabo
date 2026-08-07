@@ -156,7 +156,10 @@ export function renderMarketplaceView(container) {
     container.innerHTML = `
       <div style="min-height: 100vh; display: flex; flex-direction: column;">
         ${activeTab === 'seller_portal' ? `
-          <div style="padding: 2.5rem; flex: 1;" id="seller-portal-mount"></div>
+          <!-- No padding here: the signed-out state renders the full-bleed glass
+               sign-up card (hillside background edge-to-edge), and the signed-in
+               dashboard applies its own padding around its content instead. -->
+          <div style="flex: 1; display: flex; flex-direction: column;" id="seller-portal-mount"></div>
         ` : `
           <div style="flex: 1;">
 

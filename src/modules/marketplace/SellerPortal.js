@@ -41,7 +41,7 @@ function renderSellerDashboardView(container, sellerUser) {
     if (activeTab === 'expired') currentTabProds = expiredProds;
 
     container.innerHTML = `
-      <div style="max-width: 1280px; margin: 0 auto;">
+      <div style="max-width: 1280px; margin: 0 auto; padding: 2.5rem 1.5rem; width: 100%; box-sizing: border-box;">
         <!-- Seller Dashboard Header -->
         <div class="glass-panel" style="padding: 2rem; border-radius: var(--radius-lg); margin-bottom: 2rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">

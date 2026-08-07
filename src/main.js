@@ -107,8 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="nav-tab-btn" id="header-login-btn" style="border: 1.5px solid #034B04; color: #034B04; font-weight: 700;">
                   Login
                 </button>
-                <button class="nav-tab-btn" id="header-signup-btn" style="background: #034B04; color: #fff;">
-                  Sign Up
+                <button class="nav-tab-btn" id="header-signup-btn" style="background: #2563EB; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 1.15em; font-weight: 800; line-height: 1;">+</span> Post
                 </button>
               `}
             </div>

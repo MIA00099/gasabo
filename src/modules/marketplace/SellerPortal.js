@@ -2,6 +2,7 @@
  * KIGALI MARKET - Seller Registration, Authentication & Seller Dashboard
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { renderLoginView } from '../../components/LoginView.js';
 
 export function renderSellerPortal(container) {
   const state = stateEngine.getState();
@@ -9,191 +10,13 @@ export function renderSellerPortal(container) {
   const isSeller = currentUser && currentUser.role === 'seller';
 
   if (!isSeller) {
-    renderSellerAuthView(container);
+    // Reuse the exact same glass Sign Up / Login component as the header's
+    // Sign Up button and the standalone /login page - "Start Selling" should
+    // show the one real sign-up form, not a separate look-alike.
+    renderLoginView(container, 'signup');
   } else {
     renderSellerDashboardView(container, currentUser);
   }
-}
-
-function renderSellerAuthView(container) {
-  function update() {
-    const state = stateEngine.getState();
-    const step = state.ui.sellerAuthStep || 'register'; // 'register' | 'created' | 'login'
-    const registeredSellerData = state.ui.registeredSellerData || null;
-    const submitting = !!state.loading.auth;
-    const errorMessage = state.error;
-
-    container.innerHTML = `
-      <div style="max-width: 600px; margin: 2rem auto; padding: 0 1rem;">
-        <!-- Visual Flowchart Header -->
-        <div style="margin-bottom: 1.5rem; text-align: center;">
-          <h2 style="font-size: 1.6rem; color: #fff; margin-bottom: 0.5rem;">Seller Registration & Onboarding</h2>
-          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 0.75rem 1rem; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">
-            <div style="color: ${step==='register'?'#10B981':'#94A3B8'}; display: flex; align-items: center; gap: 4px;">
-              <span style="background: ${step==='register'?'#10B981':'#334155'}; color: #fff; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">1</span>
-              Complete Form
-            </div>
-            <span style="color: #64748B;">➔</span>
-            <div style="color: ${step==='created'?'#10B981':'#94A3B8'}; display: flex; align-items: center; gap: 4px;">
-              <span style="background: ${step==='created'?'#10B981':'#334155'}; color: #fff; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">2</span>
-              Account Created
-            </div>
-            <span style="color: #64748B;">➔</span>
-            <div style="color: ${step==='login'?'#10B981':'#94A3B8'}; display: flex; align-items: center; gap: 4px;">
-              <span style="background: ${step==='login'?'#10B981':'#334155'}; color: #fff; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">3</span>
-              Login
-            </div>
-            <span style="color: #64748B;">➔</span>
-            <div style="color: #94A3B8; display: flex; align-items: center; gap: 4px;">
-              <span style="background: #334155; color: #fff; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">4</span>
-              Dashboard
-            </div>
-          </div>
-        </div>
-
-        <div class="glass-panel" style="padding: 2.2rem; border-radius: var(--radius-lg); border: 1px solid rgba(255, 255, 255, 0.12);">
-          ${errorMessage ? `
-            <div style="background: rgba(220,38,38,0.15); border: 1px solid rgba(248,113,113,0.5); color: #fecaca; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
-              ⚠️ ${escapeHtml(errorMessage)}
-            </div>
-          ` : ''}
-
-          ${step === 'register' ? `
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-              <h3 style="font-size: 1.4rem; color: #fff; margin-bottom: 0.3rem;">Register Seller Account</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem;">Complete all required fields below to register as a verified Rwandan seller.</p>
-            </div>
-
-            <form id="seller-reg-form">
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Full Name</label>
-                <input type="text" id="reg-fullname" class="form-control" placeholder="e.g. Marie Claire Uwase" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
-              </div>
-
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Phone Number</label>
-                <input type="tel" id="reg-phone" class="form-control" placeholder="+250 788 000 000" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
-              </div>
-
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Email Address</label>
-                <input type="email" id="reg-email" class="form-control" placeholder="seller@domain.rw" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
-              </div>
-
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">District</label>
-                <select id="reg-district" class="form-control" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.8); color: #fff;">
-                  ${state.districts.map(d => `<option value="${d}">${d} District</option>`).join('')}
-                </select>
-              </div>
-
-              <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Password</label>
-                <input type="password" id="reg-password" class="form-control" placeholder="Min. 6 characters" required minlength="6" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
-              </div>
-
-              <button type="submit" class="btn btn-gold" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; font-weight: 700; cursor: pointer;" ${submitting ? 'disabled' : ''}>
-                ${submitting ? 'Creating account...' : 'Complete Form & Create Account'}
-              </button>
-            </form>
-            <div style="text-align: center; margin-top: 1rem;">
-              <button id="btn-goto-login" style="background: none; border: none; color: #94A3B8; cursor: pointer; font-size: 0.85rem; text-decoration: underline;">
-                Already have an account? Skip to Login
-              </button>
-            </div>
-          ` : step === 'created' ? `
-            <div style="text-align: center; padding: 1.5rem 0;">
-              <div style="width: 64px; height: 64px; background: rgba(16, 185, 129, 0.2); border: 2px solid #10B981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2rem; color: #10B981;">
-                ✓
-              </div>
-              <h3 style="font-size: 1.6rem; color: #fff; margin-bottom: 0.5rem;">Account Created!</h3>
-              <p style="color: #94A3B8; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5;">
-                Congratulations <strong style="color: #fff;">${escapeHtml(registeredSellerData?.name || 'Seller')}</strong>! Your seller account has been successfully created and you are now logged in.
-              </p>
-              <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1rem; text-align: left; margin-bottom: 1.5rem; font-size: 0.85rem; color: #CBD5E1;">
-                <div>📍 <strong>District:</strong> ${escapeHtml(registeredSellerData?.district || 'Gasabo')}</div>
-                <div style="margin-top: 4px;">✉️ <strong>Email:</strong> ${escapeHtml(registeredSellerData?.email || '')}</div>
-                <div style="margin-top: 4px;">📞 <strong>Phone:</strong> ${escapeHtml(registeredSellerData?.phone || '')}</div>
-              </div>
-              <button id="btn-proceed-login" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                Go to My Dashboard →
-              </button>
-            </div>
-          ` : `
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-              <h3 style="font-size: 1.4rem; color: #fff; margin-bottom: 0.3rem;">Seller Login</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem;">Enter your seller credentials to access your dashboard.</p>
-            </div>
-
-            <form id="seller-login-form">
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Email Address</label>
-                <input type="email" id="login-email" class="form-control" placeholder="e.g. eric.m@rwandaagri.rw" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
-              </div>
-              <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E2E8F0; margin-bottom: 0.4rem;">Password</label>
-                <input type="password" id="login-password" class="form-control" placeholder="••••••••" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.6); color: #fff;">
-              </div>
-              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; font-weight: 700; cursor: pointer;" ${submitting ? 'disabled' : ''}>
-                ${submitting ? 'Logging in...' : 'Login to Seller Dashboard'}
-              </button>
-            </form>
-            <div style="text-align: center; margin-top: 1rem;">
-              <button id="btn-goto-register" style="background: none; border: none; color: #94A3B8; cursor: pointer; font-size: 0.85rem; text-decoration: underline;">
-                Don't have an account? Register
-              </button>
-            </div>
-          `}
-        </div>
-      </div>
-    `;
-
-    container.querySelector('#seller-reg-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = container.querySelector('#reg-fullname').value;
-      const email = container.querySelector('#reg-email').value;
-      const phone = container.querySelector('#reg-phone').value;
-      const district = container.querySelector('#reg-district').value;
-      const password = container.querySelector('#reg-password').value;
-
-      try {
-        await stateEngine.registerSeller({ fullName: name, email, phone, district, password });
-        stateEngine.setUI({ sellerAuthStep: 'created', registeredSellerData: { name, email, phone, district } });
-      } catch (err) {
-        // stateEngine already recorded state.error - re-render picks it up.
-        update();
-      }
-    });
-
-    container.querySelector('#btn-goto-login')?.addEventListener('click', () => {
-      stateEngine.clearError();
-      stateEngine.setUI({ sellerAuthStep: 'login' });
-    });
-
-    container.querySelector('#btn-goto-register')?.addEventListener('click', () => {
-      stateEngine.clearError();
-      stateEngine.setUI({ sellerAuthStep: 'register' });
-    });
-
-    container.querySelector('#btn-proceed-login')?.addEventListener('click', () => {
-      // Registration already logged the seller in - this just moves past the
-      // confirmation screen into the dashboard on the next render.
-      stateEngine.setUI({ sellerAuthStep: 'login' });
-    });
-
-    container.querySelector('#seller-login-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = container.querySelector('#login-email').value;
-      const password = container.querySelector('#login-password').value;
-      try {
-        await stateEngine.login(email, password);
-      } catch (err) {
-        update();
-      }
-    });
-  }
-
-  update();
 }
 
 function renderSellerDashboardView(container, sellerUser) {

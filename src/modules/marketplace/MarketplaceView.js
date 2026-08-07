@@ -202,41 +202,44 @@ export function renderMarketplaceView(container) {
             </div>
           </section>
 
-          <!-- FLOATING MODERN SEARCH BAR CARD -->
-          <div style="max-width: 1200px; margin: -48px auto 5rem auto; padding: 0 1.25rem; position: relative; z-index: 20;">
-            <div style="background: #FFFFFF; border-radius: 24px; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(226, 232, 240, 0.9); padding: 12px; transition: all 0.25s ease;">
-              <div style="display: grid; grid-template-columns: 2.2fr 1.1fr 1.1fr auto; gap: 0.75rem; align-items: center;">
+          <!-- FLOATING PILL SEARCH BAR: one seamless rounded pill, borderless segments,
+               each segment picks up a green "active" highlight once it has a value -->
+          <div style="max-width: 1100px; margin: -48px auto 5rem auto; padding: 0 1.25rem; position: relative; z-index: 20;">
+            <div class="search-pill-bar">
 
-                <!-- Input Segment 1: Search Query -->
-                <div style="position: relative; display: flex; align-items: center; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 0 16px; height: 48px; transition: all 0.2s ease;">
-                  <span style="font-size: 1.15rem; color: #334155; margin-right: 10px; display: flex; align-items: center;">🔍</span>
-                  <input type="text" id="hero-search-input" value="${escapeHtml(filters.searchQuery)}" placeholder="${t('search_placeholder')}" style="width: 100%; border: none; background: transparent; font-size: 0.98rem; font-weight: 600; outline: none; color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif;">
-                  ${filters.searchQuery ? `<button id="clear-search-btn" style="border:none; background:transparent; font-size:1.1rem; color:#94A3B8; cursor:pointer;">&times;</button>` : ''}
-                </div>
-
-                <!-- Select Segment 2: Category Filter -->
-                <div style="position: relative; display: flex; align-items: center; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 0 14px; height: 48px; transition: all 0.2s ease;">
-                  <span style="font-size: 1.1rem; color: #334155; margin-right: 8px;">📁</span>
-                  <select id="hero-cat-select" style="width: 100%; border: none; background: transparent; font-size: 0.92rem; font-weight: 700; color: #1E293B; outline: none; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;">
-                    <option value="all">${t('all_categories')}</option>
-                    ${state.categories.map(c => `<option value="${c.id}" ${filters.selectedCategory===c.id?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
-                  </select>
-                </div>
-
-                <!-- Select Segment 3: District Location -->
-                <div style="position: relative; display: flex; align-items: center; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 0 14px; height: 48px; transition: all 0.2s ease;">
-                  <span style="font-size: 1.1rem; color: #334155; margin-right: 8px;">📍</span>
-                  <select id="hero-district-select" style="width: 100%; border: none; background: transparent; font-size: 0.92rem; font-weight: 700; color: #1E293B; outline: none; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;">
-                    <option value="all">${t('all_districts')}</option>
-                    ${state.districts.map(d => `<option value="${d}" ${filters.selectedDistrict===d?'selected':''}>${d} District</option>`).join('')}
-                  </select>
-                </div>
-
-                <!-- Button Segment 4: Search CTA -->
-                <button id="hero-search-btn" style="height: 48px; background: #EDA203; border: none; color: #000000; font-weight: 800; font-size: 0.98rem; border-radius: 12px; padding: 0 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 18px rgba(237, 162, 3, 0.35); transition: all 0.2s ease;">
-                  🔍 ${t('search_button')}
-                </button>
+              <!-- Segment 1: Search Query -->
+              <div class="search-pill-segment ${filters.searchQuery ? 'active' : ''}" style="flex: 1.8;">
+                <span class="search-pill-icon">🔍</span>
+                <input type="text" id="hero-search-input" value="${escapeHtml(filters.searchQuery)}" placeholder="${t('search_placeholder')}" class="search-pill-input">
+                ${filters.searchQuery ? `<button id="clear-search-btn" class="search-pill-clear-btn">&times;</button>` : ''}
               </div>
+
+              <div class="search-pill-divider"></div>
+
+              <!-- Segment 2: Category Filter -->
+              <div class="search-pill-segment ${filters.selectedCategory !== 'all' ? 'active' : ''}" style="flex: 1;">
+                <span class="search-pill-icon">📁</span>
+                <select id="hero-cat-select" class="search-pill-select">
+                  <option value="all">${t('all_categories')}</option>
+                  ${state.categories.map(c => `<option value="${c.id}" ${filters.selectedCategory===c.id?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="search-pill-divider"></div>
+
+              <!-- Segment 3: District Location -->
+              <div class="search-pill-segment ${filters.selectedDistrict !== 'all' ? 'active' : ''}" style="flex: 1;">
+                <span class="search-pill-icon">📍</span>
+                <select id="hero-district-select" class="search-pill-select">
+                  <option value="all">${t('all_districts')}</option>
+                  ${state.districts.map(d => `<option value="${d}" ${filters.selectedDistrict===d?'selected':''}>${d} District</option>`).join('')}
+                </select>
+              </div>
+
+              <!-- Segment 4: Search CTA -->
+              <button id="hero-search-btn" class="search-pill-cta">
+                🔍 ${t('search_button')}
+              </button>
             </div>
           </div>
 

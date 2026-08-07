@@ -385,18 +385,136 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transform: translateY(0) scale(0.96) !important;
 }
 
-/* Search Submit Button Hover Animation */
-#hero-search-btn {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+
+/* PILL SEARCH BAR - one seamless rounded pill, borderless segments by default,
+   each segment picks up the app's existing "active nav tab" green highlight
+   (#E6F4EA bg / #034B04 text) once it holds a real value. */
+.search-pill-bar {
+  background: #FFFFFF;
+  border-radius: 9999px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(226, 232, 240, 0.9);
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-#hero-search-btn:hover {
-  transform: translateY(-2px) scale(1.03) !important;
-  box-shadow: 0 8px 22px rgba(237, 162, 3, 0.45) !important;
+.search-pill-segment {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  background: transparent;
+  transition: background 0.2s ease;
 }
 
-#hero-search-btn:active {
-  transform: translateY(0) scale(0.97) !important;
+.search-pill-segment.active {
+  background: #E6F4EA;
+}
+
+.search-pill-segment:hover {
+  background: #F1F5F9;
+}
+
+.search-pill-segment.active:hover {
+  background: #E6F4EA;
+}
+
+.search-pill-icon {
+  font-size: 1.05rem;
+  margin-right: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.search-pill-input,
+.search-pill-select {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: #0F172A;
+  font-family: var(--font-family-main);
+}
+
+.search-pill-input {
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.search-pill-select {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1E293B;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.search-pill-clear-btn {
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  color: #94A3B8;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0 0 0 6px;
+}
+
+.search-pill-divider {
+  width: 1px;
+  height: 26px;
+  background: #E2E8F0;
+  flex-shrink: 0;
+}
+
+.search-pill-cta {
+  height: 48px;
+  background: #EDA203;
+  border: none;
+  color: #000000;
+  font-weight: 800;
+  font-size: 0.98rem;
+  border-radius: 9999px;
+  padding: 0 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(237, 162, 3, 0.35);
+  flex-shrink: 0;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.search-pill-cta:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 22px rgba(237, 162, 3, 0.45);
+}
+
+.search-pill-cta:active {
+  transform: translateY(0) scale(0.97);
+}
+
+@media (max-width: 860px) {
+  .search-pill-bar {
+    flex-wrap: wrap;
+    border-radius: 24px;
+    gap: 8px;
+  }
+  .search-pill-segment {
+    flex: 1 1 100% !important;
+  }
+  .search-pill-divider {
+    display: none;
+  }
+  .search-pill-cta {
+    flex: 1 1 100%;
+  }
 }
 
 /* Footer Links Hover Animation */

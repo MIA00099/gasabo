@@ -473,31 +473,29 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .search-pill-cta {
+  width: 48px;
   height: 48px;
-  background: #EDA203;
+  background: #0F172A;
   border: none;
-  color: #000000;
-  font-weight: 800;
-  font-size: 0.98rem;
-  border-radius: 9999px;
-  padding: 0 28px;
+  color: #FFFFFF;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  box-shadow: 0 6px 18px rgba(237, 162, 3, 0.35);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
   flex-shrink: 0;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .search-pill-cta:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 8px 22px rgba(237, 162, 3, 0.45);
+  transform: scale(1.06);
+  background: #1E293B;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.45);
 }
 
 .search-pill-cta:active {
-  transform: translateY(0) scale(0.97);
+  transform: scale(0.96);
 }
 
 @media (max-width: 860px) {
@@ -513,7 +511,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     display: none;
   }
   .search-pill-cta {
-    flex: 1 1 100%;
+    flex: 0 0 auto;
+    align-self: flex-end;
   }
 }
 

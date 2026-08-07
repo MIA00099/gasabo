@@ -453,6 +453,25 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-family: var(--font-family-main);
 }
 
+/* Overrides the global gold focus-visible outline (main.css:136) for these
+   fields specifically - a square gold ring looked out of place against the
+   pill's fully rounded shape. The parent segment's own subtle highlight on
+   focus is a cleaner, shape-matching way to show the same focus state. */
+.search-pill-input:focus-visible,
+.search-pill-select:focus-visible {
+  outline: none;
+}
+
+.search-pill-segment:focus-within {
+  background: #F1F5F9;
+  box-shadow: 0 0 0 2px #CBD5E1;
+}
+
+.search-pill-segment.active:focus-within {
+  background: #E6F4EA;
+  box-shadow: 0 0 0 2px #86EFAC;
+}
+
 .search-pill-input {
   font-size: 0.98rem;
   font-weight: 600;

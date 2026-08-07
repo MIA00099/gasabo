@@ -36,6 +36,13 @@
     "jsonwebtoken": "^9.0.2",
     "split-type": "^0.3.4",
     "zod": "^3.23.8"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "esbuild@0.28.1": true,
+    "esbuild@0.21.5": true,
+    "esbuild@0.18.20": true,
+    "prisma@5.22.0": true
   }
 }
-

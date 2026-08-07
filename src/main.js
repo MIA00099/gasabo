@@ -67,7 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <!-- Center Navigation Links -->
             <div style="display: flex; align-items: center; gap: 1rem;">
-              <button class="nav-tab-btn ${activePortal==='marketplace'?'active':''}" id="nav-link-mkt">
+              <button class="nav-tab-btn ${activePortal==='marketplace'?'active':''}" id="nav-link-mkt" style="display: inline-flex; align-items: center; gap: 7px;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                  <path d="M4 9l1.8-5.4A1 1 0 0 1 6.74 3h10.52a1 1 0 0 1 .94.6L20 9"></path>
+                  <path d="M4 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"></path>
+                  <path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"></path>
+                  <rect x="9" y="14" width="2.5" height="2.5"></rect>
+                  <path d="M15 20v-6h2v6"></path>
+                </svg>
                 ${t('nav_marketplace')}
               </button>
               <button class="nav-tab-btn ${activePortal==='realestate'?'active':''}" id="nav-link-re" title="Gasabo Real Estate" style="padding: 3px 12px; display: inline-flex; align-items: center; justify-content: center; height: 38px; border-radius: 9999px; vertical-align: middle;">

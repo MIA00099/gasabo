@@ -104,9 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
                   </button>
                 </div>
               ` : `
-                <button class="nav-tab-btn" id="header-login-btn" style="border: 1.5px solid #034B04; color: #034B04; font-weight: 700;">
-                  Login
-                </button>
                 <button class="nav-tab-btn" id="header-signup-btn" style="background: #2563EB; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
                   <span style="font-size: 1.15em; font-weight: 800; line-height: 1;">+</span> Post
                 </button>
@@ -120,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
       headerMount.querySelector('#nav-brand-home')?.addEventListener('click', () => stateEngine.setPortal('marketplace'));
       headerMount.querySelector('#nav-link-mkt')?.addEventListener('click', () => stateEngine.setPortal('marketplace'));
       headerMount.querySelector('#nav-link-re')?.addEventListener('click', () => stateEngine.setPortal('realestate'));
-      headerMount.querySelector('#header-login-btn')?.addEventListener('click', () => stateEngine.setPortal('login'));
       headerMount.querySelector('#header-signup-btn')?.addEventListener('click', () => stateEngine.setPortal('signup'));
       headerMount.querySelector('#header-logout-btn')?.addEventListener('click', () => {
         stateEngine.logout();

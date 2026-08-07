@@ -1,0 +1,174 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMINISTRATOR
+  SUB_ADMINISTRATOR
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProductStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum AdType {
+  HOMEPAGE_BANNER
+  HERO_SLIDER
+  PROMOTIONAL_BANNER
+}
+
+enum AdStatus {
+  SCHEDULED
+  ACTIVE
+  EXPIRED
+}
+
+enum RecipientType {
+  SELLER
+  ADMIN
+}
+
+// 1. Administrator Model
+model Administrator {
+  id               String             @id @default(uuid())
+  email            String             @unique
+  passwordHash     String
+  name             String
+  role             Role               @default(ADMINISTRATOR)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  lastLoginAt      DateTime?
+  auditLogs        AuditLog[]
+  createdSubAdmins SubAdministrator[] @relation("AdminCreatedSubAdmin")
+}
+
+// 2. SubAdministrator Model
+model SubAdministrator {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         Role          @default(SUB_ADMINISTRATOR)
+  permissions  String        // JSON array of assigned module permissions, e.g. ["PRODUCTS","SELLERS"]
+  createdById  String
+  createdBy    Administrator @relation("AdminCreatedSubAdmin", fields: [createdById], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  lastLoginAt  DateTime?
+}
+
+// 3. PlatformUser Model (Distinct from Seller)
+model PlatformUser {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  status       AccountStatus @default(ACTIVE)
+  roles        String        @default("[\"USER\"]") // JSON array of user roles
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  lastLoginAt  DateTime?
+}
+
+// 4. Seller Model
+model Seller {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  businessName String
+  contactPhone String?
+  status       AccountStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  lastLoginAt  DateTime?
+  products     Product[]
+}
+
+// 5. Category Model
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  iconUrl   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+// 6. Product Model
+model Product {
+  id            String        @id @default(uuid())
+  title         String
+  description   String
+  price         Float
+  currency      String        @default("RWF")
+  sellerId      String
+  seller        Seller        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      Category      @relation(fields: [categoryId], references: [id])
+  status        ProductStatus @default(ACTIVE)
+  isFeatured    Boolean       @default(false)
+  isTrending    Boolean       @default(false)
+  isRecommended Boolean       @default(false)
+  expiresAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+// 7. Advertisement Model
+model Advertisement {
+  id          String   @id @default(uuid())
+  title       String
+  type        AdType
+  imageUrl    String
+  targetUrl   String?
+  startDate   DateTime
+  endDate     DateTime
+  status      AdStatus @default(SCHEDULED)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 8. AuditLog Model
+model AuditLog {
+  id          String         @id @default(uuid())
+  actorId     String
+  actorType   String         // "ADMINISTRATOR" | "SUB_ADMINISTRATOR" | "SYSTEM"
+  action      String         // e.g. "SUSPEND_SELLER", "CREATE_PRODUCT"
+  module      String         // e.g. "SELLERS", "PRODUCTS"
+  targetId    String?
+  details     String?        // JSON string of change diff/metadata
+  ipAddress   String?
+  createdAt   DateTime       @default(now())
+  admin       Administrator? @relation(fields: [actorId], references: [id])
+}
+
+// 9. RealEstateContent Model (Gasabo Real Estate CMS)
+model RealEstateContent {
+  id         String   @id @default(uuid())
+  sectionKey String   @unique // e.g. "HOMEPAGE", "ABOUT", "SERVICES", "SOLUTIONS", "PROJECTS", "GALLERY", "TEAM", "CONTACT", "COMPANY_IMAGES", "OFFICE_LOCATION"
+  content    String   // JSON formatted content object
+  updatedAt  DateTime @updatedAt
+}
+
+// 10. Notification Model
+model Notification {
+  id            String        @id @default(uuid())
+  recipientType RecipientType
+  recipientId   String?       // Seller ID or Admin ID (null for all admins)
+  type          String        // e.g. "EXPIRY_WARNING", "SUSPENSION", "NEW_SELLER_REGISTRATION"
+  message       String
+  isRead        Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+}

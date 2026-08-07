@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <!-- Outer Top Handle Arch -->
+  <path d="M 176 160 C 176 80, 324 80, 324 160" fill="none" stroke="#034B04" stroke-width="26" stroke-linecap="round"/>
+  
+  <!-- Inner Handle Frame -->
+  <path d="M 116 186 L 116 110 C 116 110, 116 110, 116 110 L 384 110 L 384 186" fill="none" stroke="#034B04" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Green Shopping Bag Body -->
+  <path d="M 96 200 Q 150 170 200 206 Q 250 216 300 206 Q 350 170 404 200 C 415 205, 415 220, 415 235 L 415 440 C 415 465, 395 485, 370 485 L 130 485 C 105 485, 85 465, 85 440 L 85 235 C 85 220, 85 205, 96 200 Z" fill="#034B04"/>
+  
+  <!-- Solid White Letter K -->
+  <path d="M 190 240 L 235 240 L 235 320 L 305 240 L 360 240 L 275 330 L 365 440 L 305 440 L 235 345 L 235 440 L 190 440 Z" fill="#FFFFFF"/>
+</svg>

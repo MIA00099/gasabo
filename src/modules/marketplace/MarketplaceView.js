@@ -190,7 +190,14 @@ export function renderMarketplaceView(container) {
               </div>
 
               <div style="display: flex; justify-content: flex-end;">
-                <img src="/hero-section.png" alt="Kigali Market Bag" style="max-width: 100%; height: auto; max-height: 420px; object-fit: contain; filter: drop-shadow(0 20px 30px rgba(0,0,0,0.2));">
+                <video
+                  src="/hero-section-video.mp4"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                  style="max-width: 100%; height: auto; max-height: 420px; border-radius: 16px; box-shadow: 0 20px 30px rgba(0,0,0,0.2);"
+                ></video>
               </div>
             </div>
           </section>

@@ -207,11 +207,23 @@ export function renderMarketplaceView(container) {
           <div style="max-width: 1100px; margin: -90px auto 5rem auto; padding: 0 1.25rem; position: relative; z-index: 20;">
             <div class="search-pill-bar">
 
-              <!-- Segment 1: Search Query (no icon here - the circular button at
-                   the end of the bar is the one and only search icon now) -->
-              <div class="search-pill-segment ${filters.searchQuery ? 'active' : ''}" style="flex: 1.8;">
-                <input type="text" id="hero-search-input" value="${escapeHtml(filters.searchQuery)}" placeholder="${t('search_placeholder')}" class="search-pill-input">
-                ${filters.searchQuery ? `<button id="clear-search-btn" class="search-pill-clear-btn">&times;</button>` : ''}
+              <!-- Search input + CTA button are grouped so they always stay
+                   physically joined as one pill, even when the bar wraps on
+                   narrow screens - only category/district reflow independently. -->
+              <div class="search-pill-input-group">
+                <div class="search-pill-segment ${filters.searchQuery ? 'active' : ''}" style="flex: 1;">
+                  <input type="text" id="hero-search-input" value="${escapeHtml(filters.searchQuery)}" placeholder="${t('search_placeholder')}" class="search-pill-input">
+                  ${filters.searchQuery ? `<button id="clear-search-btn" class="search-pill-clear-btn">&times;</button>` : ''}
+                </div>
+
+                <!-- Search CTA - a circular icon-only button flush with the
+                     pill's rounded end, the single search icon for the whole bar. -->
+                <button id="hero-search-btn" class="search-pill-cta" title="${t('search_button')}" aria-label="${t('search_button')}">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </button>
               </div>
 
               <div class="search-pill-divider"></div>
@@ -235,15 +247,6 @@ export function renderMarketplaceView(container) {
                   ${state.districts.map(d => `<option value="${d}" ${filters.selectedDistrict===d?'selected':''}>${d} District</option>`).join('')}
                 </select>
               </div>
-
-              <!-- Segment 4: Search CTA - a circular icon-only button flush with
-                   the pill's rounded end, the single search icon for the whole bar. -->
-              <button id="hero-search-btn" class="search-pill-cta" title="${t('search_button')}" aria-label="${t('search_button')}">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="7"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </button>
             </div>
           </div>
 

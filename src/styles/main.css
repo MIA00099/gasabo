@@ -399,6 +399,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   gap: 4px;
 }
 
+/* Groups the search input and the circular CTA button as one inseparable
+   unit - they move and wrap together, so they never end up visually split
+   apart from each other regardless of viewport width. */
+.search-pill-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1.8;
+  min-width: 0;
+}
+
 .search-pill-segment {
   position: relative;
   display: flex;
@@ -504,15 +515,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     border-radius: 24px;
     gap: 8px;
   }
+  .search-pill-input-group {
+    flex: 1 1 100%;
+  }
   .search-pill-segment {
     flex: 1 1 100% !important;
   }
   .search-pill-divider {
     display: none;
-  }
-  .search-pill-cta {
-    flex: 0 0 auto;
-    align-self: flex-end;
   }
 }
 

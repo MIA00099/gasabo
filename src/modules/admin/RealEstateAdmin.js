@@ -7,10 +7,12 @@ export function renderRealEstateAdmin(container) {
   function render() {
     const state = stateEngine.getState();
     const reData = state.realEstate;
+    const attempted = state.loading.realEstate !== undefined;
+
+    if (!attempted) stateEngine.loadRealEstate().catch(() => {});
 
     if (!reData.hero) {
-      stateEngine.loadRealEstate().catch(() => {});
-      container.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-muted);">Loading real estate content...</div>`;
+      container.innerHTML = `<div style="text-align:center; padding: 3rem; color: #64748B;">Loading real estate content...</div>`;
       return;
     }
 
@@ -18,8 +20,8 @@ export function renderRealEstateAdmin(container) {
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #fff; font-size: 1.5rem;">🏢 Gasabo Real Estate Content Management</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">
+            <h2 style="color: #0F172A; font-size: 1.5rem;">🏢 Gasabo Real Estate Content Management</h2>
+            <p style="color: #64748B; font-size: 0.9rem;">
               Manage the company homepage hero content and flagship real estate development portfolio.
             </p>
           </div>
@@ -37,7 +39,7 @@ export function renderRealEstateAdmin(container) {
 
         <!-- HERO & ABOUT EDITORS -->
         <div class="glass-panel" style="padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 2rem;">
-          <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 1rem;">Hero Showcase & Corporate Info</h3>
+          <h3 style="color: #0F172A; font-size: 1.1rem; margin-bottom: 1rem;">Hero Showcase & Corporate Info</h3>
           <div class="grid-2">
             <div class="form-group">
               <label>Hero Title</label>
@@ -54,7 +56,7 @@ export function renderRealEstateAdmin(container) {
         </div>
 
         <!-- PORTFOLIO PROJECTS TABLE -->
-        <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">Active Real Estate Development Projects (${reData.projects.length})</h3>
+        <h3 style="color: #0F172A; font-size: 1.15rem; margin-bottom: 1rem;">Active Real Estate Development Projects (${reData.projects.length})</h3>
 
         <div class="custom-table-container">
           <table class="custom-table">
@@ -74,8 +76,8 @@ export function renderRealEstateAdmin(container) {
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                       <img src="${p.image}" alt="${escapeHtml(p.title)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
                       <div>
-                        <div style="font-weight: 600; color: #fff;">${escapeHtml(p.title)}</div>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(p.description.substring(0, 45))}...</div>
+                        <div style="font-weight: 600; color: #0F172A;">${escapeHtml(p.title)}</div>
+                        <div style="font-size: 0.78rem; color: #64748B;">${escapeHtml(p.description.substring(0, 45))}...</div>
                       </div>
                     </div>
                   </td>

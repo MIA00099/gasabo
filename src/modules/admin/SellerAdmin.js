@@ -17,8 +17,8 @@ export function renderSellerAdmin(container) {
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #fff; font-size: 1.5rem;">👥 Registered Sellers Management</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">
+            <h2 style="color: #0F172A; font-size: 1.5rem;">👥 Registered Sellers Management</h2>
+            <p style="color: #64748B; font-size: 0.9rem;">
               Manage verified Rwandan sellers, suspend accounts, reset credentials, and review activity logs. Deleting sellers requires multi-admin approval.
             </p>
           </div>
@@ -52,18 +52,18 @@ export function renderSellerAdmin(container) {
                 <tr>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
-                      <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary); color: #000; font-weight: 800; display: flex; align-items: center; justify-content: center;">
+                      <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center;">
                         ${s.name.charAt(0)}
                       </div>
                       <div>
-                        <div style="font-weight: 600; color: #fff;">${escapeHtml(s.name)}</div>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">ID: ${s.id}</div>
+                        <div style="font-weight: 600; color: #0F172A;">${escapeHtml(s.name)}</div>
+                        <div style="font-size: 0.78rem; color: #64748B;">ID: ${s.id}</div>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <div style="font-size: 0.85rem; color: #fff;">📞 ${escapeHtml(s.phone || '-')}</div>
-                    <div style="font-size: 0.78rem; color: var(--text-muted);">✉️ ${escapeHtml(s.email)}</div>
+                    <div style="font-size: 0.85rem; color: #0F172A;">📞 ${escapeHtml(s.phone || '-')}</div>
+                    <div style="font-size: 0.78rem; color: #64748B;">✉️ ${escapeHtml(s.email)}</div>
                   </td>
                   <td>${escapeHtml(s.district || '-')}</td>
                   <td><strong style="color: var(--primary);">${s.productsCount} Products</strong></td>

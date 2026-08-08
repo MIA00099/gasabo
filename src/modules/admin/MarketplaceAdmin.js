@@ -16,20 +16,20 @@ export function renderMarketplaceAdmin(container) {
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #fff; font-size: 1.5rem;">🛒 Marketplace Management</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">
+            <h2 style="color: #0F172A; font-size: 1.5rem;">🛒 Marketplace Management</h2>
+            <p style="color: #64748B; font-size: 0.9rem;">
               Manage product listings, categories, homepage promotional banners, and featuring controls.
             </p>
           </div>
 
-          <div style="display: flex; gap: 0.5rem; background: var(--navy-card); padding: 4px; border-radius: 12px; border: 1px solid var(--navy-border);">
-            <button id="mkt-adm-products" class="btn btn-sm" style="color:${activeTab==='products'?'#fff':'var(--text-muted)'}; background:${activeTab==='products'?'var(--primary)':'transparent'};">
+          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0;">
+            <button id="mkt-adm-products" class="btn btn-sm" style="color:${activeTab==='products'?'#fff':'#64748B'}; background:${activeTab==='products'?'var(--primary)':'transparent'};">
               📦 Products (${state.products.length})
             </button>
-            <button id="mkt-adm-categories" class="btn btn-sm" style="color:${activeTab==='categories'?'#fff':'var(--text-muted)'}; background:${activeTab==='categories'?'var(--primary)':'transparent'};">
+            <button id="mkt-adm-categories" class="btn btn-sm" style="color:${activeTab==='categories'?'#fff':'#64748B'}; background:${activeTab==='categories'?'var(--primary)':'transparent'};">
               📁 Categories (${state.categories.length})
             </button>
-            <button id="mkt-adm-banners" class="btn btn-sm" style="color:${activeTab==='banners'?'#fff':'var(--text-muted)'}; background:${activeTab==='banners'?'var(--primary)':'transparent'};">
+            <button id="mkt-adm-banners" class="btn btn-sm" style="color:${activeTab==='banners'?'#fff':'#64748B'}; background:${activeTab==='banners'?'var(--primary)':'transparent'};">
               🖼️ Ad Banners (${state.banners.length})
             </button>
           </div>
@@ -64,8 +64,8 @@ export function renderMarketplaceAdmin(container) {
                       <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
                         <div>
-                          <div style="font-weight: 600; color: #fff;">${escapeHtml(prod.title)}</div>
-                          <div style="font-size: 0.78rem; color: var(--text-muted);">Posted: ${new Date(prod.postedDate).toLocaleDateString()}</div>
+                          <div style="font-weight: 600; color: #0F172A;">${escapeHtml(prod.title)}</div>
+                          <div style="font-size: 0.78rem; color: #64748B;">Posted: ${new Date(prod.postedDate).toLocaleDateString()}</div>
                         </div>
                       </div>
                     </td>
@@ -78,10 +78,10 @@ export function renderMarketplaceAdmin(container) {
                     </td>
                     <td>
                       <div style="display: flex; gap: 4px;">
-                        <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isFeatured" style="background:${prod.isFeatured?'var(--accent-gold-light)':'rgba(255,255,255,0.05)'}; color:${prod.isFeatured?'var(--accent-gold)':'var(--text-muted)'}; padding: 2px 6px; font-size: 0.75rem;">
+                        <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isFeatured" style="background:${prod.isFeatured?'var(--accent-gold-light)':'#F1F5F9'}; color:${prod.isFeatured?'var(--accent-gold)':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
                           ⭐ Featured
                         </button>
-                        <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isTrending" style="background:${prod.isTrending?'var(--primary-light)':'rgba(255,255,255,0.05)'}; color:${prod.isTrending?'var(--primary)':'var(--text-muted)'}; padding: 2px 6px; font-size: 0.75rem;">
+                        <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isTrending" style="background:${prod.isTrending?'var(--primary-light)':'#F1F5F9'}; color:${prod.isTrending?'var(--primary)':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
                           🔥 Trending
                         </button>
                       </div>
@@ -122,7 +122,7 @@ export function renderMarketplaceAdmin(container) {
                 ${state.categories.map(cat => `
                   <tr>
                     <td style="font-size: 1.5rem;">${cat.icon}</td>
-                    <td><strong style="color: #fff;">${escapeHtml(cat.name)}</strong></td>
+                    <td><strong style="color: #0F172A;">${escapeHtml(cat.name)}</strong></td>
                     <td>${cat.order}</td>
                     <td>${cat.count} Products</td>
                     <td>
@@ -141,7 +141,7 @@ export function renderMarketplaceAdmin(container) {
         ` : `
           <!-- BANNERS MANAGEMENT -->
           ${state.banners.length === 0 ? `
-            <div style="text-align: center; padding: 3rem; background: rgba(255,255,255,0.03); border-radius: var(--radius-md); border: 1px dashed var(--navy-border); color: var(--text-muted);">
+            <div style="text-align: center; padding: 3rem; background: #F8FAFC; border-radius: var(--radius-md); border: 1px dashed #E2E8F0; color: #64748B;">
               No promotional banners configured yet.
             </div>
           ` : `
@@ -151,8 +151,8 @@ export function renderMarketplaceAdmin(container) {
                   <div style="height: 140px; border-radius: var(--radius-sm); overflow: hidden; background: #000; margin-bottom: 1rem;">
                     <img src="${b.image}" alt="${escapeHtml(b.title)}" style="width: 100%; height: 100%; object-fit: cover;">
                   </div>
-                  <h4 style="color: #fff; margin-bottom: 0.25rem;">${escapeHtml(b.title)}</h4>
-                  <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">${escapeHtml(b.subtitle)}</p>
+                  <h4 style="color: #0F172A; margin-bottom: 0.25rem;">${escapeHtml(b.title)}</h4>
+                  <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;">${escapeHtml(b.subtitle)}</p>
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span class="badge badge-active">${b.status}</span>
                   </div>

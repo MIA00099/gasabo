@@ -36,21 +36,22 @@ export function renderAdminDashboardView(container) {
           <!-- OVERVIEW CARDS (4 Grid Layout matching Enterprise Spec) -->
           <div class="grid-4" style="margin-bottom: 2rem; gap: 1.25rem;">
 
-            <!-- Card 1: Pending Approvals -->
-            <div class="adm-card-white">
+            <!-- Card 1: Pending Approvals (featured, matches the reference's
+                 solid-green highlighted stat card) -->
+            <div class="adm-card-white" style="background: #034B04; border-color: #034B04;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Pending Approvals</span>
-                <span class="adm-badge-risk">Action Required</span>
+                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: rgba(255,255,255,0.75);">Pending Approvals</span>
+                <span style="width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.15); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">↗</span>
               </div>
-              <div class="adm-metric-number" style="color: #dc2626;">${pendingReqs.length}</div>
-              <div class="adm-caption" style="margin-top: 0.5rem; color: #64748b;">Multi-Admin Approval Requests</div>
+              <div class="adm-metric-number" style="color: #ffffff;">${pendingReqs.length}</div>
+              <div class="adm-caption" style="margin-top: 0.5rem; color: rgba(255,255,255,0.75);">Multi-Admin Approval Requests</div>
             </div>
 
             <!-- Card 2: High Risk Requests -->
             <div class="adm-card-white">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                 <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">High Risk Requests</span>
-                <span class="adm-badge-warning">Security Risk</span>
+                <span style="width: 26px; height: 26px; border-radius: 50%; background: #FEF3C7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">↗</span>
               </div>
               <div class="adm-metric-number" style="color: #d97706;">${highRiskCount}</div>
               <div class="adm-caption" style="margin-top: 0.5rem; color: #64748b;">Requires Dual Authorization</div>
@@ -60,7 +61,7 @@ export function renderAdminDashboardView(container) {
             <div class="adm-card-white">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                 <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Awaiting Review</span>
-                <span class="adm-badge-info">Secondary Check</span>
+                <span style="width: 26px; height: 26px; border-radius: 50%; background: #DBEAFE; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">↗</span>
               </div>
               <div class="adm-metric-number" style="color: #2563eb;">${pendingReqs.length}</div>
               <div class="adm-caption" style="margin-top: 0.5rem; color: #64748b;">Pending Secondary Admin Verification</div>
@@ -70,7 +71,7 @@ export function renderAdminDashboardView(container) {
             <div class="adm-card-white">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                 <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Completed Today</span>
-                <span class="adm-badge-success">Audit Logged</span>
+                <span style="width: 26px; height: 26px; border-radius: 50%; background: #DCFCE7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">↗</span>
               </div>
               <div class="adm-metric-number" style="color: #16a34a;">${completedTodayCount}</div>
               <div class="adm-caption" style="margin-top: 0.5rem; color: #64748b;">Authorized Administrative Actions</div>
@@ -78,10 +79,10 @@ export function renderAdminDashboardView(container) {
 
           </div>
 
-          <!-- MAIN LAYOUT: DARK CHARCOAL SIDEBAR + PURE WHITE CONTENT CARD -->
+          <!-- MAIN LAYOUT: LIGHT SIDEBAR + PURE WHITE CONTENT CARD -->
           <div class="grid-4" style="grid-template-columns: 280px 1fr; gap: 1.75rem; align-items: start;">
 
-            <!-- SIDEBAR: DARK CHARCOAL (#0f172a) WITH MINIMAL THIN ACTIVE INDICATOR -->
+            <!-- SIDEBAR: white rounded card, active item shown as a solid green pill -->
             <div class="adm-sidebar-dark">
               <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; padding: 0 0.5rem;">
                 Administration Control
@@ -116,10 +117,10 @@ export function renderAdminDashboardView(container) {
                 </button>
               </div>
 
-              <div style="margin-top: 2rem; padding: 1rem 0.5rem 0 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: #64748b;">
-                <div style="font-weight: 700; color: #94a3b8; margin-bottom: 2px;">${escapeHtml(currentUser.name)}</div>
-                <div style="text-transform: uppercase; font-size: 10px; font-weight: 800; color: #10b981;">● ${currentUser.role.replace('_', ' ')}</div>
-                <button id="adm-logout-btn" style="margin-top: 0.75rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; padding: 6px 0; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+              <div style="margin-top: 2rem; padding: 1rem 0.5rem 0 0.5rem; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748b;">
+                <div style="font-weight: 700; color: #0F172A; margin-bottom: 2px;">${escapeHtml(currentUser.name)}</div>
+                <div style="text-transform: uppercase; font-size: 10px; font-weight: 800; color: #16a34a;">● ${currentUser.role.replace('_', ' ')}</div>
+                <button id="adm-logout-btn" style="margin-top: 0.75rem; width: 100%; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155; padding: 6px 0; border-radius: 9999px; font-size: 11px; font-weight: 700; cursor: pointer;">
                   ↪ Log Out
                 </button>
               </div>

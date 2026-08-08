@@ -17,8 +17,8 @@ export function renderUserRBACAdmin(container) {
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #fff; font-size: 1.5rem;">🔐 Administrator Roles & Permissions (RBAC)</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">
+            <h2 style="color: #0F172A; font-size: 1.5rem;">🔐 Administrator Roles & Permissions (RBAC)</h2>
+            <p style="color: #64748B; font-size: 0.9rem;">
               Manage platform administrators, assign roles (Administrator, Sub-Administrator), and scope granular access permissions.
             </p>
           </div>
@@ -39,12 +39,12 @@ export function renderUserRBACAdmin(container) {
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
                   <div>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
-                      <h3 style="color: #fff; font-size: 1.2rem;">${escapeHtml(u.name)}</h3>
-                      <span class="badge" style="background: rgba(255,255,255,0.08); color: ${u.role==='administrator'?'var(--accent-gold)':'#fff'}; font-weight: 800;">
+                      <h3 style="color: #0F172A; font-size: 1.2rem;">${escapeHtml(u.name)}</h3>
+                      <span class="badge" style="background: #F1F5F9; color: ${u.role==='administrator'?'var(--accent-gold)':'#334155'}; font-weight: 800;">
                         ${u.role.replace('_', ' ').toUpperCase()}
                       </span>
                     </div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+                    <div style="font-size: 0.85rem; color: #64748B; margin-top: 0.2rem;">
                       ✉️ ${escapeHtml(u.email)} • 🕒 Last Login: ${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
                     </div>
                   </div>
@@ -57,12 +57,12 @@ export function renderUserRBACAdmin(container) {
                 </div>
 
                 <!-- Permission Toggles Matrix -->
-                <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--navy-border);">
-                  <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">Assigned Module Access Permissions</div>
+                <div style="background: #F8FAFC; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid #E2E8F0;">
+                  <div style="font-size: 0.78rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">Assigned Module Access Permissions</div>
 
                   <div class="grid-4" style="gap: 0.75rem;">
                     ${Object.entries(u.permissions).map(([permKey, isAllowed]) => `
-                      <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: ${isAllowed?'#00e676':'var(--text-muted)'};">
+                      <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: ${isAllowed?'#059669':'#94A3B8'};">
                         <span>${isAllowed ? '✅' : '❌'}</span>
                         <span style="text-transform: capitalize;">${permKey.replace('_', ' ')}</span>
                       </div>

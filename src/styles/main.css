@@ -1410,29 +1410,32 @@ footer a:hover {
    GLASS PANELS, CARDS, FORMS & SYSTEM UTILITIES
    ========================================================================== */
 
+/* Dashboard surfaces (admin panels, seller dashboard) used to be a dark
+   green glassmorphism theme. Redesigned to the clean white-card look used
+   throughout the rest of the site (matching .adm-card-white below) - these
+   two classes alone cascade the new look across every admin sub-panel and
+   the seller dashboard, since they're all built on .glass-panel/.glass-card. */
 .glass-panel {
-  background: linear-gradient(145deg, #032202, #063805);
-  border: 1px solid rgba(237, 162, 3, 0.25);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: var(--radius-lg);
-  color: #FFFFFF;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  color: #0F172A;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
 }
 
 .glass-card {
-  background: linear-gradient(145deg, #032202, #073805);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: var(--radius-md);
-  color: #FFFFFF;
-  box-shadow: var(--shadow-soft-md);
+  color: #0F172A;
+  box-shadow: var(--shadow-soft-sm);
   transition: var(--transition-smooth);
 }
 
 .glass-card:hover {
   transform: translateY(-2px);
-  border-color: var(--accent-gold);
-  box-shadow: var(--shadow-soft-lg);
+  border-color: var(--primary-green);
+  box-shadow: var(--shadow-soft-md);
 }
 
 /* FORM CONTROLS & GROUPS */
@@ -1447,17 +1450,17 @@ footer a:hover {
 .form-group label {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #E2E8F0;
+  color: #334155;
   letter-spacing: 0.01em;
 }
 
 .form-control {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
   border-radius: var(--radius-input);
-  color: #FFFFFF;
+  color: #0F172A;
   font-size: 0.95rem;
   font-family: inherit;
   outline: none;
@@ -1465,9 +1468,9 @@ footer a:hover {
 }
 
 .form-control:focus {
-  border-color: var(--accent-gold);
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 0 0 3px rgba(237, 162, 3, 0.25);
+  border-color: var(--primary-green);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(3, 75, 4, 0.1);
 }
 
 .form-control::placeholder {
@@ -1475,8 +1478,8 @@ footer a:hover {
 }
 
 select.form-control option {
-  background: #032202;
-  color: #FFFFFF;
+  background: #FFFFFF;
+  color: #0F172A;
 }
 
 /* GRID SYSTEM - responsive: these were fixed at N columns regardless of
@@ -1528,8 +1531,8 @@ select.form-control option {
   width: 100%;
   overflow-x: auto;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(3, 34, 2, 0.6);
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
 }
 
 .custom-table {
@@ -1540,40 +1543,45 @@ select.form-control option {
 }
 
 .custom-table th {
-  background: rgba(255, 255, 255, 0.05);
-  color: #EDA203;
+  background: #F8FAFC;
+  color: #475569;
   font-weight: 700;
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid #E2E8F0;
   white-space: nowrap;
 }
 
 .custom-table td {
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  color: #E2E8F0;
+  border-bottom: 1px solid #F1F5F9;
+  color: #1E293B;
   vertical-align: middle;
 }
 
 .custom-table tr:hover td {
-  background: rgba(255, 255, 255, 0.04);
+  background: #F8FAFC;
 }
 
 /* ==========================================================================
    ENTERPRISE SAAS ADMIN STYLING (Stripe / Vercel / Linear Grade)
    ========================================================================== */
 .adm-layout-wrap {
-  background-color: #f8fafc;
+  background-color: #F1F3F5;
   min-height: calc(100vh - 70px);
   color: #0f172a;
+  padding-top: 1px;
+  padding-bottom: 1px;
 }
 
+/* Sidebar: white rounded card with a solid green pill behind the active
+   item (matching the reference design), not a dark navy panel. */
 .adm-sidebar-dark {
-  background-color: #0f172a;
-  border-radius: 14px;
+  background-color: #ffffff;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
   padding: 1.25rem 1rem;
-  color: #94a3b8;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  color: #64748b;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
 }
 
 .adm-side-btn {
@@ -1582,10 +1590,10 @@ select.form-control option {
   gap: 10px;
   width: 100%;
   padding: 0.75rem 1rem;
-  border-radius: 10px;
+  border-radius: 9999px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: #64748b;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1595,31 +1603,27 @@ select.form-control option {
 }
 
 .adm-side-btn:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.06);
+  color: #034B04;
+  background: #F1F5F9;
 }
 
 .adm-side-btn.active {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  background: #034B04;
   font-weight: 700;
+  box-shadow: 0 4px 12px rgba(3, 75, 4, 0.25);
 }
 
-.adm-side-btn.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3.5px;
-  background-color: #10b981;
-  border-radius: 0 4px 4px 0;
+.adm-side-btn.active .action-count-badge,
+.adm-side-btn.active span[style*="background: #dc2626"] {
+  background: #ffffff !important;
+  color: #034B04 !important;
 }
 
 .adm-card-white {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
   transition: all 0.2s ease;

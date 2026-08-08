@@ -50,10 +50,10 @@ function renderSellerDashboardView(container, sellerUser) {
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
             <div>
               <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem;">
-                <h2 style="font-size: 1.8rem; color: #fff;">Welcome, ${escapeHtml(sellerUser.name)}</h2>
+                <h2 style="font-size: 1.8rem; color: #0F172A;">Welcome, ${escapeHtml(sellerUser.name)}</h2>
                 <span class="badge badge-active">✔ Verified Rwandan Seller</span>
               </div>
-              <p style="color: var(--text-muted); font-size: 0.92rem;">
+              <p style="color: #64748B; font-size: 0.92rem;">
                 📍 ${escapeHtml(sellerUser.district)} District • ✉️ ${escapeHtml(sellerUser.email)} • 📞 ${escapeHtml(sellerUser.phone)}
               </p>
             </div>
@@ -76,7 +76,7 @@ function renderSellerDashboardView(container, sellerUser) {
           <!-- POST NEW PRODUCT FORM -->
           <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg); margin-bottom: 3rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-              <h3 style="font-size: 1.4rem; color: #fff;">Post New Item on Kigali Marketplace</h3>
+              <h3 style="font-size: 1.4rem; color: #0F172A;">Post New Item on Kigali Marketplace</h3>
               <button id="cancel-add-btn" class="btn btn-secondary btn-sm">Cancel</button>
             </div>
 
@@ -122,22 +122,22 @@ function renderSellerDashboardView(container, sellerUser) {
               <div class="form-group">
                 <label>Product Photo</label>
                 <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
-                  <button type="button" id="img-mode-upload-btn" class="btn btn-sm" style="background:${imageMode==='upload'?'var(--primary)':'rgba(255,255,255,0.05)'}; color:${imageMode==='upload'?'#fff':'var(--text-muted)'};">
+                  <button type="button" id="img-mode-upload-btn" class="btn btn-sm" style="background:${imageMode==='upload'?'var(--primary)':'#F1F5F9'}; color:${imageMode==='upload'?'#fff':'#64748B'};">
                     📁 Upload from Device
                   </button>
-                  <button type="button" id="img-mode-url-btn" class="btn btn-sm" style="background:${imageMode==='url'?'var(--primary)':'rgba(255,255,255,0.05)'}; color:${imageMode==='url'?'#fff':'var(--text-muted)'};">
+                  <button type="button" id="img-mode-url-btn" class="btn btn-sm" style="background:${imageMode==='url'?'var(--primary)':'#F1F5F9'}; color:${imageMode==='url'?'#fff':'#64748B'};">
                     🔗 Paste Image URL
                   </button>
                 </div>
 
                 ${imageMode === 'upload' ? `
                   <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" ${imageUploading ? 'disabled' : ''}>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.4rem;">JPEG, PNG, WEBP, or GIF - max 5MB.</div>
+                  <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.4rem;">JPEG, PNG, WEBP, or GIF - max 5MB.</div>
                   ${imageUploading ? `
-                    <div style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">⏳ Uploading...</div>
+                    <div style="margin-top: 0.75rem; color: #64748B; font-size: 0.85rem;">⏳ Uploading...</div>
                   ` : imagePreviewUrl ? `
                     <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.75rem;">
-                      <img src="${imagePreviewUrl}" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);">
+                      <img src="${imagePreviewUrl}" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #E2E8F0;">
                       <span style="color: #10B981; font-size: 0.85rem; font-weight: 600;">✔ Photo uploaded</span>
                     </div>
                   ` : ''}
@@ -156,14 +156,14 @@ function renderSellerDashboardView(container, sellerUser) {
 
         <!-- Product Status Tabs -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <div style="display: flex; gap: 0.5rem; background: var(--navy-card); padding: 4px; border-radius: 12px; border: 1px solid var(--navy-border);">
-            <button id="tab-active-btn" class="btn btn-sm" style="color:${activeTab==='active'?'#fff':'var(--text-muted)'}; background:${activeTab==='active'?'var(--primary)':'transparent'};">
+          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0;">
+            <button id="tab-active-btn" class="btn btn-sm" style="color:${activeTab==='active'?'#fff':'#64748B'}; background:${activeTab==='active'?'var(--primary)':'transparent'};">
               Active Products (${activeProds.length})
             </button>
-            <button id="tab-expiring-btn" class="btn btn-sm" style="color:${activeTab==='expiring'?'#fff':'var(--text-muted)'}; background:${activeTab==='expiring'?'var(--warning)':'transparent'};">
+            <button id="tab-expiring-btn" class="btn btn-sm" style="color:${activeTab==='expiring'?'#fff':'#64748B'}; background:${activeTab==='expiring'?'var(--warning)':'transparent'};">
               Expiring Soon (${expiringProds.length})
             </button>
-            <button id="tab-expired-btn" class="btn btn-sm" style="color:${activeTab==='expired'?'#fff':'var(--text-muted)'}; background:${activeTab==='expired'?'var(--danger)':'transparent'};">
+            <button id="tab-expired-btn" class="btn btn-sm" style="color:${activeTab==='expired'?'#fff':'#64748B'}; background:${activeTab==='expired'?'var(--danger)':'transparent'};">
               Expired Archive (${expiredProds.length})
             </button>
           </div>
@@ -198,8 +198,8 @@ function renderSellerDashboardView(container, sellerUser) {
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                       <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
                       <div>
-                        <div style="font-weight: 600; color: #fff;">${escapeHtml(prod.title)}</div>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">📍 ${escapeHtml(prod.district)} • ${prod.condition}</div>
+                        <div style="font-weight: 600; color: #0F172A;">${escapeHtml(prod.title)}</div>
+                        <div style="font-size: 0.78rem; color: #64748B;">📍 ${escapeHtml(prod.district)} • ${prod.condition}</div>
                       </div>
                     </div>
                   </td>

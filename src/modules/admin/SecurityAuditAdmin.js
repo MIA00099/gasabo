@@ -17,8 +17,8 @@ export function renderSecurityAuditAdmin(container) {
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #fff; font-size: 1.5rem;">🛡️ System Security Audit Logs & Backups</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">
+            <h2 style="color: #0F172A; font-size: 1.5rem;">🛡️ System Security Audit Logs & Backups</h2>
+            <p style="color: #64748B; font-size: 0.9rem;">
               Complete audit trail of all platform activities, administrative approvals, login sessions, and database backups.
             </p>
           </div>
@@ -39,15 +39,15 @@ export function renderSecurityAuditAdmin(container) {
         <!-- BACKUP POLICY BANNER -->
         <div class="glass-panel" style="padding: 1.25rem 1.5rem; border-radius: var(--radius-md); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h4 style="color: #fff; font-size: 1.05rem;">Database Backup Policy</h4>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">
+            <h4 style="color: #0F172A; font-size: 1.05rem;">Database Backup Policy</h4>
+            <p style="font-size: 0.85rem; color: #64748B;">
               Each backup trigger is recorded to the audit log below with a timestamp for compliance tracking.
             </p>
           </div>
         </div>
 
         <!-- AUDIT LOGS TABLE -->
-        <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">Audit Log Registry (${logs.length} Logged Events)</h3>
+        <h3 style="color: #0F172A; font-size: 1.15rem; margin-bottom: 1rem;">Audit Log Registry (${logs.length} Logged Events)</h3>
 
         <div class="custom-table-container">
           <table class="custom-table">
@@ -69,7 +69,7 @@ export function renderSecurityAuditAdmin(container) {
               ` : logs.map(log => `
                 <tr>
                   <td style="white-space: nowrap; font-size: 0.82rem; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</td>
-                  <td><strong style="color: #fff;">${escapeHtml(log.user)}</strong></td>
+                  <td><strong style="color: #0F172A;">${escapeHtml(log.user)}</strong></td>
                   <td>
                     <span class="badge" style="background: rgba(0, 168, 107, 0.15); color: var(--primary); border: 1px solid rgba(0, 168, 107, 0.3);">
                       ${escapeHtml(log.action)}

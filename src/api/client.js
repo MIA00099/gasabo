@@ -55,10 +55,44 @@ async function request(method, path, body) {
   return data;
 }
 
+// Separate from request() above: file uploads need multipart/form-data with
+// a browser-generated boundary, so this must NOT set a Content-Type header
+// itself (fetch does that correctly only when left alone with a FormData body).
+async function uploadFile(path, file) {
+  const session = getSession();
+  const headers = {};
+  if (session?.token) headers.Authorization = `Bearer ${session.token}`;
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  let res;
+  try {
+    res = await fetch(`/api${path}`, { method: 'POST', headers, body: formData });
+  } catch {
+    throw new Error('Could not reach the server. Check your connection and try again.');
+  }
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    // no body
+  }
+
+  if (!res.ok) {
+    if (res.status === 401) setSession(null);
+    throw new Error(data?.error || `Upload failed (${res.status}).`);
+  }
+
+  return data;
+}
+
 export const api = {
   get: (path) => request('GET', path),
   post: (path, body) => request('POST', path, body),
   put: (path, body) => request('PUT', path, body),
   patch: (path, body) => request('PATCH', path, body),
   delete: (path) => request('DELETE', path),
+  uploadFile,
 };

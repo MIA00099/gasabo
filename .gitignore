@@ -8,6 +8,9 @@ prisma/dev.db
 prisma/*.db
 prisma/*.db-journal
 
+# user-uploaded content
+server/uploads/
+
 # logs
 npm-debug.log*
 *.log

@@ -210,6 +210,13 @@ class StateEngine {
     });
   }
 
+  async uploadProductImage(file) {
+    return this._run('imageUpload', async () => {
+      const { url } = await api.uploadFile('/uploads', file);
+      return url;
+    });
+  }
+
   async createProduct(productData) {
     return this._run('productForm', async () => {
       const { product } = await api.post('/products', {

@@ -26,6 +26,9 @@ function renderSellerDashboardView(container, sellerUser) {
     const formSubmitting = !!state.loading.productForm;
     const myProductsAttempted = state.loading.myProducts !== undefined;
     const productsLoading = !!state.loading.myProducts || !myProductsAttempted;
+    const imageMode = state.ui.productImageMode || 'url';
+    const imageUploading = !!state.loading.imageUpload;
+    const imagePreviewUrl = state.ui.productImagePreview || '';
 
     if (!myProductsAttempted) {
       stateEngine.loadMyProducts().catch(() => {});
@@ -117,11 +120,34 @@ function renderSellerDashboardView(container, sellerUser) {
               </div>
 
               <div class="form-group">
-                <label>Image URL (or unsplash preview image)</label>
-                <input type="url" id="p-image" class="form-control" value="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1000&q=80" required>
+                <label>Product Photo</label>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
+                  <button type="button" id="img-mode-upload-btn" class="btn btn-sm" style="background:${imageMode==='upload'?'var(--primary)':'rgba(255,255,255,0.05)'}; color:${imageMode==='upload'?'#fff':'var(--text-muted)'};">
+                    📁 Upload from Device
+                  </button>
+                  <button type="button" id="img-mode-url-btn" class="btn btn-sm" style="background:${imageMode==='url'?'var(--primary)':'rgba(255,255,255,0.05)'}; color:${imageMode==='url'?'#fff':'var(--text-muted)'};">
+                    🔗 Paste Image URL
+                  </button>
+                </div>
+
+                ${imageMode === 'upload' ? `
+                  <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" ${imageUploading ? 'disabled' : ''}>
+                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.4rem;">JPEG, PNG, WEBP, or GIF - max 5MB.</div>
+                  ${imageUploading ? `
+                    <div style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">⏳ Uploading...</div>
+                  ` : imagePreviewUrl ? `
+                    <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.75rem;">
+                      <img src="${imagePreviewUrl}" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);">
+                      <span style="color: #10B981; font-size: 0.85rem; font-weight: 600;">✔ Photo uploaded</span>
+                    </div>
+                  ` : ''}
+                  <input type="hidden" id="p-image" value="${escapeHtml(imagePreviewUrl || '')}">
+                ` : `
+                  <input type="url" id="p-image" class="form-control" value="${escapeHtml(imagePreviewUrl && imageMode === 'url' ? imagePreviewUrl : 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1000&q=80')}" placeholder="https://...">
+                `}
               </div>
 
-              <button type="submit" class="btn btn-primary" style="padding: 0.95rem 2rem; font-size: 1rem; margin-top: 1rem;" ${formSubmitting ? 'disabled' : ''}>
+              <button type="submit" class="btn btn-primary" style="padding: 0.95rem 2rem; font-size: 1rem; margin-top: 1rem;" ${formSubmitting || imageUploading ? 'disabled' : ''}>
                 ${formSubmitting ? 'Publishing...' : '🚀 Publish Product Listing Now'}
               </button>
             </form>
@@ -212,6 +238,24 @@ function renderSellerDashboardView(container, sellerUser) {
     container.querySelector('#tab-expiring-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'expiring' }));
     container.querySelector('#tab-expired-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'expired' }));
 
+    container.querySelector('#img-mode-upload-btn')?.addEventListener('click', () => {
+      stateEngine.setUI({ productImageMode: 'upload' });
+    });
+    container.querySelector('#img-mode-url-btn')?.addEventListener('click', () => {
+      stateEngine.setUI({ productImageMode: 'url' });
+    });
+
+    container.querySelector('#p-image-file')?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const url = await stateEngine.uploadProductImage(file);
+        stateEngine.setUI({ productImagePreview: url });
+      } catch (err) {
+        render();
+      }
+    });
+
     container.querySelector('#create-product-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = container.querySelector('#p-title').value;
@@ -222,10 +266,21 @@ function renderSellerDashboardView(container, sellerUser) {
       const description = container.querySelector('#p-desc').value;
       const image = container.querySelector('#p-image').value;
 
+      // #p-image is type="hidden" while in upload mode, so the browser's
+      // own `required` validation never runs on it (hidden inputs are
+      // excluded from constraint validation) - check by hand instead.
+      if (!image) {
+        stateEngine.data.error = imageMode === 'upload'
+          ? 'Please choose and wait for a product photo to finish uploading.'
+          : 'Please provide a product image URL.';
+        stateEngine.notify();
+        return;
+      }
+
       try {
         await stateEngine.createProduct({ title, category, price, district, condition, description, image });
         alert('Product published successfully to Kigali Marketplace!');
-        stateEngine.setUI({ sellerDashboardTab: 'active' });
+        stateEngine.setUI({ sellerDashboardTab: 'active', productImageMode: 'url', productImagePreview: '' });
       } catch (err) {
         render();
       }

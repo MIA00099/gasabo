@@ -62,6 +62,11 @@ export function bindLargeFooterEvents(container) {
   if (!container) return;
   container.querySelector('#foot-link-mkt')?.addEventListener('click', (e) => {
     e.preventDefault();
+    // Reset back to the actual browse tab too, in case the user is
+    // currently sitting on the seller dashboard (marketplaceTab would
+    // otherwise stay 'seller_portal' and this link would silently do
+    // nothing if activePortal is already 'marketplace').
+    stateEngine.setUI({ marketplaceTab: 'products' });
     stateEngine.setPortal('marketplace');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
@@ -118,6 +123,7 @@ export function initSlimStickyFooter() {
 
   // Attach event handlers
   stickyBar.querySelector('#sticky-brand-action')?.addEventListener('click', () => {
+    stateEngine.setUI({ marketplaceTab: 'products' });
     stateEngine.setPortal('marketplace');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });

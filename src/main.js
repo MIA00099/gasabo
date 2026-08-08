@@ -106,8 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size: 0.82rem; font-weight: 800; color: #1E293B;">${escapeHtml(currentUser.name.split(' ')[0])}</div>
                     <div style="font-size: 0.68rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">${roleLabel}</div>
                   </div>
-                  <button id="header-logout-btn" class="nav-circle-btn" title="Log out" style="width: 34px; height: 34px; font-size: 0.9rem;">
-                    ↪
+                  <button id="header-logout-btn" title="Log out" style="background: #2563EB; color: #fff; font-weight: 700; font-size: 0.78rem; border: none; border-radius: 9999px; padding: 0 14px; height: 34px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: background 0.2s ease;">
+                    ↪ Logout
                   </button>
                 </div>
               ` : `
@@ -121,8 +121,18 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
 
       // Header Event Listeners
-      headerMount.querySelector('#nav-brand-home')?.addEventListener('click', () => stateEngine.setPortal('marketplace'));
-      headerMount.querySelector('#nav-link-mkt')?.addEventListener('click', () => stateEngine.setPortal('marketplace'));
+      // Brand logo and the Marketplace tab both need to land on the actual
+      // browse homepage from any page - not just flip activePortal to
+      // 'marketplace' and leave state.ui.marketplaceTab wherever it was last
+      // (e.g. still 'seller_portal' if the user had been on their seller
+      // dashboard), which would silently do nothing since activePortal may
+      // already be 'marketplace' in that case.
+      const goHome = () => {
+        stateEngine.setUI({ marketplaceTab: 'products' });
+        stateEngine.setPortal('marketplace');
+      };
+      headerMount.querySelector('#nav-brand-home')?.addEventListener('click', goHome);
+      headerMount.querySelector('#nav-link-mkt')?.addEventListener('click', goHome);
       headerMount.querySelector('#nav-link-re')?.addEventListener('click', () => stateEngine.setPortal('realestate'));
       headerMount.querySelector('#header-signup-btn')?.addEventListener('click', () => stateEngine.setPortal('signup'));
       headerMount.querySelector('#header-logout-btn')?.addEventListener('click', () => {

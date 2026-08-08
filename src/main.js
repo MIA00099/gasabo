@@ -132,6 +132,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       headerMount.querySelector('#lang-toggle-en')?.addEventListener('click', () => stateEngine.setLanguage('en'));
       headerMount.querySelector('#lang-toggle-rw')?.addEventListener('click', () => stateEngine.setLanguage('rw'));
+
+      // .main-navbar is position:fixed (see main.css), which removes it from
+      // normal document flow - without this, the fixed bar would sit on top
+      // of and hide the first row of whatever's rendered below it. Measure
+      // the navbar itself, not #header-mount: a fixed child contributes
+      // nothing to its (non-fixed) parent's box size, so header-mount always
+      // reads back 0 even though the navbar inside it is rendering normally.
+      const navbarEl = headerMount.querySelector('.main-navbar');
+      if (appElement && navbarEl) {
+        appElement.style.paddingTop = navbarEl.offsetHeight + 'px';
+      }
     }
 
     // Keep the address bar in sync with the admin portal's dedicated URL, without

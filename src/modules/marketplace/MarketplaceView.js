@@ -303,26 +303,26 @@ export function renderMarketplaceView(container) {
                 <p style="color: #64748B; font-size: 0.95rem;">Try selecting a different district or clearing your category filters.</p>
               </div>
             ` : `
-              <div class="grid-4" style="gap: 1.5rem;">
+              <div class="grid-4" style="gap: 1.5rem; align-items: stretch;">
                 ${state.products.map(prod => `
                   <div class="main-prod-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease;">
                     <div>
-                      <div style="height: 200px; overflow: hidden; position: relative; background: #F8FAFC;">
-                        <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                      <div class="product-card-image-wrap">
+                        <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}">
                         ${prod.isFeatured ? `<span style="position: absolute; top: 12px; left: 12px; background: #EDA203; color: #000; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px;">⭐ FEATURED</span>` : ''}
                       </div>
 
                       <div style="padding: 1.25rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                          <span style="font-size: 0.78rem; font-weight: 700; color: #034B04; background: #E6F4EA; padding: 2px 8px; border-radius: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; gap: 0.5rem;">
+                          <span style="font-size: 0.78rem; font-weight: 700; color: #034B04; background: #E6F4EA; padding: 2px 8px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">
                             📍 ${escapeHtml(prod.district)}
                           </span>
-                          <span style="font-size: 0.78rem; color: #64748B; font-weight: 600;">
-                            ${prod.condition}
+                          <span style="font-size: 0.78rem; color: #64748B; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${escapeHtml(prod.condition)}
                           </span>
                         </div>
 
-                        <h3 style="font-size: 1.05rem; font-weight: 700; color: #0F172A; margin-bottom: 0.5rem; line-height: 1.35; height: 2.7em; overflow: hidden;">
+                        <h3 class="product-card-title" style="font-size: 1.05rem; font-weight: 700; color: #0F172A; margin-bottom: 0.5rem; line-height: 1.35; height: 2.7em;">
                           ${escapeHtml(prod.title)}
                         </h3>
 
@@ -330,9 +330,9 @@ export function renderMarketplaceView(container) {
                           ${prod.price.toLocaleString()} ${prod.currency}
                         </div>
 
-                        <div style="font-size: 0.8rem; color: #64748B; margin-bottom: 1rem; display: flex; align-items: center; gap: 4px;">
-                          <span>👤 Seller:</span>
-                          <strong style="color: #1E293B;">${escapeHtml(prod.sellerName)}</strong>
+                        <div style="font-size: 0.8rem; color: #64748B; margin-bottom: 1rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden;">
+                          <span style="flex-shrink: 0;">👤 Seller:</span>
+                          <strong style="color: #1E293B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(prod.sellerName)}</strong>
                         </div>
                       </div>
                     </div>

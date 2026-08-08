@@ -338,7 +338,10 @@ export function renderLoginView(container, initialMode = 'login') {
           } else {
             await stateEngine.registerSeller(formData);
           }
-          stateEngine.setPortal('marketplace');
+          // Route to whatever's actually relevant for this account (seller
+          // dashboard, admin panel, or marketplace) instead of always
+          // dropping the user on the generic marketplace browse page.
+          stateEngine.routeToDashboard();
         } catch (err) {
           submitting = false;
           errorMessage = err.message || 'Something went wrong. Please try again.';

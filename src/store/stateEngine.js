@@ -134,6 +134,24 @@ class StateEngine {
     return this.data.currentUser.role === 'admin' || this.data.currentUser.role === 'sub_admin';
   }
 
+  // Sends a just-authenticated user to their actual home screen instead of
+  // always dropping everyone on the generic marketplace browse page - e.g.
+  // logging in as a seller through the general /login form (not just via
+  // "Start Selling") should land on the seller dashboard, and an admin
+  // should land on the admin panel, not appear "logged in" with no visible
+  // way back to what they logged in to do.
+  routeToDashboard() {
+    const role = this.data.currentUser.role;
+    if (role === 'seller') {
+      this.setUI({ marketplaceTab: 'seller_portal' });
+      this.setPortal('marketplace');
+    } else if (role === 'admin' || role === 'sub_admin') {
+      this.setPortal('admin');
+    } else {
+      this.setPortal('marketplace');
+    }
+  }
+
   async login(email, password) {
     return this._run('auth', async () => {
       const { token, user } = await api.post('/auth/login', { email, password });

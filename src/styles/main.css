@@ -142,8 +142,23 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .main-navbar {
   background: var(--surface);
   border-bottom: 1px solid var(--border-color);
-  position: sticky;
+  /* Fixed rather than sticky: body has overflow-x:hidden (below), which per
+     spec forces overflow-y to a used value of auto, turning body into its
+     own scroll container and breaking position:sticky here (it was scrolling
+     away with the page instead of staying pinned). Fixed positioning is
+     immune to that. main.js compensates by padding #app by this navbar's
+     actual rendered height, since fixed removes it from normal flow. */
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  /* Not width:100% - left:0 + right:0 already pins it edge-to-edge, and
+     width:100% on top of that was resolving against the layout viewport
+     rather than the visual one on narrow/mobile screens (same issue fixed
+     on .slim-sticky-bar above), pushing the whole page into horizontal
+     scroll. max-width + box-sizing is a hard backstop against that. */
+  max-width: 100vw;
+  box-sizing: border-box;
   z-index: 1000;
   box-shadow: var(--shadow-soft-sm);
 }
@@ -353,6 +368,36 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .main-prod-card:hover img {
   transform: scale(1.08) !important;
+}
+
+/* Uniform product cards: grid's default align-items:stretch already equalizes
+   card height per row, but height:100% makes that explicit rather than
+   incidental, and the fixed aspect-ratio + line-clamped title keep every
+   card's internal proportions identical regardless of how long the title,
+   seller name, or district text happens to be. */
+.main-prod-card {
+  height: 100%;
+}
+
+.product-card-image-wrap {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  position: relative;
+  background: #F8FAFC;
+}
+
+.product-card-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* View Button Hover Animation */
@@ -1426,7 +1471,11 @@ select.form-control option {
   color: #FFFFFF;
 }
 
-/* GRID SYSTEM */
+/* GRID SYSTEM - responsive: these were fixed at N columns regardless of
+   viewport, which meant e.g. .grid-4 squeezed 4 columns into a 375px phone
+   screen. Each now steps down as space narrows instead of relying on the
+   grid track's own min-width to force wrapping (grid doesn't wrap tracks by
+   itself the way flex-wrap does). */
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1443,6 +1492,27 @@ select.form-control option {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
+}
+
+@media (max-width: 1100px) {
+  .grid-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* CUSTOM TABLES */

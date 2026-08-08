@@ -33,6 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentUser = state.currentUser;
     const currentLang = state.currentLang || 'en';
     const isLoggedIn = currentUser.role !== 'guest';
+    // Admin/sub-admin identity and logout are only shown while actually
+    // inside the admin panel - the admin portal is deliberately unlinked
+    // from public nav (reachable only via its hidden URL), so surfacing
+    // "Jean-Luc / ADMINISTRATOR" on the public marketplace page would
+    // broadcast that an admin is logged in on this device to anyone looking
+    // at the screen, and give away a control (Logout) that shouldn't be
+    // visible outside the admin area at all.
+    const isAdminRole = currentUser.role === 'admin' || currentUser.role === 'sub_admin';
+    const showAccountChip = isLoggedIn && (!isAdminRole || activePortal === 'admin');
     const pendingApprovals = state.approvalRequests.filter(r => r.status === 'pending').length;
 
     const t = (key) => getTranslation(currentLang, key);
@@ -94,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
               </div>
 
-              ${isLoggedIn ? `
+              ${showAccountChip ? `
                 <button class="nav-circle-btn" id="header-notif-btn" title="Notifications" style="position: relative;">
                   🔔
                   ${pendingApprovals > 0 ? `<span class="action-count-badge">${pendingApprovals}</span>` : ''}

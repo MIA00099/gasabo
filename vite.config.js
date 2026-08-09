@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   server: {
+    host: true, // listen on 0.0.0.0 so other devices on the same LAN can reach the dev server
     watch: {
       ignored: ['**/dist/**'],
     },

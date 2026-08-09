@@ -67,6 +67,7 @@ export function renderRealEstateAdmin(container) {
                 <th>District Location</th>
                 <th>Units / Specs</th>
                 <th>Development Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -85,6 +86,11 @@ export function renderRealEstateAdmin(container) {
                   <td>${escapeHtml(p.district)}</td>
                   <td>${escapeHtml(p.units)}</td>
                   <td><span class="badge badge-active">${escapeHtml(p.status)}</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-danger del-proj-btn" data-id="${p.id}">
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -117,6 +123,18 @@ export function renderRealEstateAdmin(container) {
           render();
         }
       }
+    });
+
+    container.querySelectorAll('.del-proj-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to delete this portfolio project?')) {
+          try {
+            await stateEngine.deleteRealEstateProject(btn.dataset.id);
+          } catch (err) {
+            render();
+          }
+        }
+      });
     });
   }
 

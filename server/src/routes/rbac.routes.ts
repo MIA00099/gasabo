@@ -36,17 +36,31 @@ rbacRouter.get('/users', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINIST
   res.json({ users });
 });
 
+const VALID_MODULES = ['PRODUCTS', 'SELLERS', 'CATEGORIES', 'ADVERTISEMENTS', 'REAL_ESTATE_CONTENT', 'REPORTS', 'USERS', 'SYSTEM_SETTINGS'];
+
 rbacRouter.post('/users/:id/request-permission-change', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
-  const targetName = req.body?.targetName || 'Administrator';
+  // Only Sub-Administrators have an editable permissions field - a full
+  // Administrator's permissions are hardcoded to "everything" (see
+  // fullPermissions() in utils/permissions.ts) and can't be reduced, so
+  // there's nothing for an approved request to actually change for one.
+  const target = await prisma.subAdministrator.findUnique({ where: { id: req.params.id } });
+  if (!target) {
+    return res.status(400).json({ error: 'Only Sub-Administrator permissions can be changed - Administrators always have full access.' });
+  }
+
+  const permissions = Array.isArray(req.body?.permissions) ? req.body.permissions.filter((m: string) => VALID_MODULES.includes(m)) : [];
+  const targetName = req.body?.targetName || target.name;
+
   const request = await prisma.approvalRequest.create({
     data: {
       actionType: 'CHANGE_ADMIN_PERMISSIONS',
-      targetName: `Administrator: ${targetName}`,
+      targetName: `Sub-Administrator: ${targetName}`,
       targetId: req.params.id,
       requestedById: req.user!.id,
       requestedByName: req.user!.name,
       requestedByEmail: req.user!.email,
-      reason: req.body?.reason || 'Modification of administrative role/permissions requested.',
+      reason: req.body?.reason || `Requesting new permission set: ${permissions.join(', ') || '(none - revoke all)'}.`,
+      newPermissions: JSON.stringify(permissions),
       riskLevel: 'HIGH',
     },
   });

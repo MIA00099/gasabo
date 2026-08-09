@@ -1,17 +1,23 @@
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // DATABASE_URL is Supabase's transaction pooler (port 6543, pgbouncer=true) -
+  // what the running app uses for normal queries. DIRECT_URL is the session
+  // pooler (port 5432) - transaction-mode pooling doesn't support the advisory
+  // locks Prisma Migrate needs, so schema changes go through this instead.
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-// NOTE: SQLite has no native enum type, and Prisma's enum feature requires a
-// connector that supports it (Postgres/MySQL) - the "enum" blocks that used to
-// live here failed schema validation the moment anyone ran `prisma generate`
-// against this sqlite datasource. Every enum below has been replaced with a
-// plain String field constrained by convention (documented per-field) instead.
+// NOTE: This schema originally ran on SQLite, which has no native enum type,
+// so every enum was replaced with a plain String field constrained by
+// convention (documented per-field). Now running on Postgres (which DOES
+// support real enums), but the String fields were kept as-is on migration to
+// avoid an unnecessary schema-shape change - valid values are still just
+// documented in the inline comments below.
 
 // 1. Administrator Model
 model Administrator {
@@ -164,6 +170,9 @@ model ApprovalRequest {
   requestedByName   String
   requestedByEmail  String
   reason            String
+  newPermissions    String?   // JSON array of module keys (e.g. ["PRODUCTS","SELLERS"]) - only
+                               // set for CHANGE_ADMIN_PERMISSIONS requests, the target sub-admin's
+                               // permissions the requester is asking to apply once approved.
   status            String    @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
   riskLevel         String    @default("HIGH")     // "LOW" | "MEDIUM" | "HIGH"
   requiredRole      String    @default("ADMINISTRATOR")

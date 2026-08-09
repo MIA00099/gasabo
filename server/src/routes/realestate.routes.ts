@@ -143,6 +143,29 @@ realEstateRouter.post('/projects', requireAuth, requireRole('ADMINISTRATOR', 'SU
   res.status(201).json({ projects: updated });
 });
 
+// Projects live as a single JSON array inside one RealEstateContent row
+// (sectionKey 'PROJECTS'), not individual DB rows - deleting one means
+// reading the array, filtering it, and writing the whole array back.
+realEstateRouter.delete('/projects/:id', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+  const projects = await getSection<any[]>('PROJECTS', DEFAULT_PROJECTS);
+  const exists = projects.some((p) => p.id === req.params.id);
+  if (!exists) return res.status(404).json({ error: 'Project not found.' });
+
+  const updated = projects.filter((p) => p.id !== req.params.id);
+  await setSection('PROJECTS', updated);
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'REALESTATE_PROJECT_DELETED',
+    module: 'Real Estate Admin',
+    details: `Deleted portfolio project (id: ${req.params.id}).`,
+  });
+
+  res.json({ projects: updated });
+});
+
 // Generic section editor for ABOUT / SERVICES / GALLERY / CONTACT
 realEstateRouter.put('/:sectionKey', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
   const key = req.params.sectionKey.toUpperCase();

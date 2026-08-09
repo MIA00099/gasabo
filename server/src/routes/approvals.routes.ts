@@ -10,7 +10,7 @@ approvalsRouter.get('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINIST
   res.json({ requests });
 });
 
-async function executeApprovedAction(req: { actionType: string; targetId: string | null }) {
+async function executeApprovedAction(req: { actionType: string; targetId: string | null; newPermissions: string | null }) {
   if (req.actionType === 'DELETE_SELLER_ACCOUNT' && req.targetId) {
     await prisma.seller.delete({ where: { id: req.targetId } }).catch(() => {
       throw new Error('Seller could not be deleted (it may already be removed).');
@@ -27,8 +27,18 @@ async function executeApprovedAction(req: { actionType: string; targetId: string
     await prisma.category.delete({ where: { id: req.targetId } });
     return 'Category deleted.';
   }
-  if (req.actionType === 'CHANGE_ADMIN_PERMISSIONS') {
-    return 'Permission change acknowledged (no automated permission diff was attached to this request).';
+  if (req.actionType === 'CHANGE_ADMIN_PERMISSIONS' && req.targetId) {
+    if (req.newPermissions === null) {
+      throw new Error('This request predates permission-diff tracking and has no recorded permission set to apply.');
+    }
+    const target = await prisma.subAdministrator.update({
+      where: { id: req.targetId },
+      data: { permissions: req.newPermissions },
+    }).catch(() => {
+      throw new Error('Sub-Administrator not found (they may have been removed since this request was made).');
+    });
+    const applied = JSON.parse(req.newPermissions || '[]');
+    return `Permissions updated for ${target.name}: ${applied.length ? applied.join(', ') : '(all access revoked)'}.`;
   }
   return 'Action type recognized, no further automation required.';
 }
@@ -39,6 +49,14 @@ approvalsRouter.post('/:id/approve', requireAuth, requireRole('ADMINISTRATOR'), 
   const request = await prisma.approvalRequest.findUnique({ where: { id: req.params.id } });
   if (!request) return res.status(404).json({ error: 'Approval request not found.' });
   if (request.status !== 'PENDING') return res.status(409).json({ error: 'This request has already been resolved.' });
+
+  // This is the entire point of "dual authorization": the administrator who
+  // requested a critical action must not also be the one who approves it.
+  // Without this check, requireRole('ADMINISTRATOR') alone lets a single admin
+  // request and immediately approve their own request, defeating the control.
+  if (request.requestedById === req.user!.id) {
+    return res.status(403).json({ error: 'You requested this action - a different administrator must approve it.' });
+  }
 
   let outcomeNote = '';
   try {

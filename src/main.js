@@ -5,7 +5,7 @@
 import './styles/main.css';
 import { stateEngine } from './store/stateEngine.js';
 import { getTranslation } from './store/i18n.js';
-import { renderMarketplaceView, cleanupHeroAnimation } from './modules/marketplace/MarketplaceView.js';
+import { renderMarketplaceView, cleanupHeroAnimation, cleanupBannerRotation } from './modules/marketplace/MarketplaceView.js';
 import { renderRealEstateView } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
 import { renderLoginView } from './components/LoginView.js';
@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const t = (key) => getTranslation(currentLang, key);
 
     cleanupHeroAnimation();
+    cleanupBannerRotation();
 
     // Header Mount
     const headerMount = document.getElementById('header-mount');

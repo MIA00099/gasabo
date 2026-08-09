@@ -140,6 +140,12 @@ export function renderMarketplaceAdmin(container) {
           </div>
         ` : `
           <!-- BANNERS MANAGEMENT -->
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+            <button id="add-banner-btn" class="btn btn-primary btn-sm">
+              ➕ Add New Banner
+            </button>
+          </div>
+
           ${state.banners.length === 0 ? `
             <div style="text-align: center; padding: 3rem; background: #F8FAFC; border-radius: var(--radius-md); border: 1px dashed #E2E8F0; color: #64748B;">
               No promotional banners configured yet.
@@ -155,6 +161,9 @@ export function renderMarketplaceAdmin(container) {
                   <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;">${escapeHtml(b.subtitle)}</p>
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span class="badge badge-active">${b.status}</span>
+                    <button class="btn btn-sm btn-danger del-banner-btn" data-id="${b.id}">
+                      Delete
+                    </button>
                   </div>
                 </div>
               `).join('')}
@@ -204,6 +213,28 @@ export function renderMarketplaceAdmin(container) {
           await stateEngine.addCategory(name, icon);
         } catch (err) { /* handled via state.error */ }
       }
+    });
+
+    container.querySelector('#add-banner-btn')?.addEventListener('click', async () => {
+      const title = prompt('Enter Banner Title (e.g. "Season Sale - Up to 30% Off"):');
+      if (title) {
+        const imageUrl = prompt('Enter Banner Image URL:');
+        if (imageUrl) {
+          try {
+            await stateEngine.createBanner(title, imageUrl);
+          } catch (err) { /* handled via state.error */ }
+        }
+      }
+    });
+
+    container.querySelectorAll('.del-banner-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to delete this promotional banner?')) {
+          try {
+            await stateEngine.deleteBanner(btn.dataset.id);
+          } catch (err) { /* handled via state.error */ }
+        }
+      });
     });
   }
 

@@ -309,6 +309,15 @@ class StateEngine {
     return this._run('sellers', () => api.post(`/sellers/${sellerId}/reset-password`, {}));
   }
 
+  async toggleSellerStatus(sellerId) {
+    return this._run('sellers', async () => {
+      const { status } = await api.post(`/sellers/${sellerId}/toggle-status`, {});
+      this.data.sellers = this.data.sellers.map((s) => (s.id === sellerId ? { ...s, status } : s));
+      this.notify();
+      return status;
+    });
+  }
+
   async requestDeleteSeller(sellerId, reason) {
     return this._run('approvalRequests', async () => {
       const { request } = await api.post(`/sellers/${sellerId}/request-delete`, { reason });
@@ -341,6 +350,15 @@ class StateEngine {
   async addRealEstateProject(projectData) {
     return this._run('realEstate', async () => {
       const { projects } = await api.post('/realestate/projects', projectData);
+      this.data.realEstate = { ...this.data.realEstate, projects };
+      this.notify();
+      return projects;
+    });
+  }
+
+  async deleteRealEstateProject(projectId) {
+    return this._run('realEstate', async () => {
+      const { projects } = await api.delete(`/realestate/projects/${projectId}`);
       this.data.realEstate = { ...this.data.realEstate, projects };
       this.notify();
       return projects;
@@ -402,6 +420,26 @@ class StateEngine {
     });
   }
 
+  async createBanner(title, imageUrl) {
+    return this._run('banners', async () => {
+      const { banner } = await api.post('/advertisements', { title, imageUrl });
+      // Re-fetch rather than hand-append: the list endpoint reshapes each
+      // record (id/title/subtitle/image/status) differently from what POST
+      // returns (the raw Advertisement row), so appending the raw response
+      // directly would render inconsistently with the rest of the list.
+      await this.loadBanners();
+      return banner;
+    });
+  }
+
+  async deleteBanner(bannerId) {
+    return this._run('banners', async () => {
+      await api.delete(`/advertisements/${bannerId}`);
+      this.data.banners = this.data.banners.filter((b) => b.id !== bannerId);
+      this.notify();
+    });
+  }
+
   // --- RBAC ---
 
   async loadRbacUsers() {
@@ -413,9 +451,9 @@ class StateEngine {
     });
   }
 
-  async requestPermissionChange(userId, targetName) {
+  async requestPermissionChange(userId, targetName, permissions) {
     return this._run('approvalRequests', async () => {
-      const { request } = await api.post(`/rbac/users/${userId}/request-permission-change`, { targetName });
+      const { request } = await api.post(`/rbac/users/${userId}/request-permission-change`, { targetName, permissions });
       this.data.approvalRequests = [request, ...this.data.approvalRequests];
       this.notify();
       return request;

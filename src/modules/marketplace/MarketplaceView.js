@@ -10,6 +10,23 @@ let currentTimeline = null;
 let splitLine1Instance = null;
 let splitLine2Instance = null;
 
+// Module-scope (not a render() closure var) for the same reason as the
+// hero animation instances above: renderMarketplaceView's render() rebuilds
+// the whole DOM tree on every stateEngine notify (a search keystroke, a
+// filter change, anything) - a closure-local "which slide is showing" would
+// snap back to slide 0 on every unrelated re-render. Rotation runs via a
+// plain setInterval directly toggling DOM/opacity, not through notify(), so
+// an unrelated re-render elsewhere in the app doesn't reset or restart it.
+let currentBannerIndex = 0;
+let bannerRotationTimer = null;
+
+export function cleanupBannerRotation() {
+  if (bannerRotationTimer) {
+    clearInterval(bannerRotationTimer);
+    bannerRotationTimer = null;
+  }
+}
+
 export function cleanupHeroAnimation() {
   if (currentTimeline) {
     currentTimeline.kill();
@@ -22,6 +39,36 @@ export function cleanupHeroAnimation() {
   if (splitLine2Instance) {
     try { splitLine2Instance.revert(); } catch (e) {}
     splitLine2Instance = null;
+  }
+}
+
+function setupBannerCarousel(container, activeBanners) {
+  cleanupBannerRotation();
+  if (activeBanners.length === 0) return;
+
+  const slides = container.querySelectorAll('.promo-banner-slide');
+  const dots = container.querySelectorAll('.promo-banner-dot');
+
+  function showSlide(idx) {
+    currentBannerIndex = idx;
+    slides.forEach((slide, i) => {
+      const isActive = i === idx;
+      slide.style.opacity = isActive ? '1' : '0';
+      slide.style.pointerEvents = isActive ? 'auto' : 'none';
+    });
+    dots.forEach((dot, i) => {
+      dot.style.background = i === idx ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.45)';
+    });
+  }
+
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => showSlide(i));
+  });
+
+  if (activeBanners.length > 1) {
+    bannerRotationTimer = setInterval(() => {
+      showSlide((currentBannerIndex + 1) % activeBanners.length);
+    }, 5000);
   }
 }
 
@@ -143,6 +190,7 @@ export function renderMarketplaceView(container) {
     const filters = state.ui.marketplaceFilters || { searchQuery: '', selectedCategory: 'all', selectedDistrict: 'all' };
     const productsAttempted = state.loading.products !== undefined;
     const categoriesAttempted = state.loading.categories !== undefined;
+    const bannersAttempted = state.loading.banners !== undefined;
     const productsLoading = !!state.loading.products || !productsAttempted;
     const categoriesLoading = !!state.loading.categories || !categoriesAttempted;
 
@@ -152,6 +200,11 @@ export function renderMarketplaceView(container) {
     // fetch below even starts.
     if (!productsAttempted) stateEngine.loadProducts(filters).catch(() => {});
     if (!categoriesAttempted) stateEngine.loadCategories().catch(() => {});
+    if (!bannersAttempted) stateEngine.loadBanners().catch(() => {});
+
+    // The admin panel needs to see banners of every status to manage them,
+    // but shoppers should only ever see ones actually live right now.
+    const activeBanners = (state.banners || []).filter(b => b.status === 'ACTIVE');
 
     container.innerHTML = `
       <div style="min-height: 100vh; display: flex; flex-direction: column;">
@@ -249,6 +302,31 @@ export function renderMarketplaceView(container) {
               </div>
             </div>
           </div>
+
+          ${activeBanners.length > 0 ? `
+            <!-- PROMOTIONAL BANNER STRIP - stacked slides, only one visible at a time
+                 via opacity (toggled directly by setupBannerCarousel, not re-render) -->
+            <div style="max-width: 1280px; margin: 0 auto 4rem auto; padding: 0 1.5rem;">
+              <div style="position: relative; border-radius: 20px; overflow: hidden; height: 220px; box-shadow: 0 10px 30px rgba(0,0,0,0.12);">
+                ${activeBanners.map((b, i) => `
+                  <a href="${b.targetUrl ? escapeHtml(b.targetUrl) : '#'}" class="promo-banner-slide" data-slide-index="${i}" style="position: absolute; inset: 0; display: block; text-decoration: none; opacity: ${i === (currentBannerIndex % activeBanners.length) ? '1' : '0'}; transition: opacity 0.6s ease; pointer-events: ${i === (currentBannerIndex % activeBanners.length) ? 'auto' : 'none'};">
+                    <img src="${b.image}" alt="${escapeHtml(b.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,34,2,0.75) 0%, rgba(3,34,2,0.15) 60%, rgba(3,34,2,0) 100%); display: flex; align-items: center; padding: 0 2.5rem;">
+                      <h3 style="color: #fff; font-size: 1.5rem; font-weight: 800; max-width: 60%;">${escapeHtml(b.title)}</h3>
+                    </div>
+                  </a>
+                `).join('')}
+
+                ${activeBanners.length > 1 ? `
+                  <div style="position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 5;">
+                    ${activeBanners.map((_, i) => `
+                      <button class="promo-banner-dot" data-dot-index="${i}" aria-label="Show promotion ${i + 1}" style="width: 9px; height: 9px; border-radius: 50%; border: none; cursor: pointer; padding: 0; background: rgba(255,255,255,${i === (currentBannerIndex % activeBanners.length) ? '1' : '0.45'}); transition: background 0.3s ease;"></button>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
 
           <!-- CATEGORY CARDS SECTION -->
           <div style="max-width: 1280px; margin: 0 auto 4rem auto; padding: 0 1.5rem;">
@@ -362,6 +440,7 @@ export function renderMarketplaceView(container) {
 
     if (activeTab === 'seller_portal') {
       cleanupHeroAnimation();
+      cleanupBannerRotation();
       const sellerMount = container.querySelector('#seller-portal-mount');
       if (sellerMount) renderSellerPortal(sellerMount);
       return;
@@ -371,6 +450,8 @@ export function renderMarketplaceView(container) {
     requestAnimationFrame(() => {
       triggerHeroAnimation(container);
     });
+
+    setupBannerCarousel(container, activeBanners);
 
     container.querySelector('#hero-browse-btn')?.addEventListener('click', () => {
       const el = container.querySelector('h2');

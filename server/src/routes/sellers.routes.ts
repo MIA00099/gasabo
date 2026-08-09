@@ -47,6 +47,31 @@ sellersRouter.post('/:id/reset-password', requireAuth, requireRole('ADMINISTRATO
   res.json({ success: true, tempPassword });
 });
 
+// Toggles ACTIVE <-> SUSPENDED. Unlike deletion this is reversible and doesn't
+// destroy any data, so it's a direct action (like password reset) rather than
+// going through the multi-admin approval workflow. This was previously
+// unreachable from any admin action even though login already checks for it
+// (server/src/routes/auth.routes.ts blocks SUSPENDED sellers from signing in).
+sellersRouter.post('/:id/toggle-status', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+  const seller = await prisma.seller.findUnique({ where: { id: req.params.id } });
+  if (!seller) return res.status(404).json({ error: 'Seller not found.' });
+
+  const newStatus = seller.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
+  const updated = await prisma.seller.update({ where: { id: seller.id }, data: { status: newStatus } });
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: newStatus === 'SUSPENDED' ? 'SELLER_SUSPENDED' : 'SELLER_REACTIVATED',
+    module: 'Seller Admin',
+    targetId: seller.id,
+    details: `${newStatus === 'SUSPENDED' ? 'Suspended' : 'Reactivated'} seller ${seller.businessName}.`,
+  });
+
+  res.json({ status: updated.status.toLowerCase() });
+});
+
 sellersRouter.post('/:id/request-delete', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
   const seller = await prisma.seller.findUnique({ where: { id: req.params.id } });
   if (!seller) return res.status(404).json({ error: 'Seller not found.' });

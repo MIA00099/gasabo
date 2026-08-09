@@ -4,6 +4,37 @@
 import { stateEngine } from '../../store/stateEngine.js';
 import { renderLoginView } from '../../components/LoginView.js';
 
+// Every stateEngine.setUI() call triggers a full top-level remount, and the
+// parent (MarketplaceView.js) rebuilds its mount div and calls
+// renderSellerPortal() completely fresh on every one of those remounts too -
+// so a closure-local variable declared inside renderSellerDashboardView()
+// does NOT survive across renders like it would in LoginView.js (that view
+// is only mounted once per portal switch, this one is re-mounted on every
+// single notify while the seller tab is open). It has to live at module
+// scope instead, same as why imageMode/imagePreviewUrl already survive - the
+// difference is those are read from stateEngine's state.ui; this mirrors
+// that same "survives a remount" property without round-tripping through
+// setUI on every keystroke (which would remount and drop keyboard focus on
+// every character typed).
+let productFormValues = { title: '', category: '', price: '', district: '', condition: '', description: '' };
+function captureProductFormValues(container) {
+  const title = container.querySelector('#p-title');
+  if (title) productFormValues.title = title.value;
+  const category = container.querySelector('#p-category');
+  if (category) productFormValues.category = category.value;
+  const price = container.querySelector('#p-price');
+  if (price) productFormValues.price = price.value;
+  const district = container.querySelector('#p-district');
+  if (district) productFormValues.district = district.value;
+  const condition = container.querySelector('#p-condition');
+  if (condition) productFormValues.condition = condition.value;
+  const description = container.querySelector('#p-desc');
+  if (description) productFormValues.description = description.value;
+}
+function resetProductFormValues(sellerDistrict) {
+  productFormValues = { title: '', category: '', price: '', district: sellerDistrict, condition: '', description: '' };
+}
+
 export function renderSellerPortal(container) {
   const state = stateEngine.getState();
   const currentUser = state.currentUser;
@@ -20,6 +51,8 @@ export function renderSellerPortal(container) {
 }
 
 function renderSellerDashboardView(container, sellerUser) {
+  if (!productFormValues.district) productFormValues.district = sellerUser.district;
+
   function render() {
     const state = stateEngine.getState();
     const activeTab = state.ui.sellerDashboardTab || 'active';
@@ -84,13 +117,13 @@ function renderSellerDashboardView(container, sellerUser) {
               <div class="grid-2">
                 <div class="form-group">
                   <label>Product Title</label>
-                  <input type="text" id="p-title" class="form-control" placeholder="e.g. Rwandan Specialty Bourbon Coffee 1kg" required>
+                  <input type="text" id="p-title" class="form-control" placeholder="e.g. Rwandan Specialty Bourbon Coffee 1kg" value="${escapeHtml(productFormValues.title)}" required>
                 </div>
 
                 <div class="form-group">
                   <label>Category</label>
                   <select id="p-category" class="form-control">
-                    ${state.categories.map(c => `<option value="${c.id}">${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
+                    ${state.categories.map(c => `<option value="${c.id}" ${c.id===productFormValues.category?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
                   </select>
                 </div>
               </div>
@@ -98,25 +131,25 @@ function renderSellerDashboardView(container, sellerUser) {
               <div class="grid-3">
                 <div class="form-group">
                   <label>Price (RWF)</label>
-                  <input type="number" id="p-price" class="form-control" placeholder="15000" min="1" required>
+                  <input type="number" id="p-price" class="form-control" placeholder="15000" min="1" value="${escapeHtml(productFormValues.price)}" required>
                 </div>
 
                 <div class="form-group">
                   <label>District Location</label>
                   <select id="p-district" class="form-control">
-                    ${state.districts.map(d => `<option value="${d}" ${d===sellerUser.district?'selected':''}>${d} District</option>`).join('')}
+                    ${state.districts.map(d => `<option value="${d}" ${d===productFormValues.district?'selected':''}>${d} District</option>`).join('')}
                   </select>
                 </div>
 
                 <div class="form-group">
                   <label>Item Condition</label>
-                  <input type="text" id="p-condition" class="form-control" placeholder="e.g. Brand New / Fresh Produce" required>
+                  <input type="text" id="p-condition" class="form-control" placeholder="e.g. Brand New / Fresh Produce" value="${escapeHtml(productFormValues.condition)}" required>
                 </div>
               </div>
 
               <div class="form-group">
                 <label>Product Description</label>
-                <textarea id="p-desc" class="form-control" rows="4" placeholder="Detailed product specifications, origin, delivery options..." required></textarea>
+                <textarea id="p-desc" class="form-control" rows="4" placeholder="Detailed product specifications, origin, delivery options..." required>${escapeHtml(productFormValues.description)}</textarea>
               </div>
 
               <div class="form-group">
@@ -231,23 +264,32 @@ function renderSellerDashboardView(container, sellerUser) {
     `;
 
     // Event Handlers
-    container.querySelector('#add-new-prod-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'new_product' }));
-    container.querySelector('#cancel-add-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'active' }));
+    container.querySelector('#add-new-prod-btn')?.addEventListener('click', () => {
+      resetProductFormValues(sellerUser.district);
+      stateEngine.setUI({ sellerDashboardTab: 'new_product' });
+    });
+    container.querySelector('#cancel-add-btn')?.addEventListener('click', () => {
+      resetProductFormValues(sellerUser.district);
+      stateEngine.setUI({ sellerDashboardTab: 'active' });
+    });
 
     container.querySelector('#tab-active-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'active' }));
     container.querySelector('#tab-expiring-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'expiring' }));
     container.querySelector('#tab-expired-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'expired' }));
 
     container.querySelector('#img-mode-upload-btn')?.addEventListener('click', () => {
+      captureProductFormValues(container);
       stateEngine.setUI({ productImageMode: 'upload' });
     });
     container.querySelector('#img-mode-url-btn')?.addEventListener('click', () => {
+      captureProductFormValues(container);
       stateEngine.setUI({ productImageMode: 'url' });
     });
 
     container.querySelector('#p-image-file')?.addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      captureProductFormValues(container);
       try {
         const url = await stateEngine.uploadProductImage(file);
         stateEngine.setUI({ productImagePreview: url });
@@ -270,6 +312,7 @@ function renderSellerDashboardView(container, sellerUser) {
       // own `required` validation never runs on it (hidden inputs are
       // excluded from constraint validation) - check by hand instead.
       if (!image) {
+        captureProductFormValues(container);
         stateEngine.data.error = imageMode === 'upload'
           ? 'Please choose and wait for a product photo to finish uploading.'
           : 'Please provide a product image URL.';
@@ -280,8 +323,10 @@ function renderSellerDashboardView(container, sellerUser) {
       try {
         await stateEngine.createProduct({ title, category, price, district, condition, description, image });
         alert('Product published successfully to Kigali Marketplace!');
+        resetProductFormValues(sellerUser.district);
         stateEngine.setUI({ sellerDashboardTab: 'active', productImageMode: 'url', productImagePreview: '' });
       } catch (err) {
+        captureProductFormValues(container);
         render();
       }
     });

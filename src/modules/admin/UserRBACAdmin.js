@@ -3,6 +3,20 @@
  */
 import { stateEngine } from '../../store/stateEngine.js';
 
+// Mirrors server/src/utils/permissions.ts - the frontend display key (e.g.
+// "product_mgmt", used to render the matrix) back to the module key the
+// backend's ApprovalRequest.newPermissions array actually expects.
+const KEY_TO_MODULE = {
+  product_mgmt: 'PRODUCTS',
+  seller_mgmt: 'SELLERS',
+  category_mgmt: 'CATEGORIES',
+  banner_mgmt: 'ADVERTISEMENTS',
+  realestate_content: 'REAL_ESTATE_CONTENT',
+  reports: 'REPORTS',
+  user_mgmt: 'USERS',
+  system_settings: 'SYSTEM_SETTINGS',
+};
+
 export function renderUserRBACAdmin(container) {
   function render() {
     const state = stateEngine.getState();
@@ -50,22 +64,33 @@ export function renderUserRBACAdmin(container) {
                   </div>
 
                   <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-secondary req-perm-change-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
-                      🔒 Request Permission Change (Multi-Admin)
-                    </button>
+                    ${u.role !== 'administrator' ? `
+                      <button class="btn btn-sm btn-secondary req-perm-change-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
+                        🔒 Request Permission Change (Multi-Admin)
+                      </button>
+                    ` : ''}
                   </div>
                 </div>
 
-                <!-- Permission Toggles Matrix -->
+                <!-- Permission Toggles Matrix - editable checkboxes for Sub-Administrators
+                     (the requester picks the target permission set, submitted with the
+                     approval request); read-only for the Administrator row below, since a
+                     full Administrator's access is hardcoded to "everything" and can't be
+                     reduced (see fullPermissions() in utils/permissions.ts) - there's
+                     nothing here for a request to meaningfully change for them. -->
                 <div style="background: #F8FAFC; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid #E2E8F0;">
-                  <div style="font-size: 0.78rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">Assigned Module Access Permissions</div>
+                  <div style="font-size: 0.78rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                    ${u.role !== 'administrator' ? 'Assigned Module Access Permissions - toggle to set the requested permission set' : 'Assigned Module Access Permissions (Administrators always have full access)'}
+                  </div>
 
                   <div class="grid-4" style="gap: 0.75rem;">
                     ${Object.entries(u.permissions).map(([permKey, isAllowed]) => `
-                      <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: ${isAllowed?'#059669':'#94A3B8'};">
-                        <span>${isAllowed ? '✅' : '❌'}</span>
+                      <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: ${isAllowed?'#059669':'#94A3B8'}; cursor: ${u.role!=='administrator'?'pointer':'default'};">
+                        ${u.role !== 'administrator' ? `
+                          <input type="checkbox" class="perm-checkbox" data-user-id="${u.id}" data-module="${KEY_TO_MODULE[permKey]}" ${isAllowed ? 'checked' : ''} style="cursor: pointer;">
+                        ` : `<span>${isAllowed ? '✅' : '❌'}</span>`}
                         <span style="text-transform: capitalize;">${permKey.replace('_', ' ')}</span>
-                      </div>
+                      </label>
                     `).join('')}
                   </div>
                 </div>
@@ -79,8 +104,13 @@ export function renderUserRBACAdmin(container) {
     // Handlers
     container.querySelectorAll('.req-perm-change-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
+        // Read the checkbox states set above - this is what actually gets
+        // requested and, once approved, applied to the target's permissions.
+        const checkboxes = container.querySelectorAll(`.perm-checkbox[data-user-id="${btn.dataset.id}"]`);
+        const permissions = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.dataset.module);
+        if (!confirm(`Request this permission set for ${btn.dataset.name}?\n\n${permissions.length ? permissions.join(', ') : '(no access - all permissions revoked)'}\n\nAnother Administrator must approve this before it takes effect.`)) return;
         try {
-          await stateEngine.requestPermissionChange(btn.dataset.id, btn.dataset.name);
+          await stateEngine.requestPermissionChange(btn.dataset.id, btn.dataset.name, permissions);
           alert(`Approval Request created for modifying permissions of ${btn.dataset.name}. Another Administrator must review and approve this action.`);
         } catch (err) {
           render();

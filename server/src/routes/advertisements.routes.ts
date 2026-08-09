@@ -34,3 +34,14 @@ advertisementsRouter.post('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_AD
   });
   res.status(201).json({ banner: ad });
 });
+
+// Unlike categories/sellers, deleting a banner doesn't cascade to any other
+// record and isn't structural data - it's marketing content, low-risk and
+// easily recreated. Direct delete (same pattern as products), not the
+// multi-admin approval workflow.
+advertisementsRouter.delete('/:id', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+  await prisma.advertisement.delete({ where: { id: req.params.id } }).catch(() => {
+    throw new Error('Banner not found or already deleted.');
+  });
+  res.json({ success: true });
+});

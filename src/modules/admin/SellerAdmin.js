@@ -78,6 +78,9 @@ export function renderSellerAdmin(container) {
                       <button class="btn btn-sm btn-secondary reset-pass-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
                         🔑 Reset Pass
                       </button>
+                      <button class="btn btn-sm toggle-status-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" style="background:${s.status==='active'?'#FEF3C7':'#DCFCE7'}; color:${s.status==='active'?'#92400E':'#166534'}; border:1px solid ${s.status==='active'?'#FDE68A':'#BBF7D0'};">
+                        ${s.status==='active' ? '⏸ Suspend' : '▶ Reactivate'}
+                      </button>
                       <button class="btn btn-sm btn-danger del-seller-req-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
                         🔒 Request Deletion (Multi-Admin)
                       </button>
@@ -97,6 +100,18 @@ export function renderSellerAdmin(container) {
         try {
           const result = await stateEngine.resetSellerPassword(btn.dataset.id);
           alert(`Temporary password for ${btn.dataset.name}: ${result.tempPassword}\n\n(In production this would be emailed/SMS'd to the seller instead of shown here.)`);
+        } catch (err) {
+          render();
+        }
+      });
+    });
+
+    container.querySelectorAll('.toggle-status-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const suspending = btn.textContent.includes('Suspend');
+        if (!confirm(`${suspending ? 'Suspend' : 'Reactivate'} ${btn.dataset.name}? ${suspending ? 'They will not be able to log in until reactivated.' : 'They will be able to log in again immediately.'}`)) return;
+        try {
+          await stateEngine.toggleSellerStatus(btn.dataset.id);
         } catch (err) {
           render();
         }

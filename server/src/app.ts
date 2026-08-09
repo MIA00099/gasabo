@@ -1,4 +1,10 @@
-import './utils/patchAsyncErrors.js';
+// Must be imported before any router/route is registered - it patches Express 4's
+// internal Route/Layer classes so a rejected promise from an async handler is
+// forwarded to next(err) instead of crashing the process as an unhandled rejection.
+// (A hand-rolled version of this patched the wrong object - Router.prototype, which
+// is unrelated to the actual prototype Router() instances use - and was a silent
+// no-op the whole time. This package patches the real internal classes correctly.)
+import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -46,5 +52,20 @@ app.use('/api', (req, res) => {
 // or hanging requests when a route handler throws.
 app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[Unhandled API error]', err);
+
+  // Prisma can't reach the database - most commonly a serverless Postgres host
+  // (e.g. Neon free tier) that auto-suspends its compute after being idle and is
+  // still cold-starting. This is transient, not a bug - tell the client to retry
+  // rather than returning an opaque "something went wrong".
+  const isDbUnreachable =
+    err?.name === 'PrismaClientInitializationError' ||
+    err?.code === 'P1001' || // "Can't reach database server"
+    err?.code === 'P1002' || // timed out
+    err?.code === 'P1008' || // operation timed out
+    err?.code === 'P1017';   // server closed the connection
+  if (isDbUnreachable) {
+    return res.status(503).json({ error: 'The database is temporarily unavailable (it may be waking up from idle). Please try again in a few seconds.' });
+  }
+
   res.status(500).json({ error: 'Something went wrong on our end. Please try again.' });
 });

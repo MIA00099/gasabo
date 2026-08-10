@@ -24,114 +24,149 @@ export function renderAdminDashboardView(container) {
   function render() {
     const state = stateEngine.getState();
     const currentUser = state.currentUser;
-    const activeTab = state.ui.adminTab || 'approvals';
     const pendingReqs = state.approvalRequests.filter(r => r.status === 'pending');
     const highRiskCount = pendingReqs.filter(r => r.riskLevel === 'HIGH').length;
     const completedTodayCount = state.approvalRequests.filter(r => r.status !== 'pending').length;
 
+    // Mirrors the server-side requirePermission() checks (server/src/middleware/auth.ts) -
+    // that's the real security boundary; this just keeps a Sub-Administrator from
+    // clicking into a panel that will 403 on every action inside it. "Multi-Admin
+    // Approvals" is the oversight mechanism itself, not a module, so it's never hidden.
+    const perms = currentUser.permissions || {};
+    const tabAccess = {
+      approvals: true,
+      marketplace: !!(perms.product_mgmt || perms.category_mgmt || perms.banner_mgmt),
+      sellers: !!perms.seller_mgmt,
+      realestate: !!perms.realestate_content,
+      rbac: !!perms.user_mgmt,
+      audit: !!perms.system_settings,
+    };
+    let activeTab = state.ui.adminTab || 'approvals';
+    if (!tabAccess[activeTab]) activeTab = 'approvals';
+
     container.innerHTML = `
       <div class="adm-layout-wrap">
-        <div style="max-width: 1440px; margin: 0 auto; padding: 2.5rem 1.5rem;">
 
-          <!-- OVERVIEW CARDS (4 Grid Layout matching Enterprise Spec) -->
-          <div class="grid-4" style="margin-bottom: 2rem; gap: 1.25rem;">
-
-            <!-- Card 1: Pending Approvals (featured, matches the reference's
-                 solid-green highlighted stat card) -->
-            <div class="adm-card-white" style="background: #034B04; border-color: #034B04;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: rgba(255,255,255,0.75);">Pending Approvals</span>
-                <span style="width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.15); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">↗</span>
-              </div>
-              <div class="adm-metric-number" style="color: #ffffff;">${pendingReqs.length}</div>
-              <div class="adm-caption" style="margin-top: 0.5rem; color: rgba(255,255,255,0.75);">Multi-Admin Approval Requests</div>
+        <!-- SIDEBAR: near-black panel, flush against the true left edge of the
+             screen (sticky + full viewport height), active item shown as a
+             solid blue pill. Lives outside the padded/centered main column
+             below so nothing puts a gray gap between it and the edge. -->
+        <div class="adm-sidebar-dark">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; padding: 0 0.5rem;">
+              Administration Control
             </div>
 
-            <!-- Card 2: High Risk Requests -->
-            <div class="adm-card-white">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">High Risk Requests</span>
-                <span style="width: 26px; height: 26px; border-radius: 50%; background: #FEF3C7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">↗</span>
-              </div>
-              <div class="adm-metric-number" style="color: #d97706;">${highRiskCount}</div>
-              <div class="adm-caption" style="margin-top: 0.5rem; color: #64748b;">Requires Dual Authorization</div>
-            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <button class="adm-side-btn ${activeTab==='approvals'?'active':''}" data-tab="approvals">
+                <span>🛡️ Multi-Admin Approvals</span>
+                ${pendingReqs.length > 0 ? `
+                  <span style="background: #dc2626; color: #ffffff; position: absolute; right: 12px; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${pendingReqs.length}</span>
+                ` : ''}
+              </button>
 
-            <!-- Card 3: Awaiting Review -->
-            <div class="adm-card-white">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Awaiting Review</span>
-                <span style="width: 26px; height: 26px; border-radius: 50%; background: #DBEAFE; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">↗</span>
-              </div>
-              <div class="adm-metric-number" style="color: #2563eb;">${pendingReqs.length}</div>
-              <div class="adm-caption" style="margin-top: 0.5rem; color: #64748b;">Pending Secondary Admin Verification</div>
-            </div>
-
-            <!-- Card 4: Completed Today -->
-            <div class="adm-card-white">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Completed Today</span>
-                <span style="width: 26px; height: 26px; border-radius: 50%; background: #DCFCE7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">↗</span>
-              </div>
-              <div class="adm-metric-number" style="color: #16a34a;">${completedTodayCount}</div>
-              <div class="adm-caption" style="margin-top: 0.5rem; color: #64748b;">Authorized Administrative Actions</div>
-            </div>
-
-          </div>
-
-          <!-- MAIN LAYOUT: LIGHT SIDEBAR + PURE WHITE CONTENT CARD -->
-          <div class="grid-4" style="grid-template-columns: 280px 1fr; gap: 1.75rem; align-items: start;">
-
-            <!-- SIDEBAR: white rounded card, active item shown as a solid green pill -->
-            <div class="adm-sidebar-dark">
-              <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; padding: 0 0.5rem;">
-                Administration Control
-              </div>
-
-              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                <button class="adm-side-btn ${activeTab==='approvals'?'active':''}" data-tab="approvals">
-                  <span>🛡️ Multi-Admin Approvals</span>
-                  ${pendingReqs.length > 0 ? `
-                    <span style="background: #dc2626; color: #ffffff; position: absolute; right: 12px; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${pendingReqs.length}</span>
-                  ` : ''}
-                </button>
-
+              ${tabAccess.marketplace ? `
                 <button class="adm-side-btn ${activeTab==='marketplace'?'active':''}" data-tab="marketplace">
                   <span>🛒 Marketplace Management</span>
                 </button>
+              ` : ''}
 
+              ${tabAccess.sellers ? `
                 <button class="adm-side-btn ${activeTab==='sellers'?'active':''}" data-tab="sellers">
                   <span>👥 Sellers Directory</span>
                 </button>
+              ` : ''}
 
+              ${tabAccess.realestate ? `
                 <button class="adm-side-btn ${activeTab==='realestate'?'active':''}" data-tab="realestate">
                   <span>🏢 Real Estate CMS</span>
                 </button>
+              ` : ''}
 
+              ${tabAccess.rbac ? `
                 <button class="adm-side-btn ${activeTab==='rbac'?'active':''}" data-tab="rbac">
                   <span>🔐 User RBAC & Roles</span>
                 </button>
+              ` : ''}
 
+              ${tabAccess.audit ? `
                 <button class="adm-side-btn ${activeTab==='audit'?'active':''}" data-tab="audit">
                   <span>📜 Audit Logs & Backups</span>
                 </button>
-              </div>
+              ` : ''}
+            </div>
+          </div>
 
-              <div style="margin-top: 2rem; padding: 1rem 0.5rem 0 0.5rem; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748b;">
-                <div style="font-weight: 700; color: #0F172A; margin-bottom: 2px;">${escapeHtml(currentUser.name)}</div>
-                <div style="text-transform: uppercase; font-size: 10px; font-weight: 800; color: #16a34a;">● ${currentUser.role.replace('_', ' ')}</div>
-                <button id="adm-logout-btn" style="margin-top: 0.75rem; width: 100%; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155; padding: 6px 0; border-radius: 9999px; font-size: 11px; font-weight: 700; cursor: pointer;">
-                  ↪ Log Out
-                </button>
+          <div class="adm-sidebar-footer" style="padding: 1rem 0.5rem 0 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: #64748B;">
+            <div style="font-weight: 700; color: #ffffff; margin-bottom: 2px;">${escapeHtml(currentUser.name)}</div>
+            <div style="text-transform: uppercase; font-size: 10px; font-weight: 800; color: #4ADE80;">● ${currentUser.role.replace('_', ' ')}</div>
+            <button id="adm-logout-btn" style="margin-top: 0.75rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #ffffff; padding: 6px 0; border-radius: 9999px; font-size: 11px; font-weight: 700; cursor: pointer;">
+              ↪ Log Out
+            </button>
+          </div>
+        </div>
+
+        <!-- MAIN COLUMN: keeps its own padding/max-width centering, independent
+             of the sidebar so the sidebar can stay flush left. -->
+        <div class="adm-main-col">
+        <div class="adm-main-inner">
+
+          <!-- OVERVIEW CARDS (4 Grid Layout matching Enterprise Spec) - compact
+               padding (1.1rem, vs .adm-card-white's default 1.5rem used by the
+               big content card below) so this row reads as a short strip like
+               the reference, not a second full-height block. -->
+          <div class="grid-4" style="margin-bottom: 1.5rem; gap: 1.1rem;">
+
+            <!-- Card 1: Pending Approvals (featured - translucent blue glass,
+                 not a flat fill, so it reads as tinted glass rather than a
+                 solid block sitting oddly among the other glass cards). -->
+            <div class="adm-card-white" style="background: linear-gradient(135deg, rgba(61,82,241,0.82), rgba(42,58,219,0.88)); border-color: rgba(255,255,255,0.25); padding: 1.1rem 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
+                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: rgba(255,255,255,0.75);">Pending Approvals</span>
+                <span style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.18); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">↗</span>
               </div>
+              <div class="adm-metric-number" style="color: #ffffff; font-size: 34px;">${pendingReqs.length}</div>
+              <div class="adm-caption" style="margin-top: 0.4rem; color: rgba(255,255,255,0.75);">Multi-Admin Approval Requests</div>
             </div>
 
-            <!-- DYNAMIC ADMIN CONTENT MOUNT (PURE WHITE CARD) -->
-            <div class="adm-card-white" style="padding: 2.25rem;">
-              <div id="admin-module-mount"></div>
+            <!-- Card 2: High Risk Requests -->
+            <div class="adm-card-white" style="padding: 1.1rem 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
+                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">High Risk Requests</span>
+                <span style="width: 24px; height: 24px; border-radius: 50%; background: #FEF3C7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">↗</span>
+              </div>
+              <div class="adm-metric-number" style="color: #d97706; font-size: 34px;">${highRiskCount}</div>
+              <div class="adm-caption" style="margin-top: 0.4rem; color: #64748b;">Requires Dual Authorization</div>
+            </div>
+
+            <!-- Card 3: Awaiting Review -->
+            <div class="adm-card-white" style="padding: 1.1rem 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
+                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Awaiting Review</span>
+                <span style="width: 24px; height: 24px; border-radius: 50%; background: #DBEAFE; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">↗</span>
+              </div>
+              <div class="adm-metric-number" style="color: var(--primary); font-size: 34px;">${pendingReqs.length}</div>
+              <div class="adm-caption" style="margin-top: 0.4rem; color: #64748b;">Pending Secondary Admin Verification</div>
+            </div>
+
+            <!-- Card 4: Completed Today -->
+            <div class="adm-card-white" style="padding: 1.1rem 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
+                <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Completed Today</span>
+                <span style="width: 24px; height: 24px; border-radius: 50%; background: #DCFCE7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">↗</span>
+              </div>
+              <div class="adm-metric-number" style="color: #16a34a; font-size: 34px;">${completedTodayCount}</div>
+              <div class="adm-caption" style="margin-top: 0.4rem; color: #64748b;">Authorized Administrative Actions</div>
             </div>
 
           </div>
+
+          <!-- DYNAMIC ADMIN CONTENT MOUNT (PURE WHITE CARD) -->
+          <div class="adm-card-white" style="padding: 2.25rem;">
+            <div id="admin-module-mount"></div>
+          </div>
+
+        </div>
         </div>
       </div>
       ${getLargeFooterHtml(state.currentLang || 'en')}

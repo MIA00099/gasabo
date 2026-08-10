@@ -335,6 +335,199 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-weight: 800;
 }
 
+/* CINEMATIC HERO - full-bleed video background with a dark gradient scrim,
+   text floating on top. The scrim (not the video itself) is what guarantees
+   headline legibility - our actual video asset is light-colored, so relying
+   on the footage alone for contrast the way a dramatic dark photo would
+   isn't safe. */
+.cinematic-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Bottom padding has to clear both the carousel bar's own height AND the
+     floating search pill's -90px pull-up below it (see MarketplaceView.js) -
+     tuned against the live rendered gap, not just guessed. */
+  padding: 6.5rem 0 7rem;
+}
+
+.cinematic-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.cinematic-hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(100deg, rgba(3,34,2,0.95) 0%, rgba(3,34,2,0.85) 30%, rgba(3,34,2,0.5) 62%, rgba(3,34,2,0.22) 100%);
+}
+
+.cinematic-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 2rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* Bottom prev/next promo bar - the promotional banners that used to be their
+   own section further down the page, now living inside the hero itself,
+   styled after the reference's adjacent-content strip (small clickable
+   previews either side of the current item, plus arrow controls). */
+.hero-bottom-carousel {
+  position: relative;
+  z-index: 2;
+  max-width: 1280px;
+  margin: 3rem auto 0;
+  width: 100%;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hero-carousel-arrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.28);
+  color: #FFFFFF;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.hero-carousel-arrow:hover {
+  background: rgba(255,255,255,0.25);
+  transform: scale(1.08);
+}
+
+.hero-carousel-side-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+  max-width: 190px;
+}
+
+.hero-carousel-side-preview:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.hero-carousel-side-preview--right {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.hero-carousel-side-preview img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.35);
+  flex-shrink: 0;
+}
+
+.hero-carousel-side-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase;
+}
+
+.hero-carousel-side-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-carousel-current {
+  flex: 1;
+  min-width: 0;
+  border-left: 1px solid rgba(255,255,255,0.22);
+  border-right: 1px solid rgba(255,255,255,0.22);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.hero-carousel-current-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #F59E0B;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.hero-carousel-current-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-carousel-cta {
+  color: #F59E0B;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.hero-carousel-cta:hover {
+  color: #FFC107;
+  text-decoration: underline;
+}
+
+@media (max-width: 860px) {
+  .hero-bottom-carousel {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .hero-carousel-current {
+    order: -1;
+    flex: 1 1 100%;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.22);
+    padding: 0 0 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+}
 
 /* Category Cards Hover Animation */
 .category-card-item {
@@ -385,19 +578,39 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    seller name, or district text happens to be. */
 .main-prod-card {
   height: 100%;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 22px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
+/* The colored "mat" behind each product photo - --card-mat is set per-card
+   inline (a rotating accent palette, see PRODUCT_CARD_ACCENTS in
+   MarketplaceView.js) so a grid of cards reads as varied and alive instead
+   of every photo sitting on the same flat gray placeholder. The image itself
+   is inset with padding and object-fit:contain (not cover) so the whole
+   product shows framed inside the color, rather than being edge-to-edge
+   cropped - real uploaded photos rarely have a transparent background, so
+   this is what gets closest to the "floating product" look without one. */
 .product-card-image-wrap {
   aspect-ratio: 4 / 3;
   overflow: hidden;
   position: relative;
-  background: #F8FAFC;
+  background: var(--card-mat, #F8FAFC);
+  border-radius: 18px;
+  margin: 0.75rem;
+  width: calc(100% - 1.5rem);
 }
 
 .product-card-image-wrap img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 1.5rem;
+  box-sizing: border-box;
   display: block;
 }
 
@@ -406,6 +619,62 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 0.5rem;
+  line-height: 1.35;
+  height: 2.7em;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.product-card-title:hover {
+  color: var(--primary-green);
+}
+
+/* Floating circular action icons over the image mat - expand (view details,
+   top-left) and message (contact seller, top-right) - replacing the two
+   full-width buttons that used to sit below the card content. */
+.product-card-fab {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: none;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.product-card-fab:hover {
+  transform: scale(1.1);
+  background: var(--primary-green);
+  color: #FFFFFF;
+}
+
+.product-card-fab-right {
+  left: auto;
+  right: 14px;
+}
+
+.product-card-featured-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: #EDA203;
+  color: #000;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
 /* View Button Hover Animation */
@@ -1415,27 +1684,39 @@ footer a:hover {
    throughout the rest of the site (matching .adm-card-white below) - these
    two classes alone cascade the new look across every admin sub-panel and
    the seller dashboard, since they're all built on .glass-panel/.glass-card. */
+/* Real glassmorphism (frosted blur + translucency), not just a name - these
+   two classes are already used across every dashboard (Admin panels, Seller
+   Portal), so upgrading them here is what actually gets "glass" applied
+   everywhere consistently. Kept light/translucent rather than dark, and with
+   no colorful backdrop behind it, per the deliberate scope decision: dense
+   data (tables, forms) needs to stay legible, so this is a glass TEXTURE
+   (blur, saturation, soft inner highlight) on the existing light theme, not
+   a full dark-glass-over-colorful-blur rebuild. */
 .glass-panel {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: var(--radius-lg);
   color: #0F172A;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .glass-card {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: var(--radius-md);
   color: #0F172A;
-  box-shadow: var(--shadow-soft-sm);
+  box-shadow: var(--shadow-soft-sm), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   transition: var(--transition-smooth);
 }
 
 .glass-card:hover {
   transform: translateY(-2px);
   border-color: var(--primary-green);
-  box-shadow: var(--shadow-soft-md);
+  box-shadow: var(--shadow-soft-md), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 /* FORM CONTROLS & GROUPS */
@@ -1526,10 +1807,15 @@ select.form-control option {
   }
 }
 
-/* CUSTOM TABLES */
+/* CUSTOM TABLES - capped height with internal scroll (sticky header) rather
+   than letting a table with many rows stretch the whole page indefinitely -
+   this was the actual cause of admin panels feeling like unmanageable "long
+   boards" that didn't fit the screen, not the color scheme. */
 .custom-table-container {
   width: 100%;
+  max-height: 60vh;
   overflow-x: auto;
+  overflow-y: auto;
   border-radius: var(--radius-md);
   border: 1px solid #E2E8F0;
   background: #FFFFFF;
@@ -1543,6 +1829,9 @@ select.form-control option {
 }
 
 .custom-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   background: #F8FAFC;
   color: #475569;
   font-weight: 700;
@@ -1562,26 +1851,124 @@ select.form-control option {
   background: #F8FAFC;
 }
 
+/* Freeze a table's Actions column (opt-in via .tbl-actions-col, NOT a blanket
+   :last-child - some tables' last column is free-form text like Audit Log's
+   "Event Details", which shouldn't get pinned) so it stays visible at the
+   right edge of the table's own scroll area no matter how far a wide row
+   (e.g. Contact Info) scrolls horizontally underneath it. This, not
+   shrinking real data columns, is what keeps action buttons from getting
+   "cut off" out of view. */
+.tbl-actions-col {
+  position: sticky;
+  right: 0;
+  background: #FFFFFF;
+  border-left: 1px solid #E2E8F0;
+}
+
+th.tbl-actions-col {
+  z-index: 2;
+  background: #F8FAFC;
+}
+
+.custom-table tr:hover td.tbl-actions-col {
+  background: #F8FAFC;
+}
+
 /* ==========================================================================
    ENTERPRISE SAAS ADMIN STYLING (Stripe / Vercel / Linear Grade)
    ========================================================================== */
+/* Scoped override, not a :root change - the public marketplace/real estate
+   site keeps its green brand color untouched. Everything inside the admin
+   dashboard and seller dashboard (both use var(--primary) extensively for
+   buttons/badges/accents already) picks up this blue instead, just by
+   virtue of being a descendant - no need to touch every component class. */
+.adm-layout-wrap, .seller-dash-wrap {
+  --primary: #3D52F1;
+  --primary-hover: #2A3ADB;
+  --primary-light: rgba(61, 82, 241, 0.12);
+}
+
 .adm-layout-wrap {
   background-color: #F1F3F5;
   min-height: calc(100vh - 70px);
   color: #0f172a;
   padding-top: 1px;
   padding-bottom: 1px;
+  /* Flex row so the sidebar can sit flush against the true left edge of the
+     screen while the main column keeps its own comfortable padding - a
+     single centered max-width wrapper around BOTH (the old layout) was what
+     put equal gray gaps on both sides of the sidebar. */
+  display: flex;
+  align-items: stretch;
 }
 
-/* Sidebar: white rounded card with a solid green pill behind the active
-   item (matching the reference design), not a dark navy panel. */
+/* Dark sidebar, matching the reference: near-black panel, active item as a
+   solid blue pill. Sticky + full-height so it stays pinned in view while
+   the content column scrolls beside it, and touches the left edge of the
+   viewport directly (rounded only on the right, since the left edge is
+   flush against the page rather than floating in a card). Table/list
+   heights are capped (see .custom-table-container below) so a panel with
+   many rows scrolls internally instead of stretching the whole page. */
 .adm-sidebar-dark {
-  background-color: #ffffff;
-  border: 1px solid #E2E8F0;
-  border-radius: 20px;
-  padding: 1.25rem 1rem;
-  color: #64748b;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  /* Already dark - the natural place for a genuine dark glass treatment
+     (translucent near-black + blur) rather than a flat solid fill. */
+  background: rgba(20, 21, 31, 0.8);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-radius: 0 20px 20px 0;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: none;
+  padding: 1.5rem 1rem 1.25rem;
+  color: #94A3B8;
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  width: 264px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transition: width 0.2s ease;
+}
+
+/* Pins the name/role/logout block to the very bottom of the sidebar's full
+   viewport height, instead of it trailing right after the last nav button
+   with a dead gap either above or below it. */
+.adm-sidebar-footer {
+  margin-top: auto;
+}
+
+.adm-main-col {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem 1.75rem 2.5rem 1.75rem;
+}
+
+.adm-main-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+@media (max-width: 860px) {
+  .adm-layout-wrap {
+    flex-direction: column;
+  }
+
+  .adm-sidebar-dark {
+    position: static;
+    /* width:auto (not 100%) so the side margins below subtract from the
+       available space instead of adding on top of a full-width box and
+       overflowing the viewport. */
+    width: auto;
+    height: auto;
+    border-radius: 20px;
+    margin: 1rem 1rem 0 1rem;
+  }
+
+  .adm-main-col {
+    padding: 1.25rem 1rem 2rem;
+  }
 }
 
 .adm-side-btn {
@@ -1589,11 +1976,11 @@ select.form-control option {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.7rem 1rem;
   border-radius: 9999px;
-  font-size: 0.9rem;
+  font-size: 0.87rem;
   font-weight: 600;
-  color: #64748b;
+  color: #94A3B8;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1603,34 +1990,77 @@ select.form-control option {
 }
 
 .adm-side-btn:hover {
-  color: #034B04;
-  background: #F1F5F9;
+  color: #ffffff;
+  background: rgba(255,255,255,0.06);
 }
 
 .adm-side-btn.active {
   color: #ffffff;
-  background: #034B04;
+  background: var(--primary);
   font-weight: 700;
-  box-shadow: 0 4px 12px rgba(3, 75, 4, 0.25);
+  box-shadow: 0 4px 14px rgba(61, 82, 241, 0.4);
 }
 
 .adm-side-btn.active .action-count-badge,
 .adm-side-btn.active span[style*="background: #dc2626"] {
   background: #ffffff !important;
-  color: #034B04 !important;
+  color: var(--primary) !important;
 }
 
 .adm-card-white {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
+  /* Translucent + blurred rather than flat white - the tables/forms nested
+     inside (.custom-table-container etc.) keep their own solid white
+     background, so this card-level glass never touches actual data
+     legibility, just the card's own surface texture. */
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 22px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   transition: all 0.2s ease;
+  /* Every tab switch / data refresh replaces this element's innerHTML wholesale
+     (no persistent DOM to transition between states), so a fresh fade+rise on
+     mount is what reads as "smooth" here rather than a hard instant swap. */
+  animation: admCardIn 0.28s ease;
 }
 
 .adm-card-white:hover {
   box-shadow: 0 8px 30px rgba(15, 23, 42, 0.07);
+  transform: translateY(-2px);
+}
+
+@keyframes admCardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-card-white {
+    animation: none;
+  }
+}
+
+/* Action-button clusters inside table cells (Sellers Directory, Marketplace
+   product rows) - a fixed-width stacked column of uniform mini-buttons
+   instead of letting 3-4 variable-length labels sit in a single row, which
+   was forcing the column (and the whole table) wider than the card and
+   pushing buttons past the visible right edge. */
+.adm-action-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  width: 148px;
+}
+
+.adm-action-group .btn {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .adm-metric-number {
@@ -1734,15 +2164,31 @@ select.form-control option {
 }
 
 /* MODAL WINDOWS */
+/* A flat dark dimmer here (what this used to be: rgba(0,0,0,0.78) +
+   backdrop-filter:blur(8px) on the overlay itself) crushes all color/detail
+   from the real page BEFORE .modal-content's own blur ever gets a chance to
+   reveal anything - so the "glass" card behind it just reads as a flat gray
+   box, no matter how correct its own blur/translucency CSS is. Baking
+   decorative color blobs directly into the overlay's background (like the
+   Duvera reference's manufactured backdrop, not whatever happens to be on
+   the real page) guarantees the glass card always has vivid color right
+   behind it to actually show through. No backdrop-filter on the overlay
+   itself - the blobs need to stay sharp so .modal-content's blur is doing
+   real work on them, not re-blurring an already-blurred flat field. */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Same 3-blob layout/colors as the reference itself (orange top-left,
+     white top-right, red bottom-right) on a dark brown-gray base, rather
+     than the brand-green palette this had before. */
+  background:
+    radial-gradient(circle at 6% 10%, rgba(245, 158, 11, 0.75), transparent 34%),
+    radial-gradient(circle at 88% 8%, rgba(255, 255, 255, 0.6), transparent 30%),
+    radial-gradient(circle at 92% 92%, rgba(220, 38, 38, 0.7), transparent 32%),
+    #2A2622;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1750,16 +2196,28 @@ select.form-control option {
   padding: 1.5rem;
 }
 
+/* Light warm glass card, not the old dark-green gradient - this is the modal
+   that opens from the product grid's colored-mat cards (MarketplaceView.js),
+   and only that one uses these classes (grep confirms no other modal in the
+   app does), so it can match that card language directly without any risk
+   of affecting something else. Translucent + blurred against the dark
+   .modal-overlay backdrop behind it - real glass, not just a name. */
 .modal-content {
-  background: linear-gradient(145deg, #032202, #053304);
-  border: 1.5px solid rgba(237, 162, 3, 0.35);
-  border-radius: var(--radius-card);
+  /* Lower opacity than the dashboard glass cards (0.82 -> 0.62) - this one
+     has real vivid color right behind it (the overlay's blobs above) worth
+     letting show through; the dashboard cards don't, so staying more opaque
+     there was the right call for data legibility. */
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 24px;
   padding: 2rem;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  color: #FFFFFF;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  color: #0F172A;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   position: relative;
 }
 
@@ -1768,22 +2226,31 @@ select.form-control option {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid #E2E8F0;
   padding-bottom: 1rem;
 }
 
 .modal-close {
-  font-size: 1.8rem;
-  color: #94A3B8;
-  border: none;
-  background: transparent;
+  font-size: 1.4rem;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #64748B;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   cursor: pointer;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: var(--transition-smooth);
 }
 
 .modal-close:hover {
-  color: #EDA203;
+  color: #FFFFFF;
+  background: var(--primary-green);
+  border-color: var(--primary-green);
   transform: scale(1.1);
 }
 
@@ -1821,6 +2288,18 @@ select.form-control option {
   background: rgba(107, 114, 128, 0.2);
   color: #9CA3AF;
   border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+.badge-pending {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.badge-rejected {
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
 }
 
 .btn-danger {

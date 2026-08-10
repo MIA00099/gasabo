@@ -20,6 +20,12 @@ let splitLine2Instance = null;
 let currentBannerIndex = 0;
 let bannerRotationTimer = null;
 
+// Rotating backdrop palette for the product image "mat" - one color per card,
+// cycling by grid position, echoing the reference layout's alternating
+// orange/indigo/green card backdrops instead of every card sharing one flat
+// gray placeholder background.
+const PRODUCT_CARD_ACCENTS = ['#F3D9B1', '#D9D6F5', '#CFEAD9', '#F6D3DC', '#CFE4F5', '#F5E3B3'];
+
 export function cleanupBannerRotation() {
   if (bannerRotationTimer) {
     clearInterval(bannerRotationTimer);
@@ -42,33 +48,50 @@ export function cleanupHeroAnimation() {
   }
 }
 
-function setupBannerCarousel(container, activeBanners) {
+// Writes the prev/current/next banner frame directly into the already-mounted
+// hero-bottom-carousel DOM (img src / text content / link href), instead of
+// going through a full re-render - same reasoning as the module-scope index
+// above: this needs to survive unrelated stateEngine notifies without
+// resetting, and a setInterval-driven rotation must not fight a full re-render
+// wiping out mid-animation state.
+function paintHeroCarouselFrame(container, banners) {
+  const len = banners.length;
+  const idx = ((currentBannerIndex % len) + len) % len;
+  const prev = banners[(idx - 1 + len) % len];
+  const current = banners[idx];
+  const next = banners[(idx + 1) % len];
+
+  const prevImg = container.querySelector('#hero-prev-preview img');
+  const prevTitle = container.querySelector('#hero-prev-preview .hero-carousel-side-title');
+  const nextImg = container.querySelector('#hero-next-preview img');
+  const nextTitle = container.querySelector('#hero-next-preview .hero-carousel-side-title');
+  const currentTitle = container.querySelector('.hero-carousel-current-title');
+  const currentLink = container.querySelector('.hero-carousel-cta');
+
+  if (prevImg) prevImg.src = prev.image;
+  if (prevTitle) prevTitle.textContent = prev.title;
+  if (nextImg) nextImg.src = next.image;
+  if (nextTitle) nextTitle.textContent = next.title;
+  if (currentTitle) currentTitle.textContent = current.title;
+  if (currentLink) currentLink.href = current.targetUrl || '#';
+}
+
+function setupHeroCarousel(container, activeBanners) {
   cleanupBannerRotation();
   if (activeBanners.length === 0) return;
 
-  const slides = container.querySelectorAll('.promo-banner-slide');
-  const dots = container.querySelectorAll('.promo-banner-dot');
-
-  function showSlide(idx) {
-    currentBannerIndex = idx;
-    slides.forEach((slide, i) => {
-      const isActive = i === idx;
-      slide.style.opacity = isActive ? '1' : '0';
-      slide.style.pointerEvents = isActive ? 'auto' : 'none';
-    });
-    dots.forEach((dot, i) => {
-      dot.style.background = i === idx ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.45)';
-    });
+  function goTo(idx) {
+    currentBannerIndex = ((idx % activeBanners.length) + activeBanners.length) % activeBanners.length;
+    paintHeroCarouselFrame(container, activeBanners);
   }
 
-  dots.forEach((dot, i) => {
-    dot.addEventListener('click', () => showSlide(i));
-  });
+  container.querySelector('#hero-carousel-prev-btn')?.addEventListener('click', () => goTo(currentBannerIndex - 1));
+  container.querySelector('#hero-carousel-next-btn')?.addEventListener('click', () => goTo(currentBannerIndex + 1));
+  container.querySelector('#hero-prev-preview')?.addEventListener('click', () => goTo(currentBannerIndex - 1));
+  container.querySelector('#hero-next-preview')?.addEventListener('click', () => goTo(currentBannerIndex + 1));
 
   if (activeBanners.length > 1) {
-    bannerRotationTimer = setInterval(() => {
-      showSlide((currentBannerIndex + 1) % activeBanners.length);
-    }, 5000);
+    bannerRotationTimer = setInterval(() => goTo(currentBannerIndex + 1), 5000);
   }
 }
 
@@ -216,10 +239,24 @@ export function renderMarketplaceView(container) {
         ` : `
           <div style="flex: 1;">
 
-          <!-- HERO BANNER (GSAP & SplitType Staggered Text Bounce Entrance) -->
-          <section style="background: #034B04; padding: 5.5rem 2rem 7rem 2rem; position: relative; overflow: hidden;">
-            <div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: center;">
-              <div>
+          <!-- CINEMATIC HERO: full-bleed video background with a dark gradient
+               scrim (guarantees text legibility regardless of the video's own
+               brightness), headline/CTA floating on top, and the promo
+               banners merged into a bottom prev/next bar instead of living in
+               their own separate section further down the page. -->
+          <section class="cinematic-hero">
+            <video
+              class="cinematic-hero-bg"
+              src="/hero-section-video.mp4"
+              autoplay
+              muted
+              loop
+              playsinline
+            ></video>
+            <div class="cinematic-hero-scrim"></div>
+
+            <div class="cinematic-hero-content">
+              <div style="max-width: 640px;">
                 <h1 class="hero-title-line1" aria-label="${escapeHtml(t('hero_title1'))}">
                   ${t('hero_title1')}
                 </h1>
@@ -241,18 +278,49 @@ export function renderMarketplaceView(container) {
                   </button>
                 </div>
               </div>
-
-              <div style="display: flex; justify-content: flex-end;">
-                <video
-                  src="/hero-section-video.mp4"
-                  autoplay
-                  muted
-                  loop
-                  playsinline
-                  style="max-width: 100%; height: auto; max-height: 420px; border-radius: 16px; box-shadow: 0 20px 30px rgba(0,0,0,0.2);"
-                ></video>
-              </div>
             </div>
+
+            ${activeBanners.length > 0 ? (() => {
+              const len = activeBanners.length;
+              const idx = ((currentBannerIndex % len) + len) % len;
+              const prevB = activeBanners[(idx - 1 + len) % len];
+              const currentB = activeBanners[idx];
+              const nextB = activeBanners[(idx + 1) % len];
+              return `
+                <!-- Bottom prev/next promo bar, styled after the reference's
+                     "Barry / Last Week" adjacent-content strip - prev/next
+                     previews are clickable, not just the arrow buttons. -->
+                <div class="hero-bottom-carousel">
+                  <button class="hero-carousel-arrow" id="hero-carousel-prev-btn" aria-label="Previous promotion">‹</button>
+
+                  <div class="hero-carousel-side-preview" id="hero-prev-preview">
+                    <img src="${prevB.image}" alt="${escapeHtml(prevB.title)}">
+                    <div>
+                      <div class="hero-carousel-side-label">Prev</div>
+                      <div class="hero-carousel-side-title">${escapeHtml(prevB.title)}</div>
+                    </div>
+                  </div>
+
+                  <div class="hero-carousel-current">
+                    <div>
+                      <div class="hero-carousel-current-label">Featured Promotion</div>
+                      <div class="hero-carousel-current-title">${escapeHtml(currentB.title)}</div>
+                    </div>
+                    <a href="${currentB.targetUrl ? escapeHtml(currentB.targetUrl) : '#'}" class="hero-carousel-cta">View Offer →</a>
+                  </div>
+
+                  <div class="hero-carousel-side-preview hero-carousel-side-preview--right" id="hero-next-preview">
+                    <div>
+                      <div class="hero-carousel-side-label">Next</div>
+                      <div class="hero-carousel-side-title">${escapeHtml(nextB.title)}</div>
+                    </div>
+                    <img src="${nextB.image}" alt="${escapeHtml(nextB.title)}">
+                  </div>
+
+                  <button class="hero-carousel-arrow" id="hero-carousel-next-btn" aria-label="Next promotion">›</button>
+                </div>
+              `;
+            })() : ''}
           </section>
 
           <!-- FLOATING PILL SEARCH BAR: one seamless rounded pill, borderless segments,
@@ -302,31 +370,6 @@ export function renderMarketplaceView(container) {
               </div>
             </div>
           </div>
-
-          ${activeBanners.length > 0 ? `
-            <!-- PROMOTIONAL BANNER STRIP - stacked slides, only one visible at a time
-                 via opacity (toggled directly by setupBannerCarousel, not re-render) -->
-            <div style="max-width: 1280px; margin: 0 auto 4rem auto; padding: 0 1.5rem;">
-              <div style="position: relative; border-radius: 20px; overflow: hidden; height: 220px; box-shadow: 0 10px 30px rgba(0,0,0,0.12);">
-                ${activeBanners.map((b, i) => `
-                  <a href="${b.targetUrl ? escapeHtml(b.targetUrl) : '#'}" class="promo-banner-slide" data-slide-index="${i}" style="position: absolute; inset: 0; display: block; text-decoration: none; opacity: ${i === (currentBannerIndex % activeBanners.length) ? '1' : '0'}; transition: opacity 0.6s ease; pointer-events: ${i === (currentBannerIndex % activeBanners.length) ? 'auto' : 'none'};">
-                    <img src="${b.image}" alt="${escapeHtml(b.title)}" style="width: 100%; height: 100%; object-fit: cover;">
-                    <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,34,2,0.75) 0%, rgba(3,34,2,0.15) 60%, rgba(3,34,2,0) 100%); display: flex; align-items: center; padding: 0 2.5rem;">
-                      <h3 style="color: #fff; font-size: 1.5rem; font-weight: 800; max-width: 60%;">${escapeHtml(b.title)}</h3>
-                    </div>
-                  </a>
-                `).join('')}
-
-                ${activeBanners.length > 1 ? `
-                  <div style="position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 5;">
-                    ${activeBanners.map((_, i) => `
-                      <button class="promo-banner-dot" data-dot-index="${i}" aria-label="Show promotion ${i + 1}" style="width: 9px; height: 9px; border-radius: 50%; border: none; cursor: pointer; padding: 0; background: rgba(255,255,255,${i === (currentBannerIndex % activeBanners.length) ? '1' : '0.45'}); transition: background 0.3s ease;"></button>
-                    `).join('')}
-                  </div>
-                ` : ''}
-              </div>
-            </div>
-          ` : ''}
 
           <!-- CATEGORY CARDS SECTION -->
           <div style="max-width: 1280px; margin: 0 auto 4rem auto; padding: 0 1.5rem;">
@@ -382,16 +425,31 @@ export function renderMarketplaceView(container) {
               </div>
             ` : `
               <div class="grid-4" style="gap: 1.5rem; align-items: stretch;">
-                ${state.products.map(prod => `
-                  <div class="main-prod-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease;">
+                ${state.products.map((prod, i) => `
+                  <div class="main-prod-card" data-id="${prod.id}">
                     <div>
-                      <div class="product-card-image-wrap">
+                      <div class="product-card-image-wrap" style="--card-mat: ${PRODUCT_CARD_ACCENTS[i % PRODUCT_CARD_ACCENTS.length]};">
                         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}">
-                        ${prod.isFeatured ? `<span style="position: absolute; top: 12px; left: 12px; background: #EDA203; color: #000; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px;">⭐ FEATURED</span>` : ''}
+
+                        <!-- Floating circular action icons, overlaid on the color mat -
+                             expand opens full product details, chat opens contact -
+                             instead of the two full-width buttons this replaced. -->
+                        <button class="product-card-fab view-details-btn" data-id="${prod.id}" title="View full details" aria-label="View full details">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                          </svg>
+                        </button>
+                        <button class="product-card-fab product-card-fab-right contact-seller-btn" data-id="${prod.id}" title="Contact seller" aria-label="Contact seller">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                          </svg>
+                        </button>
+
+                        ${prod.isFeatured ? `<span class="product-card-featured-badge">⭐ FEATURED</span>` : ''}
                       </div>
 
-                      <div style="padding: 1.25rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; gap: 0.5rem;">
+                      <div style="padding: 1.1rem 1.25rem 0.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem;">
                           <span style="font-size: 0.78rem; font-weight: 700; color: #034B04; background: #E6F4EA; padding: 2px 8px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">
                             📍 ${escapeHtml(prod.district)}
                           </span>
@@ -400,28 +458,19 @@ export function renderMarketplaceView(container) {
                           </span>
                         </div>
 
-                        <h3 class="product-card-title" style="font-size: 1.05rem; font-weight: 700; color: #0F172A; margin-bottom: 0.5rem; line-height: 1.35; height: 2.7em;">
+                        <h3 class="product-card-title view-details-btn" data-id="${prod.id}">
                           ${escapeHtml(prod.title)}
                         </h3>
 
-                        <div style="font-size: 1.35rem; font-weight: 800; color: #034B04; margin-bottom: 0.75rem;">
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #034B04; margin-bottom: 0.6rem;">
                           ${prod.price.toLocaleString()} ${prod.currency}
-                        </div>
-
-                        <div style="font-size: 0.8rem; color: #64748B; margin-bottom: 1rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden;">
-                          <span style="flex-shrink: 0;">👤 Seller:</span>
-                          <strong style="color: #1E293B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(prod.sellerName)}</strong>
                         </div>
                       </div>
                     </div>
 
-                    <div style="padding: 0 1.25rem 1.25rem 1.25rem; display: flex; gap: 0.5rem;">
-                      <button class="view-prod-card-btn view-details-btn" data-id="${prod.id}" style="flex: 1; height: 42px; background: #EDA203; border: none; color: #000; font-weight: 800; font-size: 0.88rem; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        👁️ View Details
-                      </button>
-                      <button class="contact-seller-card-btn contact-seller-btn" data-id="${prod.id}" style="flex: 1; height: 42px; background: #034B04; border: none; color: #FFF; font-weight: 800; font-size: 0.88rem; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        💬 Contact
-                      </button>
+                    <div style="padding: 0 1.25rem 1.1rem; display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #64748B; white-space: nowrap; overflow: hidden;">
+                      <span style="flex-shrink: 0;">👤</span>
+                      <strong style="color: #1E293B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(prod.sellerName)}</strong>
                     </div>
                   </div>
                 `).join('')}
@@ -451,7 +500,7 @@ export function renderMarketplaceView(container) {
       triggerHeroAnimation(container);
     });
 
-    setupBannerCarousel(container, activeBanners);
+    setupHeroCarousel(container, activeBanners);
 
     container.querySelector('#hero-browse-btn')?.addEventListener('click', () => {
       const el = container.querySelector('h2');

@@ -15,9 +15,9 @@ export function renderSecurityAuditAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.5rem;">🛡️ System Security Audit Logs & Backups</h2>
+            <h2 style="color: #0F172A; font-size: 1.3rem;">🛡️ System Security Audit Logs & Backups</h2>
             <p style="color: #64748B; font-size: 0.9rem;">
               Complete audit trail of all platform activities, administrative approvals, login sessions, and database backups.
             </p>
@@ -37,7 +37,7 @@ export function renderSecurityAuditAdmin(container) {
         ` : ''}
 
         <!-- BACKUP POLICY BANNER -->
-        <div class="glass-panel" style="padding: 1.25rem 1.5rem; border-radius: var(--radius-md); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div class="glass-panel" style="padding: 1rem 1.25rem; border-radius: 20px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <div>
             <h4 style="color: #0F172A; font-size: 1.05rem;">Database Backup Policy</h4>
             <p style="font-size: 0.85rem; color: #64748B;">

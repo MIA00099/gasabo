@@ -68,16 +68,20 @@ function renderSellerDashboardView(container, sellerUser) {
     }
 
     const myProducts = state.myProducts;
+    const pendingProds = myProducts.filter(p => p.status === 'pending');
+    const rejectedProds = myProducts.filter(p => p.status === 'rejected');
     const activeProds = myProducts.filter(p => p.status === 'active');
     const expiringProds = myProducts.filter(p => p.status === 'expiring_soon');
     const expiredProds = myProducts.filter(p => p.status === 'expired');
 
     let currentTabProds = activeProds;
+    if (activeTab === 'pending') currentTabProds = pendingProds;
+    if (activeTab === 'rejected') currentTabProds = rejectedProds;
     if (activeTab === 'expiring') currentTabProds = expiringProds;
     if (activeTab === 'expired') currentTabProds = expiredProds;
 
     container.innerHTML = `
-      <div style="max-width: 1280px; margin: 0 auto; padding: 2.5rem 1.5rem; width: 100%; box-sizing: border-box;">
+      <div class="seller-dash-wrap" style="max-width: 1280px; margin: 0 auto; padding: 2.5rem 1.5rem; width: 100%; box-sizing: border-box;">
         <!-- Seller Dashboard Header -->
         <div class="glass-panel" style="padding: 2rem; border-radius: var(--radius-lg); margin-bottom: 2rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
@@ -189,7 +193,15 @@ function renderSellerDashboardView(container, sellerUser) {
 
         <!-- Product Status Tabs -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0;">
+          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0; flex-wrap: wrap;">
+            <button id="tab-pending-btn" class="btn btn-sm" style="color:${activeTab==='pending'?'#fff':'#64748B'}; background:${activeTab==='pending'?'#D97706':'transparent'};">
+              🕒 Awaiting Review (${pendingProds.length})
+            </button>
+            ${rejectedProds.length > 0 ? `
+              <button id="tab-rejected-btn" class="btn btn-sm" style="color:${activeTab==='rejected'?'#fff':'#64748B'}; background:${activeTab==='rejected'?'var(--danger)':'transparent'};">
+                ❌ Rejected (${rejectedProds.length})
+              </button>
+            ` : ''}
             <button id="tab-active-btn" class="btn btn-sm" style="color:${activeTab==='active'?'#fff':'#64748B'}; background:${activeTab==='active'?'var(--primary)':'transparent'};">
               Active Products (${activeProds.length})
             </button>
@@ -233,13 +245,23 @@ function renderSellerDashboardView(container, sellerUser) {
                       <div>
                         <div style="font-weight: 600; color: #0F172A;">${escapeHtml(prod.title)}</div>
                         <div style="font-size: 0.78rem; color: #64748B;">📍 ${escapeHtml(prod.district)} • ${prod.condition}</div>
+                        ${prod.status === 'rejected' && prod.rejectionReason ? `
+                          <div style="font-size: 0.78rem; color: #991B1B; margin-top: 0.3rem; max-width: 320px;">
+                            <strong>Reason:</strong> ${escapeHtml(prod.rejectionReason)}
+                          </div>
+                        ` : ''}
+                        ${prod.status === 'pending' ? `
+                          <div style="font-size: 0.78rem; color: #92400E; margin-top: 0.3rem;">
+                            Not visible on the marketplace yet - an admin needs to approve it first.
+                          </div>
+                        ` : ''}
                       </div>
                     </div>
                   </td>
                   <td>${escapeHtml(prod.category || 'General')}</td>
                   <td><strong style="color: var(--accent-gold);">${prod.price.toLocaleString()} RWF</strong></td>
                   <td>${new Date(prod.postedDate).toLocaleDateString()}</td>
-                  <td>${new Date(prod.expiryDate).toLocaleDateString()}</td>
+                  <td>${prod.expiryDate ? new Date(prod.expiryDate).toLocaleDateString() : '—'}</td>
                   <td>
                     <span class="badge badge-${prod.status}">${prod.status.replace('_', ' ').toUpperCase()}</span>
                   </td>
@@ -273,6 +295,8 @@ function renderSellerDashboardView(container, sellerUser) {
       stateEngine.setUI({ sellerDashboardTab: 'active' });
     });
 
+    container.querySelector('#tab-pending-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'pending' }));
+    container.querySelector('#tab-rejected-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'rejected' }));
     container.querySelector('#tab-active-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'active' }));
     container.querySelector('#tab-expiring-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'expiring' }));
     container.querySelector('#tab-expired-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'expired' }));

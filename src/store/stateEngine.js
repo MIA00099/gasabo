@@ -52,6 +52,7 @@ class StateEngine {
       districts: DISTRICTS,
       products: [],
       myProducts: [],
+      pendingProducts: [],
       categories: [],
       sellers: [],
       banners: [],
@@ -59,6 +60,7 @@ class StateEngine {
       approvalRequests: [],
       auditLogs: [],
       systemUsers: [],
+      notifications: [],
       loading: {},
       error: null,
       // Every stateEngine mutation (even just a loading-flag flip) notifies subscribers,
@@ -241,6 +243,31 @@ class StateEngine {
       this.notify();
       return product;
     });
+  }
+
+  // --- Product moderation (admin) ---
+
+  async loadPendingProducts() {
+    return this._run('pendingProducts', async () => {
+      const { products } = await api.get('/products/pending');
+      this.data.pendingProducts = products;
+      this.notify();
+      return products;
+    });
+  }
+
+  async approveProduct(productId) {
+    const { product } = await api.post(`/products/${productId}/approve`);
+    this.data.pendingProducts = this.data.pendingProducts.filter((p) => p.id !== productId);
+    this.notify();
+    return product;
+  }
+
+  async rejectProduct(productId, reason) {
+    const { product } = await api.post(`/products/${productId}/reject`, { reason });
+    this.data.pendingProducts = this.data.pendingProducts.filter((p) => p.id !== productId);
+    this.notify();
+    return product;
   }
 
   async deleteProduct(productId) {
@@ -451,12 +478,86 @@ class StateEngine {
     });
   }
 
+  async loadNotifications() {
+    return this._run('notifications', async () => {
+      const { notifications } = await api.get('/notifications');
+      this.data.notifications = notifications;
+      this.notify();
+      return notifications;
+    });
+  }
+
+  async markNotificationRead(notificationId) {
+    await api.post(`/notifications/${notificationId}/read`, {});
+    this.data.notifications = this.data.notifications.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n));
+    this.notify();
+  }
+
+  async markAllNotificationsRead() {
+    await api.post('/notifications/mark-all-read', {});
+    this.data.notifications = this.data.notifications.map((n) => ({ ...n, isRead: true }));
+    this.notify();
+  }
+
   async requestPermissionChange(userId, targetName, permissions) {
     return this._run('approvalRequests', async () => {
       const { request } = await api.post(`/rbac/users/${userId}/request-permission-change`, { targetName, permissions });
       this.data.approvalRequests = [request, ...this.data.approvalRequests];
       this.notify();
       return request;
+    });
+  }
+
+  async createSubAdmin(name, email, password, permissions) {
+    return this._run('systemUsers', async () => {
+      const { user } = await api.post('/rbac/sub-admins', { name, email, password, permissions });
+      this.data.systemUsers = [...this.data.systemUsers, user];
+      this.notify();
+      return user;
+    });
+  }
+
+  // A second full Administrator - not another Sub-Administrator - is what
+  // breaks the dual-authorization deadlock: with only one Administrator
+  // account, self-approval being blocked means no critical request (like a
+  // Sub-Administrator permission grant) can ever be approved.
+  async createAdministrator(name, email, password) {
+    return this._run('systemUsers', async () => {
+      const { user } = await api.post('/rbac/administrators', { name, email, password });
+      this.data.systemUsers = [...this.data.systemUsers, user];
+      this.notify();
+      return user;
+    });
+  }
+
+  async requestDeleteSubAdmin(subAdminId, reason) {
+    return this._run('approvalRequests', async () => {
+      const { request } = await api.post(`/rbac/sub-admins/${subAdminId}/request-delete`, { reason });
+      this.data.approvalRequests = [request, ...this.data.approvalRequests];
+      this.notify();
+      return request;
+    });
+  }
+
+  async resetSubAdminPassword(subAdminId) {
+    return this._run('systemUsers', () => api.post(`/rbac/sub-admins/${subAdminId}/reset-password`, {}));
+  }
+
+  async changeSubAdminEmail(subAdminId, email) {
+    return this._run('systemUsers', async () => {
+      const { email: updatedEmail } = await api.post(`/rbac/sub-admins/${subAdminId}/change-email`, { email });
+      this.data.systemUsers = this.data.systemUsers.map((u) => (u.id === subAdminId ? { ...u, email: updatedEmail } : u));
+      this.notify();
+      return updatedEmail;
+    });
+  }
+
+  async changeSellerEmail(sellerId, email) {
+    return this._run('sellers', async () => {
+      const { email: updatedEmail } = await api.post(`/sellers/${sellerId}/change-email`, { email });
+      this.data.sellers = this.data.sellers.map((s) => (s.id === sellerId ? { ...s, email: updatedEmail } : s));
+      this.notify();
+      return updatedEmail;
     });
   }
 }

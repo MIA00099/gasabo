@@ -51,6 +51,26 @@
     </div>
   </main>
 
+  <script>
+    // Safety net, deliberately NOT inside main.js: if the module script below
+    // fails to load/parse/execute for any reason (dropped connection, dev
+    // server mid-restart, a bad deploy), #app-loading previously just sat
+    // there forever with no error and no way out except a manual hard
+    // refresh - exactly the "stuck for 10 minutes" symptom, with no signal
+    // to the user that anything had gone wrong. main.js normally replaces
+    // #app's content (and so this loader) within milliseconds of executing,
+    // so if it's STILL here after a generous 12s, something upstream of the
+    // app's own JS never ran at all.
+    setTimeout(function () {
+      var loader = document.getElementById('app-loading');
+      if (!loader) return; // app already mounted - nothing to do
+      loader.innerHTML =
+        '<h2 style="font-weight:700;letter-spacing:-0.02em;">This is taking longer than expected</h2>' +
+        '<p style="font-size:0.88rem;color:#F4EDE2;margin-top:0.5rem;max-width:420px;text-align:center;">' +
+        'The app didn\'t finish loading. This is usually a dropped connection, not your device.</p>' +
+        '<button onclick="window.location.reload()" style="margin-top:1.25rem;background:#EDA203;color:#000;font-weight:700;border:none;border-radius:10px;padding:0.7rem 1.5rem;font-size:0.95rem;cursor:pointer;">Reload</button>';
+    }, 12000);
+  </script>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

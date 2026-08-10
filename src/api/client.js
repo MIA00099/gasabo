@@ -24,10 +24,19 @@ export function setSession(session) {
   }
 }
 
+// fetch() has no built-in timeout - a hung request (a dropped connection, a
+// server mid-restart, a backend query that never resolves) would otherwise
+// leave the caller's loading state stuck indefinitely with no error ever
+// surfaced, since the request() promise itself never settles.
+const REQUEST_TIMEOUT_MS = 15000;
+
 async function request(method, path, body) {
   const session = getSession();
   const headers = { 'Content-Type': 'application/json' };
   if (session?.token) headers.Authorization = `Bearer ${session.token}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   let res;
   try {
@@ -35,9 +44,15 @@ async function request(method, path, body) {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
     });
   } catch (networkErr) {
+    if (networkErr.name === 'AbortError') {
+      throw new Error('The server took too long to respond. Please try again.');
+    }
     throw new Error('Could not reach the server. Check your connection and try again.');
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   let data = null;
@@ -66,11 +81,21 @@ async function uploadFile(path, file) {
   const formData = new FormData();
   formData.append('image', file);
 
+  // Longer than the JSON request timeout - a 5MB image on a slow connection
+  // legitimately needs more time than a plain API call.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   let res;
   try {
-    res = await fetch(`/api${path}`, { method: 'POST', headers, body: formData });
-  } catch {
+    res = await fetch(`/api${path}`, { method: 'POST', headers, body: formData, signal: controller.signal });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('The upload took too long and was cancelled. Please try again.');
+    }
     throw new Error('Could not reach the server. Check your connection and try again.');
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   let data = null;

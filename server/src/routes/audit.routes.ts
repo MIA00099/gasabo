@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { prisma } from '../config/db.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 
 export const auditRouter = Router();
 
-auditRouter.get('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (_req, res) => {
+auditRouter.get('/', requireAuth, requirePermission('SYSTEM_SETTINGS'), async (_req, res) => {
   const logs = await prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 200 });
   res.json({
     logs: logs.map((l) => ({
@@ -20,7 +20,7 @@ auditRouter.get('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATO
   });
 });
 
-auditRouter.post('/backup', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+auditRouter.post('/backup', requireAuth, requirePermission('SYSTEM_SETTINGS'), async (req, res) => {
   await logAudit({
     actorId: req.user!.id,
     actorType: req.user!.role,

@@ -10,6 +10,11 @@ const PERMISSION_KEYS = [
   'reports',
   'user_mgmt',
   'system_settings',
+  // Scoped to the Multi-Admin Approvals queue itself (approve/reject
+  // requests) - not the other admin modules. A Sub-Administrator with only
+  // this permission can act as a dedicated approver without being able to
+  // touch Marketplace/Sellers/Real Estate/RBAC/Audit at all.
+  'approvals',
 ] as const;
 
 const MODULE_TO_KEY: Record<string, (typeof PERMISSION_KEYS)[number]> = {
@@ -21,6 +26,7 @@ const MODULE_TO_KEY: Record<string, (typeof PERMISSION_KEYS)[number]> = {
   REPORTS: 'reports',
   USERS: 'user_mgmt',
   SYSTEM_SETTINGS: 'system_settings',
+  APPROVALS: 'approvals',
 };
 
 export function fullPermissions(): Record<string, boolean> {

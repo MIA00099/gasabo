@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../config/db.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
+import { notifyAdmins } from '../utils/notify.js';
 
 export const categoriesRouter = Router();
 
@@ -31,7 +32,7 @@ const createCategorySchema = z.object({
   icon: z.string().min(1),
 });
 
-categoriesRouter.post('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+categoriesRouter.post('/', requireAuth, requirePermission('CATEGORIES'), async (req, res) => {
   const parsed = createCategorySchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Category name and icon are required.' });
 
@@ -59,7 +60,7 @@ categoriesRouter.post('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINI
 
 // Category deletion is high-risk (cascades to listed products elsewhere in the flow),
 // so it goes through the multi-admin approval workflow rather than deleting immediately.
-categoriesRouter.post('/:id/request-delete', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+categoriesRouter.post('/:id/request-delete', requireAuth, requirePermission('CATEGORIES'), async (req, res) => {
   const category = await prisma.category.findUnique({ where: { id: req.params.id } });
   if (!category) return res.status(404).json({ error: 'Category not found.' });
 
@@ -84,6 +85,11 @@ categoriesRouter.post('/:id/request-delete', requireAuth, requireRole('ADMINISTR
     module: 'Multi-Admin Approvals',
     targetId: request.id,
     details: `Created approval request ${request.id} to delete category "${category.name}".`,
+  });
+
+  await notifyAdmins({
+    type: 'APPROVAL_REQUEST_CREATED',
+    message: `${req.user!.name} requested deletion of category "${category.name}" - needs a second Administrator's approval.`,
   });
 
   res.status(201).json({ request });

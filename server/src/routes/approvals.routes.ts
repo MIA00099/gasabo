@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { prisma } from '../config/db.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth, requireRole, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
+import { notifyAdmins } from '../utils/notify.js';
 
 export const approvalsRouter = Router();
 
@@ -40,12 +41,23 @@ async function executeApprovedAction(req: { actionType: string; targetId: string
     const applied = JSON.parse(req.newPermissions || '[]');
     return `Permissions updated for ${target.name}: ${applied.length ? applied.join(', ') : '(all access revoked)'}.`;
   }
+  if (req.actionType === 'DELETE_SUB_ADMIN' && req.targetId) {
+    const target = await prisma.subAdministrator.delete({ where: { id: req.targetId } }).catch(() => {
+      throw new Error('Sub-Administrator could not be deleted (they may already be removed).');
+    });
+    return `Sub-Administrator account removed: ${target.name}.`;
+  }
   return 'Action type recognized, no further automation required.';
 }
 
-// Approving and executing a critical action requires full Administrator clearance -
-// a Sub-Administrator can request or reject, but cannot be the second approver.
-approvalsRouter.post('/:id/approve', requireAuth, requireRole('ADMINISTRATOR'), async (req, res) => {
+// Approving and executing a critical action requires either full Administrator
+// clearance, or a Sub-Administrator who's been granted the dedicated APPROVALS
+// permission (a scoped "approver-only" account - see rbac.routes.ts). Ordinary
+// Sub-Administrators without that permission can still request or reject, but
+// can't be the second approver - requirePermission('APPROVALS') already
+// resolves to true for full Administrators unconditionally (see
+// hasModulePermission in middleware/auth.ts), so this one check covers both.
+approvalsRouter.post('/:id/approve', requireAuth, requirePermission('APPROVALS'), async (req, res) => {
   const request = await prisma.approvalRequest.findUnique({ where: { id: req.params.id } });
   if (!request) return res.status(404).json({ error: 'Approval request not found.' });
   if (request.status !== 'PENDING') return res.status(409).json({ error: 'This request has already been resolved.' });
@@ -85,6 +97,12 @@ approvalsRouter.post('/:id/approve', requireAuth, requireRole('ADMINISTRATOR'), 
     details: `Approved & executed request ${request.id} (${request.actionType}). ${outcomeNote}`,
   });
 
+  await notifyAdmins({
+    type: 'APPROVAL_REQUEST_RESOLVED',
+    recipientId: request.requestedById,
+    message: `Your request to ${request.targetName} was approved by ${req.user!.name}. ${outcomeNote}`,
+  });
+
   res.json({ request: updated });
 });
 
@@ -111,6 +129,12 @@ approvalsRouter.post('/:id/reject', requireAuth, requireRole('ADMINISTRATOR', 'S
     module: 'Multi-Admin Approvals',
     targetId: request.id,
     details: `Rejected request ${request.id}.`,
+  });
+
+  await notifyAdmins({
+    type: 'APPROVAL_REQUEST_RESOLVED',
+    recipientId: request.requestedById,
+    message: `Your request to ${request.targetName} was rejected by ${req.user!.name}.${req.body?.note ? ' Reason: ' + req.body.note : ''}`,
   });
 
   res.json({ request: updated });

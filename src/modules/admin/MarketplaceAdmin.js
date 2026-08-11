@@ -11,18 +11,25 @@ export function renderMarketplaceAdmin(container) {
     if (state.loading.products === undefined) stateEngine.loadProducts().catch(() => {});
     if (state.loading.categories === undefined) stateEngine.loadCategories().catch(() => {});
     if (state.loading.banners === undefined) stateEngine.loadBanners().catch(() => {});
+    // Loaded unconditionally (not just when that tab is active) so the
+    // pending-count badge on the tab button itself is accurate no matter
+    // which tab the admin currently has open.
+    if (state.loading.pendingProducts === undefined) stateEngine.loadPendingProducts().catch(() => {});
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.5rem;">🛒 Marketplace Management</h2>
+            <h2 style="color: #0F172A; font-size: 1.3rem;">🛒 Marketplace Management</h2>
             <p style="color: #64748B; font-size: 0.9rem;">
               Manage product listings, categories, homepage promotional banners, and featuring controls.
             </p>
           </div>
 
-          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0;">
+          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0; flex-wrap: wrap;">
+            <button id="mkt-adm-pending" class="btn btn-sm" style="color:${activeTab==='pending'?'#fff':'#64748B'}; background:${activeTab==='pending'?'#D97706':'transparent'}; position: relative;">
+              🕒 Pending Approval (${state.pendingProducts.length})
+            </button>
             <button id="mkt-adm-products" class="btn btn-sm" style="color:${activeTab==='products'?'#fff':'#64748B'}; background:${activeTab==='products'?'var(--primary)':'transparent'};">
               📦 Products (${state.products.length})
             </button>
@@ -41,7 +48,55 @@ export function renderMarketplaceAdmin(container) {
           </div>
         ` : ''}
 
-        ${activeTab === 'products' ? `
+        ${activeTab === 'pending' ? `
+          <!-- PENDING APPROVAL QUEUE - new listings are never public until an
+               admin acts on them here (see products.routes.ts POST / which
+               creates every listing as PENDING now, not ACTIVE). -->
+          ${state.pendingProducts.length === 0 ? `
+            <div style="text-align: center; padding: 3rem; background: #F8FAFC; border-radius: var(--radius-md); border: 1px dashed #E2E8F0; color: #64748B;">
+              ✅ No listings awaiting review right now.
+            </div>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              ${state.pendingProducts.map(prod => `
+                <div class="glass-panel" style="padding: 1.25rem 1.4rem; border-radius: 20px; border-left: 4px solid #D97706;">
+                  <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 84px; height: 84px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
+
+                    <div style="flex: 1; min-width: 220px;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+                        <div>
+                          <h4 style="color: #0F172A; font-size: 1.05rem;">${escapeHtml(prod.title)}</h4>
+                          <div style="font-size: 0.85rem; color: #64748B;">
+                            👤 ${escapeHtml(prod.sellerName)} • 📁 ${escapeHtml(prod.category || 'General')} • 📍 ${escapeHtml(prod.district)}
+                          </div>
+                        </div>
+                        <strong style="color: var(--primary); font-size: 1.15rem; white-space: nowrap;">${prod.price.toLocaleString()} RWF</strong>
+                      </div>
+
+                      <p style="font-size: 0.88rem; color: #475569; margin-top: 0.6rem; margin-bottom: 0;">
+                        ${escapeHtml(prod.description)}
+                      </p>
+
+                      <div style="font-size: 0.78rem; color: #94A3B8; margin-top: 0.5rem;">
+                        Submitted ${new Date(prod.postedDate).toLocaleString()}
+                      </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; justify-content: center; flex-shrink: 0;">
+                      <button class="btn btn-sm approve-prod-btn" data-id="${prod.id}" data-title="${escapeHtml(prod.title)}" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">
+                        ✅ Approve
+                      </button>
+                      <button class="btn btn-sm reject-prod-btn" data-id="${prod.id}" data-title="${escapeHtml(prod.title)}" style="background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;">
+                        ❌ Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        ` : activeTab === 'products' ? `
           <!-- PRODUCTS MANAGEMENT -->
           <div class="custom-table-container">
             <table class="custom-table">
@@ -54,7 +109,7 @@ export function renderMarketplaceAdmin(container) {
                   <th>Seller</th>
                   <th>Status</th>
                   <th>Promotions</th>
-                  <th>Actions</th>
+                  <th class="tbl-actions-col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,7 +141,7 @@ export function renderMarketplaceAdmin(container) {
                         </button>
                       </div>
                     </td>
-                    <td>
+                    <td class="tbl-actions-col">
                       <div style="display: flex; gap: 4px;">
                         <button class="btn btn-sm btn-danger del-prod-btn" data-id="${prod.id}">
                           Delete
@@ -115,7 +170,7 @@ export function renderMarketplaceAdmin(container) {
                   <th>Order</th>
                   <th>Listed Products</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  <th class="tbl-actions-col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -128,9 +183,9 @@ export function renderMarketplaceAdmin(container) {
                     <td>
                       <span class="badge badge-active">ENABLED</span>
                     </td>
-                    <td>
-                      <button class="btn btn-sm btn-danger req-del-cat-btn" data-id="${cat.id}">
-                        🔒 Delete Category (Multi-Admin Approval)
+                    <td class="tbl-actions-col">
+                      <button class="btn btn-sm btn-danger req-del-cat-btn" data-id="${cat.id}" title="Requires approval from another Administrator before it takes effect">
+                        🔒 Delete Category
                       </button>
                     </td>
                   </tr>
@@ -174,9 +229,29 @@ export function renderMarketplaceAdmin(container) {
     `;
 
     // Event Handlers
+    container.querySelector('#mkt-adm-pending')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'pending' }));
     container.querySelector('#mkt-adm-products')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'products' }));
     container.querySelector('#mkt-adm-categories')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'categories' }));
     container.querySelector('#mkt-adm-banners')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'banners' }));
+
+    container.querySelectorAll('.approve-prod-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Approve "${btn.dataset.title}"? It will go live on the marketplace immediately for 6 months.`)) return;
+        try {
+          await stateEngine.approveProduct(btn.dataset.id);
+        } catch (err) { /* handled via state.error */ }
+      });
+    });
+
+    container.querySelectorAll('.reject-prod-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const reason = prompt(`Why is "${btn.dataset.title}" being rejected? (shown to the seller)`);
+        if (!reason) return;
+        try {
+          await stateEngine.rejectProduct(btn.dataset.id, reason);
+        } catch (err) { /* handled via state.error */ }
+      });
+    });
 
     container.querySelectorAll('.flag-btn').forEach(btn => {
       btn.addEventListener('click', async () => {

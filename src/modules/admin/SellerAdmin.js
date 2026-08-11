@@ -15,9 +15,9 @@ export function renderSellerAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.5rem;">👥 Registered Sellers Management</h2>
+            <h2 style="color: #0F172A; font-size: 1.3rem;">👥 Registered Sellers Management</h2>
             <p style="color: #64748B; font-size: 0.9rem;">
               Manage verified Rwandan sellers, suspend accounts, reset credentials, and review activity logs. Deleting sellers requires multi-admin approval.
             </p>
@@ -40,7 +40,7 @@ export function renderSellerAdmin(container) {
                 <th>Active Listings</th>
                 <th>Status</th>
                 <th>Joined Date</th>
-                <th>Admin Actions</th>
+                <th class="tbl-actions-col">Admin Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -73,16 +73,19 @@ export function renderSellerAdmin(container) {
                     </span>
                   </td>
                   <td>${new Date(s.joinedDate).toLocaleDateString()}</td>
-                  <td>
-                    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <td class="tbl-actions-col">
+                    <div class="adm-action-group">
                       <button class="btn btn-sm btn-secondary reset-pass-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
                         🔑 Reset Pass
+                      </button>
+                      <button class="btn btn-sm btn-secondary change-email-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-email="${escapeHtml(s.email)}">
+                        ✉️ Change Email
                       </button>
                       <button class="btn btn-sm toggle-status-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" style="background:${s.status==='active'?'#FEF3C7':'#DCFCE7'}; color:${s.status==='active'?'#92400E':'#166534'}; border:1px solid ${s.status==='active'?'#FDE68A':'#BBF7D0'};">
                         ${s.status==='active' ? '⏸ Suspend' : '▶ Reactivate'}
                       </button>
-                      <button class="btn btn-sm btn-danger del-seller-req-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
-                        🔒 Request Deletion (Multi-Admin)
+                      <button class="btn btn-sm btn-danger del-seller-req-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" title="Requires approval from another Administrator before it takes effect">
+                        🔒 Request Deletion
                       </button>
                     </div>
                   </td>
@@ -100,6 +103,19 @@ export function renderSellerAdmin(container) {
         try {
           const result = await stateEngine.resetSellerPassword(btn.dataset.id);
           alert(`Temporary password for ${btn.dataset.name}: ${result.tempPassword}\n\n(In production this would be emailed/SMS'd to the seller instead of shown here.)`);
+        } catch (err) {
+          render();
+        }
+      });
+    });
+
+    container.querySelectorAll('.change-email-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newEmail = prompt(`Enter new email address for ${btn.dataset.name}:`, btn.dataset.email);
+        if (!newEmail || newEmail === btn.dataset.email) return;
+        try {
+          await stateEngine.changeSellerEmail(btn.dataset.id, newEmail);
+          alert(`Email updated for ${btn.dataset.name}.`);
         } catch (err) {
           render();
         }

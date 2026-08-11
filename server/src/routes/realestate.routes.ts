@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../config/db.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 
 export const realEstateRouter = Router();
@@ -95,7 +95,7 @@ realEstateRouter.get('/', async (_req, res) => {
   res.json({ hero, about, services, gallery, contact, projects });
 });
 
-realEstateRouter.put('/hero', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+realEstateRouter.put('/hero', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
   const { title, subtitle, bgImage } = req.body || {};
   const current = await getSection('HERO', DEFAULTS.HERO as any);
   const updated = { ...current, ...(title ? { title } : {}), ...(subtitle ? { subtitle } : {}), ...(bgImage ? { bgImage } : {}) };
@@ -113,7 +113,7 @@ realEstateRouter.put('/hero', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADM
   res.json({ hero: updated });
 });
 
-realEstateRouter.post('/projects', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+realEstateRouter.post('/projects', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
   const { title, district, category, units, image, description } = req.body || {};
   if (!title) return res.status(400).json({ error: 'Project title is required.' });
 
@@ -146,7 +146,7 @@ realEstateRouter.post('/projects', requireAuth, requireRole('ADMINISTRATOR', 'SU
 // Projects live as a single JSON array inside one RealEstateContent row
 // (sectionKey 'PROJECTS'), not individual DB rows - deleting one means
 // reading the array, filtering it, and writing the whole array back.
-realEstateRouter.delete('/projects/:id', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+realEstateRouter.delete('/projects/:id', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
   const projects = await getSection<any[]>('PROJECTS', DEFAULT_PROJECTS);
   const exists = projects.some((p) => p.id === req.params.id);
   if (!exists) return res.status(404).json({ error: 'Project not found.' });
@@ -167,7 +167,7 @@ realEstateRouter.delete('/projects/:id', requireAuth, requireRole('ADMINISTRATOR
 });
 
 // Generic section editor for ABOUT / SERVICES / GALLERY / CONTACT
-realEstateRouter.put('/:sectionKey', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+realEstateRouter.put('/:sectionKey', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
   const key = req.params.sectionKey.toUpperCase();
   if (!['ABOUT', 'SERVICES', 'GALLERY', 'CONTACT'].includes(key)) {
     return res.status(400).json({ error: 'Unknown content section.' });

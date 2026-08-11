@@ -18,9 +18,9 @@ export function renderRealEstateAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.5rem;">🏢 Gasabo Real Estate Content Management</h2>
+            <h2 style="color: #0F172A; font-size: 1.3rem;">🏢 Gasabo Real Estate Content Management</h2>
             <p style="color: #64748B; font-size: 0.9rem;">
               Manage the company homepage hero content and flagship real estate development portfolio.
             </p>
@@ -38,7 +38,7 @@ export function renderRealEstateAdmin(container) {
         ` : ''}
 
         <!-- HERO & ABOUT EDITORS -->
-        <div class="glass-panel" style="padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 2rem;">
+        <div class="glass-panel" style="padding: 1.25rem 1.4rem; border-radius: 20px; margin-bottom: 1.25rem;">
           <h3 style="color: #0F172A; font-size: 1.1rem; margin-bottom: 1rem;">Hero Showcase & Corporate Info</h3>
           <div class="grid-2">
             <div class="form-group">
@@ -67,7 +67,7 @@ export function renderRealEstateAdmin(container) {
                 <th>District Location</th>
                 <th>Units / Specs</th>
                 <th>Development Status</th>
-                <th>Actions</th>
+                <th class="tbl-actions-col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -86,7 +86,7 @@ export function renderRealEstateAdmin(container) {
                   <td>${escapeHtml(p.district)}</td>
                   <td>${escapeHtml(p.units)}</td>
                   <td><span class="badge badge-active">${escapeHtml(p.status)}</span></td>
-                  <td>
+                  <td class="tbl-actions-col">
                     <button class="btn btn-sm btn-danger del-proj-btn" data-id="${p.id}">
                       Delete
                     </button>

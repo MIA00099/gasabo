@@ -1,11 +1,14 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { prisma } from '../config/db.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
+import { isEmailTaken } from '../utils/accountEmail.js';
+import { notifyAdmins } from '../utils/notify.js';
 
 export const sellersRouter = Router();
 
-sellersRouter.get('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (_req, res) => {
+sellersRouter.get('/', requireAuth, requirePermission('SELLERS'), async (_req, res) => {
   const sellers = await prisma.seller.findMany({
     orderBy: { createdAt: 'desc' },
     include: { _count: { select: { products: true } } },
@@ -24,7 +27,7 @@ sellersRouter.get('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRA
   });
 });
 
-sellersRouter.post('/:id/reset-password', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+sellersRouter.post('/:id/reset-password', requireAuth, requirePermission('SELLERS'), async (req, res) => {
   const seller = await prisma.seller.findUnique({ where: { id: req.params.id } });
   if (!seller) return res.status(404).json({ error: 'Seller not found.' });
 
@@ -47,12 +50,41 @@ sellersRouter.post('/:id/reset-password', requireAuth, requireRole('ADMINISTRATO
   res.json({ success: true, tempPassword });
 });
 
+const changeEmailSchema = z.object({ email: z.string().email() });
+
+sellersRouter.post('/:id/change-email', requireAuth, requirePermission('SELLERS'), async (req, res) => {
+  const parsed = changeEmailSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'A valid email address is required.' });
+
+  const seller = await prisma.seller.findUnique({ where: { id: req.params.id } });
+  if (!seller) return res.status(404).json({ error: 'Seller not found.' });
+
+  if (parsed.data.email !== seller.email && (await isEmailTaken(parsed.data.email, seller.id, 'seller'))) {
+    return res.status(409).json({ error: 'An account with this email already exists.' });
+  }
+
+  const oldEmail = seller.email;
+  const updated = await prisma.seller.update({ where: { id: seller.id }, data: { email: parsed.data.email } });
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'SELLER_EMAIL_CHANGED',
+    module: 'Seller Admin',
+    targetId: seller.id,
+    details: `Changed email for ${seller.businessName} from ${oldEmail} to ${updated.email}.`,
+  });
+
+  res.json({ email: updated.email });
+});
+
 // Toggles ACTIVE <-> SUSPENDED. Unlike deletion this is reversible and doesn't
 // destroy any data, so it's a direct action (like password reset) rather than
 // going through the multi-admin approval workflow. This was previously
 // unreachable from any admin action even though login already checks for it
 // (server/src/routes/auth.routes.ts blocks SUSPENDED sellers from signing in).
-sellersRouter.post('/:id/toggle-status', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+sellersRouter.post('/:id/toggle-status', requireAuth, requirePermission('SELLERS'), async (req, res) => {
   const seller = await prisma.seller.findUnique({ where: { id: req.params.id } });
   if (!seller) return res.status(404).json({ error: 'Seller not found.' });
 
@@ -72,7 +104,7 @@ sellersRouter.post('/:id/toggle-status', requireAuth, requireRole('ADMINISTRATOR
   res.json({ status: updated.status.toLowerCase() });
 });
 
-sellersRouter.post('/:id/request-delete', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+sellersRouter.post('/:id/request-delete', requireAuth, requirePermission('SELLERS'), async (req, res) => {
   const seller = await prisma.seller.findUnique({ where: { id: req.params.id } });
   if (!seller) return res.status(404).json({ error: 'Seller not found.' });
 
@@ -97,6 +129,11 @@ sellersRouter.post('/:id/request-delete', requireAuth, requireRole('ADMINISTRATO
     module: 'Multi-Admin Approvals',
     targetId: request.id,
     details: `Created approval request ${request.id} to delete seller "${seller.businessName}".`,
+  });
+
+  await notifyAdmins({
+    type: 'APPROVAL_REQUEST_CREATED',
+    message: `${req.user!.name} requested deletion of seller "${seller.businessName}" - needs a second Administrator's approval.`,
   });
 
   res.status(201).json({ request });

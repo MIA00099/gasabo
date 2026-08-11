@@ -101,11 +101,21 @@ model Product {
   seller        Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   categoryId    String
   category      Category @relation(fields: [categoryId], references: [id])
-  status        String   @default("ACTIVE") // "ACTIVE" | "SUSPENDED"
+  // "PENDING" (just posted, awaiting admin review - not visible on the public
+  // marketplace) | "ACTIVE" | "REJECTED" (admin declined it, see
+  // rejectionReason) | "SUSPENDED". Every new listing starts at PENDING now -
+  // sellers no longer go straight to live without a moderation pass.
+  status          String    @default("PENDING")
+  rejectionReason String?
   isFeatured    Boolean  @default(false)
   isTrending    Boolean  @default(false)
   isRecommended Boolean  @default(false)
   expiresAt     DateTime?
+  // Set once the "last week before expiry" reminder notification has been
+  // sent for the CURRENT 6-month cycle, so the sweep doesn't re-notify the
+  // seller every time it runs. Cleared back to null whenever expiresAt is
+  // pushed forward (POST /:id/renew), starting a fresh cycle.
+  expiryReminderSentAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }

@@ -18,6 +18,7 @@ import { auditRouter } from './routes/audit.routes.js';
 import { advertisementsRouter } from './routes/advertisements.routes.js';
 import { rbacRouter } from './routes/rbac.routes.js';
 import { uploadsRouter } from './routes/uploads.routes.js';
+import { notificationsRouter } from './routes/notifications.routes.js';
 
 export const app = express();
 
@@ -42,10 +43,29 @@ app.use('/api/audit-logs', auditRouter);
 app.use('/api/advertisements', advertisementsRouter);
 app.use('/api/rbac', rbacRouter);
 app.use('/api/uploads', uploadsRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // 404 handler for unmatched /api routes
 app.use('/api', (req, res) => {
   res.status(404).json({ error: `No route for ${req.method} ${req.originalUrl}` });
+});
+
+// Serve the built frontend (npm run build -> dist/) from this same Express
+// process - this is what lets one Railway service host both the API and the
+// site on one origin, so the frontend's relative fetch('/api/...') calls
+// keep working in production with no CORS/absolute-URL rework. Inert in
+// local dev: the dev workflow runs Vite's own server on :5173 for the
+// frontend and never asks this Express process for a non-API route, and
+// dist/ won't even exist yet before the first `npm run build`.
+const distDir = path.resolve('dist');
+app.use(express.static(distDir));
+app.get('*', (req, res, next) => {
+  // Anything under /uploads is real user content, not a frontend route -
+  // let it 404 normally instead of masquerading as index.html.
+  if (req.path.startsWith('/uploads')) return next();
+  res.sendFile(path.join(distDir, 'index.html'), (err) => {
+    if (err) next(err);
+  });
 });
 
 // Central error handler - guarantees JSON error responses instead of leaking stack traces

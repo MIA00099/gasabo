@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../config/db.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth, requirePermission } from '../middleware/auth.js';
 
 export const advertisementsRouter = Router();
 
@@ -17,7 +17,7 @@ advertisementsRouter.get('/', async (_req, res) => {
   });
 });
 
-advertisementsRouter.post('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+advertisementsRouter.post('/', requireAuth, requirePermission('ADVERTISEMENTS'), async (req, res) => {
   const { title, type, imageUrl, targetUrl, startDate, endDate } = req.body || {};
   if (!title || !imageUrl) return res.status(400).json({ error: 'Banner title and image are required.' });
 
@@ -39,7 +39,7 @@ advertisementsRouter.post('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_AD
 // record and isn't structural data - it's marketing content, low-risk and
 // easily recreated. Direct delete (same pattern as products), not the
 // multi-admin approval workflow.
-advertisementsRouter.delete('/:id', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+advertisementsRouter.delete('/:id', requireAuth, requirePermission('ADVERTISEMENTS'), async (req, res) => {
   await prisma.advertisement.delete({ where: { id: req.params.id } }).catch(() => {
     throw new Error('Banner not found or already deleted.');
   });

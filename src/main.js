@@ -16,6 +16,12 @@ import { renderLoginView } from './components/LoginView.js';
 // inside AdminDashboardView - the URL just keeps it off the public UI.
 const ADMIN_URL_HASH = '#/admin-portal';
 
+// Module scope, not a renderApp() local - renderApp() is called on every
+// single stateEngine notify (any state change anywhere), which would reset
+// a closure-local "is the dropdown open" back to false the instant anything
+// else in the app changed while it was open.
+let notifDropdownOpen = false;
+
 document.addEventListener('DOMContentLoaded', () => {
   const appElement = document.getElementById('app');
 
@@ -41,8 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // at the screen, and give away a control (Logout) that shouldn't be
     // visible outside the admin area at all.
     const isAdminRole = currentUser.role === 'admin' || currentUser.role === 'sub_admin';
+    const isSellerRole = currentUser.role === 'seller';
     const showAccountChip = isLoggedIn && (!isAdminRole || activePortal === 'admin');
-    const pendingApprovals = state.approvalRequests.filter(r => r.status === 'pending').length;
+    // GET /api/notifications now serves both admin roles (approvals,
+    // removals, etc.) and sellers (listing-expiry reminders) - shown exactly
+    // where each role's identity chip is, i.e. inside the admin portal for
+    // admins, and anywhere in the marketplace portal for a logged-in seller
+    // (their dashboard lives inside it, not as a separate top-level portal).
+    const showNotifBell = isLoggedIn && ((isAdminRole && activePortal === 'admin') || (isSellerRole && activePortal === 'marketplace'));
+    if (showNotifBell && state.loading.notifications === undefined) {
+      stateEngine.loadNotifications().catch(() => {});
+    }
+    const unreadNotifCount = state.notifications.filter(n => !n.isRead).length;
 
     const t = (key) => getTranslation(currentLang, key);
 
@@ -87,8 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </svg>
                 ${t('nav_marketplace')}
               </button>
-              <button class="nav-tab-btn ${activePortal==='realestate'?'active':''}" id="nav-link-re" title="Gasabo Real Estate" style="padding: 3px 12px; display: inline-flex; align-items: center; justify-content: center; height: 38px; border-radius: 9999px; vertical-align: middle;">
-                <img src="/real-estate-logo.png" alt="Gasabo Real Estate" style="height: 32px; width: auto; max-height: 100%; object-fit: contain; display: block;">
+              <button class="nav-tab-btn ${activePortal==='realestate'?'active':''}" id="nav-link-re" title="Gasabo Real Estate" style="display: inline-flex; align-items: center; gap: 7px;">
+                <img src="/real-estate-logo.png" alt="Gasabo Real Estate" style="height: 22px; width: 22px; object-fit: contain; border-radius: 4px; flex-shrink: 0;">
+                ${t('nav_realestate')}
               </button>
             </div>
 
@@ -104,12 +121,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
               </div>
 
-              ${showAccountChip ? `
-                <button class="nav-circle-btn" id="header-notif-btn" title="Notifications" style="position: relative;">
-                  🔔
-                  ${pendingApprovals > 0 ? `<span class="action-count-badge">${pendingApprovals}</span>` : ''}
-                </button>
+              ${showNotifBell ? `
+                <div style="position: relative;">
+                  <button class="nav-circle-btn" id="header-notif-btn" title="Notifications" style="position: relative;">
+                    🔔
+                    ${unreadNotifCount > 0 ? `<span class="action-count-badge">${unreadNotifCount}</span>` : ''}
+                  </button>
+                  ${notifDropdownOpen ? `
+                    <div id="notif-dropdown" style="position: absolute; top: 44px; right: 0; width: 340px; max-height: 420px; overflow-y: auto; background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,0.15); z-index: 100;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.1rem; border-bottom: 1px solid #E2E8F0;">
+                        <span style="font-weight: 800; color: #0F172A; font-size: 0.9rem;">Notifications</span>
+                        ${unreadNotifCount > 0 ? `<button id="notif-mark-all-read" style="background: none; border: none; color: #2563EB; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Mark all read</button>` : ''}
+                      </div>
+                      ${state.notifications.length === 0 ? `
+                        <div style="padding: 2rem 1rem; text-align: center; color: #94A3B8; font-size: 0.85rem;">No notifications yet.</div>
+                      ` : state.notifications.map(n => `
+                        <button class="notif-item" data-id="${n.id}" style="display: block; width: 100%; text-align: left; padding: 0.8rem 1.1rem; border: none; border-bottom: 1px solid #F1F5F9; background: ${n.isRead ? '#fff' : '#F0FDF4'}; cursor: pointer;">
+                          <div style="font-size: 0.82rem; color: #1E293B; line-height: 1.4;">${escapeHtml(n.message)}</div>
+                          <div style="font-size: 0.7rem; color: #94A3B8; margin-top: 0.3rem;">${new Date(n.createdAt).toLocaleString()}</div>
+                        </button>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+                </div>
+              ` : ''}
 
+              ${showAccountChip ? `
                 <!-- Signed-in Account Chip -->
                 <div style="display: flex; align-items: center; gap: 8px; background: #F1F5F9; border: 1px solid #E2E8F0; padding: 6px 8px 6px 14px; border-radius: 9999px;">
                   <div style="line-height: 1.1;">
@@ -152,6 +189,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       headerMount.querySelector('#lang-toggle-en')?.addEventListener('click', () => stateEngine.setLanguage('en'));
       headerMount.querySelector('#lang-toggle-rw')?.addEventListener('click', () => stateEngine.setLanguage('rw'));
+
+      headerMount.querySelector('#header-notif-btn')?.addEventListener('click', () => {
+        notifDropdownOpen = !notifDropdownOpen;
+        renderApp();
+      });
+      headerMount.querySelector('#notif-mark-all-read')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        stateEngine.markAllNotificationsRead().catch(() => {});
+      });
+      headerMount.querySelectorAll('.notif-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          stateEngine.markNotificationRead(btn.dataset.id).catch(() => {});
+        });
+      });
 
       // .main-navbar is position:fixed (see main.css), which removes it from
       // normal document flow - without this, the fixed bar would sit on top

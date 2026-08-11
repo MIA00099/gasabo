@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../config/db.js';
 import { requireAuth, requireRole, requirePermission, hasModulePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
-import { notifySeller, notifyAdmins } from '../utils/notify.js';
+import { notifySeller, notifyAdminsWithModulePermission } from '../utils/notify.js';
 
 export const productsRouter = Router();
 
@@ -142,7 +142,11 @@ productsRouter.post('/', requireAuth, requireRole('SELLER'), async (req, res) =>
   // The sidebar badge (see AdminDashboardView.js) only updates once an admin
   // is actually looking at the app - a real push notification is what
   // actually gets noticed if nobody happens to have it open right now.
-  await notifyAdmins({
+  // Scoped to PRODUCTS permission specifically - a Sub-Administrator
+  // restricted to only the Approvals permission (see rbac.routes.ts) has no
+  // way to act on a product listing, so pinging them about one is a false
+  // alarm, not a useful notification.
+  await notifyAdminsWithModulePermission('PRODUCTS', {
     type: 'PRODUCT_SUBMITTED',
     message: `${req.user!.name} submitted a new listing "${title}" - needs approval before it goes live.`,
   });

@@ -346,9 +346,16 @@ function renderSellerDashboardView(container, sellerUser) {
 
       try {
         await stateEngine.createProduct({ title, category, price, district, condition, description, image });
-        alert('Product published successfully to Kigali Marketplace!');
+        // Stale copy from before the approval workflow existed - new listings
+        // start PENDING now, not live, and this was both lying to the seller
+        // ("published... to the Marketplace" - it isn't, yet) and then
+        // sending them to the "active" tab, where a pending listing never
+        // appears. That combination is exactly what read as "my product
+        // just vanished" - it was never broken, just told the wrong story
+        // and pointed at the wrong tab immediately after.
+        alert('Product submitted! It will appear on the marketplace once an admin reviews and approves it - you can track its status under "Awaiting Review".');
         resetProductFormValues(sellerUser.district);
-        stateEngine.setUI({ sellerDashboardTab: 'active', productImageMode: 'url', productImagePreview: '' });
+        stateEngine.setUI({ sellerDashboardTab: 'pending', productImageMode: 'url', productImagePreview: '' });
       } catch (err) {
         captureProductFormValues(container);
         render();

@@ -15,6 +15,14 @@ const KEY_TO_MODULE = {
   reports: 'REPORTS',
   user_mgmt: 'USERS',
   system_settings: 'SYSTEM_SETTINGS',
+  // These two were missing entirely - checking their box in the matrix and
+  // submitting a permission request would have silently dropped them (the
+  // checkbox's data-module ended up literally "undefined", which
+  // VALID_MODULES then filters out server-side). Never caught before now
+  // because both were only ever granted via direct API calls, not through
+  // this checkbox flow.
+  approvals: 'APPROVALS',
+  product_approval: 'PRODUCT_APPROVAL',
 };
 
 export function renderUserRBACAdmin(container) {

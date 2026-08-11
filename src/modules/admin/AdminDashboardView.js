@@ -35,7 +35,7 @@ export function renderAdminDashboardView(container) {
     // items the whole time. Loading it here too (same eventual-consistency
     // pattern as notifications in main.js) means the badge below is
     // accurate before anyone has ever clicked into that tab.
-    if (currentUser.permissions?.product_mgmt && state.loading.pendingProducts === undefined) {
+    if ((currentUser.permissions?.product_mgmt || currentUser.permissions?.product_approval) && state.loading.pendingProducts === undefined) {
       stateEngine.loadPendingProducts().catch(() => {});
     }
     const pendingProductsCount = state.pendingProducts?.length || 0;
@@ -47,7 +47,7 @@ export function renderAdminDashboardView(container) {
     const perms = currentUser.permissions || {};
     const tabAccess = {
       approvals: true,
-      marketplace: !!(perms.product_mgmt || perms.category_mgmt || perms.banner_mgmt),
+      marketplace: !!(perms.product_mgmt || perms.category_mgmt || perms.banner_mgmt || perms.product_approval),
       sellers: !!perms.seller_mgmt,
       realestate: !!perms.realestate_content,
       rbac: !!perms.user_mgmt,

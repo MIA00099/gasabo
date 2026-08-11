@@ -40,7 +40,7 @@ rbacRouter.get('/users', requireAuth, requirePermission('USERS'), async (_req, r
   res.json({ users });
 });
 
-const VALID_MODULES = ['PRODUCTS', 'SELLERS', 'CATEGORIES', 'ADVERTISEMENTS', 'REAL_ESTATE_CONTENT', 'REPORTS', 'USERS', 'SYSTEM_SETTINGS', 'APPROVALS'];
+const VALID_MODULES = ['PRODUCTS', 'SELLERS', 'CATEGORIES', 'ADVERTISEMENTS', 'REAL_ESTATE_CONTENT', 'REPORTS', 'USERS', 'SYSTEM_SETTINGS', 'APPROVALS', 'PRODUCT_APPROVAL'];
 
 const createSubAdminSchema = z.object({
   name: z.string().min(2),

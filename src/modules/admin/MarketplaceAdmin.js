@@ -6,15 +6,31 @@ import { stateEngine } from '../../store/stateEngine.js';
 export function renderMarketplaceAdmin(container) {
   function render() {
     const state = stateEngine.getState();
-    const activeTab = state.ui.marketplaceAdminTab || 'products';
 
-    if (state.loading.products === undefined) stateEngine.loadProducts().catch(() => {});
-    if (state.loading.categories === undefined) stateEngine.loadCategories().catch(() => {});
-    if (state.loading.banners === undefined) stateEngine.loadBanners().catch(() => {});
+    // Split from product_mgmt on purpose (see server/src/utils/permissions.ts) -
+    // a dedicated moderator approving new submissions shouldn't automatically
+    // get full product/category/banner management too. Each tab below is
+    // gated on its own specific permission, not just "got into this panel at
+    // all" - the backend enforces the same split, so showing a tab someone
+    // can't actually use would just mean every action on it 403s.
+    const perms = state.currentUser?.permissions || {};
+    const tabPerms = {
+      pending: !!perms.product_approval,
+      products: !!perms.product_mgmt,
+      categories: !!perms.category_mgmt,
+      banners: !!perms.banner_mgmt,
+    };
+    const firstAllowedTab = ['pending', 'products', 'categories', 'banners'].find((t) => tabPerms[t]) || 'pending';
+    let activeTab = state.ui.marketplaceAdminTab || firstAllowedTab;
+    if (!tabPerms[activeTab]) activeTab = firstAllowedTab;
+
+    if (tabPerms.products && state.loading.products === undefined) stateEngine.loadProducts().catch(() => {});
+    if (tabPerms.categories && state.loading.categories === undefined) stateEngine.loadCategories().catch(() => {});
+    if (tabPerms.banners && state.loading.banners === undefined) stateEngine.loadBanners().catch(() => {});
     // Loaded unconditionally (not just when that tab is active) so the
     // pending-count badge on the tab button itself is accurate no matter
     // which tab the admin currently has open.
-    if (state.loading.pendingProducts === undefined) stateEngine.loadPendingProducts().catch(() => {});
+    if (tabPerms.pending && state.loading.pendingProducts === undefined) stateEngine.loadPendingProducts().catch(() => {});
 
     container.innerHTML = `
       <div>
@@ -27,18 +43,26 @@ export function renderMarketplaceAdmin(container) {
           </div>
 
           <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0; flex-wrap: wrap;">
-            <button id="mkt-adm-pending" class="btn btn-sm" style="color:${activeTab==='pending'?'#fff':'#64748B'}; background:${activeTab==='pending'?'#D97706':'transparent'}; position: relative;">
-              🕒 Pending Approval (${state.pendingProducts.length})
-            </button>
-            <button id="mkt-adm-products" class="btn btn-sm" style="color:${activeTab==='products'?'#fff':'#64748B'}; background:${activeTab==='products'?'var(--primary)':'transparent'};">
-              📦 Products (${state.products.length})
-            </button>
-            <button id="mkt-adm-categories" class="btn btn-sm" style="color:${activeTab==='categories'?'#fff':'#64748B'}; background:${activeTab==='categories'?'var(--primary)':'transparent'};">
-              📁 Categories (${state.categories.length})
-            </button>
-            <button id="mkt-adm-banners" class="btn btn-sm" style="color:${activeTab==='banners'?'#fff':'#64748B'}; background:${activeTab==='banners'?'var(--primary)':'transparent'};">
-              🖼️ Ad Banners (${state.banners.length})
-            </button>
+            ${tabPerms.pending ? `
+              <button id="mkt-adm-pending" class="btn btn-sm" style="color:${activeTab==='pending'?'#fff':'#64748B'}; background:${activeTab==='pending'?'#D97706':'transparent'}; position: relative;">
+                🕒 Pending Approval (${state.pendingProducts.length})
+              </button>
+            ` : ''}
+            ${tabPerms.products ? `
+              <button id="mkt-adm-products" class="btn btn-sm" style="color:${activeTab==='products'?'#fff':'#64748B'}; background:${activeTab==='products'?'var(--primary)':'transparent'};">
+                📦 Products (${state.products.length})
+              </button>
+            ` : ''}
+            ${tabPerms.categories ? `
+              <button id="mkt-adm-categories" class="btn btn-sm" style="color:${activeTab==='categories'?'#fff':'#64748B'}; background:${activeTab==='categories'?'var(--primary)':'transparent'};">
+                📁 Categories (${state.categories.length})
+              </button>
+            ` : ''}
+            ${tabPerms.banners ? `
+              <button id="mkt-adm-banners" class="btn btn-sm" style="color:${activeTab==='banners'?'#fff':'#64748B'}; background:${activeTab==='banners'?'var(--primary)':'transparent'};">
+                🖼️ Ad Banners (${state.banners.length})
+              </button>
+            ` : ''}
           </div>
         </div>
 

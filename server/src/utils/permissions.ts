@@ -15,6 +15,12 @@ const PERMISSION_KEYS = [
   // this permission can act as a dedicated approver without being able to
   // touch Marketplace/Sellers/Real Estate/RBAC/Audit at all.
   'approvals',
+  // Separate from product_mgmt on purpose: product_mgmt is full ongoing
+  // product management (edit feature/trending flags, delete existing
+  // listings) - a dedicated moderator reviewing NEW submissions shouldn't
+  // need or get that. This only covers GET /products/pending and
+  // approve/reject.
+  'product_approval',
 ] as const;
 
 const MODULE_TO_KEY: Record<string, (typeof PERMISSION_KEYS)[number]> = {
@@ -27,6 +33,7 @@ const MODULE_TO_KEY: Record<string, (typeof PERMISSION_KEYS)[number]> = {
   USERS: 'user_mgmt',
   SYSTEM_SETTINGS: 'system_settings',
   APPROVALS: 'approvals',
+  PRODUCT_APPROVAL: 'product_approval',
 };
 
 export function fullPermissions(): Record<string, boolean> {

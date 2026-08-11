@@ -81,7 +81,7 @@ productsRouter.get('/mine', requireAuth, requireRole('SELLER'), async (req, res)
 });
 
 // GET /api/products/pending - admin moderation queue
-productsRouter.get('/pending', requireAuth, requirePermission('PRODUCTS'), async (_req, res) => {
+productsRouter.get('/pending', requireAuth, requirePermission('PRODUCT_APPROVAL'), async (_req, res) => {
   const products = await prisma.product.findMany({
     where: { status: 'PENDING' },
     include: { seller: true, category: true },
@@ -146,7 +146,7 @@ productsRouter.post('/', requireAuth, requireRole('SELLER'), async (req, res) =>
   // restricted to only the Approvals permission (see rbac.routes.ts) has no
   // way to act on a product listing, so pinging them about one is a false
   // alarm, not a useful notification.
-  await notifyAdminsWithModulePermission('PRODUCTS', {
+  await notifyAdminsWithModulePermission('PRODUCT_APPROVAL', {
     type: 'PRODUCT_SUBMITTED',
     message: `${req.user!.name} submitted a new listing "${title}" - needs approval before it goes live.`,
   });
@@ -156,7 +156,7 @@ productsRouter.post('/', requireAuth, requireRole('SELLER'), async (req, res) =>
 
 const rejectSchema = z.object({ reason: z.string().min(3, 'A rejection reason is required.') });
 
-productsRouter.post('/:id/approve', requireAuth, requirePermission('PRODUCTS'), async (req, res) => {
+productsRouter.post('/:id/approve', requireAuth, requirePermission('PRODUCT_APPROVAL'), async (req, res) => {
   const product = await prisma.product.findUnique({ where: { id: req.params.id } });
   if (!product) return res.status(404).json({ error: 'Product not found.' });
   if (product.status !== 'PENDING') {
@@ -188,7 +188,7 @@ productsRouter.post('/:id/approve', requireAuth, requirePermission('PRODUCTS'), 
   res.json({ product: serializeProduct(updated) });
 });
 
-productsRouter.post('/:id/reject', requireAuth, requirePermission('PRODUCTS'), async (req, res) => {
+productsRouter.post('/:id/reject', requireAuth, requirePermission('PRODUCT_APPROVAL'), async (req, res) => {
   const parsed = rejectSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Please provide a reason for rejecting this listing.' });
 

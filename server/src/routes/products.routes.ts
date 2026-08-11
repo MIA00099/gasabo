@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../config/db.js';
 import { requireAuth, requireRole, requirePermission, hasModulePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
-import { notifySeller } from '../utils/notify.js';
+import { notifySeller, notifyAdmins } from '../utils/notify.js';
 
 export const productsRouter = Router();
 
@@ -137,6 +137,14 @@ productsRouter.post('/', requireAuth, requireRole('SELLER'), async (req, res) =>
     module: 'Marketplace',
     targetId: product.id,
     details: `Submitted product "${title}" for admin approval.`,
+  });
+
+  // The sidebar badge (see AdminDashboardView.js) only updates once an admin
+  // is actually looking at the app - a real push notification is what
+  // actually gets noticed if nobody happens to have it open right now.
+  await notifyAdmins({
+    type: 'PRODUCT_SUBMITTED',
+    message: `${req.user!.name} submitted a new listing "${title}" - needs approval before it goes live.`,
   });
 
   res.status(201).json({ product: serializeProduct(product) });

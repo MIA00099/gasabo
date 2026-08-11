@@ -28,6 +28,18 @@ export function renderAdminDashboardView(container) {
     const highRiskCount = pendingReqs.filter(r => r.riskLevel === 'HIGH').length;
     const completedTodayCount = state.approvalRequests.filter(r => r.status !== 'pending').length;
 
+    // Pending product listings were only ever loaded once someone actually
+    // opened Marketplace Management's own Pending Approval sub-tab - which
+    // meant the sidebar had no way to show a count, and a real admin
+    // reported not seeing anything to approve even though the queue had
+    // items the whole time. Loading it here too (same eventual-consistency
+    // pattern as notifications in main.js) means the badge below is
+    // accurate before anyone has ever clicked into that tab.
+    if (currentUser.permissions?.product_mgmt && state.loading.pendingProducts === undefined) {
+      stateEngine.loadPendingProducts().catch(() => {});
+    }
+    const pendingProductsCount = state.pendingProducts?.length || 0;
+
     // Mirrors the server-side requirePermission() checks (server/src/middleware/auth.ts) -
     // that's the real security boundary; this just keeps a Sub-Administrator from
     // clicking into a panel that will 403 on every action inside it. "Multi-Admin
@@ -68,6 +80,9 @@ export function renderAdminDashboardView(container) {
               ${tabAccess.marketplace ? `
                 <button class="adm-side-btn ${activeTab==='marketplace'?'active':''}" data-tab="marketplace">
                   <span>🛒 Marketplace Management</span>
+                  ${pendingProductsCount > 0 ? `
+                    <span style="background: #dc2626; color: #ffffff; position: absolute; right: 12px; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${pendingProductsCount}</span>
+                  ` : ''}
                 </button>
               ` : ''}
 

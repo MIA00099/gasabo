@@ -7,60 +7,60 @@ export const realEstateRouter = Router();
 
 const DEFAULTS: Record<string, unknown> = {
   HERO: {
-    title: "Building Rwanda's Next Generation Architectural Landmarks",
-    subtitle:
-      'Gasabo Real Estate leads luxury residential developments, grade-A commercial plazas, land surveying, and property management in Kigali, Musanze, and Rubavu.',
-    bgImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80',
+    title: 'Find Your Perfect Property with Gasabo Real Estate',
+    subtitle: 'Your trusted partner in Rwanda for buying, selling, renting, and managing premium properties.',
+    bgImage: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2000&q=80',
   },
   ABOUT: {
-    heading: 'Rwanda-Rooted, Investor-Trusted',
-    text: 'Gasabo Real Estate has delivered landmark residential and commercial developments across Kigali, Musanze, and Rubavu for over a decade, combining international construction standards with deep local market expertise.',
-    stats: [
-      { value: '12+', label: 'Years in Operation' },
-      { value: '30+', label: 'Completed Developments' },
-      { value: '3', label: 'Active Districts' },
-      { value: '500+', label: 'Happy Property Owners' },
-    ],
+    heading: 'About Gasabo Real Estate',
+    text: "We are Rwanda's premier real estate agency, committed to excellence, integrity, and transparency in every transaction.",
   },
   SERVICES: [
-    { icon: '🏗️', title: 'Residential Development', description: 'Luxury villas, eco-estates, and gated residential communities built to international standards.' },
-    { icon: '🏢', title: 'Commercial Property', description: 'Grade-A office towers and retail plazas designed for Kigali’s growing business sector.' },
-    { icon: '📐', title: 'Land Surveying', description: 'Certified land surveying, titling support, and due-diligence services across all 30 districts.' },
-    { icon: '🔑', title: 'Property Management', description: 'Full-service leasing, maintenance, and tenant management for owners and investors.' },
-  ],
-  GALLERY: [
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+    { icon: '🏠', title: 'Land and Houses Sales', description: 'Expert assistance in buying and selling premium properties.', featured: true },
+    { icon: '🔑', title: 'House Renting', description: 'Find fully furnished, move-in ready homes tailored to your lifestyle.', featured: true },
+    { icon: '🏢', title: 'Property Management', description: 'Comprehensive asset management, ensuring routine maintenance.', featured: false },
+    { icon: '📈', title: 'Investment Advice', description: 'Strategic consulting to help maximize your real estate ROI.', featured: false },
+    { icon: '📣', title: 'Marketing and Advertising', description: 'High-reach property promotion using professional video tours.', featured: false },
+    { icon: '🛡️', title: 'Tenant Representation', description: 'Dedicated advocacy for tenants navigating complex leases.', featured: false },
   ],
   CONTACT: {
-    address: 'Gasabo Tower, 4th Floor, KG 7 Ave, Kacyiru, Gasabo District, Kigali, Rwanda',
-    phone: '+250 788 100 200',
+    address: 'Gasabo District, Kigali, Rwanda',
+    phone: '+250 788 350 555',
     email: 'info@gasaborealestate.rw',
   },
 };
 
-const DEFAULT_PROJECTS = [
+// Individual listings (houses/plots/commercial units) - replaced the old
+// developer "portfolio projects" model by request. priceNum is kept
+// separate from the display price string so the price-range search filter
+// (see stateEngine.js) has something numeric to compare against, same
+// reasoning as Product.price in the marketplace.
+const DEFAULT_PROPERTIES = [
   {
-    id: 'proj_1',
-    title: 'Gasabo Green Heights Villa Estate',
-    category: 'Residential',
-    district: 'Gasabo (Gacuriro)',
-    units: '24 Luxury Solar Eco-Villas',
-    status: 'Completed',
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1000&q=80',
-    description: 'Solar-powered 4-bedroom smart eco-villas featuring panoramic Kigali valley views, private pools, and 24/7 guarded security.',
+    id: 'prop_1',
+    type: 'house',
+    title: 'Modern 4-Bedroom Villa',
+    location: 'Gasabo',
+    price: '150,000,000 Rwf',
+    priceNum: 150000000,
+    beds: 4,
+    baths: 3,
+    area: '600 sqm',
+    image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80',
+    description: 'Stunning modern villa located in the upscale neighborhood of Gacuriro. Features a large garden, paved parking, modern kitchen, and spacious master suite.',
   },
   {
-    id: 'proj_2',
-    title: 'Kigali Central Commercial Plaza',
-    category: 'Commercial',
-    district: 'Nyarugenge (CBD)',
-    units: '14 Floors Grade-A Offices',
-    status: 'Under Construction (85%)',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=80',
-    description: 'State-of-the-art office tower with double-glazed glass facade, high-speed fiber optics, 250-car parking garage, and rooftop garden.',
+    id: 'prop_2',
+    type: 'plot',
+    title: 'Prime Residential Plot',
+    location: 'Bugesera',
+    price: '8,500,000 Rwf',
+    priceNum: 8500000,
+    beds: 0,
+    baths: 0,
+    area: '600 sqm',
+    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
+    description: 'Excellent flat land ready for construction in the fast-growing Bugesera district. Close to the main tarmac road.',
   },
 ];
 
@@ -84,15 +84,14 @@ async function setSection(key: string, content: unknown) {
 
 // GET /api/realestate - aggregated public content for the whole Gasabo Real Estate page
 realEstateRouter.get('/', async (_req, res) => {
-  const [hero, about, services, gallery, contact, projects] = await Promise.all([
+  const [hero, about, services, contact, properties] = await Promise.all([
     getSection('HERO', DEFAULTS.HERO),
     getSection('ABOUT', DEFAULTS.ABOUT),
     getSection('SERVICES', DEFAULTS.SERVICES),
-    getSection('GALLERY', DEFAULTS.GALLERY),
     getSection('CONTACT', DEFAULTS.CONTACT),
-    getSection('PROJECTS', DEFAULT_PROJECTS),
+    getSection('PROPERTIES', DEFAULT_PROPERTIES),
   ]);
-  res.json({ hero, about, services, gallery, contact, projects });
+  res.json({ hero, about, services, contact, properties });
 });
 
 realEstateRouter.put('/hero', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
@@ -113,63 +112,68 @@ realEstateRouter.put('/hero', requireAuth, requirePermission('REAL_ESTATE_CONTEN
   res.json({ hero: updated });
 });
 
-realEstateRouter.post('/projects', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
-  const { title, district, category, units, image, description } = req.body || {};
-  if (!title) return res.status(400).json({ error: 'Project title is required.' });
+const PROPERTY_TYPES = ['house', 'plot', 'commercial'];
 
-  const projects = await getSection('PROJECTS', DEFAULT_PROJECTS);
-  const newProject = {
+realEstateRouter.post('/properties', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
+  const { title, type, location, price, priceNum, beds, baths, area, image, description } = req.body || {};
+  if (!title) return res.status(400).json({ error: 'Property title is required.' });
+
+  const properties = await getSection('PROPERTIES', DEFAULT_PROPERTIES);
+  const newProperty = {
     id: 're_' + Date.now(),
+    type: PROPERTY_TYPES.includes(type) ? type : 'house',
     title,
-    category: category || 'Residential',
-    district: district || 'Gasabo',
-    units: units || '20 Units',
-    status: 'Under Development',
+    location: location || 'Gasabo',
+    price: price || 'Contact for price',
+    priceNum: Number.isFinite(priceNum) ? priceNum : 0,
+    beds: Number.isFinite(beds) ? beds : 0,
+    baths: Number.isFinite(baths) ? baths : 0,
+    area: area || 'N/A',
     image: image || '/real-estate-logo.png',
-    description: description || 'Newly announced flagship development by Gasabo Real Estate.',
+    description: description || 'Newly listed property by Gasabo Real Estate.',
   };
-  const updated = [newProject, ...projects];
-  await setSection('PROJECTS', updated);
+  const updated = [newProperty, ...properties];
+  await setSection('PROPERTIES', updated);
 
   await logAudit({
     actorId: req.user!.id,
     actorType: req.user!.role,
     actorName: req.user!.name,
-    action: 'REALESTATE_PROJECT_ADDED',
+    action: 'REALESTATE_PROPERTY_ADDED',
     module: 'Real Estate Admin',
-    details: `Added portfolio project "${title}".`,
+    details: `Added property listing "${title}".`,
   });
 
-  res.status(201).json({ projects: updated });
+  res.status(201).json({ properties: updated });
 });
 
-// Projects live as a single JSON array inside one RealEstateContent row
-// (sectionKey 'PROJECTS'), not individual DB rows - deleting one means
+// Properties live as a single JSON array inside one RealEstateContent row
+// (sectionKey 'PROPERTIES'), not individual DB rows - deleting one means
 // reading the array, filtering it, and writing the whole array back.
-realEstateRouter.delete('/projects/:id', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
-  const projects = await getSection<any[]>('PROJECTS', DEFAULT_PROJECTS);
-  const exists = projects.some((p) => p.id === req.params.id);
-  if (!exists) return res.status(404).json({ error: 'Project not found.' });
+realEstateRouter.delete('/properties/:id', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
+  const properties = await getSection<any[]>('PROPERTIES', DEFAULT_PROPERTIES);
+  const exists = properties.some((p) => p.id === req.params.id);
+  if (!exists) return res.status(404).json({ error: 'Property not found.' });
 
-  const updated = projects.filter((p) => p.id !== req.params.id);
-  await setSection('PROJECTS', updated);
+  const updated = properties.filter((p) => p.id !== req.params.id);
+  await setSection('PROPERTIES', updated);
 
   await logAudit({
     actorId: req.user!.id,
     actorType: req.user!.role,
     actorName: req.user!.name,
-    action: 'REALESTATE_PROJECT_DELETED',
+    action: 'REALESTATE_PROPERTY_DELETED',
     module: 'Real Estate Admin',
-    details: `Deleted portfolio project (id: ${req.params.id}).`,
+    details: `Deleted property listing (id: ${req.params.id}).`,
   });
 
-  res.json({ projects: updated });
+  res.json({ properties: updated });
 });
 
-// Generic section editor for ABOUT / SERVICES / GALLERY / CONTACT
+// Generic section editor for ABOUT / SERVICES / CONTACT
 realEstateRouter.put('/:sectionKey', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
   const key = req.params.sectionKey.toUpperCase();
-  if (!['ABOUT', 'SERVICES', 'GALLERY', 'CONTACT'].includes(key)) {
+  if (!['ABOUT', 'SERVICES', 'CONTACT'].includes(key)) {
     return res.status(400).json({ error: 'Unknown content section.' });
   }
   await setSection(key, req.body);

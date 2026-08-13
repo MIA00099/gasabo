@@ -56,7 +56,7 @@ class StateEngine {
       categories: [],
       sellers: [],
       banners: [],
-      realEstate: { hero: null, about: null, services: [], gallery: [], contact: null, projects: [] },
+      realEstate: { hero: null, about: null, services: [], contact: null, properties: [] },
       approvalRequests: [],
       auditLogs: [],
       systemUsers: [],
@@ -374,21 +374,21 @@ class StateEngine {
     });
   }
 
-  async addRealEstateProject(projectData) {
+  async addRealEstateProperty(propertyData) {
     return this._run('realEstate', async () => {
-      const { projects } = await api.post('/realestate/projects', projectData);
-      this.data.realEstate = { ...this.data.realEstate, projects };
+      const { properties } = await api.post('/realestate/properties', propertyData);
+      this.data.realEstate = { ...this.data.realEstate, properties };
       this.notify();
-      return projects;
+      return properties;
     });
   }
 
-  async deleteRealEstateProject(projectId) {
+  async deleteRealEstateProperty(propertyId) {
     return this._run('realEstate', async () => {
-      const { projects } = await api.delete(`/realestate/projects/${projectId}`);
-      this.data.realEstate = { ...this.data.realEstate, projects };
+      const { properties } = await api.delete(`/realestate/properties/${propertyId}`);
+      this.data.realEstate = { ...this.data.realEstate, properties };
       this.notify();
-      return projects;
+      return properties;
     });
   }
 

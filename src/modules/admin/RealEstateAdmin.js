@@ -3,6 +3,8 @@
  */
 import { stateEngine } from '../../store/stateEngine.js';
 
+const PROPERTY_TYPE_LABELS = { house: '🏠 House', plot: '🟩 Plot / Land', commercial: '🏢 Commercial' };
+
 export function renderRealEstateAdmin(container) {
   function render() {
     const state = stateEngine.getState();
@@ -22,12 +24,12 @@ export function renderRealEstateAdmin(container) {
           <div>
             <h2 style="color: #0F172A; font-size: 1.3rem;">🏢 Gasabo Real Estate Content Management</h2>
             <p style="color: #64748B; font-size: 0.9rem;">
-              Manage the company homepage hero content and flagship real estate development portfolio.
+              Manage the homepage hero content and individual property listings (houses, plots, commercial units).
             </p>
           </div>
 
-          <button id="admin-add-proj-btn" class="btn btn-primary">
-            ➕ Add Portfolio Project
+          <button id="admin-add-property-btn" class="btn btn-primary">
+            ➕ Add Property Listing
           </button>
         </div>
 
@@ -37,9 +39,9 @@ export function renderRealEstateAdmin(container) {
           </div>
         ` : ''}
 
-        <!-- HERO & ABOUT EDITORS -->
+        <!-- HERO EDITOR -->
         <div class="glass-panel" style="padding: 1.25rem 1.4rem; border-radius: 20px; margin-bottom: 1.25rem;">
-          <h3 style="color: #0F172A; font-size: 1.1rem; margin-bottom: 1rem;">Hero Showcase & Corporate Info</h3>
+          <h3 style="color: #0F172A; font-size: 1.1rem; margin-bottom: 1rem;">Hero Showcase</h3>
           <div class="grid-2">
             <div class="form-group">
               <label>Hero Title</label>
@@ -55,39 +57,39 @@ export function renderRealEstateAdmin(container) {
           </button>
         </div>
 
-        <!-- PORTFOLIO PROJECTS TABLE -->
-        <h3 style="color: #0F172A; font-size: 1.15rem; margin-bottom: 1rem;">Active Real Estate Development Projects (${reData.projects.length})</h3>
+        <!-- PROPERTY LISTINGS TABLE -->
+        <h3 style="color: #0F172A; font-size: 1.15rem; margin-bottom: 1rem;">Property Listings (${reData.properties.length})</h3>
 
         <div class="custom-table-container">
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Project Title</th>
-                <th>Category</th>
-                <th>District Location</th>
-                <th>Units / Specs</th>
-                <th>Development Status</th>
+                <th>Property</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Price</th>
+                <th>Beds / Baths / Area</th>
                 <th class="tbl-actions-col">Actions</th>
               </tr>
             </thead>
             <tbody>
-              ${reData.projects.map(p => `
+              ${reData.properties.map(p => `
                 <tr>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                       <img src="${p.image}" alt="${escapeHtml(p.title)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
                       <div>
                         <div style="font-weight: 600; color: #0F172A;">${escapeHtml(p.title)}</div>
-                        <div style="font-size: 0.78rem; color: #64748B;">${escapeHtml(p.description.substring(0, 45))}...</div>
+                        <div style="font-size: 0.78rem; color: #64748B;">${escapeHtml((p.description || '').substring(0, 45))}...</div>
                       </div>
                     </div>
                   </td>
-                  <td>${escapeHtml(p.category)}</td>
-                  <td>${escapeHtml(p.district)}</td>
-                  <td>${escapeHtml(p.units)}</td>
-                  <td><span class="badge badge-active">${escapeHtml(p.status)}</span></td>
+                  <td>${PROPERTY_TYPE_LABELS[p.type] || escapeHtml(p.type)}</td>
+                  <td>${escapeHtml(p.location)}</td>
+                  <td style="font-weight: 700; color: #0F172A;">${escapeHtml(p.price)}</td>
+                  <td>${p.beds ? `🛏️ ${p.beds}` : ''} ${p.baths ? `🛁 ${p.baths}` : ''} 📐 ${escapeHtml(p.area)}</td>
                   <td class="tbl-actions-col">
-                    <button class="btn btn-sm btn-danger del-proj-btn" data-id="${p.id}">
+                    <button class="btn btn-sm btn-danger del-property-btn" data-id="${p.id}">
                       Delete
                     </button>
                   </td>
@@ -111,25 +113,15 @@ export function renderRealEstateAdmin(container) {
       }
     });
 
-    container.querySelector('#admin-add-proj-btn')?.addEventListener('click', async () => {
-      const title = prompt('Enter Project Title (e.g. Kigali Eco Residences):');
-      if (title) {
-        const district = prompt('District (e.g. Gasabo, Musanze, Rubavu):') || 'Gasabo';
-        const category = prompt('Category (Residential / Commercial / Industrial & Land):') || 'Residential';
-        const units = prompt('Units/Capacity (e.g. 30 Luxury Condos):') || '20 Units';
-        try {
-          await stateEngine.addRealEstateProject({ title, district, category, units });
-        } catch (err) {
-          render();
-        }
-      }
+    container.querySelector('#admin-add-property-btn')?.addEventListener('click', () => {
+      openAddPropertyModal();
     });
 
-    container.querySelectorAll('.del-proj-btn').forEach(btn => {
+    container.querySelectorAll('.del-property-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to delete this portfolio project?')) {
+        if (confirm('Are you sure you want to delete this property listing?')) {
           try {
-            await stateEngine.deleteRealEstateProject(btn.dataset.id);
+            await stateEngine.deleteRealEstateProperty(btn.dataset.id);
           } catch (err) {
             render();
           }
@@ -139,6 +131,126 @@ export function renderRealEstateAdmin(container) {
   }
 
   render();
+}
+
+// One form for all property fields instead of a chain of 8 prompt() dialogs -
+// appended to document.body so it survives the next stateEngine re-render,
+// same pattern as the sub-admin creation modal in UserRBACAdmin.js.
+function openAddPropertyModal() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.65); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
+
+  overlay.innerHTML = `
+    <div style="background: #fff; border-radius: 20px; padding: 1.75rem 2rem; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto;">
+      <h3 style="color: #0F172A; font-size: 1.2rem; margin-bottom: 1.25rem;">➕ Add Property Listing</h3>
+
+      <form id="add-property-form">
+        <div class="form-group">
+          <label>Title</label>
+          <input name="title" type="text" class="form-control" placeholder="e.g. Modern 4-Bedroom Villa" required>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Type</label>
+            <select name="type" class="form-control">
+              <option value="house">🏠 House</option>
+              <option value="plot">🟩 Plot / Land</option>
+              <option value="commercial">🏢 Commercial</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Location / District</label>
+            <input name="location" type="text" class="form-control" placeholder="e.g. Gasabo" required>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Price (display text)</label>
+            <input name="price" type="text" class="form-control" placeholder="e.g. 150,000,000 Rwf or Rent: $800/mo" required>
+          </div>
+          <div class="form-group">
+            <label>Price (number, for search filtering)</label>
+            <input name="priceNum" type="number" min="0" class="form-control" placeholder="e.g. 150000000" required>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Bedrooms (0 for plots)</label>
+            <input name="beds" type="number" min="0" class="form-control" value="0">
+          </div>
+          <div class="form-group">
+            <label>Bathrooms (0 for plots)</label>
+            <input name="baths" type="number" min="0" class="form-control" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Area</label>
+          <input name="area" type="text" class="form-control" placeholder="e.g. 600 sqm or 1 Hectare" required>
+        </div>
+
+        <div class="form-group">
+          <label>Image URL</label>
+          <input name="image" type="text" class="form-control" placeholder="https://...">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description" class="form-control" rows="3" placeholder="Short description shown on the listing" required></textarea>
+        </div>
+
+        <div id="add-property-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem;">
+          <button type="button" id="add-property-cancel" class="btn btn-sm btn-secondary">Cancel</button>
+          <button type="submit" id="add-property-submit" class="btn btn-sm btn-primary">Add Listing</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  function close() {
+    overlay.remove();
+  }
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#add-property-cancel').addEventListener('click', close);
+
+  overlay.querySelector('#add-property-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = overlay.querySelector('#add-property-submit');
+    const propertyData = {
+      title: form.title.value.trim(),
+      type: form.type.value,
+      location: form.location.value.trim(),
+      price: form.price.value.trim(),
+      priceNum: Number(form.priceNum.value) || 0,
+      beds: Number(form.beds.value) || 0,
+      baths: Number(form.baths.value) || 0,
+      area: form.area.value.trim(),
+      image: form.image.value.trim() || undefined,
+      description: form.description.value.trim(),
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+    try {
+      await stateEngine.addRealEstateProperty(propertyData);
+      close();
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Add Listing';
+      const message = err.message || 'Something went wrong. Please try again.';
+      form.querySelector('#add-property-error').textContent = `⚠️ ${message}`;
+    }
+  });
+
+  document.body.appendChild(overlay);
+  overlay.querySelector('input[name="title"]').focus();
 }
 
 function escapeHtml(str) {

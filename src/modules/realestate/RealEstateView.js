@@ -1,8 +1,32 @@
 /**
- * GASABO REAL ESTATE - Corporate Website & Project Showcase Module
+ * GASABO REAL ESTATE - Property Listings Site
+ * Rebuilt to match the "gasabo_real_estate" reference mockup: a property
+ * listings agency (Plots/Houses/Services/About), not a developer portfolio.
+ * Ported into this app's own design system (inline styles + main.css, emoji
+ * icons) rather than the mockup's Tailwind CDN + Lucide - keeps one bundled
+ * CSS system instead of loading a second framework at runtime.
  */
 import { stateEngine } from '../../store/stateEngine.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
+
+// Mockup's own brand palette (Gasabo Real Estate's tailwind.config), kept
+// as its own identity separate from the marketplace's green/gold/flag-blue
+// scheme - Real Estate has always been a visually distinct portal.
+const RE_BLUE = '#134e7a';
+const RE_GREEN = '#1a8a4f';
+const RE_GOLD = '#dca73a';
+const RE_DARK = '#0f172a';
+
+const TYPE_BADGE = {
+  house: { bg: RE_BLUE, color: '#fff', label: 'House' },
+  plot: { bg: RE_GREEN, color: '#fff', label: 'Plot' },
+  commercial: { bg: RE_GOLD, color: RE_DARK, label: 'Commercial' },
+};
+
+const TESTIMONIALS = [
+  { quote: 'Gasabo Real Estate made buying a plot in Nyamata so incredibly easy. Their investment advice gave me full confidence.', name: 'Eric N. - Investor' },
+  { quote: 'Their property management services are top tier. I live abroad and they collect rent and maintain my apartments perfectly.', name: 'Jean Claude - Property Owner' },
+];
 
 export function renderRealEstateView(container) {
   function render() {
@@ -11,11 +35,9 @@ export function renderRealEstateView(container) {
     const hasAttempted = state.loading.realEstate !== undefined;
     const loading = !!state.loading.realEstate;
 
-    // Kick off the fetch on first render only. Note this must NOT be gated behind
-    // a separate stateEngine.setUI() call: setUI() notifies synchronously, which
-    // would re-enter this render function (main.js remounts on every notify)
-    // *before* the fetch below even starts, while reData is still empty - reading
-    // straight off state.loading here instead avoids that reentrancy trap.
+    // Kick off the fetch on first render only - must NOT be gated behind a
+    // separate stateEngine.setUI() call, since setUI() notifies synchronously
+    // and would re-enter this render function before the fetch even starts.
     if (!hasAttempted && !loading) {
       stateEngine.loadRealEstate().catch(() => {});
     }
@@ -40,235 +62,52 @@ export function renderRealEstateView(container) {
       return;
     }
 
-    const activeFilter = state.ui.realEstateFilter || 'All'; // 'All' | 'Residential' | 'Commercial' | 'Industrial & Land'
-    const activeTab = state.ui.realEstateTab || 'home'; // 'home' | 'about' | 'services' | 'projects' | 'gallery' | 'contact'
+    const activeTab = state.ui.realEstateTab || 'home'; // 'home' | 'properties' | 'services' | 'about'
+    const filters = state.ui.realEstateFilters || { type: 'all', location: 'all', price: 'all' };
+    const properties = reData.properties || [];
 
-    const filteredProjects = activeFilter === 'All'
-      ? reData.projects
-      : reData.projects.filter(p => p.category === activeFilter);
+    let filteredProperties = properties;
+    if (filters.type !== 'all') filteredProperties = filteredProperties.filter(p => p.type === filters.type);
+    if (filters.location !== 'all') filteredProperties = filteredProperties.filter(p => p.location === filters.location);
+    if (filters.price === 'under50') filteredProperties = filteredProperties.filter(p => p.priceNum < 50000000);
+    if (filters.price === '50to100') filteredProperties = filteredProperties.filter(p => p.priceNum >= 50000000 && p.priceNum <= 100000000);
+    if (filters.price === 'over100') filteredProperties = filteredProperties.filter(p => p.priceNum > 100000000);
+
+    const propertiesTitle = filters.type === 'plot' ? 'Plots & Land'
+      : filters.type === 'house' ? 'Houses & Villas'
+      : filters.type === 'commercial' ? 'Commercial Properties'
+      : 'All Properties';
+
+    // Unique locations from real listings, not a hardcoded list - the
+    // search/filter dropdown only ever offers places something is actually
+    // listed in.
+    const availableLocations = [...new Set(properties.map(p => p.location))].sort();
 
     container.innerHTML = `
-      <div style="max-width: 1440px; margin: 0 auto; padding: 2rem 1.5rem;">
-        <!-- Real Estate Sub Navigation Bar -->
-        <div class="glass-panel" style="padding: 0.75rem 1.5rem; border-radius: 30px; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; background: #ffffff;">
-          <div style="display: flex; align-items: center; gap: 0.85rem;">
-            <img src="/real-estate-logo.png" alt="Gasabo Real Estate Logo" style="height: 38px; width: 38px; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-            <span style="font-weight: 800; font-size: 1.25rem; color: var(--text-primary);">GASABO REAL ESTATE</span>
-          </div>
+      <div>
+        <!-- SUB-NAV: logo (home) + Plots / Houses / Services / About, matching
+             the reference mockup's simpler 4-item nav (not the marketplace's
+             main site nav, which stays above this). -->
+        <div style="background: #ffffff; border-bottom: 1px solid #E2E8F0; padding: 0.85rem 1.5rem; margin-bottom: 0; position: sticky; top: 70px; z-index: 30;">
+          <div style="max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div id="re-logo-home" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+              <img src="/real-estate-logo.png" alt="Gasabo Real Estate Logo" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; border: 1px solid #E2E8F0;">
+              <span style="font-weight: 800; font-size: 1.15rem; color: ${RE_BLUE};">Gasabo Real Estate</span>
+            </div>
 
-          <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
-            ${['home', 'about', 'services', 'projects', 'gallery', 'contact'].map(tab => `
-              <button class="btn btn-sm re-nav-tab" data-tab="${tab}" style="text-transform: capitalize; border-radius: 20px; font-weight: 700; color:${activeTab===tab?'#ffffff':'var(--text-secondary)'}; background:${activeTab===tab?'#2563eb':'transparent'};">
-                ${tab === 'contact' ? '📞 Contact & Office' : tab}
-              </button>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- HERO SECTION -->
-        <div class="glass-panel" style="position: relative; min-height: 420px; border-radius: var(--radius-lg); overflow: hidden; display: flex; align-items: center; padding: 3.5rem; margin-bottom: 3rem; background: linear-gradient(90deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.65) 100%), url('${reData.hero.bgImage}') center/cover;">
-          <div style="max-width: 700px;">
-            <span class="badge" style="background: rgba(37, 99, 235, 0.2); color: #93c5fd; border: 1px solid rgba(147, 197, 253, 0.4); margin-bottom: 1rem; font-weight: 800;">
-              🏛️ Premier Rwandan Real Estate Developer
-            </span>
-            <h1 style="font-size: 2.8rem; line-height: 1.15; color: #ffffff; margin-bottom: 1rem; font-weight: 800;">
-              ${escapeHtml(reData.hero.title)}
-            </h1>
-            <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 2rem;">
-              ${escapeHtml(reData.hero.subtitle)}
-            </p>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-              <button id="re-explore-proj-btn" class="btn" style="background: #2563eb; color: #ffffff; font-weight: 700; font-size: 1rem; padding: 0.85rem 1.75rem;">
-                🏢 Explore Portfolio Projects
-              </button>
-              <button id="re-contact-top-btn" class="btn btn-secondary" style="font-size: 1rem; font-weight: 700; padding: 0.85rem 1.75rem;">
-                📍 Visit Kigali Headquarters
-              </button>
+            <div style="display: flex; gap: 1.75rem; flex-wrap: wrap;">
+              <button class="re-nav-link" data-tab="properties" data-type="plot" style="background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: ${activeTab==='properties' && filters.type==='plot' ? RE_BLUE : '#475569'};">Plots</button>
+              <button class="re-nav-link" data-tab="properties" data-type="house" style="background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: ${activeTab==='properties' && filters.type==='house' ? RE_BLUE : '#475569'};">Houses</button>
+              <button class="re-nav-link" data-tab="services" style="background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: ${activeTab==='services' ? RE_BLUE : '#475569'};">Services</button>
+              <button class="re-nav-link" data-tab="about" style="background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: ${activeTab==='about' ? RE_BLUE : '#475569'};">About</button>
             </div>
           </div>
         </div>
 
-        <!-- SECTION 1: ABOUT COMPANY & STATS -->
-        <div id="section-about" style="margin-bottom: 3.5rem;">
-          <div class="grid-2" style="gap: 2.5rem; align-items: center;">
-            <div>
-              <span style="color: #2563eb; font-weight: 800; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">About Gasabo Real Estate</span>
-              <h2 style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-top: 0.3rem; margin-bottom: 1rem;">
-                ${escapeHtml(reData.about.heading)}
-              </h2>
-              <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem;">
-                ${escapeHtml(reData.about.text)}
-              </p>
-
-              <div class="grid-2" style="gap: 1rem;">
-                ${reData.about.stats.map(s => `
-                  <div class="glass-card" style="padding: 1.25rem; border-left: 5px solid #2563eb; background: #ffffff;">
-                    <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary);">${s.value}</div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">${s.label}</div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-
-            <div style="position: relative; border-radius: var(--radius-lg); overflow: hidden; height: 380px; box-shadow: var(--shadow-soft-md);">
-              <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80" alt="Gasabo Development" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 2: SERVICES SHOWCASE -->
-        <div id="section-services" style="margin-bottom: 3.5rem;">
-          <div style="text-align: center; max-width: 650px; margin: 0 auto 2.5rem auto;">
-            <span style="color: #2563eb; font-weight: 800; text-transform: uppercase; font-size: 0.85rem;">Solutions & Services</span>
-            <h2 style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-top: 0.3rem;">Comprehensive Property Solutions</h2>
-          </div>
-
-          <div class="grid-4">
-            ${reData.services.map(s => `
-              <div class="glass-card" style="padding: 1.75rem; text-align: left; display: flex; flex-direction: column; justify-content: space-between; background: #ffffff;">
-                <div>
-                  <div style="font-size: 2.5rem; margin-bottom: 1rem;">${s.icon}</div>
-                  <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">${escapeHtml(s.title)}</h3>
-                  <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(s.description)}</p>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- SECTION 3: PORTFOLIO PROJECTS -->
-        <div id="section-projects" style="margin-bottom: 3.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-            <div>
-              <span style="color: #2563eb; font-weight: 800; text-transform: uppercase; font-size: 0.85rem;">Development Portfolio</span>
-              <h2 style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-top: 0.2rem;">Flagship Rwandan Real Estate</h2>
-            </div>
-
-            <!-- Filter Pills -->
-            <div style="display: flex; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 12px; border: 1px solid var(--border-color);">
-              ${['All', 'Residential', 'Commercial', 'Industrial & Land'].map(filter => `
-                <button class="btn btn-sm re-filter-btn" data-filter="${filter}" style="color:${activeFilter===filter?'#ffffff':'var(--text-secondary)'}; background:${activeFilter===filter?'#2563eb':'transparent'}; font-weight: 700;">
-                  ${filter}
-                </button>
-              `).join('')}
-            </div>
-          </div>
-
-          ${filteredProjects.length === 0 ? `
-            <div style="text-align: center; padding: 3rem; background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border-color); color: var(--text-secondary);">
-              No projects in this category yet.
-            </div>
-          ` : `
-            <div class="grid-3">
-              ${filteredProjects.map(proj => `
-                <div class="glass-card" style="overflow: hidden; display: flex; flex-direction: column; background: #ffffff;">
-                  <div style="height: 220px; overflow: hidden; position: relative;">
-                    <img src="${proj.image}" alt="${escapeHtml(proj.title)}" style="width: 100%; height: 100%; object-fit: cover;">
-                    <span class="badge" style="position: absolute; top: 12px; left: 12px; background: rgba(15,23,42,0.85); color: #ffffff; backdrop-filter: blur(4px); font-weight: 800;">
-                      ${proj.category}
-                    </span>
-                  </div>
-
-                  <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                      <div style="font-size: 0.8rem; font-weight: 700; color: #2563eb; margin-bottom: 0.25rem;">📍 ${escapeHtml(proj.district)} District</div>
-                      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">${escapeHtml(proj.title)}</h3>
-                      <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
-                        ${escapeHtml(proj.description)}
-                      </p>
-                    </div>
-
-                    <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                      <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">🏢 ${escapeHtml(proj.units)}</span>
-                      <span class="badge badge-active">${proj.status}</span>
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          `}
-        </div>
-
-        <!-- SECTION 4: GALLERY ASSETS -->
-        <div id="section-gallery" style="margin-bottom: 3.5rem;">
-          <div style="text-align: center; max-width: 650px; margin: 0 auto 2rem auto;">
-            <span style="color: #2563eb; font-weight: 800; text-transform: uppercase; font-size: 0.85rem;">Project Gallery</span>
-            <h2 style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-top: 0.3rem;">Architectural Visuals</h2>
-          </div>
-
-          <div class="grid-4">
-            ${reData.gallery.map(imgUrl => `
-              <div style="height: 180px; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-soft-sm);">
-                <img src="${imgUrl}" alt="Gallery Asset" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- SECTION 5: CONTACT & OFFICE INFO -->
-        <div id="section-contact" class="glass-panel" style="padding: 3rem; border-radius: var(--radius-lg); background: #ffffff;">
-          <div class="grid-2" style="gap: 3rem; align-items: center;">
-            <div>
-              <span style="color: #2563eb; font-weight: 800; text-transform: uppercase; font-size: 0.85rem;">Get in Touch</span>
-              <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin-top: 0.3rem; margin-bottom: 1rem;">
-                Visit Our Kigali Headquarters
-              </h2>
-              <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin-bottom: 2rem;">
-                Interested in investment opportunities or residential property inquiries? Reach out to our real estate advisory team.
-              </p>
-
-              <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                  <div style="width: 44px; height: 44px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800;">📍</div>
-                  <div>
-                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Office Location</div>
-                    <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(reData.contact.address)}</div>
-                  </div>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                  <div style="width: 44px; height: 44px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800;">📞</div>
-                  <div>
-                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Inquiry Hotlines</div>
-                    <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(reData.contact.phone)}</div>
-                  </div>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                  <div style="width: 44px; height: 44px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800;">✉️</div>
-                  <div>
-                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Corporate Email</div>
-                    <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(reData.contact.email)}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Interactive Inquiry Form -->
-            <form id="re-inquiry-form" style="background: #f8fafc; padding: 2rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-              <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary); margin-bottom: 1.25rem;">Schedule Property Consultation</h3>
-              <div class="form-group">
-                <label style="color: var(--text-primary); font-weight: 700;">Full Name</label>
-                <input type="text" class="form-control" placeholder="e.g. Jean-Luc Ndayisaba" required>
-              </div>
-              <div class="form-group">
-                <label style="color: var(--text-primary); font-weight: 700;">Phone Number / WhatsApp</label>
-                <input type="text" class="form-control" placeholder="+250 788 000 000" required>
-              </div>
-              <div class="form-group">
-                <label style="color: var(--text-primary); font-weight: 700;">Investment Interest</label>
-                <select class="form-control">
-                  <option>Residential Condos & Villas</option>
-                  <option>Commercial Office Space</option>
-                  <option>Land Acquisition & Development</option>
-                </select>
-              </div>
-              <button type="submit" class="btn" style="width: 100%; background: #2563eb; color: #ffffff; font-weight: 700; padding: 0.85rem; font-size: 1rem; margin-top: 0.5rem;">
-                📩 Submit Inquiry Request
-              </button>
-            </form>
-          </div>
-        </div>
+        ${activeTab === 'home' ? renderHomeView(reData, properties) : ''}
+        ${activeTab === 'properties' ? renderPropertiesView(propertiesTitle, filteredProperties, filters, availableLocations) : ''}
+        ${activeTab === 'services' ? renderServicesView(reData.services || []) : ''}
+        ${activeTab === 'about' ? renderAboutView(reData) : ''}
       </div>
       ${getLargeFooterHtml(state.currentLang || 'en')}
     `;
@@ -277,38 +116,374 @@ export function renderRealEstateView(container) {
     initSlimStickyFooter();
 
     // Event Handlers
-    container.querySelectorAll('.re-nav-tab').forEach(btn => {
+    container.querySelector('#re-logo-home')?.addEventListener('click', () => {
+      stateEngine.setUI({ realEstateTab: 'home' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    container.querySelectorAll('.re-nav-link').forEach(btn => {
       btn.addEventListener('click', () => {
-        stateEngine.setUI({ realEstateTab: btn.dataset.tab });
-        const sec = container.querySelector(`#section-${btn.dataset.tab}`);
-        if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+        const tab = btn.dataset.tab;
+        if (tab === 'properties' && btn.dataset.type) {
+          stateEngine.setUI({ realEstateTab: 'properties', realEstateFilters: { type: btn.dataset.type, location: 'all', price: 'all' } });
+        } else {
+          stateEngine.setUI({ realEstateTab: tab });
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     });
 
-    container.querySelectorAll('.re-filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        stateEngine.setUI({ realEstateFilter: btn.dataset.filter });
+    container.querySelector('#re-search-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const type = container.querySelector('#re-search-type').value;
+      const location = container.querySelector('#re-search-location').value;
+      const price = container.querySelector('#re-search-price').value;
+      stateEngine.setUI({ realEstateTab: 'properties', realEstateFilters: { type, location, price } });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    container.querySelectorAll('.re-property-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const prop = properties.find(p => p.id === card.dataset.id);
+        if (prop) openPropertyModal(prop, reData.contact);
       });
     });
 
-    container.querySelector('#re-explore-proj-btn')?.addEventListener('click', () => {
-      stateEngine.setUI({ realEstateTab: 'projects' });
-      container.querySelector('#section-projects')?.scrollIntoView({ behavior: 'smooth' });
-    });
-
-    container.querySelector('#re-contact-top-btn')?.addEventListener('click', () => {
-      stateEngine.setUI({ realEstateTab: 'contact' });
-      container.querySelector('#section-contact')?.scrollIntoView({ behavior: 'smooth' });
+    container.querySelector('#re-explore-btn')?.addEventListener('click', () => {
+      stateEngine.setUI({ realEstateTab: 'properties', realEstateFilters: { type: 'all', location: 'all', price: 'all' } });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     container.querySelector('#re-inquiry-form')?.addEventListener('submit', (e) => {
       e.preventDefault();
-      alert('Thank you for contacting Gasabo Real Estate! Our investment team will call you back shortly.');
+      alert('Thank you for contacting Gasabo Real Estate! Our team will call you back shortly.');
       e.target.reset();
     });
   }
 
   render();
+}
+
+function renderHomeView(reData, properties) {
+  return `
+    <!-- HERO SECTION -->
+    <section style="position: relative; overflow: hidden; background: ${RE_DARK};">
+      <div style="position: absolute; inset: 0;">
+        <img src="${reData.hero.bgImage}" alt="Gasabo Real Estate" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.55;">
+        <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,23,42,0.96), ${RE_BLUE}CC);"></div>
+      </div>
+
+      <div style="position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 3.5rem 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 2.5rem;">
+        <div style="flex: 1 1 420px;">
+          <span style="display: inline-block; padding: 4px 14px; border-radius: 9999px; background: rgba(220,167,58,0.18); color: ${RE_GOLD}; border: 1px solid rgba(220,167,58,0.35); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 1rem;">
+            Opening doors to extraordinary spaces
+          </span>
+          <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; line-height: 1.15; margin-bottom: 1.25rem;">
+            ${escapeHtml(reData.hero.title)}
+          </h1>
+          <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.6; max-width: 560px;">
+            ${escapeHtml(reData.hero.subtitle)}
+          </p>
+        </div>
+
+        <!-- QUICK SEARCH WIDGET -->
+        <div style="flex: 1 1 360px; max-width: 420px;">
+          <div style="background: #fff; border-radius: 20px; box-shadow: 0 20px 45px rgba(0,0,0,0.3); padding: 1.75rem; border-top: 4px solid ${RE_GREEN};">
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: #0F172A; margin-bottom: 1.25rem;">🔍 Quick Search</h3>
+            <form id="re-search-form" style="display: flex; flex-direction: column; gap: 1rem;">
+              <div>
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.3rem;">Property Type</label>
+                <select id="re-search-type" style="width: 100%; padding: 0.7rem 0.9rem; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; font-size: 0.92rem;">
+                  <option value="all">Any Type</option>
+                  <option value="house">Houses & Villas</option>
+                  <option value="plot">Plots / Land</option>
+                  <option value="commercial">Commercial</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.3rem;">Location</label>
+                <select id="re-search-location" style="width: 100%; padding: 0.7rem 0.9rem; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; font-size: 0.92rem;">
+                  <option value="all">Any Location</option>
+                  ${[...new Set(properties.map(p => p.location))].sort().map(loc => `<option value="${escapeHtml(loc)}">${escapeHtml(loc)}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.3rem;">Price Range</label>
+                <select id="re-search-price" style="width: 100%; padding: 0.7rem 0.9rem; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; font-size: 0.92rem;">
+                  <option value="all">Any Price</option>
+                  <option value="under50">Under 50,000,000 Rwf</option>
+                  <option value="50to100">50M - 100M Rwf</option>
+                  <option value="over100">Over 100,000,000 Rwf</option>
+                </select>
+              </div>
+              <button type="submit" style="width: 100%; background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.85rem; border: none; border-radius: 10px; font-size: 0.95rem; cursor: pointer; margin-top: 0.25rem;">
+                Search Properties
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED LISTINGS -->
+    <section style="padding: 3.5rem 1.5rem; background: #F8FAFC;">
+      <div style="max-width: 1280px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+          <h2 style="font-size: 1.9rem; font-weight: 800; color: #0F172A;">Featured Listings</h2>
+          <p style="color: #64748B; margin-top: 0.3rem;">Explore all our available plots and houses.</p>
+        </div>
+        ${renderPropertyGrid(properties)}
+      </div>
+    </section>
+  `;
+}
+
+function renderPropertiesView(title, filteredProperties, filters, availableLocations) {
+  return `
+    <div style="background: #ffffff; padding: 2.5rem 1.5rem; border-bottom: 1px solid #E2E8F0; text-align: center;">
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: #0F172A; margin-bottom: 0.5rem;">${escapeHtml(title)}</h1>
+      <p style="color: #64748B; max-width: 600px; margin: 0 auto;">Browse our exclusive selection tailored to your needs.</p>
+    </div>
+
+    <div style="padding: 2.5rem 1.5rem; background: #F8FAFC;">
+      <div style="max-width: 1280px; margin: 0 auto;">
+        ${filteredProperties.length === 0 ? `
+          <div style="text-align: center; padding: 4rem 1.5rem;">
+            <div style="width: 96px; height: 96px; border-radius: 50%; background: #F1F5F9; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2.5rem;">🔍</div>
+            <h3 style="font-size: 1.4rem; font-weight: 700; color: #0F172A; margin-bottom: 0.5rem;">No properties found</h3>
+            <p style="color: #64748B;">We couldn't find any properties matching your current criteria.</p>
+          </div>
+        ` : renderPropertyGrid(filteredProperties)}
+      </div>
+    </div>
+  `;
+}
+
+function renderServicesView(services) {
+  const featured = services.filter(s => s.featured);
+  const standard = services.filter(s => !s.featured);
+
+  return `
+    <section style="padding: 3.5rem 1.5rem; background: #ffffff;">
+      <div style="max-width: 1280px; margin: 0 auto;">
+        <div style="text-align: center; max-width: 700px; margin: 0 auto 3rem auto;">
+          <span style="color: ${RE_GOLD}; font-weight: 800; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.15em;">Our Expertise</span>
+          <h2 style="font-size: 2.2rem; font-weight: 700; color: #0F172A; margin: 0.5rem 0;">Tailored <strong style="color: ${RE_BLUE};">Real Estate</strong> Solutions</h2>
+          <p style="color: #64748B; font-size: 1.05rem;">
+            Beyond simply buying and selling, Gasabo Real Estate offers a holistic suite of services designed to manage, enhance, and protect your property investments in Rwanda.
+          </p>
+        </div>
+
+        ${featured.length > 0 ? `
+          <div class="grid-2" style="gap: 1.5rem; margin-bottom: 2rem;">
+            ${featured.map(s => `
+              <div style="position: relative; height: 240px; border-radius: 20px; overflow: hidden; background: ${RE_DARK}; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.75rem;">
+                <div style="position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(15,23,42,0.85));"></div>
+                <div style="position: relative; z-index: 1;">
+                  <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 0.85rem;">${s.icon}</div>
+                  <h4 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem;">${escapeHtml(s.title)}</h4>
+                  <p style="color: #cbd5e1; font-size: 0.88rem;">${escapeHtml(s.description)}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        <div style="background: #F8FAFC; border-radius: 20px; padding: 1rem; border: 1px solid #E2E8F0;">
+          ${standard.map(s => `
+            <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: 14px;">
+              <div style="width: 48px; height: 48px; border-radius: 14px; background: #fff; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; color: ${RE_BLUE};">${s.icon}</div>
+              <div>
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: #0F172A; margin-bottom: 0.2rem;">${escapeHtml(s.title)}</h4>
+                <p style="color: #64748B; font-size: 0.9rem;">${escapeHtml(s.description)}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderAboutView(reData) {
+  return `
+    <!-- ABOUT HERO -->
+    <section style="padding: 4rem 1.5rem; background: ${RE_BLUE}; color: #fff; text-align: center;">
+      <h1 style="font-size: 2.4rem; font-weight: 800; margin-bottom: 0.75rem;">${escapeHtml(reData.about.heading)}</h1>
+      <p style="font-size: 1.15rem; color: #cbd5e1; max-width: 700px; margin: 0 auto;">${escapeHtml(reData.about.text)}</p>
+    </section>
+
+    <section style="padding: 3.5rem 1.5rem; background: #ffffff;">
+      <div style="max-width: 1280px; margin: 0 auto;">
+
+        <!-- VIDEO TOURS CTA -->
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 2.5rem; background: #F8FAFC; padding: 2.5rem; border-radius: 24px; margin-bottom: 3.5rem;">
+          <div style="flex: 1 1 340px;">
+            <h2 style="font-size: 1.7rem; font-weight: 800; color: #0F172A; margin-bottom: 1rem;">See Properties in Full Detail</h2>
+            <p style="color: #64748B; font-size: 1.02rem; margin-bottom: 1.5rem; line-height: 1.6;">
+              We pride ourselves on our robust marketing services. Subscribe to our YouTube channel to get comprehensive video walk-throughs of houses, plots, and commercial spaces before you even visit.
+            </p>
+            <a href="https://www.youtube.com/@GasaboRealEstate" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 0.6rem; background: #FF0000; color: #fff; font-weight: 700; padding: 0.9rem 1.75rem; border-radius: 9999px; text-decoration: none; font-size: 1rem;">
+              ▶️ Watch Our Tours
+            </a>
+          </div>
+          <div style="flex: 1 1 340px;">
+            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1000&q=80" alt="Video Tours" style="width: 100%; border-radius: 18px; box-shadow: var(--shadow-soft-md);">
+          </div>
+        </div>
+
+        <!-- TESTIMONIALS -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2 style="font-size: 1.9rem; font-weight: 800; color: #0F172A;">What Our Clients Say</h2>
+        </div>
+        <div class="grid-2" style="gap: 1.5rem; margin-bottom: 3.5rem;">
+          ${TESTIMONIALS.map(t => `
+            <div style="background: #F8FAFC; padding: 1.75rem; border-radius: 18px; border: 1px solid #E2E8F0;">
+              <div style="color: ${RE_GOLD}; margin-bottom: 0.75rem; font-size: 1.1rem;">★★★★★</div>
+              <p style="color: #475569; font-style: italic; margin-bottom: 1rem; line-height: 1.6;">"${escapeHtml(t.quote)}"</p>
+              <h4 style="font-weight: 700; color: #0F172A;">${escapeHtml(t.name)}</h4>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section style="padding: 3.5rem 1.5rem; background: #F8FAFC; border-top: 1px solid #E2E8F0;">
+      <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 3rem;">
+        <div style="flex: 1 1 300px;">
+          <h3 style="font-size: 1.75rem; font-weight: 800; color: #0F172A; margin-bottom: 0.75rem;">Contact Us</h3>
+          <p style="color: #64748B; margin-bottom: 1.75rem;">Ready to find your dream property? Reach out to our expert agents today.</p>
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="width: 46px; height: 46px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-soft-sm); display: flex; align-items: center; justify-content: center; color: ${RE_BLUE}; font-size: 1.2rem;">📞</div>
+              <div>
+                <div style="font-weight: 700; color: #0F172A;">Call / WhatsApp</div>
+                <div style="color: #64748B;">${escapeHtml(reData.contact.phone)}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="width: 46px; height: 46px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-soft-sm); display: flex; align-items: center; justify-content: center; color: ${RE_BLUE}; font-size: 1.2rem;">✉️</div>
+              <div>
+                <div style="font-weight: 700; color: #0F172A;">Email</div>
+                <div style="color: #64748B;">${escapeHtml(reData.contact.email)}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="width: 46px; height: 46px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-soft-sm); display: flex; align-items: center; justify-content: center; color: ${RE_BLUE}; font-size: 1.2rem;">📍</div>
+              <div>
+                <div style="font-weight: 700; color: #0F172A;">Office</div>
+                <div style="color: #64748B;">${escapeHtml(reData.contact.address)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form id="re-inquiry-form" style="flex: 2 1 480px; background: #fff; padding: 2rem; border-radius: 24px; box-shadow: var(--shadow-soft-md); border: 1px solid #E2E8F0;">
+          <div class="grid-2" style="gap: 1.25rem; margin-bottom: 1.25rem;">
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label>Message</label>
+            <textarea rows="4" class="form-control" required></textarea>
+          </div>
+          <button type="submit" style="background: ${RE_GREEN}; color: #fff; font-weight: 700; padding: 0.85rem 2rem; border: none; border-radius: 10px; cursor: pointer; font-size: 0.98rem;">
+            Send Message →
+          </button>
+        </form>
+      </div>
+    </section>
+  `;
+}
+
+function renderPropertyGrid(list) {
+  if (list.length === 0) {
+    return `<div style="text-align: center; padding: 3rem; color: #64748B;">No properties listed yet.</div>`;
+  }
+  return `
+    <div class="grid-3" style="gap: 1.75rem;">
+      ${list.map(prop => {
+        const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
+        const metrics = prop.type === 'plot'
+          ? `<div style="display: flex; align-items: center; gap: 4px;">📐 ${escapeHtml(prop.area)}</div>`
+          : `<div style="display: flex; align-items: center; gap: 4px;">🛏️ ${prop.beds}</div>
+             <div style="display: flex; align-items: center; gap: 4px;">🛁 ${prop.baths}</div>
+             <div style="display: flex; align-items: center; gap: 4px;">📐 ${escapeHtml(prop.area)}</div>`;
+        return `
+          <div class="re-property-card" data-id="${prop.id}" style="background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.25s ease;">
+            <div style="position: relative; height: 220px; overflow: hidden;">
+              <img src="${prop.image}" alt="${escapeHtml(prop.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+              <span style="position: absolute; top: 14px; left: 14px; background: ${badge.bg}; color: ${badge.color}; font-size: 0.7rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">
+                ${badge.label}
+              </span>
+            </div>
+            <div style="padding: 1.5rem;">
+              <h4 style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin-bottom: 0.4rem;">${escapeHtml(prop.title)}</h4>
+              <p style="color: #64748B; font-size: 0.88rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 4px;">📍 ${escapeHtml(prop.location)}</p>
+              <p style="font-size: 1.4rem; font-weight: 800; color: ${RE_GREEN}; margin-bottom: 1rem;">${escapeHtml(prop.price)}</p>
+              <div style="display: flex; gap: 1rem; border-top: 1px solid #F1F5F9; padding-top: 1rem; color: #475569; font-size: 0.85rem; font-weight: 600;">
+                ${metrics}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function openPropertyModal(prop, contact) {
+  const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
+
+  const metrics = prop.type === 'plot'
+    ? `<div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center;"><div style="font-size: 1.3rem; margin-bottom: 0.3rem;">📐</div><strong>${escapeHtml(prop.area)}</strong></div>`
+    : `<div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center;"><div style="font-size: 1.3rem; margin-bottom: 0.3rem;">🛏️</div><strong>${prop.beds} Beds</strong></div>
+       <div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center;"><div style="font-size: 1.3rem; margin-bottom: 0.3rem;">🛁</div><strong>${prop.baths} Baths</strong></div>
+       <div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center;"><div style="font-size: 1.3rem; margin-bottom: 0.3rem;">📐</div><strong>${escapeHtml(prop.area)}</strong></div>`;
+
+  const phoneDigits = (contact?.phone || '').replace(/[^\d+]/g, '');
+
+  overlay.innerHTML = `
+    <div style="background: #fff; border-radius: 20px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative;">
+      <button id="re-modal-close" style="position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; font-size: 1.1rem; cursor: pointer; z-index: 1;">✕</button>
+      <div style="display: flex; flex-wrap: wrap;">
+        <div style="flex: 1 1 380px;">
+          <img src="${prop.image}" alt="${escapeHtml(prop.title)}" style="width: 100%; height: 100%; min-height: 280px; object-fit: cover;">
+        </div>
+        <div style="flex: 1 1 380px; padding: 2rem 2.25rem;">
+          <span style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 1rem;">${badge.label}</span>
+          <h2 style="font-size: 1.7rem; font-weight: 800; color: #0F172A; margin-bottom: 0.4rem;">${escapeHtml(prop.title)}</h2>
+          <p style="color: #64748B; display: flex; align-items: center; gap: 4px; margin-bottom: 1rem;">📍 ${escapeHtml(prop.location)}</p>
+          <div style="font-size: 1.7rem; font-weight: 800; color: ${RE_GREEN}; margin-bottom: 1.25rem;">${escapeHtml(prop.price)}</div>
+          <p style="color: #334155; line-height: 1.6; border-left: 4px solid ${RE_GOLD}; padding-left: 1rem; margin-bottom: 1.5rem;">${escapeHtml(prop.description)}</p>
+
+          <div class="grid-3" style="gap: 0.75rem; margin-bottom: 1.75rem;">
+            ${metrics}
+          </div>
+
+          <div style="display: flex; gap: 0.85rem;">
+            <a href="tel:${phoneDigits}" style="flex: 1; text-align: center; background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.8rem; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">📞 Call</a>
+            <a href="https://wa.me/${phoneDigits.replace('+', '')}" target="_blank" rel="noopener" style="flex: 1; text-align: center; background: #25D366; color: #fff; font-weight: 700; padding: 0.8rem; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">💬 WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  function close() { overlay.remove(); document.body.style.overflow = 'auto'; }
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#re-modal-close').addEventListener('click', close);
+  document.body.style.overflow = 'hidden';
+  document.body.appendChild(overlay);
 }
 
 function escapeHtml(str) {

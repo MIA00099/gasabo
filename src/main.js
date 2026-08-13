@@ -82,10 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="nav-brand-logo" id="nav-brand-home">
               <img src="${activePortal==='realestate' ? '/real-estate-logo.png' : '/logo.svg'}" alt="Logo" style="height: 44px; width: 44px; object-fit: contain; border-radius: ${activePortal==='realestate'?'8px':'0'}; transition: all 0.3s ease;">
               <div>
-                <div style="line-height: 1; font-weight: 800; color: #032202; font-size: 1.25rem; letter-spacing: -0.02em;">
+                <div style="line-height: 1; font-weight: 800; color: #20603D; font-size: 1.25rem; letter-spacing: -0.02em;">
                   ${activePortal==='realestate' ? 'GASABO REAL ESTATE' : 'KIGALI MARKET'}
                 </div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #EDA203; letter-spacing: 0.02em;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #FAD201; letter-spacing: 0.02em;">
                   ${activePortal==='realestate' ? 'gasabo.kigalimarket.com' : 'kigalimarket.com'}
                 </div>
               </div>

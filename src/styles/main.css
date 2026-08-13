@@ -6,7 +6,10 @@
   /* Exact Specified Color Palette */
   --primary-green: #034B04;
   --dark-green: #032202;
-  --accent-gold: #EDA203;
+  /* Rwanda flag yellow (was #EDA203, a slightly more orange gold) - kept as
+     one root token so every gold/yellow accent site-wide (footer, sticky
+     bar, badges) stays in sync with the flag palette used on the homepage. */
+  --accent-gold: #FAD201;
   --accent-gold-hover: #FFC107;
   --success: #16A34A;
   --bg-main: #F8FAFC;
@@ -262,8 +265,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 #hero-browse-btn:hover {
   transform: translateY(-3px) scale(1.03) !important;
-  border-color: #00C814 !important;
-  box-shadow: 0 8px 24px rgba(0, 200, 20, 0.25) !important;
+  border-color: #00A1DE !important;
+  box-shadow: 0 8px 24px rgba(0, 161, 222, 0.35) !important;
 }
 
 #hero-browse-btn:active {
@@ -536,8 +539,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .category-card-item:hover {
   transform: translateY(-8px) scale(1.03) !important;
-  border-color: #00C814 !important;
-  box-shadow: 0 16px 32px rgba(3, 75, 4, 0.12) !important;
+  border-color: #20603D !important;
+  box-shadow: 0 16px 32px rgba(32, 96, 61, 0.18) !important;
 }
 
 .category-card-item > div:first-child {
@@ -559,8 +562,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .main-prod-card:hover {
   transform: translateY(-8px) scale(1.015) !important;
-  border-color: #00C814 !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.14), 0 0 0 2px rgba(0, 200, 20, 0.15) !important;
+  border-color: #20603D !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.14), 0 0 0 2px rgba(32, 96, 61, 0.2) !important;
 }
 
 .main-prod-card img {
@@ -911,7 +914,7 @@ footer a {
 }
 
 footer a:hover {
-  color: #EDA203 !important;
+  color: #FAD201 !important;
   transform: translateX(6px) !important;
 }
 
@@ -1484,7 +1487,7 @@ footer a:hover {
 .footer-brand-title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #EDA203;
+  color: #FAD201;
   margin-bottom: 1.2rem;
   display: flex;
   align-items: center;
@@ -1533,7 +1536,7 @@ footer a:hover {
 }
 
 .footer-links-list a:hover {
-  color: #EDA203;
+  color: #FAD201;
 }
 
 .footer-address {
@@ -1554,7 +1557,7 @@ footer a:hover {
 }
 
 .footer-phone-link:hover {
-  color: #EDA203;
+  color: #FAD201;
 }
 
 /* SLIM STICKY FOOTER BAR */
@@ -1570,10 +1573,15 @@ footer a:hover {
   max-width: 100vw;
   box-sizing: border-box;
   overflow-x: hidden;
-  background: rgba(3, 34, 2, 0.94);
+  /* Flag blue (was dark green rgba(3,34,2)) to match the large footer below
+     it, with the same blue/yellow/green tri-stripe top border instead of
+     solid gold - this bar and .large-footer are the site's two "footer"
+     surfaces, so they should read as one consistent treatment. */
+  background: rgba(0, 161, 222, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-top: 2px solid #EDA203;
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(to right, #00A1DE 0 33.33%, #FAD201 33.33% 66.66%, #20603D 66.66% 100%) 1;
   box-shadow: 0 -6px 25px rgba(0, 0, 0, 0.35);
   z-index: 9999;
   padding: 0.65rem 1.5rem;
@@ -1629,7 +1637,7 @@ footer a:hover {
 }
 
 .sticky-brand-text {
-  color: #EDA203;
+  color: #FAD201;
   font-size: 1.05rem;
   font-weight: 800;
 }
@@ -1637,7 +1645,7 @@ footer a:hover {
 .sticky-divider {
   width: 1px;
   height: 20px;
-  background: rgba(237, 162, 3, 0.3);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .sticky-contact-link {
@@ -1646,11 +1654,11 @@ footer a:hover {
 }
 
 .sticky-contact-link:hover {
-  color: #EDA203;
+  color: #FAD201;
 }
 
 .sticky-contact-link:hover .sticky-val {
-  color: #EDA203;
+  color: #FAD201;
   text-decoration: underline;
 }
 

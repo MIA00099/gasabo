@@ -269,7 +269,7 @@ export function renderMarketplaceView(container) {
                 </p>
 
                 <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
-                  <button id="hero-browse-btn" style="height: 50px; background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 2px solid #20603D; color: #FFFFFF; font-weight: 800; font-size: 1.02rem; border-radius: 12px; padding: 0 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 6px 20px rgba(32, 96, 61, 0.35);">
+                  <button id="hero-browse-btn" style="height: 50px; background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 2px solid #00A1DE; color: #FFFFFF; font-weight: 800; font-size: 1.02rem; border-radius: 12px; padding: 0 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 6px 20px rgba(0, 161, 222, 0.35);">
                     ${t('browse_products')}
                   </button>
 

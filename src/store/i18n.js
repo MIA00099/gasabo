@@ -22,9 +22,9 @@ export const translations = {
     // Floating Search Bar
     search_placeholder: 'Search products, coffee, cars, craft baskets, electronics...',
     cat_all: 'Category: All',
-    district_all: 'District: All',
+    district_all: 'Location: All',
     all_categories: 'Category: All',
-    all_districts: 'District: All',
+    all_districts: 'Location: All',
     search_btn: 'Search',
     search_button: 'Search',
 
@@ -82,9 +82,9 @@ export const translations = {
     // Floating Search Bar
     search_placeholder: 'Shakisha ibicuruzwa, ikawa, imodoka, agaseke, ikoranabuhanga...',
     cat_all: 'Ibyiciro: Byose',
-    district_all: 'Akarere: Kose',
+    district_all: 'Ahantu: Hose',
     all_categories: 'Ibyiciro: Byose',
-    all_districts: 'Akarere: Kose',
+    all_districts: 'Ahantu: Hose',
     search_btn: 'Shakisha',
     search_button: 'Shakisha',
 

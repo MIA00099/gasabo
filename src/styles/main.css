@@ -1667,7 +1667,10 @@ footer a:hover {
 }
 
 .sticky-label {
-  color: #94A3B8;
+  /* Yellow (was muted gray #94A3B8) to match the "KIGALI MARKET" brand text
+     (.sticky-brand-text) - both read clearly against the bar's blue
+     background instead of fading into it. */
+  color: #FAD201;
   font-weight: 600;
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -1675,7 +1678,8 @@ footer a:hover {
 }
 
 .sticky-val {
-  color: #FFFFFF;
+  /* Yellow (was white) - same reasoning as .sticky-label above. */
+  color: #FAD201;
   font-weight: 700;
 }
 

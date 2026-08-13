@@ -25,6 +25,19 @@ const KEY_TO_MODULE = {
   product_approval: 'PRODUCT_APPROVAL',
 };
 
+const PERMISSION_LABELS = {
+  product_mgmt: 'Product Management',
+  seller_mgmt: 'Seller Management',
+  category_mgmt: 'Category Management',
+  banner_mgmt: 'Ad Banners',
+  realestate_content: 'Real Estate Content',
+  reports: 'Reports',
+  user_mgmt: 'User RBAC & Roles',
+  system_settings: 'System Settings & Audit',
+  approvals: 'Multi-Admin Approvals (Approver)',
+  product_approval: 'Product Approval Queue',
+};
+
 export function renderUserRBACAdmin(container) {
   function render() {
     const state = stateEngine.getState();
@@ -155,19 +168,20 @@ export function renderUserRBACAdmin(container) {
     `;
 
     // Handlers
-    container.querySelector('#add-subadmin-btn')?.addEventListener('click', async () => {
-      const name = prompt('Enter Sub-Administrator Full Name:');
-      if (!name) return;
-      const email = prompt('Enter Email Address:');
-      if (!email) return;
-      const password = prompt('Set an Initial Password (min. 6 characters):');
-      if (!password) return;
-      try {
-        await stateEngine.createSubAdmin(name, email, password, []);
-        alert(`Sub-Administrator account created for ${name}. They start with no module permissions - grant access via the checkboxes below, then request a permission change to apply it.`);
-      } catch (err) {
-        render();
-      }
+    // Root cause of "I added a sub-admin and gave them a role but it doesn't
+    // work": creation and permission-granting used to be two entirely
+    // separate actions (sequential prompt() dialogs to create, THEN a
+    // completely separate checkbox-matrix-and-button step below to request
+    // access) - easy to do the first and never realize/remember the second
+    // exists. Confirmed against production data: a sub-admin created this way
+    // had zero ApprovalRequest rows ever created for them - the second step
+    // was simply never taken, not a technical failure. This modal makes both
+    // one action: create the account, then immediately submit a permission
+    // request for whatever was checked (still requires a different
+    // Administrator's approval - that dual-authorization step is intentional
+    // and unchanged).
+    container.querySelector('#add-subadmin-btn')?.addEventListener('click', () => {
+      openCreateSubAdminModal();
     });
 
     container.querySelector('#add-admin-btn')?.addEventListener('click', async () => {
@@ -240,6 +254,100 @@ export function renderUserRBACAdmin(container) {
   }
 
   render();
+}
+
+// Combines account creation + the initial permission request into one modal
+// submit, instead of two easy-to-lose-track-of separate actions (see the
+// #add-subadmin-btn handler above for the full reasoning). Appended to
+// document.body (not the module's own container) so it survives the next
+// stateEngine re-render, same pattern as the image lightbox in
+// MarketplaceAdmin.js.
+function openCreateSubAdminModal() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.65); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
+
+  overlay.innerHTML = `
+    <div style="background: #fff; border-radius: 20px; padding: 1.75rem 2rem; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto;">
+      <h3 style="color: #0F172A; font-size: 1.2rem; margin-bottom: 0.25rem;">➕ Add New Sub-Administrator</h3>
+      <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 1.25rem;">
+        Set their account details and initial module access in one step.
+      </p>
+
+      <form id="create-subadmin-form">
+        <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.25rem;">
+          <input name="name" type="text" placeholder="Full Name" required
+            style="padding: 0.65rem 0.9rem; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 0.9rem;">
+          <input name="email" type="email" placeholder="Email Address" required
+            style="padding: 0.65rem 0.9rem; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 0.9rem;">
+          <input name="password" type="password" placeholder="Initial Password (min. 6 characters)" minlength="6" required
+            style="padding: 0.65rem 0.9rem; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 0.9rem;">
+        </div>
+
+        <div style="font-size: 0.78rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem;">
+          Initial Module Access (optional - can be changed later)
+        </div>
+        <div class="grid-2" style="gap: 0.6rem; margin-bottom: 1rem;">
+          ${Object.entries(PERMISSION_LABELS).map(([key, label]) => `
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #334155; cursor: pointer;">
+              <input type="checkbox" name="perm" value="${KEY_TO_MODULE[key]}" style="cursor: pointer;">
+              ${escapeHtml(label)}
+            </label>
+          `).join('')}
+        </div>
+
+        <div style="background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; padding: 0.65rem 0.9rem; border-radius: 10px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1.25rem;">
+          ⏳ Any permissions checked here still need a <em>different</em> Administrator's approval in Multi-Admin Approvals before they take effect - self-approval isn't allowed. The account itself is created immediately either way.
+        </div>
+
+        <div id="create-subadmin-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" id="create-subadmin-cancel" class="btn btn-sm btn-secondary">Cancel</button>
+          <button type="submit" id="create-subadmin-submit" class="btn btn-sm btn-primary">Create & Submit Access Request</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  function close() {
+    overlay.remove();
+  }
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#create-subadmin-cancel').addEventListener('click', close);
+
+  overlay.querySelector('#create-subadmin-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = overlay.querySelector('#create-subadmin-submit');
+    const name = form.name.value.trim();
+    const email = form.email.value.trim();
+    const password = form.password.value;
+    const permissions = Array.from(form.querySelectorAll('input[name="perm"]:checked')).map(cb => cb.value);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+    try {
+      const user = await stateEngine.createSubAdmin(name, email, password, []);
+      if (permissions.length > 0) {
+        await stateEngine.requestPermissionChange(user.id, name, permissions);
+      }
+      close();
+      alert(
+        permissions.length > 0
+          ? `Sub-Administrator account created for ${name}, and an access request for ${permissions.join(', ')} has been submitted. It will show as "pending review" on their card until a different Administrator approves it in Multi-Admin Approvals.`
+          : `Sub-Administrator account created for ${name} with no initial permissions. Use "Request Permission Change" on their card whenever you're ready to grant access.`
+      );
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create & Submit Access Request';
+      const message = err.message || 'Something went wrong. Please try again.';
+      form.querySelector('#create-subadmin-error').textContent = `⚠️ ${message}`;
+    }
+  });
+
+  document.body.appendChild(overlay);
+  overlay.querySelector('input[name="name"]').focus();
 }
 
 function escapeHtml(str) {

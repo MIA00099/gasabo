@@ -431,16 +431,17 @@ export function renderMarketplaceView(container) {
                       <div class="product-card-image-wrap" style="--card-mat: ${PRODUCT_CARD_ACCENTS[i % PRODUCT_CARD_ACCENTS.length]};">
                         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}">
 
-                        <!-- Floating circular action icons, overlaid on the color mat -
+                        <!-- Floating circular action icons, overlaid on the product photo -
                              expand opens full product details, chat opens contact -
-                             instead of the two full-width buttons this replaced. -->
+                             instead of the two full-width buttons this replaced. Sized up
+                             to match the bigger .product-card-fab circles (see main.css). -->
                         <button class="product-card-fab view-details-btn" data-id="${prod.id}" title="View full details" aria-label="View full details">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
                           </svg>
                         </button>
                         <button class="product-card-fab product-card-fab-right contact-seller-btn" data-id="${prod.id}" title="Contact seller" aria-label="Contact seller">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                           </svg>
                         </button>

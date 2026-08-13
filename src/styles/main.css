@@ -629,24 +629,29 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   color: var(--primary-green);
 }
 
-/* Floating circular action icons over the image mat - expand (view details,
+/* Floating circular action icons over the image - expand (view details,
    top-left) and message (contact seller, top-right) - replacing the two
-   full-width buttons that used to sit below the card content. */
+   full-width buttons that used to sit below the card content. Sized up
+   (34px -> 46px) and given a stronger shadow now that the photo behind them
+   is a real edge-to-edge image (object-fit: cover, see
+   .product-card-image-wrap above) instead of a plain color mat - a small
+   icon that used to sit on flat color needs more visual weight to stay
+   easy to spot/tap over varied photo content. */
 .product-card-fab {
   position: absolute;
-  top: 14px;
-  left: 14px;
-  width: 34px;
-  height: 34px;
+  top: 16px;
+  left: 16px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   border: none;
   color: #0F172A;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.3);
   transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
@@ -658,7 +663,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .product-card-fab-right {
   left: auto;
-  right: 14px;
+  right: 16px;
 }
 
 .product-card-featured-badge {

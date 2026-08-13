@@ -152,7 +152,7 @@ export function renderAdminDashboardView(container) {
             <!-- Card 1: Pending Approvals (featured - translucent blue glass,
                  not a flat fill, so it reads as tinted glass rather than a
                  solid block sitting oddly among the other glass cards). -->
-            <div class="adm-card-white" style="background: linear-gradient(135deg, rgba(37,99,235,0.82), rgba(29,78,216,0.88)); border-color: rgba(255,255,255,0.25); padding: 1.1rem 1.25rem;">
+            <div class="adm-card-white" style="background: linear-gradient(135deg, rgba(0,161,222,0.82), rgba(0,129,178,0.88)); border-color: rgba(255,255,255,0.25); padding: 1.1rem 1.25rem;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
                 <span class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: rgba(255,255,255,0.75);">Pending Approvals</span>
                 <span style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.18); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">↗</span>

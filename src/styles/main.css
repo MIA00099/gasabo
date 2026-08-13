@@ -248,7 +248,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 #header-logout-btn:hover {
-  background: #1D4ED8 !important;
+  background: #0081B2 !important;
 }
 
 #header-logout-btn:active {
@@ -301,7 +301,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .hero-title-line2 {
-  color: #F59E0B;
+  color: #FAD201;
   margin-bottom: 1.6rem;
 }
 
@@ -331,7 +331,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .hero-subtitle .hero-highlight {
-  color: #F59E0B;
+  color: #FAD201;
   font-weight: 800;
 }
 
@@ -483,7 +483,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: #F59E0B;
+  color: #FAD201;
   text-transform: uppercase;
   margin-bottom: 2px;
 }
@@ -498,7 +498,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .hero-carousel-cta {
-  color: #F59E0B;
+  color: #FAD201;
   font-weight: 700;
   font-size: 0.85rem;
   text-decoration: none;
@@ -675,7 +675,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   position: absolute;
   bottom: 12px;
   left: 12px;
-  background: #EDA203;
+  /* Rwanda flag yellow (Pantone 116C ~ #FAD201), not the site's general gold
+     accent - this badge only ever appears on the homepage marketplace grid,
+     so it's part of the flag's blue/yellow/green balance requested there. */
+  background: #FAD201;
   color: #000;
   font-size: 0.72rem;
   font-weight: 800;
@@ -694,7 +697,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   position: absolute;
   bottom: 12px;
   right: 12px;
-  background: #2563EB;
+  /* Rwanda flag blue (Pantone 299C ~ #00A1DE) - was an approximated indigo
+     (#2563EB), corrected now that the site's blue/yellow/green accents are
+     meant to read as the national flag's actual colors, not just "a blue". */
+  background: #00A1DE;
   color: #fff;
   font-size: 0.72rem;
   font-weight: 800;
@@ -849,16 +855,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   flex-shrink: 0;
 }
 
-/* Blue rather than the near-black it used to be - the one spot on the
-   homepage that introduces the site's third accent color (green stays
-   primary, gold stays the "Start Selling"/featured color) without touching
-   any existing branded element. The search pill floats front-and-center
-   right under the hero, so it reads immediately without needing any other
-   part of the page to change. */
+/* Rwanda flag blue (#00A1DE) - the one spot on the homepage that introduces
+   the site's third accent color (green stays primary, yellow stays the
+   "Start Selling"/featured color) without touching any existing branded
+   element. The search pill floats front-and-center right under the hero,
+   so it reads immediately without needing any other part of the page to
+   change. */
 .search-pill-cta {
   width: 48px;
   height: 48px;
-  background: #2563EB;
+  background: #00A1DE;
   border: none;
   color: #FFFFFF;
   border-radius: 50%;
@@ -866,15 +872,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 6px 18px rgba(0, 161, 222, 0.4);
   flex-shrink: 0;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .search-pill-cta:hover {
   transform: scale(1.06);
-  background: #1D4ED8;
-  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.5);
+  background: #0081B2;
+  box-shadow: 0 8px 22px rgba(0, 161, 222, 0.5);
 }
 
 .search-pill-cta:active {
@@ -1450,14 +1456,16 @@ footer a:hover {
    ========================================================================== */
 
 .large-footer {
-  /* One consistent blue (#2563EB) across every blue element on the site now -
-     footer, .search-pill-cta, .product-card-trending-badge, and the admin
-     dashboard's --primary below - was dark green (#032202), then a darker
-     navy-only variant, replaced by request with the same exact blue used
-     everywhere else instead of a footer-specific shade. */
-  background-color: #2563EB;
+  /* Rwanda flag blue (#00A1DE) background - one consistent blue across every
+     blue element on the site (footer, .search-pill-cta,
+     .product-card-trending-badge, admin dashboard --primary below). The top
+     border is the flag's blue/yellow/green in hard-stop thirds (border-image,
+     since a plain border can't do multiple colors) - was solid gold, now the
+     one explicit "all three flag colors together" element on the site. */
+  background-color: #00A1DE;
   color: #FFFFFF;
-  border-top: 4px solid #EDA203;
+  border-top: 5px solid transparent;
+  border-image: linear-gradient(to right, #00A1DE 0 33.33%, #FAD201 33.33% 66.66%, #20603D 66.66% 100%) 1;
   padding: 4.5rem 2rem 3rem 2rem;
   margin-top: auto;
   width: 100%;
@@ -1919,9 +1927,9 @@ th.tbl-actions-col {
    buttons/badges/accents already) picks up this blue instead, just by
    virtue of being a descendant - no need to touch every component class. */
 .adm-layout-wrap, .seller-dash-wrap {
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
-  --primary-light: rgba(37, 99, 235, 0.12);
+  --primary: #00A1DE;
+  --primary-hover: #0081B2;
+  --primary-light: rgba(0, 161, 222, 0.12);
 }
 
 .adm-layout-wrap {
@@ -2034,7 +2042,7 @@ th.tbl-actions-col {
   color: #ffffff;
   background: var(--primary);
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 161, 222, 0.4);
 }
 
 .adm-side-btn.active .action-count-badge,

@@ -450,12 +450,15 @@ export function renderMarketplaceView(container) {
                         ${prod.isTrending ? `<span class="product-card-trending-badge">🔥 TRENDING</span>` : ''}
                       </div>
 
-                      <div style="padding: 1.1rem 1.25rem 0.25rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem;">
-                          <span style="font-size: 0.78rem; font-weight: 700; color: #034B04; background: #E6F4EA; padding: 2px 8px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">
+                      <!-- Trimmed padding/font-sizes throughout this block on purpose -
+                           the photo above (now 1:1, edge-to-edge) is meant to dominate the
+                           card; this text is supporting detail, not a second focal point. -->
+                      <div style="padding: 0.85rem 1.1rem 0.15rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.5rem;">
+                          <span style="font-size: 0.7rem; font-weight: 700; color: #034B04; background: #E6F4EA; padding: 2px 7px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">
                             📍 ${escapeHtml(prod.district)}
                           </span>
-                          <span style="font-size: 0.78rem; color: #64748B; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                          <span style="font-size: 0.7rem; color: #64748B; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             ${escapeHtml(prod.condition)}
                           </span>
                         </div>
@@ -464,13 +467,13 @@ export function renderMarketplaceView(container) {
                           ${escapeHtml(prod.title)}
                         </h3>
 
-                        <div style="font-size: 1.35rem; font-weight: 800; color: #034B04; margin-bottom: 0.6rem;">
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #034B04; margin-bottom: 0.4rem;">
                           ${prod.price.toLocaleString()} ${prod.currency}
                         </div>
                       </div>
                     </div>
 
-                    <div style="padding: 0 1.25rem 1.1rem; display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #64748B; white-space: nowrap; overflow: hidden;">
+                    <div style="padding: 0 1.1rem 0.85rem; display: flex; align-items: center; gap: 4px; font-size: 0.76rem; color: #64748B; white-space: nowrap; overflow: hidden;">
                       <span style="flex-shrink: 0;">👤</span>
                       <strong style="color: #1E293B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(prod.sellerName)}</strong>
                     </div>

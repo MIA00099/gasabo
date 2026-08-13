@@ -594,7 +594,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    so listings read as big, clean product photography instead of small
    thumbnails floating in a colored box. */
 .product-card-image-wrap {
-  aspect-ratio: 4 / 3;
+  /* 1:1 (was 4:3) - the photo should dominate the card, with the text block
+     below it (title/price/seller) reading as secondary detail, not a
+     competing element. Taller aspect ratio + the trimmed text sizing below
+     (search main.css for "dominate") shift the visual weight decisively
+     toward the image. */
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   position: relative;
   background: var(--card-mat, #F8FAFC);
@@ -615,12 +620,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: 1.05rem;
+  font-size: 0.94rem;
   font-weight: 700;
   color: #0F172A;
-  margin-bottom: 0.5rem;
-  line-height: 1.35;
-  height: 2.7em;
+  margin-bottom: 0.3rem;
+  line-height: 1.3;
+  height: 2.44em;
   cursor: pointer;
   transition: color 0.2s ease;
 }

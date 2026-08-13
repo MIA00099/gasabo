@@ -1450,7 +1450,12 @@ footer a:hover {
    ========================================================================== */
 
 .large-footer {
-  background-color: #032202;
+  /* Dark navy blue (was dark green #032202) - same hue family as the site's
+     other blue accent (#3D52F1, see .search-pill-cta/.product-card-trending-badge
+     above) taken all the way down to a near-black shade, so it keeps the
+     same deep/moody weight the green had rather than reading as a different
+     design. Gold top border and white/light text untouched. */
+  background-color: #0A1230;
   color: #FFFFFF;
   border-top: 4px solid #EDA203;
   padding: 4.5rem 2rem 3rem 2rem;

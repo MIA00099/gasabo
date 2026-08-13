@@ -24,9 +24,19 @@ export function renderAdminDashboardView(container) {
   function render() {
     const state = stateEngine.getState();
     const currentUser = state.currentUser;
-    const pendingReqs = state.approvalRequests.filter(r => r.status === 'pending');
+    // Backend status values are uppercase ('PENDING'/'APPROVED'/'REJECTED' -
+    // see approvals.routes.ts and ApprovalWorkflowAdmin.js, which already
+    // compared correctly). This file compared against lowercase 'pending',
+    // which never matches anything - pendingReqs was always empty, so the
+    // sidebar badge and all three approval-related dashboard cards below
+    // silently showed 0/nothing no matter how many requests were actually
+    // waiting. That's the real explanation behind "I gave the sub-admin a
+    // role and nothing happened" - the request WAS created (confirmed via
+    // direct API testing), there was just no visible sign of it anywhere
+    // outside the Multi-Admin Approvals tab itself.
+    const pendingReqs = state.approvalRequests.filter(r => r.status === 'PENDING');
     const highRiskCount = pendingReqs.filter(r => r.riskLevel === 'HIGH').length;
-    const completedTodayCount = state.approvalRequests.filter(r => r.status !== 'pending').length;
+    const completedTodayCount = state.approvalRequests.filter(r => r.status !== 'PENDING').length;
 
     // Pending product listings were only ever loaded once someone actually
     // opened Marketplace Management's own Pending Approval sub-tab - which
@@ -35,10 +45,17 @@ export function renderAdminDashboardView(container) {
     // items the whole time. Loading it here too (same eventual-consistency
     // pattern as notifications in main.js) means the badge below is
     // accurate before anyone has ever clicked into that tab.
-    if ((currentUser.permissions?.product_mgmt || currentUser.permissions?.product_approval) && state.loading.pendingProducts === undefined) {
+    //
+    // Excludes the full Administrator role - moderation is reserved for a
+    // Sub-Administrator holding product_approval only (see MarketplaceAdmin.js
+    // and requireExclusivePermission in server/src/middleware/auth.ts), so
+    // loading/badging a queue the Administrator can no longer act on would
+    // just be a red counter with nothing they can do about it.
+    const isFullAdmin = currentUser.role === 'admin';
+    if (!isFullAdmin && currentUser.permissions?.product_approval && state.loading.pendingProducts === undefined) {
       stateEngine.loadPendingProducts().catch(() => {});
     }
-    const pendingProductsCount = state.pendingProducts?.length || 0;
+    const pendingProductsCount = isFullAdmin ? 0 : (state.pendingProducts?.length || 0);
 
     // Mirrors the server-side requirePermission() checks (server/src/middleware/auth.ts) -
     // that's the real security boundary; this just keeps a Sub-Administrator from

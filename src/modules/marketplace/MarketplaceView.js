@@ -446,6 +446,7 @@ export function renderMarketplaceView(container) {
                         </button>
 
                         ${prod.isFeatured ? `<span class="product-card-featured-badge">⭐ FEATURED</span>` : ''}
+                        ${prod.isTrending ? `<span class="product-card-trending-badge">🔥 TRENDING</span>` : ''}
                       </div>
 
                       <div style="padding: 1.1rem 1.25rem 0.25rem;">

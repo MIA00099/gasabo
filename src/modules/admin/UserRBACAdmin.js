@@ -31,6 +31,10 @@ export function renderUserRBACAdmin(container) {
     const attempted = state.loading.systemUsers !== undefined;
 
     if (!attempted) stateEngine.loadRbacUsers().catch(() => {});
+    // Needed to show the "pending review" banner below - loaded here too
+    // (not just from the Multi-Admin Approvals tab) so it's accurate even if
+    // this is the first tab opened this session.
+    if (state.loading.approvalRequests === undefined) stateEngine.loadApprovals().catch(() => {});
 
     const systemUsers = state.systemUsers;
     const loading = !!state.loading.systemUsers || !attempted;
@@ -72,7 +76,17 @@ export function renderUserRBACAdmin(container) {
           <div style="text-align: center; padding: 3rem; color: var(--text-muted);">Loading administrators...</div>
         ` : `
           <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            ${systemUsers.map(u => `
+            ${systemUsers.map(u => {
+              // Surfaces a submitted-but-not-yet-applied permission change
+              // right on the card it affects - without this, checking boxes
+              // and clicking "Request Permission Change" looks like it did
+              // nothing at all until someone happens to notice the request
+              // sitting in Multi-Admin Approvals (which needs a *different*
+              // Administrator to approve it - self-approval is blocked).
+              const pendingChangeReq = state.approvalRequests.find(
+                r => r.targetId === u.id && r.status === 'PENDING' && r.actionType === 'CHANGE_ADMIN_PERMISSIONS'
+              );
+              return `
               <div class="glass-panel" style="padding: 1.25rem 1.4rem; border-radius: 20px; border-top: 4px solid ${u.role==='administrator'?'var(--accent-gold)':'#8b5cf6'};">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
                   <div>
@@ -105,6 +119,12 @@ export function renderUserRBACAdmin(container) {
                   </div>
                 </div>
 
+                ${pendingChangeReq ? `
+                  <div style="background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; padding: 0.65rem 0.9rem; border-radius: 10px; font-size: 0.82rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    ⏳ A permission change for ${escapeHtml(u.name)} is awaiting review in Multi-Admin Approvals - a <em>different</em> Administrator must approve it before it takes effect. The checkboxes below still show the current (unchanged) permissions.
+                  </div>
+                ` : ''}
+
                 <!-- Permission Toggles Matrix - editable checkboxes for Sub-Administrators
                      (the requester picks the target permission set, submitted with the
                      approval request); read-only for the Administrator row below, since a
@@ -128,7 +148,7 @@ export function renderUserRBACAdmin(container) {
                   </div>
                 </div>
               </div>
-            `).join('')}
+            `;}).join('')}
           </div>
         `}
       </div>

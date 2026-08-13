@@ -24,9 +24,18 @@ export async function notifyAdmins(opts: { type: string; message: string; recipi
 // notification. This targets only Administrators (always eligible) and
 // Sub-Administrators who actually hold the relevant module permission,
 // as individual per-recipient rows rather than one broadcast row.
-export async function notifyAdminsWithModulePermission(moduleKey: string, opts: { type: string; message: string }) {
+//
+// excludeFullAdmins: for PRODUCT_APPROVAL specifically, full Administrators
+// no longer have access to the moderation queue (see requireExclusivePermission
+// in middleware/auth.ts) - pinging them about a listing they now structurally
+// can't act on would be the exact same false alarm this function exists to
+// avoid, just for the Administrator role instead of a scoped Sub-Administrator.
+export async function notifyAdminsWithModulePermission(
+  moduleKey: string,
+  opts: { type: string; message: string; excludeFullAdmins?: boolean }
+) {
   const [admins, subAdmins] = await Promise.all([
-    prisma.administrator.findMany({ select: { id: true } }),
+    opts.excludeFullAdmins ? Promise.resolve([]) : prisma.administrator.findMany({ select: { id: true } }),
     prisma.subAdministrator.findMany({ select: { id: true, permissions: true } }),
   ]);
 

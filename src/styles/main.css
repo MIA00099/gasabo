@@ -677,6 +677,25 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-radius: 6px;
 }
 
+/* Trending flag (server/src/routes/products.routes.ts's isTrending) was
+   toggleable from the admin Products tab but never actually shown anywhere
+   on the public site - this is the one place shoppers see it, opposite
+   corner from the gold Featured badge so the two never collide. Blue rather
+   than green/gold on purpose: a third accent color alongside the site's
+   existing green (primary) and gold (featured/CTA) palette, not a
+   replacement for either. */
+.product-card-trending-badge {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: #3D52F1;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
 /* View Button Hover Animation */
 .view-prod-card-btn {
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -824,10 +843,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   flex-shrink: 0;
 }
 
+/* Blue rather than the near-black it used to be - the one spot on the
+   homepage that introduces the site's third accent color (green stays
+   primary, gold stays the "Start Selling"/featured color) without touching
+   any existing branded element. The search pill floats front-and-center
+   right under the hero, so it reads immediately without needing any other
+   part of the page to change. */
 .search-pill-cta {
   width: 48px;
   height: 48px;
-  background: #0F172A;
+  background: #3D52F1;
   border: none;
   color: #FFFFFF;
   border-radius: 50%;
@@ -835,15 +860,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 6px 18px rgba(61, 82, 241, 0.4);
   flex-shrink: 0;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .search-pill-cta:hover {
   transform: scale(1.06);
-  background: #1E293B;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.45);
+  background: #2A3ADB;
+  box-shadow: 0 8px 22px rgba(61, 82, 241, 0.5);
 }
 
 .search-pill-cta:active {

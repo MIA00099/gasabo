@@ -80,3 +80,32 @@ export function requirePermission(moduleKey: string) {
     next();
   };
 }
+
+// The inverse of hasModulePermission()'s usual "Administrators always pass"
+// rule - used only for product moderation, by explicit request: the people
+// doing day-to-day marketplace management (full Administrators included)
+// should not also be the ones deciding what goes live, so this is reserved
+// for a Sub-Administrator specifically holding the module, full stop. There
+// is deliberately no bypass for ADMINISTRATOR here.
+export async function hasExclusiveSubAdminPermission(user: AuthUser, moduleKey: string): Promise<boolean> {
+  if (user.role !== 'SUB_ADMINISTRATOR') return false;
+  const subAdmin = await prisma.subAdministrator.findUnique({ where: { id: user.id } });
+  if (!subAdmin) return false;
+  try {
+    const permissions: string[] = JSON.parse(subAdmin.permissions || '[]');
+    return permissions.includes(moduleKey);
+  } catch {
+    return false;
+  }
+}
+
+export function requireExclusivePermission(moduleKey: string) {
+  return async (req: any, res: any, next: any) => {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required.' });
+    const allowed = await hasExclusiveSubAdminPermission(req.user, moduleKey);
+    if (!allowed) {
+      return res.status(403).json({ error: `Only a Sub-Administrator holding "${moduleKey}" permission can do this - it's kept separate from general Administrator access by design.` });
+    }
+    next();
+  };
+}

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../config/db.js';
-import { requireAuth, requireRole, requirePermission, hasModulePermission } from '../middleware/auth.js';
+import { requireAuth, requireRole, requirePermission, requireExclusivePermission, hasModulePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 import { notifySeller, notifyAdminsWithModulePermission } from '../utils/notify.js';
 
@@ -80,8 +80,10 @@ productsRouter.get('/mine', requireAuth, requireRole('SELLER'), async (req, res)
   res.json({ products: products.map(serializeProduct) });
 });
 
-// GET /api/products/pending - admin moderation queue
-productsRouter.get('/pending', requireAuth, requirePermission('PRODUCT_APPROVAL'), async (_req, res) => {
+// GET /api/products/pending - moderation queue, reserved for a
+// Sub-Administrator holding PRODUCT_APPROVAL - not full Administrators (see
+// requireExclusivePermission in middleware/auth.ts).
+productsRouter.get('/pending', requireAuth, requireExclusivePermission('PRODUCT_APPROVAL'), async (_req, res) => {
   const products = await prisma.product.findMany({
     where: { status: 'PENDING' },
     include: { seller: true, category: true },
@@ -142,13 +144,14 @@ productsRouter.post('/', requireAuth, requireRole('SELLER'), async (req, res) =>
   // The sidebar badge (see AdminDashboardView.js) only updates once an admin
   // is actually looking at the app - a real push notification is what
   // actually gets noticed if nobody happens to have it open right now.
-  // Scoped to PRODUCTS permission specifically - a Sub-Administrator
-  // restricted to only the Approvals permission (see rbac.routes.ts) has no
-  // way to act on a product listing, so pinging them about one is a false
-  // alarm, not a useful notification.
+  // Scoped to PRODUCT_APPROVAL specifically and excludes full Administrators
+  // (see requireExclusivePermission in middleware/auth.ts) - moderation is
+  // now reserved for a Sub-Administrator holding that permission, so anyone
+  // else getting pinged about a listing they can't act on is a false alarm.
   await notifyAdminsWithModulePermission('PRODUCT_APPROVAL', {
     type: 'PRODUCT_SUBMITTED',
     message: `${req.user!.name} submitted a new listing "${title}" - needs approval before it goes live.`,
+    excludeFullAdmins: true,
   });
 
   res.status(201).json({ product: serializeProduct(product) });
@@ -156,7 +159,7 @@ productsRouter.post('/', requireAuth, requireRole('SELLER'), async (req, res) =>
 
 const rejectSchema = z.object({ reason: z.string().min(3, 'A rejection reason is required.') });
 
-productsRouter.post('/:id/approve', requireAuth, requirePermission('PRODUCT_APPROVAL'), async (req, res) => {
+productsRouter.post('/:id/approve', requireAuth, requireExclusivePermission('PRODUCT_APPROVAL'), async (req, res) => {
   const product = await prisma.product.findUnique({ where: { id: req.params.id } });
   if (!product) return res.status(404).json({ error: 'Product not found.' });
   if (product.status !== 'PENDING') {
@@ -188,7 +191,7 @@ productsRouter.post('/:id/approve', requireAuth, requirePermission('PRODUCT_APPR
   res.json({ product: serializeProduct(updated) });
 });
 
-productsRouter.post('/:id/reject', requireAuth, requirePermission('PRODUCT_APPROVAL'), async (req, res) => {
+productsRouter.post('/:id/reject', requireAuth, requireExclusivePermission('PRODUCT_APPROVAL'), async (req, res) => {
   const parsed = rejectSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Please provide a reason for rejecting this listing.' });
 

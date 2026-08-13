@@ -13,9 +13,17 @@ export function renderMarketplaceAdmin(container) {
     // gated on its own specific permission, not just "got into this panel at
     // all" - the backend enforces the same split, so showing a tab someone
     // can't actually use would just mean every action on it 403s.
+    //
+    // Pending Approval is additionally excluded for the full Administrator
+    // role itself, by explicit request - product moderation is reserved for
+    // a Sub-Administrator holding product_approval only, so fullPermissions()
+    // returning true for everything doesn't grant this one tab (see
+    // requireExclusivePermission in server/src/middleware/auth.ts, which
+    // enforces the same exclusion server-side).
     const perms = state.currentUser?.permissions || {};
+    const isFullAdmin = state.currentUser?.role === 'admin';
     const tabPerms = {
-      pending: !!perms.product_approval,
+      pending: !!perms.product_approval && !isFullAdmin,
       products: !!perms.product_mgmt,
       categories: !!perms.category_mgmt,
       banners: !!perms.banner_mgmt,
@@ -85,7 +93,7 @@ export function renderMarketplaceAdmin(container) {
               ${state.pendingProducts.map(prod => `
                 <div class="glass-panel" style="padding: 1.25rem 1.4rem; border-radius: 20px; border-left: 4px solid #D97706;">
                   <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 84px; height: 84px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
+                    <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" class="view-prod-image-btn" data-id="${prod.id}" title="Click to view full size" style="width: 84px; height: 84px; border-radius: 12px; object-fit: cover; flex-shrink: 0; cursor: zoom-in;">
 
                     <div style="flex: 1; min-width: 220px;">
                       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
@@ -108,6 +116,9 @@ export function renderMarketplaceAdmin(container) {
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; justify-content: center; flex-shrink: 0;">
+                      <button class="btn btn-sm view-prod-image-btn" data-id="${prod.id}" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">
+                        🔍 View Image${prod.images.length > 1 ? `s (${prod.images.length})` : ''}
+                      </button>
                       <button class="btn btn-sm approve-prod-btn" data-id="${prod.id}" data-title="${escapeHtml(prod.title)}" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">
                         ✅ Approve
                       </button>
@@ -258,6 +269,13 @@ export function renderMarketplaceAdmin(container) {
     container.querySelector('#mkt-adm-categories')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'categories' }));
     container.querySelector('#mkt-adm-banners')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'banners' }));
 
+    container.querySelectorAll('.view-prod-image-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prod = state.pendingProducts.find(p => p.id === btn.dataset.id);
+        if (prod) openImageLightbox(prod.images, prod.title);
+      });
+    });
+
     container.querySelectorAll('.approve-prod-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm(`Approve "${btn.dataset.title}"? It will go live on the marketplace immediately for 6 months.`)) return;
@@ -338,6 +356,53 @@ export function renderMarketplaceAdmin(container) {
   }
 
   render();
+}
+
+// Approval decisions were being made off an 84x84px thumbnail with no way to
+// see the rest of a listing's images - a moderator asked for a real way to
+// inspect the photo(s) before approving/rejecting. Appended to document.body
+// (not the module's own container) so it survives the next stateEngine
+// re-render, which would otherwise wipe out an open overlay mid-view.
+function openImageLightbox(images, title) {
+  let idx = 0;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.88); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem;';
+
+  function paint() {
+    overlay.innerHTML = `
+      <div style="position: relative; max-width: min(90vw, 900px); max-height: 90vh; display: flex; flex-direction: column; align-items: center; gap: 0.85rem;">
+        <button id="lightbox-close-btn" title="Close" style="position: absolute; top: -46px; right: 0; background: rgba(255,255,255,0.12); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 1.1rem; cursor: pointer;">✕</button>
+        <img src="${images[idx]}" alt="${escapeHtml(title)}" style="max-width: 100%; max-height: 75vh; border-radius: 12px; object-fit: contain; background: #0F172A; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+        <div style="color: #fff; font-weight: 700; font-size: 0.95rem; text-align: center;">${escapeHtml(title)}</div>
+        ${images.length > 1 ? `
+          <div style="display: flex; align-items: center; gap: 1rem; color: #fff; font-size: 0.85rem;">
+            <button id="lightbox-prev-btn" style="background: rgba(255,255,255,0.12); color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1.1rem;">‹</button>
+            <span>${idx + 1} / ${images.length}</span>
+            <button id="lightbox-next-btn" style="background: rgba(255,255,255,0.12); color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1.1rem;">›</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+    overlay.querySelector('#lightbox-close-btn').addEventListener('click', close);
+    overlay.querySelector('#lightbox-prev-btn')?.addEventListener('click', () => { idx = (idx - 1 + images.length) % images.length; paint(); });
+    overlay.querySelector('#lightbox-next-btn')?.addEventListener('click', () => { idx = (idx + 1) % images.length; paint(); });
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowLeft' && images.length > 1) { idx = (idx - 1 + images.length) % images.length; paint(); }
+    else if (e.key === 'ArrowRight' && images.length > 1) { idx = (idx + 1) % images.length; paint(); }
+  }
+
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    overlay.remove();
+  }
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', onKey);
+  paint();
+  document.body.appendChild(overlay);
 }
 
 function escapeHtml(str) {

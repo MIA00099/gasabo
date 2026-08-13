@@ -587,14 +587,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   justify-content: space-between;
 }
 
-/* The colored "mat" behind each product photo - --card-mat is set per-card
-   inline (a rotating accent palette, see PRODUCT_CARD_ACCENTS in
-   MarketplaceView.js) so a grid of cards reads as varied and alive instead
-   of every photo sitting on the same flat gray placeholder. The image itself
-   is inset with padding and object-fit:contain (not cover) so the whole
-   product shows framed inside the color, rather than being edge-to-edge
-   cropped - real uploaded photos rarely have a transparent background, so
-   this is what gets closest to the "floating product" look without one. */
+/* The colored "mat" (--card-mat, set per-card inline - see
+   PRODUCT_CARD_ACCENTS in MarketplaceView.js) now only shows briefly as a
+   loading-state placeholder color behind the image, not around it - photos
+   fill the whole rounded rect edge-to-edge (object-fit: cover, no padding)
+   so listings read as big, clean product photography instead of small
+   thumbnails floating in a colored box. */
 .product-card-image-wrap {
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -608,9 +606,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .product-card-image-wrap img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  padding: 1.5rem;
-  box-sizing: border-box;
+  object-fit: cover;
   display: block;
 }
 

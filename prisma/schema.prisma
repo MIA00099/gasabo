@@ -180,9 +180,13 @@ model ApprovalRequest {
   requestedByName   String
   requestedByEmail  String
   reason            String
-  newPermissions    String?   // JSON array of module keys (e.g. ["PRODUCTS","SELLERS"]) - only
-                               // set for CHANGE_ADMIN_PERMISSIONS requests, the target sub-admin's
-                               // permissions the requester is asking to apply once approved.
+  newPermissions    String?   // JSON array of module keys (e.g. ["PRODUCTS","SELLERS"]) - set for
+                               // CHANGE_ADMIN_PERMISSIONS (the target's requested permission set) and
+                               // CREATE_SUB_ADMIN (the new account's initial permission set) requests.
+  pendingEmail        String? // CREATE_SUB_ADMIN only - the not-yet-created account's email.
+  pendingPasswordHash String? // CREATE_SUB_ADMIN only - bcrypt hash of the chosen initial password.
+                               // Never stored plaintext, not even temporarily - hashed before this
+                               // row is written, same as SubAdministrator.passwordHash.
   status            String    @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
   riskLevel         String    @default("HIGH")     // "LOW" | "MEDIUM" | "HIGH"
   requiredRole      String    @default("ADMINISTRATOR")

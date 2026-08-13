@@ -508,12 +508,18 @@ class StateEngine {
     });
   }
 
-  async createSubAdmin(name, email, password, permissions) {
-    return this._run('systemUsers', async () => {
-      const { user } = await api.post('/rbac/sub-admins', { name, email, password, permissions });
-      this.data.systemUsers = [...this.data.systemUsers, user];
+  // Creating a Sub-Administrator account now goes through the same
+  // dual-authorization queue as changing one's permissions - nothing is
+  // written to the SubAdministrator table until a different Administrator
+  // approves the request (see executeApprovedAction in
+  // server/src/routes/approvals.routes.ts). This returns an ApprovalRequest,
+  // not a user - there's no account to add to systemUsers yet.
+  async requestCreateSubAdmin(name, email, password, permissions) {
+    return this._run('approvalRequests', async () => {
+      const { request } = await api.post('/rbac/sub-admins/request-create', { name, email, password, permissions });
+      this.data.approvalRequests = [request, ...this.data.approvalRequests];
       this.notify();
-      return user;
+      return request;
     });
   }
 

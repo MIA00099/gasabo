@@ -3,6 +3,7 @@ import { prisma } from '../config/db.js';
 import { requireAuth, requireRole, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 import { notifyAdmins } from '../utils/notify.js';
+import { isEmailTaken } from '../utils/accountEmail.js';
 
 export const approvalsRouter = Router();
 
@@ -11,7 +12,37 @@ approvalsRouter.get('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINIST
   res.json({ requests });
 });
 
-async function executeApprovedAction(req: { actionType: string; targetId: string | null; newPermissions: string | null }) {
+async function executeApprovedAction(req: {
+  actionType: string;
+  targetId: string | null;
+  targetName: string;
+  newPermissions: string | null;
+  pendingEmail: string | null;
+  pendingPasswordHash: string | null;
+  requestedById: string;
+}) {
+  if (req.actionType === 'CREATE_SUB_ADMIN') {
+    if (!req.pendingEmail || !req.pendingPasswordHash) {
+      throw new Error('This request predates the create-account approval flow and has no account details recorded.');
+    }
+    // Re-checked here, not just at request time - the email could have been
+    // taken by a different account in the time between the request being
+    // filed and a second Administrator approving it.
+    if (await isEmailTaken(req.pendingEmail)) {
+      throw new Error('An account with this email now exists - it may have been created another way since this request was made.');
+    }
+    const subAdmin = await prisma.subAdministrator.create({
+      data: {
+        name: req.targetName,
+        email: req.pendingEmail,
+        passwordHash: req.pendingPasswordHash,
+        permissions: req.newPermissions ?? '[]',
+        createdById: req.requestedById,
+      },
+    });
+    const applied = JSON.parse(req.newPermissions || '[]');
+    return `Sub-Administrator account created for ${subAdmin.name} with permissions: ${applied.length ? applied.join(', ') : '(none)'}.`;
+  }
   if (req.actionType === 'DELETE_SELLER_ACCOUNT' && req.targetId) {
     await prisma.seller.delete({ where: { id: req.targetId } }).catch(() => {
       throw new Error('Seller could not be deleted (it may already be removed).');

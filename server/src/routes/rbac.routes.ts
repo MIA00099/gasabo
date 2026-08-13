@@ -49,11 +49,20 @@ const createSubAdminSchema = z.object({
   permissions: z.array(z.string()).optional(),
 });
 
-// SubAdministrator.createdById is a required FK to Administrator (see
-// schema.prisma) - a Sub-Administrator creating another Sub-Administrator
-// isn't representable in the data model, so this is Administrator-only,
-// not the usual requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR') pair.
-rbacRouter.post('/sub-admins', requireAuth, requireRole('ADMINISTRATOR'), async (req, res) => {
+// Sub-Administrator creation used to happen instantly, unilaterally, by
+// whichever Administrator clicked the button - only the PERMISSIONS
+// attached afterward went through Multi-Admin Approvals. By request, the
+// account's existence itself is now gated the same way: this creates an
+// ApprovalRequest (actionType CREATE_SUB_ADMIN) holding everything needed
+// to create the account, and nothing is written to SubAdministrator until
+// a *different* Administrator approves it (see executeApprovedAction in
+// approvals.routes.ts). The password is hashed here, immediately - never
+// held in plaintext, not even for the length of the pending request.
+//
+// Administrator-only for the same reason account creation always was:
+// SubAdministrator.createdById is a required FK to Administrator, so a
+// Sub-Administrator requesting one isn't representable in the data model.
+rbacRouter.post('/sub-admins/request-create', requireAuth, requireRole('ADMINISTRATOR'), async (req, res) => {
   const parsed = createSubAdminSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Please fill in all fields correctly (name, email, password min. 6 characters).', details: parsed.error.flatten() });
@@ -65,32 +74,38 @@ rbacRouter.post('/sub-admins', requireAuth, requireRole('ADMINISTRATOR'), async 
     return res.status(409).json({ error: 'An account with this email already exists.' });
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  const subAdmin = await prisma.subAdministrator.create({
-    data: { name, email, passwordHash, permissions: JSON.stringify(permissions), createdById: req.user!.id },
+  const pendingPasswordHash = await bcrypt.hash(password, 10);
+  const request = await prisma.approvalRequest.create({
+    data: {
+      actionType: 'CREATE_SUB_ADMIN',
+      targetName: name,
+      requestedById: req.user!.id,
+      requestedByName: req.user!.name,
+      requestedByEmail: req.user!.email,
+      reason: req.body?.reason || `Requesting a new Sub-Administrator account for ${name} (${email}) with permissions: ${permissions.join(', ') || '(none)'}.`,
+      newPermissions: JSON.stringify(permissions),
+      pendingEmail: email,
+      pendingPasswordHash,
+      riskLevel: 'HIGH',
+    },
   });
 
   await logAudit({
     actorId: req.user!.id,
     actorType: req.user!.role,
     actorName: req.user!.name,
-    action: 'SUB_ADMIN_CREATED',
-    module: 'User RBAC',
-    targetId: subAdmin.id,
-    details: `Created Sub-Administrator account for ${name} (${email}) with permissions: ${permissions.join(', ') || '(none)'}.`,
+    action: 'CRITICAL_APPROVAL_REQUESTED',
+    module: 'Multi-Admin Approvals',
+    targetId: request.id,
+    details: `Created approval request ${request.id} to create a new Sub-Administrator account for ${name}.`,
   });
 
-  res.status(201).json({
-    user: {
-      id: subAdmin.id,
-      name: subAdmin.name,
-      email: subAdmin.email,
-      role: 'sub_administrator',
-      district: 'Gasabo',
-      lastLogin: subAdmin.lastLoginAt,
-      permissions: permissionsFromModuleList(permissions),
-    },
+  await notifyAdmins({
+    type: 'APPROVAL_REQUEST_CREATED',
+    message: `${req.user!.name} requested a new Sub-Administrator account for "${name}" - needs a second Administrator's approval.`,
   });
+
+  res.status(201).json({ request });
 });
 
 const createAdministratorSchema = z.object({

@@ -57,6 +57,12 @@ export function renderUserRBACAdmin(container) {
     // The backend already enforces this; hiding the button for a logged-in
     // Sub-Administrator avoids a confusing 403 from a button that can never work for them.
     const isFullAdmin = state.currentUser?.role === 'admin';
+    // A pending CREATE_SUB_ADMIN request has no SubAdministrator row yet -
+    // there's nothing in systemUsers to render a card for - so without this
+    // it would be invisible anywhere except the Multi-Admin Approvals tab.
+    const pendingCreateRequests = state.approvalRequests.filter(
+      r => r.actionType === 'CREATE_SUB_ADMIN' && r.status === 'PENDING'
+    );
 
     container.innerHTML = `
       <div>
@@ -82,6 +88,22 @@ export function renderUserRBACAdmin(container) {
         ${state.error ? `
           <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
             ⚠️ ${escapeHtml(state.error)}
+          </div>
+        ` : ''}
+
+        ${pendingCreateRequests.length > 0 ? `
+          <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+            <div style="font-weight: 800; color: #92400E; font-size: 0.9rem; margin-bottom: 0.6rem;">
+              ⏳ Pending Sub-Administrator Creation (${pendingCreateRequests.length})
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              ${pendingCreateRequests.map(r => `
+                <div style="font-size: 0.85rem; color: #92400E;">
+                  <strong>${escapeHtml(r.targetName)}</strong> - requested by ${escapeHtml(r.requestedByName)}.
+                  Awaiting a <em>different</em> Administrator's approval in Multi-Admin Approvals before this account exists.
+                </div>
+              `).join('')}
+            </div>
           </div>
         ` : ''}
 
@@ -268,9 +290,9 @@ function openCreateSubAdminModal() {
 
   overlay.innerHTML = `
     <div style="background: #fff; border-radius: 20px; padding: 1.75rem 2rem; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto;">
-      <h3 style="color: #0F172A; font-size: 1.2rem; margin-bottom: 0.25rem;">➕ Add New Sub-Administrator</h3>
+      <h3 style="color: #0F172A; font-size: 1.2rem; margin-bottom: 0.25rem;">➕ Request New Sub-Administrator</h3>
       <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 1.25rem;">
-        Set their account details and initial module access in one step.
+        Set their account details and initial module access in one step. The account itself now requires a different Administrator's approval too, same as a permission change.
       </p>
 
       <form id="create-subadmin-form">
@@ -296,14 +318,14 @@ function openCreateSubAdminModal() {
         </div>
 
         <div style="background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; padding: 0.65rem 0.9rem; border-radius: 10px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1.25rem;">
-          ⏳ Any permissions checked here still need a <em>different</em> Administrator's approval in Multi-Admin Approvals before they take effect - self-approval isn't allowed. The account itself is created immediately either way.
+          ⏳ This submits one request for the account <em>and</em> its permissions - nothing is created yet. A <em>different</em> Administrator must approve it in Multi-Admin Approvals before this account exists at all (self-approval isn't allowed).
         </div>
 
         <div id="create-subadmin-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
 
         <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
           <button type="button" id="create-subadmin-cancel" class="btn btn-sm btn-secondary">Cancel</button>
-          <button type="submit" id="create-subadmin-submit" class="btn btn-sm btn-primary">Create & Submit Access Request</button>
+          <button type="submit" id="create-subadmin-submit" class="btn btn-sm btn-primary">Submit Creation Request</button>
         </div>
       </form>
     </div>
@@ -326,21 +348,19 @@ function openCreateSubAdminModal() {
     const permissions = Array.from(form.querySelectorAll('input[name="perm"]:checked')).map(cb => cb.value);
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating...';
+    submitBtn.textContent = 'Submitting...';
     try {
-      const user = await stateEngine.createSubAdmin(name, email, password, []);
-      if (permissions.length > 0) {
-        await stateEngine.requestPermissionChange(user.id, name, permissions);
-      }
+      // One request now covers both the account and its initial permissions -
+      // see requestCreateSubAdmin in stateEngine.js. Nothing is created until
+      // a different Administrator approves it in Multi-Admin Approvals.
+      await stateEngine.requestCreateSubAdmin(name, email, password, permissions);
       close();
       alert(
-        permissions.length > 0
-          ? `Sub-Administrator account created for ${name}, and an access request for ${permissions.join(', ')} has been submitted. It will show as "pending review" on their card until a different Administrator approves it in Multi-Admin Approvals.`
-          : `Sub-Administrator account created for ${name} with no initial permissions. Use "Request Permission Change" on their card whenever you're ready to grant access.`
+        `Request submitted to create a Sub-Administrator account for ${name}${permissions.length ? ` with permissions: ${permissions.join(', ')}` : ' with no initial permissions'}. A different Administrator must approve it in Multi-Admin Approvals before the account actually exists.`
       );
     } catch (err) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Create & Submit Access Request';
+      submitBtn.textContent = 'Submit Creation Request';
       const message = err.message || 'Something went wrong. Please try again.';
       form.querySelector('#create-subadmin-error').textContent = `⚠️ ${message}`;
     }

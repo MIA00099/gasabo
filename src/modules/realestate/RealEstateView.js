@@ -12,7 +12,7 @@ import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from 
 // Mockup's own brand palette (Gasabo Real Estate's tailwind.config), kept
 // as its own identity separate from the marketplace's green/gold/flag-blue
 // scheme - Real Estate has always been a visually distinct portal.
-const RE_BLUE = '#134e7a';
+const RE_BLUE = '#003DA5';
 const RE_GREEN = '#1a8a4f';
 const RE_GOLD = '#dca73a';
 const RE_DARK = '#0f172a';

@@ -411,11 +411,6 @@ function renderPropertyGrid(list) {
     <div class="grid-3" style="gap: 1.75rem;">
       ${list.map(prop => {
         const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
-        const metrics = prop.type === 'plot'
-          ? `<div style="display: flex; align-items: center; gap: 4px;">📐 ${escapeHtml(prop.area)}</div>`
-          : `<div style="display: flex; align-items: center; gap: 4px;">🛏️ ${prop.beds}</div>
-             <div style="display: flex; align-items: center; gap: 4px;">🛁 ${prop.baths}</div>
-             <div style="display: flex; align-items: center; gap: 4px;">📐 ${escapeHtml(prop.area)}</div>`;
         return `
           <div class="re-property-card" data-id="${prop.id}" style="background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.25s ease;">
             <div style="position: relative; height: 220px; overflow: hidden;">
@@ -429,7 +424,7 @@ function renderPropertyGrid(list) {
               <p style="color: #64748B; font-size: 0.88rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 4px;">📍 ${escapeHtml(prop.location)}</p>
               <p style="font-size: 1.4rem; font-weight: 800; color: ${RE_GREEN}; margin-bottom: 1rem;">${escapeHtml(prop.price)}</p>
               <div style="display: flex; gap: 1rem; border-top: 1px solid #F1F5F9; padding-top: 1rem; color: #475569; font-size: 0.85rem; font-weight: 600;">
-                ${metrics}
+                📐 ${escapeHtml(prop.area)}
               </div>
             </div>
           </div>
@@ -443,12 +438,6 @@ function openPropertyModal(prop, contact) {
   const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
-
-  const metrics = prop.type === 'plot'
-    ? `<div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center;"><div style="font-size: 1.3rem; margin-bottom: 0.3rem;">📐</div><strong>${escapeHtml(prop.area)}</strong></div>`
-    : `<div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center;"><div style="font-size: 1.3rem; margin-bottom: 0.3rem;">🛏️</div><strong>${prop.beds} Beds</strong></div>
-       <div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center;"><div style="font-size: 1.3rem; margin-bottom: 0.3rem;">🛁</div><strong>${prop.baths} Baths</strong></div>
-       <div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center;"><div style="font-size: 1.3rem; margin-bottom: 0.3rem;">📐</div><strong>${escapeHtml(prop.area)}</strong></div>`;
 
   const phoneDigits = (contact?.phone || '').replace(/[^\d+]/g, '');
 
@@ -466,8 +455,8 @@ function openPropertyModal(prop, contact) {
           <div style="font-size: 1.7rem; font-weight: 800; color: ${RE_GREEN}; margin-bottom: 1.25rem;">${escapeHtml(prop.price)}</div>
           <p style="color: #334155; line-height: 1.6; border-left: 4px solid ${RE_GOLD}; padding-left: 1rem; margin-bottom: 1.5rem;">${escapeHtml(prop.description)}</p>
 
-          <div class="grid-3" style="gap: 0.75rem; margin-bottom: 1.75rem;">
-            ${metrics}
+          <div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center; margin-bottom: 1.75rem;">
+            <span style="font-size: 1.1rem; margin-right: 6px;">📐</span><strong>${escapeHtml(prop.area)}</strong>
           </div>
 
           <div style="display: flex; gap: 0.85rem;">

@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="nav-brand-logo" id="nav-brand-home">
               <img src="${activePortal==='realestate' ? '/real-estate-logo.png' : '/logo.svg'}" alt="Logo" style="height: 44px; width: 44px; object-fit: contain; border-radius: ${activePortal==='realestate'?'8px':'0'}; transition: all 0.3s ease;">
               <div>
-                <div style="line-height: 1; font-weight: 800; color: #20603D; font-size: 1.25rem; letter-spacing: -0.02em;">
+                <div style="line-height: 1; font-weight: 800; color: #004B00; font-size: 1.25rem; letter-spacing: -0.02em;">
                   ${activePortal==='realestate' ? 'GASABO REAL ESTATE' : 'KIGALI MARKET'}
                 </div>
                 <div style="font-size: 0.72rem; font-weight: 700; color: #FAD201; letter-spacing: 0.02em;">
@@ -113,10 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="nav-actions-group">
               <!-- BILINGUAL LANGUAGE SWITCHER TOGGLE PILL -->
               <div style="display: flex; align-items: center; background: #F1F5F9; border: 1.5px solid #CBD5E1; border-radius: 9999px; padding: 3px;">
-                <button id="lang-toggle-en" style="padding: 5px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 800; border: none; cursor: pointer; transition: all 0.2s ease; background: ${currentLang==='en'?'#034B04':'transparent'}; color: ${currentLang==='en'?'#FFFFFF':'#475569'}; box-shadow: ${currentLang==='en'?'0 2px 6px rgba(3,75,4,0.25)':'none'};">
+                <button id="lang-toggle-en" style="padding: 5px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 800; border: none; cursor: pointer; transition: all 0.2s ease; background: ${currentLang==='en'?'#004B00':'transparent'}; color: ${currentLang==='en'?'#FFFFFF':'#475569'}; box-shadow: ${currentLang==='en'?'0 2px 6px rgba(0,75,0,0.25)':'none'};">
                   🇬🇧 EN
                 </button>
-                <button id="lang-toggle-rw" style="padding: 5px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 800; border: none; cursor: pointer; transition: all 0.2s ease; background: ${currentLang==='rw'?'#034B04':'transparent'}; color: ${currentLang==='rw'?'#FFFFFF':'#475569'}; box-shadow: ${currentLang==='rw'?'0 2px 6px rgba(3,75,4,0.25)':'none'};">
+                <button id="lang-toggle-rw" style="padding: 5px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 800; border: none; cursor: pointer; transition: all 0.2s ease; background: ${currentLang==='rw'?'#004B00':'transparent'}; color: ${currentLang==='rw'?'#FFFFFF':'#475569'}; box-shadow: ${currentLang==='rw'?'0 2px 6px rgba(0,75,0,0.25)':'none'};">
                   🇷🇼 KINY
                 </button>
               </div>

@@ -375,7 +375,7 @@ export function renderMarketplaceView(container) {
           <div style="max-width: 1280px; margin: 0 auto 4rem auto; padding: 0 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem;">
               <div>
-                <h2 style="font-size: 1.8rem; font-weight: 800; color: #20603D;">${t('browse_categories')}</h2>
+                <h2 style="font-size: 1.8rem; font-weight: 800; color: #004B00;">${t('browse_categories')}</h2>
                 <p style="font-size: 0.95rem; color: #64748B;">Explore Rwanda's top commercial sectors</p>
               </div>
             </div>
@@ -385,7 +385,7 @@ export function renderMarketplaceView(container) {
             ` : `
               <div class="grid-3" style="grid-template-columns: repeat(6, 1fr); gap: 1rem;">
                 ${state.categories.map(c => `
-                  <div class="category-card-item ${filters.selectedCategory===c.id?'active':''}" data-cat="${c.id}" style="background: #FFFFFF; border: 1.5px solid ${filters.selectedCategory===c.id?'#20603D':'#E2E8F0'}; padding: 1.25rem 1rem; border-radius: 16px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
+                  <div class="category-card-item ${filters.selectedCategory===c.id?'active':''}" data-cat="${c.id}" style="background: #FFFFFF; border: 1.5px solid ${filters.selectedCategory===c.id?'#004B00':'#E2E8F0'}; padding: 1.25rem 1rem; border-radius: 16px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
                     <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">${c.icon}</div>
                     <div style="font-weight: 700; font-size: 0.9rem; color: #0F172A; margin-bottom: 0.2rem;">${escapeHtml(c.name)}</div>
                     <div style="font-size: 0.78rem; color: #64748B;">${c.count} items</div>
@@ -399,10 +399,10 @@ export function renderMarketplaceView(container) {
           <div style="max-width: 1280px; margin: 0 auto 5rem auto; padding: 0 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.75rem;">
               <div>
-                <h2 style="font-size: 1.8rem; font-weight: 800; color: #20603D;">${t('featured_products')}</h2>
+                <h2 style="font-size: 1.8rem; font-weight: 800; color: #004B00;">${t('featured_products')}</h2>
                 <p style="font-size: 0.95rem; color: #64748B;">Verified listings from trusted sellers across Rwanda</p>
               </div>
-              <div style="font-size: 0.9rem; font-weight: 700; color: #20603D;">
+              <div style="font-size: 0.9rem; font-weight: 700; color: #004B00;">
                 ${productsLoading ? 'Loading...' : `Showing ${state.products.length} listings`}
               </div>
             </div>
@@ -455,7 +455,7 @@ export function renderMarketplaceView(container) {
                            card; this text is supporting detail, not a second focal point. -->
                       <div style="padding: 0.85rem 1.1rem 0.15rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.5rem;">
-                          <span style="font-size: 0.7rem; font-weight: 700; color: #20603D; background: #E6F4EA; padding: 2px 7px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">
+                          <span style="font-size: 0.7rem; font-weight: 700; color: #004B00; background: #E6F4EA; padding: 2px 7px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">
                             📍 ${escapeHtml(prod.district)}
                           </span>
                           <span style="font-size: 0.7rem; color: #64748B; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -467,7 +467,7 @@ export function renderMarketplaceView(container) {
                           ${escapeHtml(prod.title)}
                         </h3>
 
-                        <div style="font-size: 1.15rem; font-weight: 800; color: #20603D; margin-bottom: 0.4rem;">
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #004B00; margin-bottom: 0.4rem;">
                           ${prod.price.toLocaleString()} ${prod.currency}
                         </div>
                       </div>

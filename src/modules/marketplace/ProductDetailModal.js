@@ -60,7 +60,7 @@ export function renderProductDetailModal(product, onClose) {
 
             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
               <span style="background: #E6F4EA; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; color: #475569;">
-                📍 District: <strong style="color: #034B04;">${escapeHtml(product.district)}</strong>
+                📍 District: <strong style="color: #004B00;">${escapeHtml(product.district)}</strong>
               </span>
               <span style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; color: #475569;">
                 🏷️ Condition: <strong style="color: #0F172A;">${escapeHtml(product.condition)}</strong>

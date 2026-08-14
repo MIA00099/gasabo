@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div id="notif-dropdown" style="position: absolute; top: 44px; right: 0; width: 340px; max-height: 420px; overflow-y: auto; background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,0.15); z-index: 100;">
                       <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.1rem; border-bottom: 1px solid #E2E8F0;">
                         <span style="font-weight: 800; color: #0F172A; font-size: 0.9rem;">Notifications</span>
-                        ${unreadNotifCount > 0 ? `<button id="notif-mark-all-read" style="background: none; border: none; color: #00A1DE; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Mark all read</button>` : ''}
+                        ${unreadNotifCount > 0 ? `<button id="notif-mark-all-read" style="background: none; border: none; color: #003DA5; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Mark all read</button>` : ''}
                       </div>
                       ${state.notifications.length === 0 ? `
                         <div style="padding: 2rem 1rem; text-align: center; color: #94A3B8; font-size: 0.85rem;">No notifications yet.</div>
@@ -153,12 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size: 0.82rem; font-weight: 800; color: #1E293B;">${escapeHtml(currentUser.name.split(' ')[0])}</div>
                     <div style="font-size: 0.68rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">${roleLabel}</div>
                   </div>
-                  <button id="header-logout-btn" title="Log out" style="background: #00A1DE; color: #fff; font-weight: 700; font-size: 0.78rem; border: none; border-radius: 9999px; padding: 0 14px; height: 34px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: background 0.2s ease;">
+                  <button id="header-logout-btn" title="Log out" style="background: #003DA5; color: #fff; font-weight: 700; font-size: 0.78rem; border: none; border-radius: 9999px; padding: 0 14px; height: 34px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: background 0.2s ease;">
                     ↪ Logout
                   </button>
                 </div>
               ` : `
-                <button class="nav-tab-btn" id="header-signup-btn" style="background: #00A1DE; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
+                <button class="nav-tab-btn" id="header-signup-btn" style="background: #003DA5; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
                   <span style="font-size: 1.15em; font-weight: 800; line-height: 1;">+</span> Post
                 </button>
               `}

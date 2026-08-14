@@ -251,7 +251,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 #header-logout-btn:hover {
-  background: #0081B2 !important;
+  background: #003184 !important;
 }
 
 #header-logout-btn:active {
@@ -265,8 +265,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 #hero-browse-btn:hover {
   transform: translateY(-3px) scale(1.03) !important;
-  background: #0081B2 !important;
-  box-shadow: 0 10px 28px rgba(0, 161, 222, 0.5) !important;
+  background: #003184 !important;
+  box-shadow: 0 10px 28px rgba(0, 61, 165, 0.5) !important;
 }
 
 #hero-browse-btn:active {
@@ -700,10 +700,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   position: absolute;
   bottom: 12px;
   right: 12px;
-  /* Rwanda flag blue (Pantone 299C ~ #00A1DE) - was an approximated indigo
-     (#2563EB), corrected now that the site's blue/yellow/green accents are
-     meant to read as the national flag's actual colors, not just "a blue". */
-  background: #00A1DE;
+  /* Site-wide blue accent (#003DA5) - was Rwanda's flag blue (#00A1DE),
+     replaced by explicit request with this deeper royal blue across every
+     blue element on the site, matching the Real Estate page's own blue. */
+  background: #003DA5;
   color: #fff;
   font-size: 0.72rem;
   font-weight: 800;
@@ -858,16 +858,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   flex-shrink: 0;
 }
 
-/* Rwanda flag blue (#00A1DE) - the one spot on the homepage that introduces
-   the site's third accent color (green stays primary, yellow stays the
-   "Start Selling"/featured color) without touching any existing branded
-   element. The search pill floats front-and-center right under the hero,
-   so it reads immediately without needing any other part of the page to
-   change. */
+/* Site-wide blue accent (#003DA5) - the one spot on the homepage that
+   introduces the site's third accent color (green stays primary, yellow
+   stays the "Start Selling"/featured color) without touching any existing
+   branded element. The search pill floats front-and-center right under
+   the hero, so it reads immediately without needing any other part of the
+   page to change. */
 .search-pill-cta {
   width: 48px;
   height: 48px;
-  background: #00A1DE;
+  background: #003DA5;
   border: none;
   color: #FFFFFF;
   border-radius: 50%;
@@ -875,15 +875,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(0, 161, 222, 0.4);
+  box-shadow: 0 6px 18px rgba(0, 61, 165, 0.4);
   flex-shrink: 0;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .search-pill-cta:hover {
   transform: scale(1.06);
-  background: #0081B2;
-  box-shadow: 0 8px 22px rgba(0, 161, 222, 0.5);
+  background: #003184;
+  box-shadow: 0 8px 22px rgba(0, 61, 165, 0.5);
 }
 
 .search-pill-cta:active {
@@ -1459,16 +1459,17 @@ footer a:hover {
    ========================================================================== */
 
 .large-footer {
-  /* Rwanda flag blue (#00A1DE) background - one consistent blue across every
-     blue element on the site (footer, .search-pill-cta,
+  /* Site-wide blue accent (#003DA5) background - one consistent blue across
+     every blue element on the site (footer, .search-pill-cta,
      .product-card-trending-badge, admin dashboard --primary below). The top
-     border is the flag's blue/yellow/green in hard-stop thirds (border-image,
-     since a plain border can't do multiple colors) - was solid gold, now the
-     one explicit "all three flag colors together" element on the site. */
-  background-color: #00A1DE;
+     border is still blue/yellow/Rwanda-flag-green in hard-stop thirds
+     (border-image, since a plain border can't do multiple colors) - was
+     solid gold, now the one explicit "three colors together" element on
+     the site. */
+  background-color: #003DA5;
   color: #FFFFFF;
   border-top: 5px solid transparent;
-  border-image: linear-gradient(to right, #00A1DE 0 33.33%, #FAD201 33.33% 66.66%, #20603D 66.66% 100%) 1;
+  border-image: linear-gradient(to right, #003DA5 0 33.33%, #FAD201 33.33% 66.66%, #20603D 66.66% 100%) 1;
   padding: 4.5rem 2rem 3rem 2rem;
   margin-top: auto;
   width: 100%;
@@ -1573,15 +1574,15 @@ footer a:hover {
   max-width: 100vw;
   box-sizing: border-box;
   overflow-x: hidden;
-  /* Flag blue (was dark green rgba(3,34,2)) to match the large footer below
-     it, with the same blue/yellow/green tri-stripe top border instead of
-     solid gold - this bar and .large-footer are the site's two "footer"
-     surfaces, so they should read as one consistent treatment. */
-  background: rgba(0, 161, 222, 0.94);
+  /* Site-wide blue accent (was dark green rgba(3,34,2)) to match the large
+     footer below it, with the same blue/yellow/green tri-stripe top border
+     instead of solid gold - this bar and .large-footer are the site's two
+     "footer" surfaces, so they should read as one consistent treatment. */
+  background: rgba(0, 61, 165, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 3px solid transparent;
-  border-image: linear-gradient(to right, #00A1DE 0 33.33%, #FAD201 33.33% 66.66%, #20603D 66.66% 100%) 1;
+  border-image: linear-gradient(to right, #003DA5 0 33.33%, #FAD201 33.33% 66.66%, #20603D 66.66% 100%) 1;
   box-shadow: 0 -6px 25px rgba(0, 0, 0, 0.35);
   z-index: 9999;
   padding: 0.65rem 1.5rem;
@@ -1939,9 +1940,9 @@ th.tbl-actions-col {
    buttons/badges/accents already) picks up this blue instead, just by
    virtue of being a descendant - no need to touch every component class. */
 .adm-layout-wrap, .seller-dash-wrap {
-  --primary: #00A1DE;
-  --primary-hover: #0081B2;
-  --primary-light: rgba(0, 161, 222, 0.12);
+  --primary: #003DA5;
+  --primary-hover: #003184;
+  --primary-light: rgba(0, 61, 165, 0.12);
 }
 
 .adm-layout-wrap {
@@ -2054,7 +2055,7 @@ th.tbl-actions-col {
   color: #ffffff;
   background: var(--primary);
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(0, 161, 222, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 61, 165, 0.4);
 }
 
 .adm-side-btn.active .action-count-badge,

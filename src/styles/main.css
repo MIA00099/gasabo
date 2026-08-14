@@ -369,13 +369,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   position: absolute;
   inset: 0;
   z-index: 1;
-  /* Right-edge stop raised from 0.22 to 0.55 (and rgb updated to match the
-     new brand green #004B00) - at the old low opacity, whatever the source
-     video showed in its lighter moments (e.g. the logo watermark) washed
-     out to near-white instead of reading as green. Still fades left-to-right
-     for depth, just never gets transparent enough to lose the green cast
-     entirely. */
-  background: linear-gradient(100deg, rgba(0,75,0,0.95) 0%, rgba(0,75,0,0.85) 30%, rgba(0,75,0,0.65) 62%, rgba(0,75,0,0.55) 100%);
+  /* Flat, uniform tint now (was a left-to-right gradient fading from 0.95
+     down to progressively lower opacity) - any fade let the source video's
+     lighter moments read as pale/white on the right side while the left
+     stayed solid green. Same 0.95 opacity across the whole width so both
+     sides read identically. */
+  background: rgba(0,75,0,0.95);
 }
 
 .cinematic-hero-content {

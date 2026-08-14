@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+# Real test-DB credentials - only .env.test.example is committed.
+.env.test
 *.local
 
 # database

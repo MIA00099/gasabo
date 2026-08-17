@@ -431,23 +431,13 @@ export function renderMarketplaceView(container) {
                       <div class="product-card-image-wrap" style="--card-mat: ${PRODUCT_CARD_ACCENTS[i % PRODUCT_CARD_ACCENTS.length]};">
                         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}">
 
-                        <!-- Floating circular action icons, overlaid on the product photo -
-                             expand opens full product details, chat opens contact -
-                             instead of the two full-width buttons this replaced. Sized up
-                             to match the bigger .product-card-fab circles (see main.css). -->
-                        <button class="product-card-fab view-details-btn" data-id="${prod.id}" title="View full details" aria-label="View full details">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
-                          </svg>
-                        </button>
-                        <button class="product-card-fab product-card-fab-right contact-seller-btn" data-id="${prod.id}" title="Contact seller" aria-label="Contact seller">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                          </svg>
-                        </button>
-
-                        ${prod.isFeatured ? `<span class="product-card-featured-badge">⭐ FEATURED</span>` : ''}
-                        ${prod.isTrending ? `<span class="product-card-trending-badge">🔥 TRENDING</span>` : ''}
+                        <!-- The two circular icons that used to float here (an
+                             expand glyph and a speech bubble) were removed: they
+                             duplicated the labelled View / Contact buttons at the
+                             foot of the card, and an unlabelled glyph over a photo
+                             is guesswork for the reader. -->
+                        ${prod.isFeatured ? `<span class="product-card-featured-badge"><span aria-hidden="true">⭐</span> FEATURED</span>` : ''}
+                        ${prod.isTrending ? `<span class="product-card-trending-badge"><span aria-hidden="true">🔥</span> TRENDING</span>` : ''}
                       </div>
 
                       <!-- Trimmed padding/font-sizes throughout this block on purpose -
@@ -456,10 +446,14 @@ export function renderMarketplaceView(container) {
                       <div style="padding: 0.85rem 1.1rem 0.15rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.5rem;">
                           <span style="font-size: 0.7rem; font-weight: 700; color: #004B00; background: #E6F4EA; padding: 2px 7px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">
-                            📍 ${escapeHtml(prod.district)}
+                            <span aria-hidden="true">📍</span><span class="sr-only">District: </span>${escapeHtml(prod.district)}
                           </span>
-                          <span style="font-size: 0.7rem; color: #64748B; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${escapeHtml(prod.condition)}
+                          <!-- Labelled rather than bare. Sellers type this field
+                               freely, so values like "finished" or "new" mean
+                               nothing standing alone in the corner of a card.
+                               Darkened from #64748B for contrast at this size. -->
+                          <span style="font-size: 0.7rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Condition: ${escapeHtml(prod.condition)}">
+                            Condition: ${escapeHtml(prod.condition)}
                           </span>
                         </div>
 
@@ -474,7 +468,8 @@ export function renderMarketplaceView(container) {
                     </div>
 
                     <div style="padding: 0 1.1rem 0.6rem; display: flex; align-items: center; gap: 4px; font-size: 0.76rem; color: #64748B; white-space: nowrap; overflow: hidden;">
-                      <span style="flex-shrink: 0;">👤</span>
+                      <span style="flex-shrink: 0;" aria-hidden="true">👤</span>
+                      <span class="sr-only">Seller: </span>
                       <strong style="color: #1E293B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(prod.sellerName)}</strong>
                     </div>
 

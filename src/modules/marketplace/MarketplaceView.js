@@ -484,6 +484,7 @@ export function renderMarketplaceView(container) {
                          Blue and gold are the flag palette already used in the
                          nav. Gold takes near-black text: white on #FAD201 is
                          unreadable. -->
+
                     <div style="padding: 0 1.1rem 1rem; display: flex; gap: 0.5rem;">
                       <button class="product-card-action view-details-btn" data-id="${prod.id}"
                         style="flex: 1; background: #003DA5; color: #fff; border: none; border-radius: 10px; padding: 0.55rem 0.5rem; font-size: 0.82rem; font-weight: 700; cursor: pointer;">

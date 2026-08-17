@@ -473,9 +473,36 @@ export function renderMarketplaceView(container) {
                       </div>
                     </div>
 
-                    <div style="padding: 0 1.1rem 0.85rem; display: flex; align-items: center; gap: 4px; font-size: 0.76rem; color: #64748B; white-space: nowrap; overflow: hidden;">
+                    <div style="padding: 0 1.1rem 0.6rem; display: flex; align-items: center; gap: 4px; font-size: 0.76rem; color: #64748B; white-space: nowrap; overflow: hidden;">
                       <span style="flex-shrink: 0;">👤</span>
                       <strong style="color: #1E293B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(prod.sellerName)}</strong>
+                    </div>
+
+                    <!-- Labelled actions. The circular icons over the photo do
+                         the same two things, but an expand glyph and a speech
+                         bubble are not self-explanatory - these spell it out.
+                         Blue and gold are the flag palette already used in the
+                         nav. Gold takes near-black text: white on #FAD201 is
+                         unreadable.
+                         "View" reuses the existing .view-details-btn class so
+                         the handler already bound below picks it up. -->
+                    <div style="padding: 0 1.1rem 1rem; display: flex; gap: 0.5rem;">
+                      <button class="product-card-action view-details-btn" data-id="${prod.id}"
+                        style="flex: 1; background: #003DA5; color: #fff; border: none; border-radius: 10px; padding: 0.55rem 0.5rem; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+                        View
+                      </button>
+                      ${prod.sellerPhone ? `
+                        <a class="product-card-action" target="_blank" rel="noopener"
+                          href="https://wa.me/${prod.sellerPhone.replace(/[^0-9+]/g, '').replace('+', '')}?text=${encodeURIComponent(`Hello ${prod.sellerName}, I found your product "${prod.title}" (${prod.price.toLocaleString()} ${prod.currency}) on Kigali Marketplace (kigalimarket.com). Is it still available?`)}"
+                          style="flex: 1; background: #FAD201; color: #0F172A; border: none; border-radius: 10px; padding: 0.55rem 0.5rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                          Contact
+                        </a>
+                      ` : `
+                        <button class="product-card-action contact-seller-btn" data-id="${prod.id}"
+                          style="flex: 1; background: #FAD201; color: #0F172A; border: none; border-radius: 10px; padding: 0.55rem 0.5rem; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+                          Contact
+                        </button>
+                      `}
                     </div>
                   </div>
                 `).join('')}

@@ -12,7 +12,13 @@
     "test": "vitest run",
     "prisma:generate": "npx prisma generate",
     "prisma:db:push": "npx prisma db push",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:test:init": "tsx scripts/test-db.ts init",
+    "db:test:start": "tsx scripts/test-db.ts start",
+    "db:test:stop": "tsx scripts/test-db.ts stop",
+    "db:test:status": "tsx scripts/test-db.ts status",
+    "dev:api": "tsx scripts/test-db.ts start && dotenv -e .env.local -- tsx server/src/index.ts",
+    "dev:seed": "tsx scripts/test-db.ts start && dotenv -e .env.local -- tsx prisma/seed.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -24,6 +30,8 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.17.6",
     "@types/supertest": "^6.0.2",
+    "dotenv-cli": "^11.0.0",
+    "embedded-postgres": "^18.4.0-beta.17",
     "supertest": "^7.0.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
@@ -47,6 +55,7 @@
     "zod": "^3.23.8"
   },
   "allowScripts": {
+    "@embedded-postgres/windows-x64@18.4.0-beta.17": true,
     "@prisma/client@5.22.0": true,
     "@prisma/engines@5.22.0": true,
     "esbuild@0.28.1": true,

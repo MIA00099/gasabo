@@ -6,6 +6,8 @@ dist/
 *.local
 
 # database
+# local practice/scratch Postgres cluster (scripts/test-db.ts)
+.pgdata/
 prisma/dev.db
 prisma/*.db
 prisma/*.db-journal

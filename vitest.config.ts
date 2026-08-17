@@ -9,5 +9,14 @@ export default defineConfig({
     // database, and points Prisma at the scratch DB from .env.test.
     // See server/test/setup.ts for the full rationale.
     setupFiles: ['./server/test/setup.ts'],
+    // Starts the local practice Postgres for the duration of the run and
+    // stops it afterwards, so `npm test` needs no manually-started database.
+    // This only starts the server - server/test/setup.ts still independently
+    // decides (and validates) which database the tests are pointed at.
+    globalSetup: ['./server/test/global-setup.ts'],
+    // Every suite here starts by deleting all rows, and they share one test
+    // database. Run the files one at a time so they cannot wipe each other's
+    // fixtures mid-run.
+    fileParallelism: false,
   },
 });

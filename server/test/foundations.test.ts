@@ -5,6 +5,20 @@ import { prisma } from '../src/config/db.js';
 
 describe('Module 1: Foundations & Data Models Test Suite', () => {
   beforeAll(async () => {
+    // Defense in depth. server/test/setup.ts (wired via vitest.config.ts
+    // setupFiles) is the primary guard that keeps the deleteMany() calls
+    // below off the production database; it sets this variable only after
+    // confirming an isolated test DB. Re-checking it here means that if
+    // setupFiles is ever removed, renamed, or misconfigured, this suite
+    // refuses to run rather than silently wiping real data.
+    if (process.env.ALLOW_DESTRUCTIVE_DB_TESTS !== 'yes') {
+      throw new Error(
+        'Refusing to wipe the database: safety guard did not run. ' +
+          'Expected server/test/setup.ts to have validated an isolated test DB ' +
+          '(see vitest.config.ts setupFiles and .env.test.example).'
+      );
+    }
+
     // Ensure clean test database state
     await prisma.notification.deleteMany();
     await prisma.auditLog.deleteMany();

@@ -650,6 +650,25 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    .product-card-image-wrap above) instead of a plain color mat - a small
    icon that used to sit on flat color needs more visual weight to stay
    easy to spot/tap over varied photo content. */
+/* Labelled View / Contact actions at the foot of a product card. The colours
+   are set inline per button (flag blue / gold); this only carries the shared
+   interaction feedback so the two stay in step. */
+.product-card-action {
+  transition: filter 0.18s ease, transform 0.18s ease;
+  line-height: 1.2;
+}
+.product-card-action:hover {
+  filter: brightness(0.92);
+  transform: translateY(-1px);
+}
+.product-card-action:active {
+  transform: translateY(0);
+}
+.product-card-action:focus-visible {
+  outline: 3px solid #003DA5;
+  outline-offset: 2px;
+}
+
 .product-card-fab {
   position: absolute;
   top: 16px;

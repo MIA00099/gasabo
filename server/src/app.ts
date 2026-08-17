@@ -19,6 +19,7 @@ import { advertisementsRouter } from './routes/advertisements.routes.js';
 import { rbacRouter } from './routes/rbac.routes.js';
 import { uploadsRouter } from './routes/uploads.routes.js';
 import { notificationsRouter } from './routes/notifications.routes.js';
+import { seoRouter } from './seo/routes.js';
 
 export const app = express();
 
@@ -49,6 +50,14 @@ app.use('/api/notifications', notificationsRouter);
 app.use('/api', (req, res) => {
   res.status(404).json({ error: `No route for ${req.method} ${req.originalUrl}` });
 });
+
+// Crawler-facing routes: /product/:id and /property/:id (the SPA shell with
+// per-listing metadata injected), plus a generated /sitemap.xml and
+// /robots.txt. Registered here deliberately - ahead of express.static so the
+// generated sitemap beats any file of the same name left in dist/, and ahead
+// of the catch-all below, which would otherwise answer every listing URL with
+// the generic shell and no metadata.
+app.use(seoRouter);
 
 // Serve the built frontend (npm run build -> dist/) from this same Express
 // process - this is what lets one Railway service host both the API and the

@@ -35,7 +35,12 @@ const DEFAULTS: Record<string, unknown> = {
 // separate from the display price string so the price-range search filter
 // (see stateEngine.js) has something numeric to compare against, same
 // reasoning as Product.price in the marketplace.
-const DEFAULT_PROPERTIES = [
+// Exported because the SEO layer must agree with what the site actually
+// shows. GET / below falls back to these when no PROPERTIES row exists yet,
+// so on a fresh deployment they ARE the live listings - a sitemap or
+// /property/:id handler that ignored them would 404 on links the site is
+// rendering. See server/src/seo/listings.ts.
+export const DEFAULT_PROPERTIES = [
   {
     id: 'prop_1',
     type: 'house',

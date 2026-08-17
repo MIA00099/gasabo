@@ -6,6 +6,7 @@
  * source of truth anymore, it's a reactive cache the views read from.
  */
 import { api, getSession, setSession } from '../api/client.js';
+import { parseLocation, ROUTE_HOME, ROUTE_PRODUCT } from './router.js';
 
 const LANG_KEY = 'KIGALIMARKET_LANG';
 
@@ -61,6 +62,16 @@ class StateEngine {
       auditLogs: [],
       systemUsers: [],
       notifications: [],
+      // Current URL route (see store/router.js). Seeded from the address bar
+      // so a cold load of /product/<id> already knows what to open before
+      // anything renders.
+      route: parseLocation(),
+      // The listing behind a /product/:id or /property/:id URL, fetched on
+      // demand. Deep links cannot rely on state.products: on a cold load it
+      // is empty, and even once loaded the listing may be filtered out of the
+      // current result set.
+      routeListing: null,
+      routeListingMissing: false,
       loading: {},
       error: null,
       // Every stateEngine mutation (even just a loading-flag flip) notifies subscribers,
@@ -128,6 +139,95 @@ class StateEngine {
     this.data.currentLang = lang;
     localStorage.setItem(LANG_KEY, lang);
     this.notify();
+  }
+
+  // --- URL routing ---
+
+  /**
+   * Adopt a route (from a click, Back/Forward, or the initial page load) and
+   * switch to the portal that owns it, so /property/:id lands on real estate
+   * rather than leaving the visitor on the marketplace.
+   */
+  setRoute(route) {
+    this.data.route = route;
+    this.data.routeListing = null;
+    this.data.routeListingMissing = false;
+
+    if (route.kind === ROUTE_PRODUCT) {
+      this.data.activePortal = 'marketplace';
+      this.setUI({ marketplaceTab: 'products' });
+    } else if (route.kind !== ROUTE_HOME) {
+      this.data.activePortal = 'realestate';
+    }
+
+    this.notify();
+
+    if (route.kind !== ROUTE_HOME) {
+      this.loadRouteListing(route).catch(() => {});
+    }
+  }
+
+  /**
+   * Resolve the listing a listing URL points at.
+   *
+   * Products come from the API. Real-estate properties live inside the
+   * realEstate CMS payload rather than having their own endpoint, so they are
+   * resolved from that once it is loaded.
+   */
+  async loadRouteListing(route = this.data.route) {
+    if (!route || route.kind === ROUTE_HOME || !route.id) return null;
+
+    if (route.kind === ROUTE_PRODUCT) {
+      // Navigating from the grid - the listing is already in hand, so open
+      // immediately instead of round-tripping for data we have.
+      const alreadyLoaded = this.data.products.find((p) => p.id === route.id);
+      if (alreadyLoaded) {
+        this.data.routeListing = alreadyLoaded;
+        this.data.routeListingMissing = false;
+        this.notify();
+        return alreadyLoaded;
+      }
+
+      return this._run('routeListing', async () => {
+        try {
+          const { product } = await api.get(`/products/${encodeURIComponent(route.id)}`);
+          // A slower earlier request must not overwrite a newer route.
+          if (this.data.route.id !== route.id) return null;
+          this.data.routeListing = product;
+          this.data.routeListingMissing = false;
+          this.notify();
+          return product;
+        } catch (e) {
+          if (this.data.route.id !== route.id) return null;
+          this.data.routeListing = null;
+          // Removed, expired, or never existed - the view shows a "listing
+          // unavailable" state rather than an empty modal.
+          this.data.routeListingMissing = true;
+          this.notify();
+          return null;
+        }
+      });
+    }
+
+    const properties = this.data.realEstate?.properties || [];
+    const found = properties.find((p) => p.id === route.id) || null;
+
+    // Real estate content may not have loaded yet on a cold deep link. Pull
+    // it, then look again.
+    if (!found && !properties.length) {
+      await this.loadRealEstate().catch(() => {});
+      if (this.data.route.id !== route.id) return null;
+      const retry = (this.data.realEstate?.properties || []).find((p) => p.id === route.id) || null;
+      this.data.routeListing = retry;
+      this.data.routeListingMissing = !retry;
+      this.notify();
+      return retry;
+    }
+
+    this.data.routeListing = found;
+    this.data.routeListingMissing = !found;
+    this.notify();
+    return found;
   }
 
   // --- Auth ---

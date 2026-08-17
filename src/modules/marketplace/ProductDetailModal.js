@@ -120,6 +120,11 @@ export function renderProductDetailModal(product, onClose) {
   });
 
   document.body.appendChild(modalContainer);
+
+  // Returned so the caller can dismiss it programmatically - main.js closes
+  // the open detail when the URL changes (Back/Forward), which the modal's
+  // own close button cannot know about.
+  return modalContainer;
 }
 
 function escapeHtml(str) {

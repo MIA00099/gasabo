@@ -13,6 +13,16 @@ const envSchema = z.object({
   // requires them once Supabase Storage is actually being used.
   SUPABASE_URL: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  // Public origin this site is served from, used to build the absolute URLs
+  // that crawlers and social scrapers require: <link rel="canonical">,
+  // og:url, og:image and every <loc> in the sitemap. Relative URLs are
+  // ignored by most scrapers, so this cannot be derived from the request.
+  // No trailing slash.
+  PUBLIC_SITE_URL: z
+    .string()
+    .url()
+    .default('https://www.kigalimarket.com')
+    .transform((url) => url.replace(/\/+$/, '')),
 });
 
 export const env = envSchema.parse(process.env);

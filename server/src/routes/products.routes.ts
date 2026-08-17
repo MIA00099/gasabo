@@ -92,6 +92,29 @@ productsRouter.get('/pending', requireAuth, requireExclusivePermission('PRODUCT_
   res.json({ products: products.map(serializeProduct) });
 });
 
+// GET /api/products/:id - single public listing, backing the /product/:id
+// deep link. Someone landing on that URL cold has no product list loaded,
+// and the listing may not be in the first page of results anyway, so the
+// client fetches it directly.
+//
+// ACTIVE only, matching GET / above: pending and rejected listings are not
+// public, and serving one here would let anyone read unmoderated content by
+// guessing a URL.
+//
+// MUST stay declared below the literal '/mine' and '/pending' routes.
+// Express matches in registration order, so a '/:id' placed above them would
+// swallow both and treat "mine"/"pending" as an id.
+productsRouter.get('/:id', async (req, res) => {
+  const product = await prisma.product.findFirst({
+    where: { id: req.params.id, status: 'ACTIVE' },
+    include: { seller: true, category: true },
+  });
+
+  if (!product) return res.status(404).json({ error: 'Listing not found.' });
+
+  res.json({ product: serializeProduct(product) });
+});
+
 const createProductSchema = z.object({
   title: z.string().min(3),
   categoryId: z.string().min(1),

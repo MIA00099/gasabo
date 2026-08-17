@@ -2,7 +2,7 @@ import gsap from 'gsap';
 import SplitType from 'split-type';
 import { stateEngine } from '../../store/stateEngine.js';
 import { getTranslation } from '../../store/i18n.js';
-import { renderProductDetailModal } from './ProductDetailModal.js';
+import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 import { renderSellerPortal } from './SellerPortal.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
@@ -483,9 +483,8 @@ export function renderMarketplaceView(container) {
                          bubble are not self-explanatory - these spell it out.
                          Blue and gold are the flag palette already used in the
                          nav. Gold takes near-black text: white on #FAD201 is
-                         unreadable.
-                         "View" reuses the existing .view-details-btn class so
-                         the handler already bound below picks it up. -->
+                         unreadable. -->
+
                     <div style="padding: 0 1.1rem 1rem; display: flex; gap: 0.5rem;">
                       <button class="product-card-action view-details-btn" data-id="${prod.id}"
                         style="flex: 1; background: #003DA5; color: #fff; border: none; border-radius: 10px; padding: 0.55rem 0.5rem; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
@@ -581,12 +580,15 @@ export function renderMarketplaceView(container) {
       });
     });
 
+    // Navigate rather than opening the modal directly: the URL becomes
+    // /product/<id>, and main.js opens the detail in response. One code path
+    // serves clicks, shared links, and Back/Forward alike.
     container.querySelectorAll('.view-details-btn, .contact-seller-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const prod = state.products.find(p => p.id === btn.dataset.id);
-        if (prod) {
-          renderProductDetailModal(prod, () => render());
-        }
+        const id = btn.dataset.id;
+        if (!state.products.some(p => p.id === id)) return;
+        pushPath(pathForListing(ROUTE_PRODUCT, id));
+        stateEngine.setRoute({ kind: ROUTE_PRODUCT, id });
       });
     });
   }

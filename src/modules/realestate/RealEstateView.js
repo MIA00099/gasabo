@@ -7,6 +7,7 @@
  * CSS system instead of loading a second framework at runtime.
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { pushPath, pathForListing, ROUTE_PROPERTY } from '../../store/router.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
 // Mockup's own brand palette (Gasabo Real Estate's tailwind.config), kept
@@ -142,10 +143,15 @@ export function renderRealEstateView(container) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
+    // Navigate rather than opening the modal directly: the URL becomes
+    // /property/<id>, and main.js opens the detail in response. One code path
+    // serves clicks, shared links, and Back/Forward alike.
     container.querySelectorAll('.re-property-card').forEach(card => {
       card.addEventListener('click', () => {
-        const prop = properties.find(p => p.id === card.dataset.id);
-        if (prop) openPropertyModal(prop, reData.contact);
+        const id = card.dataset.id;
+        if (!properties.some(p => p.id === id)) return;
+        pushPath(pathForListing(ROUTE_PROPERTY, id));
+        stateEngine.setRoute({ kind: ROUTE_PROPERTY, id });
       });
     });
 
@@ -434,7 +440,10 @@ function renderPropertyGrid(list) {
   `;
 }
 
-function openPropertyModal(prop, contact) {
+// Exported so main.js can open it in response to a /property/:id URL, not
+// only from a card click - a visitor landing on that link directly must get
+// the same detail view.
+export function openPropertyModal(prop, contact, onClose) {
   const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
@@ -468,11 +477,18 @@ function openPropertyModal(prop, contact) {
     </div>
   `;
 
-  function close() { overlay.remove(); document.body.style.overflow = 'auto'; }
+  function close() {
+    overlay.remove();
+    document.body.style.overflow = 'auto';
+    if (onClose) onClose();
+  }
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   overlay.querySelector('#re-modal-close').addEventListener('click', close);
   document.body.style.overflow = 'hidden';
   document.body.appendChild(overlay);
+
+  // Returned so main.js can dismiss it when the URL changes (Back/Forward).
+  return overlay;
 }
 
 function escapeHtml(str) {

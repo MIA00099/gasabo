@@ -14,7 +14,12 @@ function slugify(name: string) {
 categoriesRouter.get('/', async (_req, res) => {
   const categories = await prisma.category.findMany({
     orderBy: { order: 'asc' },
-    include: { _count: { select: { products: true } } },
+    // Count only what the marketplace will actually show. GET /api/products
+    // lists status: 'ACTIVE' only, so counting every row here made the
+    // homepage advertise categories as having listings while the grid below
+    // rendered none - pending, rejected and suspended products all inflated
+    // the number.
+    include: { _count: { select: { products: { where: { status: 'ACTIVE' } } } } },
   });
   res.json({
     categories: categories.map((c) => ({

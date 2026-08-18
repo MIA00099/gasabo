@@ -193,6 +193,47 @@ export function renderHeaderHtml(ctx) {
 }
 
 /**
+ * Mobile bottom tab bar, from the spec's phone mockup: Home, Categories, a
+ * raised green "Post Ad" action, Messages, Account.
+ *
+ * Rendered on every screen but revealed by CSS below 900px only - the desktop
+ * layout already has all of these in the header, and duplicating them there
+ * would be two competing navigations.
+ */
+export function renderMobileTabBarHtml(ctx) {
+  const { activePortal, currentUser } = ctx;
+  const signedIn = currentUser.role !== 'guest';
+  const onHome = activePortal === 'marketplace';
+
+  return `
+    <nav class="mobile-tabbar" aria-label="Primary">
+      <button type="button" class="mtab ${onHome ? 'is-active' : ''}" id="mtab-home">
+        <span class="mtab-icon" aria-hidden="true">⌂</span>
+        <span class="mtab-label">Home</span>
+      </button>
+      <button type="button" class="mtab" id="mtab-categories">
+        <span class="mtab-icon" aria-hidden="true">▦</span>
+        <span class="mtab-label">Categories</span>
+      </button>
+
+      <button type="button" class="mtab mtab-post" id="mtab-post">
+        <span class="mtab-post-disc" aria-hidden="true">+</span>
+        <span class="mtab-label">Post Ad</span>
+      </button>
+
+      <button type="button" class="mtab" data-soon="Messages">
+        <span class="mtab-icon" aria-hidden="true">✉</span>
+        <span class="mtab-label">Messages</span>
+      </button>
+      <button type="button" class="mtab" id="mtab-account">
+        <span class="mtab-icon" aria-hidden="true">👤</span>
+        <span class="mtab-label">${signedIn ? 'Account' : 'Sign In'}</span>
+      </button>
+    </nav>
+  `;
+}
+
+/**
  * Wire the header. `handlers` carries the app-level actions so this module
  * stays presentational and does not reach into the state engine itself.
  */
@@ -235,5 +276,28 @@ export function bindHeaderEvents(root, handlers) {
   on('#header-search-form', 'submit', (e) => {
     e.preventDefault();
     search(root.querySelector('#header-search-input')?.value.trim() || '');
+  });
+}
+
+/** Wire the mobile tab bar. Same handler set as the header. */
+export function bindMobileTabBarEvents(root, handlers) {
+  const { goHome, goSignup } = handlers;
+
+  root.querySelectorAll('[data-soon]').forEach((btn) => {
+    btn.addEventListener('click', () => notReadyToast(btn.dataset.soon));
+  });
+
+  root.querySelector('#mtab-home')?.addEventListener('click', goHome);
+  root.querySelector('#mtab-post')?.addEventListener('click', goSignup);
+  root.querySelector('#mtab-account')?.addEventListener('click', goSignup);
+
+  // Categories has no page of its own yet, so send the reader to the rail
+  // that does exist rather than toasting "coming soon" at something visible
+  // one scroll away.
+  root.querySelector('#mtab-categories')?.addEventListener('click', () => {
+    goHome();
+    setTimeout(() => {
+      document.querySelector('.cat-rail-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
   });
 }

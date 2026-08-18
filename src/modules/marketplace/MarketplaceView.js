@@ -24,6 +24,49 @@ let bannerRotationTimer = null;
 // restyle - the spec puts every product on plain white so the grid reads as
 // one surface. ProductDetailModal.js keeps its own copy for the modal.
 
+// Flash Deals countdown. Module scope for the same reason as the banner
+// rotation above: render() rebuilds the DOM on every state change, and the
+// interval must be cleared rather than left ticking against a detached node.
+let flashClockTimer = null;
+
+export function cleanupFlashClock() {
+  if (flashClockTimer) {
+    clearInterval(flashClockTimer);
+    flashClockTimer = null;
+  }
+}
+
+/**
+ * Count down to the next midnight.
+ *
+ * A real deadline rather than a decorative number that resets on reload -
+ * a clock claiming "02:45:30 left" that says the same thing tomorrow is
+ * telling the shopper something untrue about how long they have.
+ */
+function startFlashClock(container) {
+  cleanupFlashClock();
+  const clock = container.querySelector('#flash-clock');
+  if (!clock) return;
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const tick = () => {
+    const now = new Date();
+    const end = new Date(now);
+    end.setHours(24, 0, 0, 0);
+    const left = Math.max(0, Math.floor((end - now) / 1000));
+    const set = (unit, val) => {
+      const el = clock.querySelector(`[data-unit="${unit}"]`);
+      if (el) el.textContent = pad(val);
+    };
+    set('h', Math.floor(left / 3600));
+    set('m', Math.floor((left % 3600) / 60));
+    set('s', left % 60);
+  };
+
+  tick();
+  flashClockTimer = setInterval(tick, 1000);
+}
+
 export function cleanupBannerRotation() {
   if (bannerRotationTimer) {
     clearInterval(bannerRotationTimer);
@@ -455,6 +498,57 @@ export function renderMarketplaceView(container) {
             `}
           </div>
 
+          <!-- FLASH DEALS (high-fidelity spec).
+               Dark green panel with a live countdown on the left, a scrolling
+               row of discounted listings on the right.
+
+               Gated on listings that actually carry a reduced price. The
+               section is built to the design in full, but a "Flash Deals"
+               banner and a ticking clock over items at their normal price is
+               a promotion that does not exist - so with no discounted stock
+               the block stays out of the page rather than dressing up regular
+               listings. Give any listing an originalPrice above its price and
+               this appears exactly as drawn. -->
+          ${(() => {
+            const deals = state.products.filter(p => (Number(p.originalPrice) || 0) > p.price);
+            if (deals.length === 0) return '';
+            return `
+              <div class="flash-wrap">
+                <section class="flash-deals" aria-labelledby="flash-deals-heading">
+                  <div class="flash-panel">
+                    <h2 id="flash-deals-heading">Flash Deals</h2>
+                    <p class="flash-panel-sub">Ends in</p>
+                    <div class="flash-clock" id="flash-clock" role="timer" aria-live="off">
+                      <span class="flash-unit"><strong data-unit="h">--</strong><small>Hours</small></span>
+                      <span class="flash-unit"><strong data-unit="m">--</strong><small>Mins</small></span>
+                      <span class="flash-unit"><strong data-unit="s">--</strong><small>Secs</small></span>
+                    </div>
+                  </div>
+
+                  <div class="flash-rail">
+                    ${deals.map(p => {
+                      const was = Number(p.originalPrice);
+                      const pct = Math.round((1 - p.price / was) * 100);
+                      return `
+                        <article class="flash-card view-details-btn" data-id="${p.id}" role="button" tabindex="0">
+                          <div class="flash-card-media">
+                            <img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy">
+                            <span class="prod-card-discount">-${pct}%</span>
+                          </div>
+                          <h3>${escapeHtml(p.title)}</h3>
+                          <p class="flash-card-price">
+                            <strong>${p.price.toLocaleString()} ${p.currency}</strong>
+                            <s>${was.toLocaleString()} ${p.currency}</s>
+                          </p>
+                        </article>
+                      `;
+                    }).join('')}
+                  </div>
+                </section>
+              </div>
+            `;
+          })()}
+
           <!-- MAIN PRODUCTS GRID SECTION -->
           <div style="max-width: 1280px; margin: 0 auto 5rem auto; padding: 0 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.75rem;">
@@ -586,6 +680,7 @@ export function renderMarketplaceView(container) {
     });
 
     setupHeroCarousel(container, activeBanners);
+    startFlashClock(container);
 
     container.querySelector('#hero-browse-btn')?.addEventListener('click', () => {
       const el = container.querySelector('h2');

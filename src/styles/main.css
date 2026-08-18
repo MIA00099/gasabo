@@ -49,9 +49,24 @@
 }
 
 :root {
-  /* Exact Specified Color Palette */
-  --primary-green: #004B00;
-  --dark-green: #002200;
+  /* ---------------------------------------------------------------------
+     Brand palette, taken from the delivered mockups (nmm/*.html
+     tailwind.config). These are the authority - earlier values were an
+     approximation made before the HTML was supplied:
+
+       green  #04562D  was #004B00  header strip, buttons, prices
+       navy   #0B1C3A  new         category nav bar, headings
+       orange #F5A623  was #FAD201  Post an Ad, discount badges, ".COM"
+
+     The navy is the significant one: the category bar is navy in the
+     mockups, not green, which changes the whole weight of the header.
+     --------------------------------------------------------------------- */
+  --brand-navy: #0B1C3A;
+  --brand-orange: #F5A623;
+  --brand-orange-hover: #E0951C;
+
+  --primary-green: #04562D;
+  --dark-green: #023d20;
   /* Rwanda flag yellow (was #EDA203, a slightly more orange gold) - kept as
      one root token so every gold/yellow accent site-wide (footer, sticky
      bar, badges) stays in sync with the flag palette used on the homepage. */
@@ -287,21 +302,23 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   flex-direction: column;
   line-height: 1.05;
 }
+/* Three colours, as the mockups set it: KIGALI navy, MARKET green, .COM
+   orange. Previously all one green, which lost the wordmark's structure. */
 .nav-brand-text strong {
   font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--primary-green);
-  letter-spacing: -0.02em;
+  font-weight: 900;
+  color: var(--brand-navy);
+  letter-spacing: -0.03em;
 }
 .nav-brand-text em {
   font-style: normal;
   font-size: 1.15rem;
-  font-weight: 800;
+  font-weight: 900;
   color: var(--primary-green);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 .nav-brand-text em span {
-  color: var(--accent-gold);
+  color: var(--brand-orange);
   font-size: 0.72rem;
   vertical-align: super;
 }
@@ -312,7 +329,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   align-items: stretch;
   border: 2px solid var(--primary-green);
-  border-radius: 10px;
+  border-radius: 9999px;
   overflow: hidden;
   background: #fff;
 }
@@ -454,7 +471,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    Header tier 3 - category navigation
    --------------------------------------------------------------------------- */
 .nav-category-bar {
-  background: var(--primary-green);
+  background: var(--brand-navy);
 }
 .nav-category-bar {
   display: flex;
@@ -468,7 +485,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--primary-green);
   color: #fff;
   border: none;
   font-family: inherit;
@@ -478,7 +495,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   cursor: pointer;
   white-space: nowrap;
 }
-.nav-allcats-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.nav-allcats-btn:hover { background: var(--dark-green); }
+
+.nav-category-bar .nav-tab-btn { color: #E2E8F0; font-size: 0.82rem; }
+.nav-category-bar .nav-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.08); box-shadow: none; transform: none; }
+/* Active section carries the orange underline the mockups use. */
+.nav-category-bar .nav-tab-btn.active {
+  background: transparent;
+  color: var(--brand-orange);
+  border-radius: 0;
+  box-shadow: inset 0 -2px 0 var(--brand-orange);
+}
 
 .nav-links {
   display: flex;
@@ -494,8 +521,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--accent-gold);
-  color: #0F172A;
+  background: var(--brand-orange);
+  color: #fff;
   border: none;
   font-family: inherit;
   font-size: 0.85rem;
@@ -506,7 +533,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   white-space: nowrap;
   transition: background 0.2s ease, transform 0.2s ease;
 }
-.nav-post-ad-btn:hover { background: var(--accent-gold-hover); transform: translateY(-1px); }
+.nav-post-ad-btn:hover { background: var(--brand-orange-hover); transform: translateY(-1px); }
 
 /* ---------------------------------------------------------------------------
    Hero - still, per the spec. Copy left, product collage right, gold arc
@@ -863,7 +890,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   position: absolute;
   top: 10px;
   left: 10px;
-  background: #F59E0B;
+  background: var(--brand-orange);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 800;

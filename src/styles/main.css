@@ -1063,8 +1063,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .nav-brand-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
+  /* Never let the flexible search field squeeze the brand - without this the
+     logo and wordmark are compressed into each other as the bar narrows. */
+  flex-shrink: 0;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1072,7 +1075,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transform: scale(1.03);
 }
 
+/* Sizing lives here, not on the element.
+   The previous header carried height/width/object-fit as inline styles on the
+   <img>. Moving the markup into components/Header.js dropped them, and this
+   rule only ever set a transition - so the logo rendered at its natural size,
+   pushed the wordmark on top of itself and shoved the search field out of the
+   row. Constrained here so no caller can lose it again. */
 .nav-brand-logo img {
+  height: 44px;
+  width: auto;
+  max-width: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

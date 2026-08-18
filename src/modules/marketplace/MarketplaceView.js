@@ -323,6 +323,47 @@ export function renderMarketplaceView(container) {
             })() : ''}
           </section>
 
+          <!-- TRUST BAR (high-fidelity spec).
+               The spec's four badges are Secure Payments / Verified Sellers /
+               Fast Delivery / 24/7 Support. Two of those describe a
+               transactional marketplace: this platform takes no payment and
+               arranges no delivery - buyers contact sellers directly - so
+               claiming either would be false on the storefront. Kept the two
+               that hold, replaced the two that do not with what the platform
+               actually offers. -->
+          <div class="trust-bar">
+            <div class="trust-bar-inner">
+              <div class="trust-item">
+                <span class="trust-icon" aria-hidden="true">🛡️</span>
+                <span class="trust-text">
+                  <strong>Verified Sellers</strong>
+                  <small>Trusted &amp; reliable</small>
+                </span>
+              </div>
+              <div class="trust-item">
+                <span class="trust-icon" aria-hidden="true">💬</span>
+                <span class="trust-text">
+                  <strong>Direct Contact</strong>
+                  <small>Call or WhatsApp the seller</small>
+                </span>
+              </div>
+              <div class="trust-item">
+                <span class="trust-icon" aria-hidden="true">📍</span>
+                <span class="trust-text">
+                  <strong>All 30 Districts</strong>
+                  <small>Nationwide coverage</small>
+                </span>
+              </div>
+              <div class="trust-item">
+                <span class="trust-icon" aria-hidden="true">🕐</span>
+                <span class="trust-text">
+                  <strong>24/7 Support</strong>
+                  <small>We're here for you</small>
+                </span>
+              </div>
+            </div>
+          </div>
+
           <!-- FLOATING PILL SEARCH BAR: one seamless rounded pill, borderless segments,
                each segment picks up a green "active" highlight once it has a value -->
           <div style="max-width: 1100px; margin: -90px auto 5rem auto; padding: 0 1.25rem; position: relative; z-index: 20;">
@@ -388,7 +429,7 @@ export function renderMarketplaceView(container) {
                   <div class="category-card-item ${filters.selectedCategory===c.id?'active':''}" data-cat="${c.id}" style="background: #FFFFFF; border: 1.5px solid ${filters.selectedCategory===c.id?'#004B00':'#E2E8F0'}; padding: 1.25rem 1rem; border-radius: 16px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
                     <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">${c.icon}</div>
                     <div style="font-weight: 700; font-size: 0.9rem; color: #0F172A; margin-bottom: 0.2rem;">${escapeHtml(c.name)}</div>
-                    <div style="font-size: 0.78rem; color: #64748B;">${c.count} items</div>
+                    <div style="font-size: 0.78rem; color: #64748B;">${c.count} ${c.count === 1 ? 'item' : 'items'}</div>
                   </div>
                 `).join('')}
               </div>

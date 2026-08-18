@@ -508,8 +508,52 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .nav-post-ad-btn:hover { background: var(--accent-gold-hover); transform: translateY(-1px); }
 
+/* ---------------------------------------------------------------------------
+   Trust bar - the four reassurance badges beneath the hero.
+   --------------------------------------------------------------------------- */
+.trust-bar {
+  background: #fff;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+.trust-bar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.15rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.trust-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #E6F4EA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trust-text { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.trust-text strong { font-size: 0.88rem; font-weight: 800; color: #0F172A; }
+.trust-text small { font-size: 0.76rem; color: #475569; }
+
+@media (max-width: 900px) {
+  .trust-bar-inner { grid-template-columns: repeat(2, 1fr); gap: 1rem; padding: 1rem; }
+}
+@media (max-width: 480px) {
+  .trust-bar-inner { grid-template-columns: 1fr; }
+}
+
 /* Transient notice for controls the design shows but the backend cannot serve
-   yet (Wishlist, Cart, Deals...). Not alert(): that blocks and reads as an
+   yet (Saved listings, Deals...). Not alert(): that blocks and reads as an
    error, when this is simply "not built". */
 .km-toast {
   position: fixed;

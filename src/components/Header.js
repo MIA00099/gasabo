@@ -65,13 +65,17 @@ export function renderHeaderHtml(ctx) {
     <header class="main-navbar">
 
       <div class="nav-utility-bar">
+        <!-- The spec reads "Free Delivery on orders over RWF 50,000". This is a
+             classifieds marketplace - buyers contact sellers directly and no
+             delivery is offered or arranged - so that line would promise
+             something the platform cannot honour. Same reason "Track Order"
+             is not here: there are no orders to track. Replaced with a claim
+             that is true. -->
         <span class="nav-utility-promo">
-          <span aria-hidden="true">🚚</span> Free Delivery on orders over RWF 50,000
+          <span aria-hidden="true">📍</span> Buy and sell across all 30 districts of Rwanda
         </span>
         <nav class="nav-utility-links" aria-label="Support and language">
           <button type="button" data-soon="Help Center">Help Center</button>
-          <span class="nav-utility-sep" aria-hidden="true">|</span>
-          <button type="button" data-soon="Order tracking">Track Order</button>
           <span class="nav-utility-sep" aria-hidden="true">|</span>
           <button type="button" id="util-become-seller">Become a Seller</button>
           <span class="nav-utility-sep" aria-hidden="true">|</span>
@@ -152,13 +156,13 @@ export function renderHeaderHtml(ctx) {
             </button>
           `}
 
-          <button type="button" class="nav-icon-btn nav-icon-btn-labelled" data-soon="Wishlist"
-            aria-label="Wishlist">
-            <span aria-hidden="true">♡</span><span class="nav-icon-label">Wishlist</span>
-          </button>
-          <button type="button" class="nav-icon-btn nav-icon-btn-labelled" data-soon="Cart"
-            aria-label="Cart">
-            <span aria-hidden="true">🛒</span><span class="nav-icon-label">Cart</span>
+          <!-- Wishlist stays: saving a listing to come back to fits a
+               classifieds model. Cart does not - there is no checkout, no
+               order and no payment on this platform, so a cart icon would
+               advertise a purchase flow that does not exist. -->
+          <button type="button" class="nav-icon-btn nav-icon-btn-labelled" data-soon="Saved listings"
+            aria-label="Saved listings">
+            <span aria-hidden="true">♡</span><span class="nav-icon-label">Saved</span>
           </button>
         </div>
       </div>

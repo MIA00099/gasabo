@@ -5,11 +5,14 @@
 import './styles/main.css';
 import { stateEngine } from './store/stateEngine.js';
 import { getTranslation } from './store/i18n.js';
-import { renderMarketplaceView, cleanupHeroAnimation, cleanupBannerRotation } from './modules/marketplace/MarketplaceView.js';
+import { renderMarketplaceView, cleanupHeroAnimation, cleanupBannerRotation, cleanupFlashClock } from './modules/marketplace/MarketplaceView.js';
 import { renderRealEstateView, openPropertyModal } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
 import { renderLoginView } from './components/LoginView.js';
-import { renderHeaderHtml, bindHeaderEvents } from './components/Header.js';
+import {
+  renderHeaderHtml, bindHeaderEvents,
+  renderMobileTabBarHtml, bindMobileTabBarEvents,
+} from './components/Header.js';
 import { renderProductDetailModal } from './modules/marketplace/ProductDetailModal.js';
 import { parseLocation, onRouteChange, pushHome, ROUTE_HOME, ROUTE_PRODUCT } from './store/router.js';
 
@@ -157,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cleanupHeroAnimation();
     cleanupBannerRotation();
+    cleanupFlashClock();
 
     // Header Mount
     const headerMount = document.getElementById('header-mount');
@@ -250,6 +254,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // After the portal is mounted, so the detail sits over a page that has
     // finished rendering. The modal lives on document.body and therefore
     // survives the appElement.innerHTML reset above.
+    // Mobile tab bar. Mounted outside #app so the portal re-render above does
+    // not tear it down, and hidden by CSS above 900px where the header
+    // already carries these actions.
+    let tabMount = document.getElementById('mobile-tabbar-mount');
+    if (!tabMount) {
+      tabMount = document.createElement('div');
+      tabMount.id = 'mobile-tabbar-mount';
+      document.body.appendChild(tabMount);
+    }
+    // The admin portal has its own dedicated navigation and is deliberately
+    // unlinked from the public UI - a Post Ad button over it makes no sense.
+    if (activePortal === 'admin') {
+      tabMount.innerHTML = '';
+    } else {
+      tabMount.innerHTML = renderMobileTabBarHtml({ activePortal, currentUser });
+      bindMobileTabBarEvents(tabMount, {
+        goHome: () => {
+          stateEngine.setUI({ marketplaceTab: 'products' });
+          stateEngine.setPortal('marketplace');
+        },
+        goSignup: () => stateEngine.setPortal('signup'),
+      });
+    }
+
     syncListingModal(state);
   }
 

@@ -8,6 +8,7 @@
  */
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PROPERTY } from '../../store/router.js';
+import { makeAccessibleModal } from '../../components/modalA11y.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
 // Mockup's own brand palette (Gasabo Real Estate's tailwind.config), kept
@@ -147,11 +148,20 @@ export function renderRealEstateView(container) {
     // /property/<id>, and main.js opens the detail in response. One code path
     // serves clicks, shared links, and Back/Forward alike.
     container.querySelectorAll('.re-property-card').forEach(card => {
-      card.addEventListener('click', () => {
+      const open = () => {
         const id = card.dataset.id;
         if (!properties.some(p => p.id === id)) return;
         pushPath(pathForListing(ROUTE_PROPERTY, id));
         stateEngine.setRoute({ kind: ROUTE_PROPERTY, id });
+      };
+      card.addEventListener('click', open);
+      // The card is a div with role="button", so Enter and Space have to be
+      // wired by hand - a real button would handle both natively.
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault(); // Space would otherwise scroll the page
+          open();
+        }
       });
     });
 
@@ -418,7 +428,14 @@ function renderPropertyGrid(list) {
       ${list.map(prop => {
         const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
         return `
-          <div class="re-property-card" data-id="${prop.id}" style="background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.25s ease;">
+          <!-- role/tabindex because this is a clickable div: without them a
+               keyboard user cannot reach a property at all, and a screen
+               reader announces it as plain content rather than something
+               activatable. The keydown handler below restores Enter/Space,
+               which a real <button> would give for free. -->
+          <div class="re-property-card" data-id="${prop.id}" role="button" tabindex="0"
+            aria-label="View details for ${escapeHtml(prop.title)}, ${escapeHtml(prop.location)}, ${escapeHtml(prop.price)}"
+            style="background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.25s ease;">
             <div style="position: relative; height: 220px; overflow: hidden;">
               <img src="${prop.image}" alt="${escapeHtml(prop.title)}" style="width: 100%; height: 100%; object-fit: cover;">
               <span style="position: absolute; top: 14px; left: 14px; background: ${badge.bg}; color: ${badge.color}; font-size: 0.7rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">
@@ -443,7 +460,7 @@ function renderPropertyGrid(list) {
 // Exported so main.js can open it in response to a /property/:id URL, not
 // only from a card click - a visitor landing on that link directly must get
 // the same detail view.
-export function openPropertyModal(prop, contact, onClose) {
+export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
@@ -452,7 +469,7 @@ export function openPropertyModal(prop, contact, onClose) {
 
   overlay.innerHTML = `
     <div style="background: #fff; border-radius: 20px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative;">
-      <button id="re-modal-close" style="position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; font-size: 1.1rem; cursor: pointer; z-index: 1;">✕</button>
+      <button id="re-modal-close" data-modal-close aria-label="Close property details" style="position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; font-size: 1.1rem; cursor: pointer; z-index: 1;">✕</button>
       <div style="display: flex; flex-wrap: wrap;">
         <div style="flex: 1 1 380px;">
           <img src="${prop.image}" alt="${escapeHtml(prop.title)}" style="width: 100%; height: 100%; min-height: 280px; object-fit: cover;">
@@ -477,15 +494,19 @@ export function openPropertyModal(prop, contact, onClose) {
     </div>
   `;
 
-  function close() {
-    overlay.remove();
-    document.body.style.overflow = 'auto';
-    if (onClose) onClose();
-  }
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-  overlay.querySelector('#re-modal-close').addEventListener('click', close);
   document.body.style.overflow = 'hidden';
   document.body.appendChild(overlay);
+
+  // Announces the dialog, traps Tab inside it, closes on Escape, and hands
+  // focus back on the way out. See components/modalA11y.js.
+  const { close } = makeAccessibleModal(overlay, {
+    label: `Property details: ${prop.title}`,
+    onClose,
+    returnFocusTo,
+  });
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#re-modal-close').addEventListener('click', close);
 
   // Returned so main.js can dismiss it when the URL changes (Back/Forward).
   return overlay;

@@ -1,6 +1,7 @@
 /**
  * URWAGASABO MARKETPLACE - Product Detail Modal Component
  */
+import { makeAccessibleModal } from '../../components/modalA11y.js';
 
 // Same rotating backdrop palette as the product grid cards
 // (MarketplaceView.js's PRODUCT_CARD_ACCENTS) - duplicated rather than
@@ -15,7 +16,7 @@ function accentForId(id) {
   return PRODUCT_CARD_ACCENTS[hash % PRODUCT_CARD_ACCENTS.length];
 }
 
-export function renderProductDetailModal(product, onClose) {
+export function renderProductDetailModal(product, onClose, returnFocusTo) {
   const modalContainer = document.createElement('div');
   modalContainer.className = 'modal-overlay';
 
@@ -32,7 +33,7 @@ export function renderProductDetailModal(product, onClose) {
           <span class="badge badge-${product.status}">${product.status.replace('_', ' ').toUpperCase()}</span>
           <h2 style="margin-top: 0.25rem; font-size: 1.4rem; color: #0F172A;">${escapeHtml(product.title)}</h2>
         </div>
-        <button class="modal-close" id="modal-close-btn">&times;</button>
+        <button class="modal-close" id="modal-close-btn" data-modal-close aria-label="Close product details">&times;</button>
       </div>
 
       <div class="grid-2" style="gap: 1.5rem;">
@@ -45,7 +46,10 @@ export function renderProductDetailModal(product, onClose) {
           ${product.images.length > 1 ? `
             <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; overflow-x: auto;">
               ${product.images.map((img, idx) => `
-                <img src="${img}" class="thumb-img" data-src="${img}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; cursor: pointer; background: ${mat}; border: 2px solid ${idx===0 ? 'var(--primary-green)': 'transparent'};">
+                <button type="button" class="thumb-img" data-src="${img}"
+                  aria-label="Show image ${idx + 1} of ${product.images.length}"
+                  aria-pressed="${idx === 0 ? 'true' : 'false'}"
+                  style="width: 60px; height: 60px; padding: 0; border-radius: 8px; cursor: pointer; background: ${mat} url('${img}') center/cover no-repeat; border: 2px solid ${idx===0 ? 'var(--primary-green)': 'transparent'}; flex-shrink: 0;"></button>
               `).join('')}
             </div>
           ` : ''}
@@ -95,31 +99,37 @@ export function renderProductDetailModal(product, onClose) {
     </div>
   `;
 
-  // Attach event handlers
-  modalContainer.querySelector('#modal-close-btn').addEventListener('click', () => {
-    modalContainer.remove();
-    if (onClose) onClose();
+  document.body.appendChild(modalContainer);
+
+  // Announces the dialog, traps Tab inside it, closes on Escape, and hands
+  // focus back on the way out. See components/modalA11y.js.
+  const { close } = makeAccessibleModal(modalContainer, {
+    label: `Product details: ${product.title}`,
+    onClose,
+    returnFocusTo,
   });
+
+  modalContainer.querySelector('#modal-close-btn').addEventListener('click', close);
 
   modalContainer.addEventListener('click', (e) => {
-    if (e.target === modalContainer) {
-      modalContainer.remove();
-      if (onClose) onClose();
-    }
+    if (e.target === modalContainer) close();
   });
 
-  // Image thumb switcher
+  // Image thumb switcher. Buttons rather than bare <img> so they are
+  // reachable by keyboard and announced as controls.
   const thumbs = modalContainer.querySelectorAll('.thumb-img');
   const mainImg = modalContainer.querySelector('#main-prod-img');
   thumbs.forEach(t => {
     t.addEventListener('click', () => {
       mainImg.src = t.dataset.src;
-      thumbs.forEach(x => x.style.borderColor = 'transparent');
-      t.style.borderColor = 'var(--primary)';
+      thumbs.forEach(x => {
+        x.style.borderColor = 'transparent';
+        x.setAttribute('aria-pressed', 'false');
+      });
+      t.style.borderColor = 'var(--primary-green)';
+      t.setAttribute('aria-pressed', 'true');
     });
   });
-
-  document.body.appendChild(modalContainer);
 
   // Returned so the caller can dismiss it programmatically - main.js closes
   // the open detail when the URL changes (Back/Forward), which the modal's

@@ -80,13 +80,24 @@ function syncListingModal(state) {
     stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
   };
 
+  // Where keyboard focus should land once the detail closes: the card that
+  // opened it. Passed as a selector rather than an element because closing
+  // re-renders the grid - the original node is gone by then, and only the
+  // freshly-rendered replacement can be focused. data-id survives the
+  // re-render, so it is what identifies the card.
+  const returnFocusTo =
+    state.route.kind === ROUTE_PRODUCT
+      ? `.product-card-action[data-id="${state.route.id}"]`
+      : `.re-property-card[data-id="${state.route.id}"]`;
+
   if (state.route.kind === ROUTE_PRODUCT) {
-    openListingEl = renderProductDetailModal(state.routeListing, returnHome);
+    openListingEl = renderProductDetailModal(state.routeListing, returnHome, returnFocusTo);
   } else {
     openListingEl = openPropertyModal(
       state.routeListing,
       state.realEstate?.contact,
       returnHome,
+      returnFocusTo,
     );
   }
 }

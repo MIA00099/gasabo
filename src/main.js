@@ -185,6 +185,22 @@ document.addEventListener('DOMContentLoaded', () => {
           stateEngine.setPortal('marketplace');
         },
         goRealEstate: () => stateEngine.setPortal('realestate'),
+        // The mockups' "Stores" is a seller directory; "Vehicles" is a
+        // category filter. Both reuse screens the app already has until their
+        // dedicated pages land.
+        goStores: () => {
+          stateEngine.setUI({ marketplaceTab: 'products' });
+          stateEngine.setPortal('marketplace');
+          setTimeout(() => document.querySelector('.cat-rail-wrap')?.scrollIntoView({ behavior: 'smooth' }), 120);
+        },
+        goVehicles: () => {
+          const cats = stateEngine.getState().categories || [];
+          const vehicles = cats.find(c => /vehicle|car/i.test(c.name));
+          const filters = stateEngine.getState().ui.marketplaceFilters || {};
+          stateEngine.setUI({ marketplaceTab: 'products', marketplaceFilters: { ...filters, selectedCategory: vehicles ? vehicles.id : 'all' } });
+          stateEngine.setPortal('marketplace');
+          stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }).catch(() => {});
+        },
         goSignup: () => stateEngine.setPortal('signup'),
         logout: () => {
           stateEngine.logout();
@@ -214,16 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
       });
 
-      // .main-navbar is position:fixed (see main.css), which removes it from
-      // normal document flow - without this, the fixed bar would sit on top
-      // of and hide the first row of whatever's rendered below it. Measure
-      // the navbar itself, not #header-mount: a fixed child contributes
-      // nothing to its (non-fixed) parent's box size, so header-mount always
-      // reads back 0 even though the navbar inside it is rendering normally.
-      const navbarEl = headerMount.querySelector('.main-navbar');
-      if (appElement && navbarEl) {
-        appElement.style.paddingTop = navbarEl.offsetHeight + 'px';
-      }
+      // The ported header sits in normal document flow, as the mockups have
+      // it - so the top padding the old fixed navbar needed must be cleared,
+      // or the page opens with a header-sized gap under the header.
+      if (appElement) appElement.style.paddingTop = '';
     }
 
     // Keep the address bar in sync with the admin portal's dedicated URL, without

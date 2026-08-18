@@ -1,3 +1,22 @@
+/* Tailwind, compiled through Vite. The delivered mockups were written
+   against the Tailwind CDN, which is development-only; the same theme is
+   configured in tailwind.config.js so their markup ports across as-is.
+   The hand-written rules further down still serve the screens not yet
+   ported (admin dashboard, real estate, seller portal). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* The mockups' page gutter. Every ported screen uses it. */
+@layer components {
+  .compact-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    width: 100%;
+  }
+}
+
 /* KIGALI MARKET PLATFORM - Stripe/Apple-Grade World Class Design System */
 /* Fonts (Plus Jakarta Sans + Inter) are loaded once via <link> in index.html -
    intentionally not re-imported here to avoid a second, duplicate font request. */
@@ -120,7 +139,10 @@
   --space-6: 48px;
   --space-8: 64px;
 
-  --font-family-main: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Inter first: the delivered mockups set fontFamily.sans to Inter, and
+     that is the design authority. Plus Jakarta Sans stays as a fallback for
+     the screens not yet ported. */
+  --font-family-main: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --transition-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

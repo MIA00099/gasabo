@@ -5,7 +5,7 @@
 import './styles/main.css';
 import { stateEngine } from './store/stateEngine.js';
 import { getTranslation } from './store/i18n.js';
-import { renderMarketplaceView, cleanupHeroAnimation, cleanupBannerRotation, cleanupFlashClock } from './modules/marketplace/MarketplaceView.js';
+import { renderMarketplaceView, cleanupFlashClock } from './modules/marketplace/MarketplaceView.js';
 import { renderRealEstateView, openPropertyModal } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
 import { renderLoginView } from './components/LoginView.js';
@@ -158,8 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const t = (key) => getTranslation(currentLang, key);
 
-    cleanupHeroAnimation();
-    cleanupBannerRotation();
     cleanupFlashClock();
 
     // Header Mount

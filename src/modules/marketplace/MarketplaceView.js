@@ -20,11 +20,9 @@ let splitLine2Instance = null;
 let currentBannerIndex = 0;
 let bannerRotationTimer = null;
 
-// Rotating backdrop palette for the product image "mat" - one color per card,
-// cycling by grid position, echoing the reference layout's alternating
-// orange/indigo/green card backdrops instead of every card sharing one flat
-// gray placeholder background.
-const PRODUCT_CARD_ACCENTS = ['#F3D9B1', '#D9D6F5', '#CFEAD9', '#F6D3DC', '#CFE4F5', '#F5E3B3'];
+// The rotating coloured "mat" behind each product photo went with the card
+// restyle - the spec puts every product on plain white so the grid reads as
+// one surface. ProductDetailModal.js keeps its own copy for the modal.
 
 export function cleanupBannerRotation() {
   if (bannerRotationTimer) {
@@ -412,26 +410,47 @@ export function renderMarketplaceView(container) {
             </div>
           </div>
 
-          <!-- CATEGORY CARDS SECTION -->
-          <div style="max-width: 1280px; margin: 0 auto 4rem auto; padding: 0 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem;">
-              <div>
-                <h2 style="font-size: 1.8rem; font-weight: 800; color: #004B00;">${t('browse_categories')}</h2>
-                <p style="font-size: 0.95rem; color: #64748B;">Explore Rwanda's top commercial sectors</p>
-              </div>
-            </div>
-
+          <!-- CATEGORY ICON RAIL (high-fidelity spec).
+               One white panel holding a single row of icon-over-label tiles,
+               led by a filled green "All Categories" tile and closed by a
+               grey "More" disc. Replaced the six-across grid of bordered
+               cards: the spec treats categories as a compact navigation rail
+               above the listings, not as content cards competing with them.
+               Scrolls horizontally rather than wrapping, so the row reads as
+               one rail on any width. -->
+          <div class="cat-rail-wrap">
             ${categoriesLoading && state.categories.length === 0 ? `
-              <div style="text-align: center; padding: 2rem; color: #94A3B8;">Loading categories...</div>
+              <div class="cat-rail-loading">Loading categories...</div>
             ` : `
-              <div class="grid-3" style="grid-template-columns: repeat(6, 1fr); gap: 1rem;">
+              <div class="cat-rail" role="list">
+                <button type="button" role="listitem"
+                  class="cat-rail-item ${filters.selectedCategory === 'all' || !filters.selectedCategory ? 'is-active' : ''}"
+                  data-cat="all">
+                  <span class="cat-rail-icon cat-rail-icon-all" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="3" y="3" width="7" height="7" rx="1.6"></rect>
+                      <rect x="14" y="3" width="7" height="7" rx="1.6"></rect>
+                      <rect x="3" y="14" width="7" height="7" rx="1.6"></rect>
+                      <rect x="14" y="14" width="7" height="7" rx="1.6"></rect>
+                    </svg>
+                  </span>
+                  <span class="cat-rail-label">All Categories</span>
+                </button>
+
                 ${state.categories.map(c => `
-                  <div class="category-card-item ${filters.selectedCategory===c.id?'active':''}" data-cat="${c.id}" style="background: #FFFFFF; border: 1.5px solid ${filters.selectedCategory===c.id?'#004B00':'#E2E8F0'}; padding: 1.25rem 1rem; border-radius: 16px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
-                    <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">${c.icon}</div>
-                    <div style="font-weight: 700; font-size: 0.9rem; color: #0F172A; margin-bottom: 0.2rem;">${escapeHtml(c.name)}</div>
-                    <div style="font-size: 0.78rem; color: #64748B;">${c.count} ${c.count === 1 ? 'item' : 'items'}</div>
-                  </div>
+                  <button type="button" role="listitem"
+                    class="cat-rail-item ${filters.selectedCategory === c.id ? 'is-active' : ''}"
+                    data-cat="${c.id}"
+                    aria-label="${escapeHtml(c.name)}, ${c.count} ${c.count === 1 ? 'listing' : 'listings'}">
+                    <span class="cat-rail-icon" aria-hidden="true">${c.icon}</span>
+                    <span class="cat-rail-label">${escapeHtml(c.name)}</span>
+                  </button>
                 `).join('')}
+
+                <button type="button" role="listitem" class="cat-rail-item" id="cat-rail-more">
+                  <span class="cat-rail-icon cat-rail-icon-more" aria-hidden="true">•••</span>
+                  <span class="cat-rail-label">More</span>
+                </button>
               </div>
             `}
           </div>
@@ -466,62 +485,60 @@ export function renderMarketplaceView(container) {
               </div>
             ` : `
               <div class="grid-4" style="gap: 1.5rem; align-items: stretch;">
-                ${state.products.map((prod, i) => `
-                  <div class="main-prod-card" data-id="${prod.id}">
-                    <div>
-                      <div class="product-card-image-wrap" style="--card-mat: ${PRODUCT_CARD_ACCENTS[i % PRODUCT_CARD_ACCENTS.length]};">
-                        <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}">
-
-                        <!-- The two circular icons that used to float here (an
-                             expand glyph and a speech bubble) were removed: they
-                             duplicated the labelled View / Contact buttons at the
-                             foot of the card, and an unlabelled glyph over a photo
-                             is guesswork for the reader. -->
-                        ${prod.isFeatured ? `<span class="product-card-featured-badge"><span aria-hidden="true">⭐</span> FEATURED</span>` : ''}
-                        ${prod.isTrending ? `<span class="product-card-trending-badge"><span aria-hidden="true">🔥</span> TRENDING</span>` : ''}
-                      </div>
-
-                      <!-- Trimmed padding/font-sizes throughout this block on purpose -
-                           the photo above (now 1:1, edge-to-edge) is meant to dominate the
-                           card; this text is supporting detail, not a second focal point. -->
-                      <div style="padding: 0.85rem 1.1rem 0.15rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.5rem;">
-                          <span style="font-size: 0.7rem; font-weight: 700; color: #004B00; background: #E6F4EA; padding: 2px 7px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">
-                            <span aria-hidden="true">📍</span><span class="sr-only">District: </span>${escapeHtml(prod.district)}
-                          </span>
-                          <!-- Labelled rather than bare. Sellers type this field
-                               freely, so values like "finished" or "new" mean
-                               nothing standing alone in the corner of a card.
-                               Darkened from #64748B for contrast at this size. -->
-                          <span style="font-size: 0.7rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Condition: ${escapeHtml(prod.condition)}">
-                            Condition: ${escapeHtml(prod.condition)}
-                          </span>
-                        </div>
-
-                        <h3 class="product-card-title view-details-btn" data-id="${prod.id}">
-                          ${escapeHtml(prod.title)}
-                        </h3>
-
-                        <div style="font-size: 1.15rem; font-weight: 800; color: #004B00; margin-bottom: 0.4rem;">
-                          ${prod.price.toLocaleString()} ${prod.currency}
-                        </div>
-                      </div>
+                ${state.products.map((prod) => {
+                  // Discount ornament from the spec. Rendered only when the
+                  // listing genuinely carries a higher original price. There
+                  // is no such field today, so no badge appears - a "-20%"
+                  // over an undiscounted price is a fabricated saving, which
+                  // is exactly the sort of pricing claim a marketplace must
+                  // not invent on a seller's behalf.
+                  const wasPrice = Number(prod.originalPrice) || 0;
+                  const hasDiscount = wasPrice > prod.price;
+                  const pctOff = hasDiscount ? Math.round((1 - prod.price / wasPrice) * 100) : 0;
+                  // Same rule for the star row: shown only with real ratings.
+                  const rating = Number(prod.rating) || 0;
+                  const reviews = Number(prod.reviewCount) || 0;
+                  return `
+                  <article class="prod-card" data-id="${prod.id}">
+                    <div class="prod-card-media">
+                      <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy">
+                      ${hasDiscount ? `<span class="prod-card-discount">-${pctOff}%</span>` : ''}
+                      ${prod.isFeatured ? `<span class="prod-card-flag prod-card-flag-featured"><span aria-hidden="true">⭐</span> FEATURED</span>` : ''}
+                      ${prod.isTrending && !prod.isFeatured ? `<span class="prod-card-flag prod-card-flag-trending"><span aria-hidden="true">🔥</span> TRENDING</span>` : ''}
                     </div>
 
-                    <div style="padding: 0 1.1rem 0.6rem; display: flex; align-items: center; gap: 4px; font-size: 0.76rem; color: #64748B; white-space: nowrap; overflow: hidden;">
-                      <span style="flex-shrink: 0;" aria-hidden="true">👤</span>
-                      <span class="sr-only">Seller: </span>
-                      <strong style="color: #1E293B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(prod.sellerName)}</strong>
+                    <div class="prod-card-body">
+                      <div class="prod-card-meta">
+                        <span class="prod-card-district">
+                          <span aria-hidden="true">📍</span><span class="sr-only">District: </span>${escapeHtml(prod.district)}
+                        </span>
+                        <span class="prod-card-condition" title="Condition: ${escapeHtml(prod.condition)}">
+                          ${escapeHtml(prod.condition)}
+                        </span>
+                      </div>
+
+                      <h3 class="prod-card-title view-details-btn" data-id="${prod.id}">${escapeHtml(prod.title)}</h3>
+
+                      <p class="prod-card-price">
+                        <strong>${prod.price.toLocaleString()} ${prod.currency}</strong>
+                        ${hasDiscount ? `<s>${wasPrice.toLocaleString()} ${prod.currency}</s>` : ''}
+                      </p>
+
+                      ${rating > 0 ? `
+                        <p class="prod-card-rating">
+                          <span class="prod-card-stars" aria-hidden="true">${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))}</span>
+                          <span class="sr-only">Rated ${rating} out of 5</span>
+                          ${reviews > 0 ? `<span class="prod-card-reviews">(${reviews})</span>` : ''}
+                        </p>
+                      ` : ''}
+
+                      <p class="prod-card-seller">
+                        <span aria-hidden="true">👤</span><span class="sr-only">Seller: </span>
+                        <strong>${escapeHtml(prod.sellerName)}</strong>
+                      </p>
                     </div>
 
-                    <!-- Labelled actions. The circular icons over the photo do
-                         the same two things, but an expand glyph and a speech
-                         bubble are not self-explanatory - these spell it out.
-                         Blue and gold are the flag palette already used in the
-                         nav. Gold takes near-black text: white on #FAD201 is
-                         unreadable. -->
-
-                    <div style="padding: 0 1.1rem 1rem; display: flex; gap: 0.5rem;">
+                    <div class="prod-card-actions">
                       <button class="product-card-action view-details-btn" data-id="${prod.id}"
                         style="flex: 1; background: #003DA5; color: #fff; border: none; border-radius: 10px; padding: 0.55rem 0.5rem; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
                         View
@@ -539,8 +556,9 @@ export function renderMarketplaceView(container) {
                         </button>
                       `}
                     </div>
-                  </div>
-                `).join('')}
+                  </article>
+                `;
+                }).join('')}
               </div>
             `}
           </div>
@@ -607,13 +625,23 @@ export function renderMarketplaceView(container) {
       stateEngine.loadProducts({ search: '', category: filters.selectedCategory, district: filters.selectedDistrict }).catch(() => {});
     });
 
-    container.querySelectorAll('.category-card-item').forEach(card => {
-      card.addEventListener('click', () => {
-        const cat = card.dataset.cat;
-        const nextCategory = filters.selectedCategory === cat ? 'all' : cat;
+    // Category rail. "All Categories" clears the filter outright; any other
+    // tile toggles, so a second click on the active one also clears it.
+    container.querySelectorAll('.cat-rail-item[data-cat]').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const cat = tile.dataset.cat;
+        const nextCategory = cat === 'all' || filters.selectedCategory === cat ? 'all' : cat;
         stateEngine.setUI({ marketplaceFilters: { ...filters, selectedCategory: nextCategory } });
         stateEngine.loadProducts({ search: filters.searchQuery, category: nextCategory, district: filters.selectedDistrict }).catch(() => {});
       });
+    });
+
+    // "More" is the spec's overflow affordance for a category list longer than
+    // the rail. Every category already fits here, so it scrolls the rail to
+    // the end rather than pretending there is a hidden menu.
+    container.querySelector('#cat-rail-more')?.addEventListener('click', () => {
+      const rail = container.querySelector('.cat-rail');
+      rail?.scrollTo({ left: rail.scrollWidth, behavior: 'smooth' });
     });
 
     // Navigate rather than opening the modal directly: the URL becomes

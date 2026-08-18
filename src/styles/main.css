@@ -212,13 +212,585 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   box-shadow: var(--shadow-soft-sm);
 }
 
-.nav-top-bar {
+/* ---------------------------------------------------------------------------
+   Header tier 1 - utility strip
+   Dark band above the brand row: delivery promo left, support links and the
+   language switch right. Collapses away below 900px, where the space is
+   needed for search.
+   --------------------------------------------------------------------------- */
+.nav-utility-bar {
+  background: var(--primary-green);
+  color: #E8F3E8;
+  font-size: 0.78rem;
+}
+.nav-utility-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 7px 24px;
+}
+.nav-utility-promo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nav-utility-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav-utility-links button {
+  background: none;
+  border: none;
+  color: #E8F3E8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.nav-utility-links button:hover { color: var(--accent-gold); }
+.nav-utility-sep { color: rgba(232, 243, 232, 0.4); }
+
+.nav-lang-switch {
+  display: inline-flex;
+  border: 1px solid rgba(232, 243, 232, 0.35);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.nav-lang-switch button { padding: 2px 10px; border-radius: 9999px; }
+.nav-lang-switch button.is-active {
+  background: var(--accent-gold);
+  color: #0F172A;
+}
+
+/* ---------------------------------------------------------------------------
+   Header tier 2 - brand, search, account actions
+   Search is the centre of gravity in the spec, so it takes the free space
+   between two fixed-width flanks.
+   --------------------------------------------------------------------------- */
+.nav-main-bar {
   max-width: 1440px;
   margin: 0 auto;
   padding: 12px 24px;
   display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+.nav-brand-text strong {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--primary-green);
+  letter-spacing: -0.02em;
+}
+.nav-brand-text em {
+  font-style: normal;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--primary-green);
+  letter-spacing: -0.02em;
+}
+.nav-brand-text em span {
+  color: var(--accent-gold);
+  font-size: 0.72rem;
+  vertical-align: super;
+}
+
+.nav-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  border: 2px solid var(--primary-green);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.nav-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  outline: none;
+  padding: 0 14px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #0F172A;
+  background: transparent;
+}
+.nav-search input::placeholder { color: #94A3B8; }
+.nav-search button {
+  flex-shrink: 0;
+  width: 52px;
+  border: none;
+  background: var(--primary-green);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+.nav-search button:hover { background: var(--dark-green); }
+
+.nav-account-btn,
+.nav-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #334155;
+  font-family: inherit;
+  padding: 6px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.nav-account-btn:hover,
+.nav-icon-btn:hover { background: #F1F5F9; color: var(--primary-green); }
+
+.nav-account-btn-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  text-align: left;
+}
+.nav-account-btn-text small { font-size: 0.68rem; color: #64748B; }
+.nav-account-btn-text strong { font-size: 0.82rem; font-weight: 700; }
+
+.nav-icon-btn { font-size: 1.05rem; position: relative; }
+.nav-icon-label { font-size: 0.78rem; font-weight: 600; }
+
+.nav-account-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  padding: 5px 6px 5px 14px;
+  border-radius: 9999px;
+}
+.nav-account-id { display: flex; flex-direction: column; line-height: 1.1; }
+.nav-account-id strong { font-size: 0.82rem; font-weight: 800; color: #1E293B; }
+.nav-account-id small {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.nav-logout-btn {
+  background: #003DA5;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.76rem;
+  border: none;
+  border-radius: 9999px;
+  padding: 0 14px;
+  height: 32px;
+  cursor: pointer;
+}
+.nav-logout-btn:hover { background: #003184; }
+
+.nav-notif-wrap { position: relative; }
+.nav-notif-dropdown {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  width: 340px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+.nav-notif-head {
+  display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid #E2E8F0;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #0F172A;
+}
+.nav-notif-head button {
+  background: none;
+  border: none;
+  color: #003DA5;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.nav-notif-empty { padding: 2rem 1rem; text-align: center; color: #94A3B8; font-size: 0.85rem; }
+.notif-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.8rem 1.1rem;
+  border: none;
+  border-bottom: 1px solid #F1F5F9;
+  background: #fff;
+  cursor: pointer;
+}
+.notif-item.is-unread { background: #F0FDF4; }
+.notif-item-msg { display: block; font-size: 0.82rem; color: #1E293B; line-height: 1.4; }
+.notif-item-time { display: block; font-size: 0.7rem; color: #94A3B8; margin-top: 0.3rem; }
+
+/* ---------------------------------------------------------------------------
+   Header tier 3 - category navigation
+   --------------------------------------------------------------------------- */
+.nav-category-bar {
+  background: var(--primary-green);
+}
+.nav-category-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.nav-allcats-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 12px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nav-allcats-btn:hover { background: rgba(255, 255, 255, 0.2); }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-links::-webkit-scrollbar { display: none; }
+
+.nav-post-ad-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-gold);
+  color: #0F172A;
+  border: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 9px 18px;
+  border-radius: 9999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.nav-post-ad-btn:hover { background: var(--accent-gold-hover); transform: translateY(-1px); }
+
+/* ---------------------------------------------------------------------------
+   Category rail - one white panel of icon-over-label tiles.
+   Scrolls horizontally rather than wrapping, so it reads as a single rail at
+   any width, the way the spec draws it.
+   --------------------------------------------------------------------------- */
+.cat-rail-wrap {
+  max-width: 1280px;
+  margin: 0 auto 2.5rem auto;
+  padding: 0 1.5rem;
+}
+.cat-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1rem 0.75rem;
+  box-shadow: var(--shadow-soft-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cat-rail::-webkit-scrollbar { display: none; }
+.cat-rail-loading { text-align: center; padding: 2rem; color: #94A3B8; }
+
+.cat-rail-item {
+  flex: 1 0 auto;
+  min-width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.cat-rail-item:hover { background: #F8FAFC; transform: translateY(-2px); }
+.cat-rail-item.is-active .cat-rail-label { color: var(--primary-green); font-weight: 800; }
+
+.cat-rail-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #F1F5F9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+/* The spec fills only the leading "All Categories" tile. */
+.cat-rail-icon-all { background: var(--primary-green); color: #fff; }
+.cat-rail-icon-more { background: #E2E8F0; color: #475569; border-radius: 50%; font-size: 1rem; letter-spacing: 1px; }
+.cat-rail-item.is-active .cat-rail-icon:not(.cat-rail-icon-all) {
+  background: #E6F4EA;
+  box-shadow: inset 0 0 0 2px var(--primary-green);
+}
+
+.cat-rail-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 92px;
+}
+
+/* ---------------------------------------------------------------------------
+   Product card - spec layout: media panel with a discount slot, then meta,
+   title, price, rating and seller, then the action row.
+   --------------------------------------------------------------------------- */
+.prod-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
+}
+.prod-card:hover {
+  transform: translateY(-3px);
+  border-color: #CBD5E1;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+}
+
+.prod-card-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+.prod-card-media img {
+  max-width: 100%;
+  max-height: 100%;
+  /* contain, not cover: sellers upload wildly inconsistent photos and the
+     spec shows whole products, not crops. */
+  object-fit: contain;
+}
+
+/* Amber, top-left, per the spec. Only rendered when a real original price
+   exists - see MarketplaceView.js. */
+.prod-card-discount {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #F59E0B;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.prod-card-flag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.prod-card-flag-featured { background: var(--accent-gold); color: #0F172A; }
+.prod-card-flag-trending { background: #EF4444; color: #fff; }
+
+.prod-card-body { padding: 0.8rem 0.9rem 0.4rem; flex: 1 1 auto; }
+.prod-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.prod-card-district {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--primary-green);
+  background: #E6F4EA;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 62%;
+}
+.prod-card-condition {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.prod-card-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #0F172A;
+  line-height: 1.35;
+  margin: 0 0 0.4rem;
+  cursor: pointer;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.prod-card-title:hover { color: var(--primary-green); }
+
+.prod-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 0 0 0.35rem;
+}
+.prod-card-price strong { font-size: 1rem; font-weight: 800; color: var(--primary-green); }
+.prod-card-price s { font-size: 0.74rem; color: #94A3B8; }
+
+.prod-card-rating { display: flex; align-items: center; gap: 5px; margin: 0 0 0.35rem; }
+.prod-card-stars { color: var(--accent-gold); font-size: 0.8rem; letter-spacing: 1px; }
+.prod-card-reviews { font-size: 0.7rem; color: #94A3B8; }
+
+.prod-card-seller {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 0.72rem;
+  color: #64748B;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.prod-card-seller strong {
+  color: #1E293B;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prod-card-actions { display: flex; gap: 0.5rem; padding: 0.6rem 0.9rem 0.9rem; }
+
+/* ---------------------------------------------------------------------------
+   Trust bar - the four reassurance badges beneath the hero.
+   --------------------------------------------------------------------------- */
+.trust-bar {
+  background: #fff;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+.trust-bar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.15rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.trust-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #E6F4EA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trust-text { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.trust-text strong { font-size: 0.88rem; font-weight: 800; color: #0F172A; }
+.trust-text small { font-size: 0.76rem; color: #475569; }
+
+@media (max-width: 900px) {
+  .trust-bar-inner { grid-template-columns: repeat(2, 1fr); gap: 1rem; padding: 1rem; }
+}
+@media (max-width: 480px) {
+  .trust-bar-inner { grid-template-columns: 1fr; }
+}
+
+/* Transient notice for controls the design shows but the backend cannot serve
+   yet (Saved listings, Deals...). Not alert(): that blocks and reads as an
+   error, when this is simply "not built". */
+.km-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 12px);
+  background: #0F172A;
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  z-index: 12000;
+}
+.km-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 900px) {
+  .nav-utility-bar { display: none; }
+  .nav-main-bar { gap: 0.75rem; padding: 10px 14px; }
+  .nav-brand-text { display: none; }
+  .nav-icon-label,
+  .nav-account-btn-text { display: none; }
+  .nav-category-bar { padding: 0 14px; }
+  .nav-allcats-btn span:last-child { display: none; }
 }
 
 .nav-brand-logo {

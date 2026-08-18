@@ -509,6 +509,97 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .nav-post-ad-btn:hover { background: var(--accent-gold-hover); transform: translateY(-1px); }
 
 /* ---------------------------------------------------------------------------
+   Hero - still, per the spec. Copy left, product collage right, gold arc
+   sweeping behind the art.
+
+   Replaced the "cinematic" hero: looping video, a GSAP timeline that animated
+   the headline in and out forever, and a promo carousel. Nothing here moves -
+   the headline is the first thing a visitor reads and does not need to
+   compete with motion behind it.
+   --------------------------------------------------------------------------- */
+.km-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #F4F8F4 0%, #FFFFFF 100%);
+}
+/* The gold sweep the spec places behind the product collage. */
+.km-hero::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -12%;
+  width: 58%;
+  height: 160%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(250, 210, 1, 0.28), rgba(250, 210, 1, 0) 72%);
+  pointer-events: none;
+}
+.km-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 2rem;
+  align-items: center;
+}
+.km-hero-copy { min-width: 0; }
+.km-hero-title {
+  display: flex;
+  flex-direction: column;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: #0B2A4A;
+  margin: 0 0 1rem;
+}
+.km-hero-title span:last-child { color: var(--primary-green); }
+.km-hero-sub {
+  font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+  color: #475569;
+  line-height: 1.6;
+  max-width: 30rem;
+  margin: 0 0 1.6rem;
+}
+.km-hero-actions { display: flex; gap: 0.85rem; flex-wrap: wrap; }
+.km-hero-btn {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.8rem 1.9rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.km-hero-btn:hover { transform: translateY(-2px); }
+.km-hero-btn-primary {
+  background: var(--primary-green);
+  color: #fff;
+  border: 2px solid var(--primary-green);
+  box-shadow: 0 8px 20px rgba(0, 75, 0, 0.25);
+}
+.km-hero-btn-primary:hover { background: var(--dark-green); }
+.km-hero-btn-ghost {
+  background: #fff;
+  color: #0F172A;
+  border: 2px solid #CBD5E1;
+}
+.km-hero-btn-ghost:hover { border-color: var(--primary-green); color: var(--primary-green); }
+
+.km-hero-art { min-width: 0; display: flex; justify-content: flex-end; }
+.km-hero-art img { width: 100%; max-width: 640px; height: auto; object-fit: contain; }
+
+@media (max-width: 860px) {
+  .km-hero-inner { grid-template-columns: 1fr; padding: 2.25rem 1.25rem; gap: 1.25rem; }
+  .km-hero-art { justify-content: center; }
+  .km-hero-art img { max-width: 420px; }
+  .km-hero::after { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
    Flash Deals - dark countdown panel beside a rail of discounted listings.
    --------------------------------------------------------------------------- */
 .flash-wrap {

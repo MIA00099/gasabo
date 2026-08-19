@@ -13,7 +13,8 @@ import {
   renderHeaderHtml, bindHeaderEvents,
   renderMobileTabBarHtml, bindMobileTabBarEvents,
 } from './components/Header.js';
-import { renderProductDetailModal } from './modules/marketplace/ProductDetailModal.js';
+// Listings render as a full page now (product-detail.html), not an overlay.
+import { renderProductDetailPage } from './modules/marketplace/ProductDetailPage.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
   ROUTE_HOME, ROUTE_PRODUCT,
@@ -78,8 +79,10 @@ function syncListingModal(state) {
       ? `.product-card-action[data-id="${state.route.id}"]`
       : `.re-property-card[data-id="${state.route.id}"]`;
 
+  // Products render as a full page (see renderProductDetailPage in the portal
+  // switch below); only real-estate properties still use an overlay.
   if (state.route.kind === ROUTE_PRODUCT) {
-    openListingEl = renderProductDetailModal(state.routeListing, returnHome, returnFocusTo);
+    return;
   } else {
     openListingEl = openPropertyModal(
       state.routeListing,
@@ -199,7 +202,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Main Portal Rendering
     if (appElement) {
       appElement.innerHTML = '';
-      if (activePortal === 'marketplace') {
+      // A listing URL renders as its own page, the way product-detail.html
+      // does - not as an overlay over the grid. Waits for the listing to
+      // resolve; until then the marketplace stays on screen rather than
+      // flashing an empty page.
+      if (state.route.kind === ROUTE_PRODUCT && state.routeListing) {
+        renderProductDetailPage(appElement, state.routeListing, {
+          onBack: () => {
+            if (window.history.length > 1) { window.history.back(); return; }
+            pushHome();
+            stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          },
+          onViewAllInCategory: (categoryId) => {
+            const filters = stateEngine.getState().ui.marketplaceFilters || {};
+            stateEngine.setUI({
+              marketplaceTab: 'catalog',
+              marketplaceFilters: { ...filters, selectedCategory: categoryId || 'all' },
+            });
+            stateEngine.loadProducts({ category: categoryId }).catch(() => {});
+            pushHome();
+            stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          },
+        });
+      } else if (state.route.kind === ROUTE_PRODUCT && state.routeListingMissing) {
+        appElement.innerHTML = `
+          <div class="compact-container py-24 text-center">
+            <i class="fa-solid fa-circle-exclamation text-4xl text-gray-300 mb-3"></i>
+            <h1 class="text-xl font-bold text-gray-900 mb-1">Listing not available</h1>
+            <p class="text-sm text-gray-500">It may have been sold or removed.</p>
+          </div>
+        `;
+      } else if (activePortal === 'marketplace') {
         renderMarketplaceView(appElement);
       } else if (activePortal === 'realestate') {
         renderRealEstateView(appElement);

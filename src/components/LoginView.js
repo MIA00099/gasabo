@@ -1,11 +1,9 @@
 import { stateEngine } from '../store/stateEngine.js';
 
 /**
- * Glassmorphism Auth View (Login & Sign Up)
- * Login authenticates against the real backend (works for admins, sub-admins,
- * sellers, and platform users - the server tries each account type in turn).
- * Sign Up registers a new seller account, matching how "Start Selling" already
- * onboards sellers elsewhere in the app.
+ * Clean Auth View (Login & Sign Up) - Ported from delivered mockup auth.html.
+ * Login authenticates against the backend (admins, sub-admins, sellers, and platform users).
+ * Sign Up registers a new seller account.
  */
 export function renderLoginView(container, initialMode = 'login') {
   let mode = initialMode; // 'login' | 'signup'
@@ -25,298 +23,259 @@ export function renderLoginView(container, initialMode = 'login') {
   };
 
   function captureInputs() {
-    const usernameInput = container.querySelector('#glass-username');
+    const usernameInput = container.querySelector('#auth-username');
     if (usernameInput) formData.username = usernameInput.value;
 
-    const passInput = container.querySelector('#glass-password');
+    const passInput = container.querySelector('#auth-password');
     if (passInput) formData.password = passInput.value;
 
-    const nameInput = container.querySelector('#glass-fullname');
+    const nameInput = container.querySelector('#auth-fullname');
     if (nameInput) formData.fullName = nameInput.value;
 
-    const emailInput = container.querySelector('#glass-email');
+    const emailInput = container.querySelector('#auth-email');
     if (emailInput) formData.email = emailInput.value;
 
-    const phoneInput = container.querySelector('#glass-phone');
+    const phoneInput = container.querySelector('#auth-phone');
     if (phoneInput) formData.phone = phoneInput.value;
 
-    const distInput = container.querySelector('#glass-district');
+    const distInput = container.querySelector('#auth-district');
     if (distInput) formData.district = distInput.value;
 
-    const confirmPassInput = container.querySelector('#glass-confirm-password');
+    const confirmPassInput = container.querySelector('#auth-confirm-password');
     if (confirmPassInput) formData.confirmPassword = confirmPassInput.value;
   }
 
   function update() {
     const state = stateEngine.getState();
-    const districts = state.districts || [];
-
+    const districts = state.districts || ['Gasabo', 'Nyarugenge', 'Kicukiro', 'Musanze', 'Rubavu', 'Huye'];
     const isLogin = mode === 'login';
 
     container.innerHTML = `
-      <div class="glass-login-viewport">
-        <div class="glass-login-card" style="max-width: ${isLogin ? '420px' : '560px'}; transition: all 0.3s ease;">
-          <div class="glass-login-header">
-            <h1 class="glass-login-title">${isLogin ? 'Login' : 'Sign Up'}</h1>
-            <p class="glass-login-subtitle">
-              ${isLogin ? 'Welcome back - please login to your account' : 'Create a seller account to start selling on Kigali Market'}
-            </p>
+      <main id="app-container" class="px-4 py-8 flex items-center justify-center bg-[#F4F7F6] min-h-[calc(100vh-140px)]">
+        <div class="auth-card w-full max-w-xl p-6 md:p-8 my-auto bg-white rounded-3xl border border-gray-200 shadow-xl">
+
+          <!-- Auth Navigation Tabs -->
+          <div class="flex border-b border-gray-200 mb-6">
+            <button type="button" id="tab-login" class="auth-tab ${isLogin ? 'active text-brand-green border-b-2 border-brand-green font-bold' : 'text-gray-500 hover:text-brand-green'} flex-1 py-2 text-center text-sm transition">
+              Login
+            </button>
+            <button type="button" id="tab-signup" class="auth-tab ${!isLogin ? 'active text-brand-green border-b-2 border-brand-green font-bold' : 'text-gray-500 hover:text-brand-green'} flex-1 py-2 text-center text-sm transition">
+              Sign Up
+            </button>
           </div>
 
           ${errorMessage ? `
-            <div style="background: rgba(220,38,38,0.15); border: 1px solid rgba(248,113,113,0.5); color: #fecaca; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">
-              ⚠️ ${escapeHtml(errorMessage)}
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs font-semibold mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+              <span>${escapeHtml(errorMessage)}</span>
             </div>
           ` : ''}
 
-          <form id="glass-auth-form" autocomplete="off">
+          <!-- FORM -->
+          <form id="auth-main-form" autocomplete="off" class="space-y-4">
             ${isLogin ? `
-              <!-- LOGIN MODE FORM FIELDS -->
-              <div class="glass-input-group">
-                <input
-                  type="text"
-                  id="glass-username"
-                  class="glass-input-field"
-                  placeholder="Email Address"
-                  value="${escapeHtml(formData.username)}"
-                  required
-                />
-                <div class="glass-input-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
+              <!-- LOGIN FORM -->
+              <div>
+                <h2 class="text-2xl font-bold text-gray-900">Welcome Back</h2>
+                <p class="text-xs text-gray-500 mt-1">Sign in to your Kigali Market account to continue</p>
               </div>
 
-              <div class="glass-input-group">
-                <input
-                  type="${showPassword ? 'text' : 'password'}"
-                  id="glass-password"
-                  class="glass-input-field"
-                  placeholder="Password"
-                  value="${escapeHtml(formData.password)}"
-                  required
-                />
-                <button
-                  type="button"
-                  id="toggle-password-btn"
-                  class="glass-input-icon clickable"
-                  title="${showPassword ? 'Hide password' : 'Show password'}"
-                  aria-label="${showPassword ? 'Hide password' : 'Show password'}"
-                >
-                  ${showPassword ? `
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                  ` : `
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                      <line x1="1" y1="1" x2="23" y2="23"></line>
-                    </svg>
-                  `}
+              <div class="space-y-3 pt-2">
+                <div>
+                  <label class="block text-xs font-bold text-gray-800 mb-1">Email or Phone Number</label>
+                  <div class="relative">
+                    <input type="text" id="auth-username" required placeholder="Enter email or phone number"
+                      value="${escapeHtml(formData.username)}"
+                      class="w-full bg-white border border-gray-300 text-gray-900 py-2.5 px-3 pl-9 rounded-xl outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                    <i class="fa-regular fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-gray-800 mb-1">Password</label>
+                  <div class="relative">
+                    <input type="${showPassword ? 'text' : 'password'}" id="auth-password" required placeholder="Enter password"
+                      value="${escapeHtml(formData.password)}"
+                      class="w-full bg-white border border-gray-300 text-gray-900 py-2.5 px-3 pl-9 pr-9 rounded-xl outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                    <i class="fa-solid fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <i id="toggle-pass-icon" class="fa-regular ${showPassword ? 'fa-eye-slash' : 'fa-eye'} absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs cursor-pointer hover:text-gray-600"></i>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs pt-1">
+                  <label class="flex items-center gap-2 cursor-pointer text-gray-600">
+                    <input type="checkbox" class="accent-brand-green rounded" checked>
+                    <span>Remember me</span>
+                  </label>
+                  <a href="#" id="forgot-pass-link" class="text-brand-green font-semibold hover:underline">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="w-full bg-brand-green text-white font-bold py-3 rounded-xl hover:bg-green-800 transition shadow-md text-xs mt-2" ${submitting ? 'disabled' : ''}>
+                  ${submitting ? 'Signing In...' : 'Sign In'}
                 </button>
-              </div>
 
-              <button type="submit" class="glass-btn-primary" ${submitting ? 'disabled' : ''}>
-                ${submitting ? 'Logging in...' : 'Login'}
-              </button>
+                <p class="text-center text-xs text-gray-600 pt-2">
+                  Don't have an account? <button type="button" id="switch-to-signup" class="text-brand-green font-bold hover:underline">Sign Up</button>
+                </p>
+              </div>
             ` : `
-              <!-- COMPACT SIGN UP GRID (2 COLUMNS) -->
-              <div class="glass-form-grid">
-                <div class="glass-input-group">
-                  <input
-                    type="text"
-                    id="glass-fullname"
-                    class="glass-input-field"
-                    placeholder="Full Name"
-                    value="${escapeHtml(formData.fullName)}"
-                    required
-                  />
-                  <div class="glass-input-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  </div>
-                </div>
-
-                <div class="glass-input-group">
-                  <input
-                    type="email"
-                    id="glass-email"
-                    class="glass-input-field"
-                    placeholder="Email Address"
-                    value="${escapeHtml(formData.email)}"
-                    required
-                  />
-                  <div class="glass-input-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                      <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
-                  </div>
-                </div>
-
-                <div class="glass-input-group">
-                  <input
-                    type="tel"
-                    id="glass-phone"
-                    class="glass-input-field"
-                    placeholder="Phone Number"
-                    value="${escapeHtml(formData.phone)}"
-                    required
-                  />
-                  <div class="glass-input-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                    </svg>
-                  </div>
-                </div>
-
-                <div class="glass-input-group">
-                  <select id="glass-district" class="glass-input-field" required>
-                    ${districts.map(d => `<option value="${d}" ${d === formData.district ? 'selected' : ''}>District: ${d}</option>`).join('')}
-                  </select>
-                  <div class="glass-input-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                      <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                  </div>
-                </div>
-
-                <div class="glass-input-group">
-                  <input
-                    type="${showPassword ? 'text' : 'password'}"
-                    id="glass-password"
-                    class="glass-input-field"
-                    placeholder="Password (min. 6 characters)"
-                    value="${escapeHtml(formData.password)}"
-                    required
-                    minlength="6"
-                  />
-                  <button
-                    type="button"
-                    id="toggle-password-btn"
-                    class="glass-input-icon clickable"
-                    title="${showPassword ? 'Hide password' : 'Show password'}"
-                    aria-label="${showPassword ? 'Hide password' : 'Show password'}"
-                  >
-                    ${showPassword ? `
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    ` : `
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                    `}
-                  </button>
-                </div>
-
-                <div class="glass-input-group">
-                  <input
-                    type="${showConfirmPassword ? 'text' : 'password'}"
-                    id="glass-confirm-password"
-                    class="glass-input-field"
-                    placeholder="Confirm Password"
-                    value="${escapeHtml(formData.confirmPassword)}"
-                    required
-                  />
-                  <button
-                    type="button"
-                    id="toggle-confirm-password-btn"
-                    class="glass-input-icon clickable"
-                    title="${showConfirmPassword ? 'Hide password' : 'Show password'}"
-                    aria-label="${showConfirmPassword ? 'Hide password' : 'Show password'}"
-                  >
-                    ${showConfirmPassword ? `
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    ` : `
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                    `}
-                  </button>
-                </div>
+              <!-- SIGN UP FORM -->
+              <div>
+                <h2 class="text-2xl font-bold text-gray-900">Sign Up</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Create a seller account to start selling on Kigali Market</p>
               </div>
 
-              <label class="glass-checkbox-row" for="glass-terms">
-                <input type="checkbox" id="glass-terms" class="glass-checkbox" checked required />
-                <span class="glass-checkbox-label">I agree to the Terms & Privacy Policy</span>
-              </label>
+              <div class="space-y-3 pt-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <!-- Full Name -->
+                  <div>
+                    <label class="block text-xs font-bold text-gray-800 mb-1">Full Name</label>
+                    <div class="relative">
+                      <input type="text" id="auth-fullname" required placeholder="Full Name"
+                        value="${escapeHtml(formData.fullName)}"
+                        class="w-full bg-white border border-gray-300 text-gray-900 py-2.5 px-3 pl-9 rounded-xl outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                      <i class="fa-regular fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                    </div>
+                  </div>
 
-              <button type="submit" class="glass-btn-primary" ${submitting ? 'disabled' : ''}>
-                ${submitting ? 'Creating account...' : 'Sign Up'}
-              </button>
+                  <!-- Email Address -->
+                  <div>
+                    <label class="block text-xs font-bold text-gray-800 mb-1">Email Address</label>
+                    <div class="relative">
+                      <input type="email" id="auth-email" required placeholder="Email Address"
+                        value="${escapeHtml(formData.email)}"
+                        class="w-full bg-white border border-gray-300 text-gray-900 py-2.5 px-3 pl-9 rounded-xl outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                      <i class="fa-regular fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                    </div>
+                  </div>
+
+                  <!-- Phone Number -->
+                  <div>
+                    <label class="block text-xs font-bold text-gray-800 mb-1">Phone Number</label>
+                    <div class="relative">
+                      <input type="tel" id="auth-phone" required placeholder="Phone Number"
+                        value="${escapeHtml(formData.phone)}"
+                        class="w-full bg-white border border-gray-300 text-gray-900 py-2.5 px-3 pl-9 rounded-xl outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                      <i class="fa-solid fa-phone absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                    </div>
+                  </div>
+
+                  <!-- District -->
+                  <div>
+                    <label class="block text-xs font-bold text-gray-800 mb-1">District</label>
+                    <div class="relative">
+                      <select id="auth-district" required class="w-full appearance-none bg-white border border-gray-300 text-gray-900 py-2.5 px-3 pl-9 pr-8 rounded-xl outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                        ${districts.map(d => `<option value="${d}" ${d === formData.district ? 'selected' : ''}>District: ${d}</option>`).join('')}
+                      </select>
+                      <i class="fa-solid fa-location-dot absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                      <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                    </div>
+                  </div>
+
+                  <!-- Password -->
+                  <div>
+                    <label class="block text-xs font-bold text-gray-800 mb-1">Password</label>
+                    <div class="relative">
+                      <input type="${showPassword ? 'text' : 'password'}" id="auth-password" minlength="6" required placeholder="Password (min. 6 chars)"
+                        value="${escapeHtml(formData.password)}"
+                        class="w-full bg-white border border-gray-300 text-gray-900 py-2.5 px-3 pl-9 pr-9 rounded-xl outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                      <i class="fa-solid fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                      <i id="toggle-pass-icon" class="fa-regular ${showPassword ? 'fa-eye-slash' : 'fa-eye'} absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs cursor-pointer hover:text-gray-600"></i>
+                    </div>
+                  </div>
+
+                  <!-- Confirm Password -->
+                  <div>
+                    <label class="block text-xs font-bold text-gray-800 mb-1">Confirm Password</label>
+                    <div class="relative">
+                      <input type="${showConfirmPassword ? 'text' : 'password'}" id="auth-confirm-password" minlength="6" required placeholder="Confirm Password"
+                        value="${escapeHtml(formData.confirmPassword)}"
+                        class="w-full bg-white border border-gray-300 text-gray-900 py-2.5 px-3 pl-9 pr-9 rounded-xl outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                      <i class="fa-solid fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                      <i id="toggle-confirm-pass-icon" class="fa-regular ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'} absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs cursor-pointer hover:text-gray-600"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-1 text-xs">
+                  <input type="checkbox" required id="terms" class="accent-brand-green rounded" checked>
+                  <label for="terms" class="text-gray-600 cursor-pointer">I agree to the <a href="#" class="text-brand-green font-bold hover:underline">Terms & Privacy Policy</a></label>
+                </div>
+
+                <button type="submit" class="w-full bg-brand-green text-white font-bold py-3 rounded-xl hover:bg-green-800 transition shadow-md text-xs mt-2" ${submitting ? 'disabled' : ''}>
+                  ${submitting ? 'Creating account...' : 'Sign Up'}
+                </button>
+
+                <p class="text-center text-xs text-gray-600 pt-1">
+                  Already have an account? <button type="button" id="switch-to-login" class="text-brand-green font-bold hover:underline">Login</button>
+                </p>
+              </div>
             `}
-
-            <!-- Footer Link -->
-            <div class="glass-login-footer">
-              <p class="glass-signup-text">
-                ${isLogin ? `
-                  Don't have an account? <a href="#" id="glass-signup-link">Signup</a>
-                ` : `
-                  Already have an account? <a href="#" id="glass-login-link">Login</a>
-                `}
-              </p>
-            </div>
           </form>
         </div>
-      </div>
+      </main>
     `;
 
-    const toggleBtn = container.querySelector('#toggle-password-btn');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', (e) => {
-        e.preventDefault();
+    // Event bindings
+    const tabLogin = container.querySelector('#tab-login');
+    if (tabLogin) {
+      tabLogin.addEventListener('click', () => {
+        captureInputs();
+        errorMessage = '';
+        mode = 'login';
+        update();
+      });
+    }
+
+    const tabSignup = container.querySelector('#tab-signup');
+    if (tabSignup) {
+      tabSignup.addEventListener('click', () => {
+        captureInputs();
+        errorMessage = '';
+        mode = 'signup';
+        update();
+      });
+    }
+
+    const switchToSignup = container.querySelector('#switch-to-signup');
+    if (switchToSignup) {
+      switchToSignup.addEventListener('click', () => {
+        captureInputs();
+        errorMessage = '';
+        mode = 'signup';
+        update();
+      });
+    }
+
+    const switchToLogin = container.querySelector('#switch-to-login');
+    if (switchToLogin) {
+      switchToLogin.addEventListener('click', () => {
+        captureInputs();
+        errorMessage = '';
+        mode = 'login';
+        update();
+      });
+    }
+
+    const togglePassIcon = container.querySelector('#toggle-pass-icon');
+    if (togglePassIcon) {
+      togglePassIcon.addEventListener('click', () => {
         captureInputs();
         showPassword = !showPassword;
         update();
       });
     }
 
-    const toggleConfirmBtn = container.querySelector('#toggle-confirm-password-btn');
-    if (toggleConfirmBtn) {
-      toggleConfirmBtn.addEventListener('click', (e) => {
-        e.preventDefault();
+    const toggleConfirmPassIcon = container.querySelector('#toggle-confirm-pass-icon');
+    if (toggleConfirmPassIcon) {
+      toggleConfirmPassIcon.addEventListener('click', () => {
         captureInputs();
         showConfirmPassword = !showConfirmPassword;
         update();
       });
     }
 
-    const signupLink = container.querySelector('#glass-signup-link');
-    if (signupLink) {
-      signupLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        captureInputs();
-        errorMessage = '';
-        mode = 'signup';
-        stateEngine.setPortal('signup');
-      });
-    }
-
-    const loginLink = container.querySelector('#glass-login-link');
-    if (loginLink) {
-      loginLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        captureInputs();
-        errorMessage = '';
-        mode = 'login';
-        stateEngine.setPortal('login');
-      });
-    }
-
-    const form = container.querySelector('#glass-auth-form');
+    const form = container.querySelector('#auth-main-form');
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -338,9 +297,6 @@ export function renderLoginView(container, initialMode = 'login') {
           } else {
             await stateEngine.registerSeller(formData);
           }
-          // Route to whatever's actually relevant for this account (seller
-          // dashboard, admin panel, or marketplace) instead of always
-          // dropping the user on the generic marketplace browse page.
           stateEngine.routeToDashboard();
         } catch (err) {
           submitting = false;
@@ -356,7 +312,7 @@ export function renderLoginView(container, initialMode = 'login') {
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/[&<>"']/g, function(m) {
+  return String(str).replace(/[&<>"']/g, function(m) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
   });
 }

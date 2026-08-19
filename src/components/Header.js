@@ -12,12 +12,11 @@
  * because the mockups have them, but they say so when clicked rather than
  * silently doing nothing.
  *
- * DELIVERY CLAIMS
- * The mockups' utility strip reads "Free Delivery on orders over RWF 50,000"
- * and the nav carries a cart. This platform is classifieds - buyers contact
- * sellers directly, and the site takes no payment and arranges no delivery -
- * so that copy would be a promise it cannot keep. Replaced with a true line;
- * everything else in the strip is as drawn.
+ * COPY
+ * The announcement strip reads exactly as the mockups write it. I had
+ * replaced the delivery line - this platform is classifieds, buyers contact
+ * sellers directly and no delivery is arranged - and raised that twice. The
+ * decision was to keep the mockups' wording, so it stands as delivered.
  */
 
 const ROLE_LABELS = {
@@ -67,22 +66,15 @@ export function renderHeaderHtml(ctx) {
     <div class="bg-brand-green text-white text-[10px] py-1 flex-none">
       <div class="compact-container flex justify-between items-center">
         <div class="flex items-center gap-2">
-          <i class="fa-solid fa-location-dot"></i>
-          <span>Buy and sell across all 30 districts of Rwanda</span>
+          <i class="fa-solid fa-truck"></i>
+          <span>Free Delivery on orders over RWF 50,000</span>
         </div>
         <div class="hidden md:flex items-center gap-3">
-          <button type="button" data-soon="Help Center" class="hover:underline">Help Center</button>
-          <span class="opacity-40">|</span>
-          <button type="button" id="util-become-seller" class="hover:underline">Become a Seller</button>
-          <span class="opacity-40">|</span>
-          <span class="flex items-center rounded-full border border-white/30 overflow-hidden">
-            <button type="button" id="lang-toggle-en"
-              class="px-2 py-[1px] ${currentLang === 'en' ? 'bg-brand-orange text-brand-dark font-bold' : ''}"
-              aria-pressed="${currentLang === 'en'}">EN</button>
-            <button type="button" id="lang-toggle-rw"
-              class="px-2 py-[1px] ${currentLang === 'rw' ? 'bg-brand-orange text-brand-dark font-bold' : ''}"
-              aria-pressed="${currentLang === 'rw'}">KINY</button>
-          </span>
+          <div class="flex items-center gap-1 cursor-pointer" id="lang-toggle-en">
+            <img src="https://flagcdn.com/w20/gb.png" alt="English" class="w-4 h-3 rounded-sm">
+            <span>English</span>
+            <i class="fa-solid fa-chevron-down text-[8px]"></i>
+          </div>
         </div>
       </div>
     </div>
@@ -93,8 +85,8 @@ export function renderHeaderHtml(ctx) {
 
         <div class="flex items-center gap-2 cursor-pointer" id="nav-brand-home" role="button" tabindex="0"
           aria-label="Kigali Market - home">
-          <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo.svg'}" alt="Kigali Market Logo"
-            class="h-10 w-auto object-contain shrink-0">
+          <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo.svg'}" alt=""
+            class="h-9 md:h-10 w-auto object-contain shrink-0">
           <div class="leading-none">
             <h1 class="text-xl font-black text-brand-dark tracking-tight">${isRealEstate ? 'GASABO' : 'KIGALI'}</h1>
             <h1 class="text-xl font-black text-brand-green tracking-tight flex items-center">${isRealEstate ? 'REAL ESTATE' : 'MARKET'}<span class="text-brand-orange text-sm">.COM</span></h1>

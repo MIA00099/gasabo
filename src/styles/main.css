@@ -15,6 +15,67 @@
     padding: 0 1rem;
     width: 100%;
   }
+
+  .hero-bg {
+    background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+    border-radius: 0 0 0 80px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .auth-card {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    border: 1px solid #E5E7EB;
+  }
+
+  .auth-tab.active {
+    color: #04562D;
+    border-bottom: 3px solid #04562D;
+    font-weight: 700;
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .view-section { display: none; animation: fadeIn 0.3s ease-in-out; height: 100%; }
+  .view-section.active { display: flex; flex-direction: column; }
+}
+
+html, body {
+  background-color: #F8F9FA;
+  color: #333;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#app-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#view-home {
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* KIGALI MARKET PLATFORM - Stripe/Apple-Grade World Class Design System */

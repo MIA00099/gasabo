@@ -153,16 +153,21 @@ class StateEngine {
     this.data.routeListing = null;
     this.data.routeListingMissing = false;
 
-    if (route.kind === ROUTE_PRODUCT) {
-      this.data.activePortal = 'marketplace';
-      this.setUI({ marketplaceTab: 'products' });
-    } else if (route.kind !== ROUTE_HOME) {
+    // Only the two listing routes carry an id to resolve. Everything else is
+    // a page: an earlier version treated "anything that is not a product" as
+    // real estate, which sent /products and /stores to the wrong portal.
+    const isProperty = route.kind === 'property';
+
+    if (isProperty) {
       this.data.activePortal = 'realestate';
+    } else {
+      this.data.activePortal = 'marketplace';
+      if (route.kind === ROUTE_PRODUCT) this.setUI({ marketplaceTab: 'products' });
     }
 
     this.notify();
 
-    if (route.kind !== ROUTE_HOME) {
+    if (route.kind === ROUTE_PRODUCT || isProperty) {
       this.loadRouteListing(route).catch(() => {});
     }
   }

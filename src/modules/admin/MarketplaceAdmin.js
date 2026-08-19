@@ -2,6 +2,8 @@
  * UNIFIED ADMIN PANEL - Marketplace Management Module
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { makeAccessibleModal } from '../../components/modalA11y.js';
+import { renderCategoryIcon } from '../../utils/categoryIcon.js';
 
 export function renderMarketplaceAdmin(container) {
   function render() {
@@ -211,7 +213,7 @@ export function renderMarketplaceAdmin(container) {
               <tbody>
                 ${state.categories.map(cat => `
                   <tr>
-                    <td style="font-size: 1.5rem;">${cat.icon}</td>
+                    <td>${renderCategoryIcon(cat.icon, { size: 34, alt: cat.name })}</td>
                     <td><strong style="color: #0F172A;">${escapeHtml(cat.name)}</strong></td>
                     <td>${cat.order}</td>
                     <td>${cat.count} Products</td>
@@ -219,6 +221,9 @@ export function renderMarketplaceAdmin(container) {
                       <span class="badge badge-active">ENABLED</span>
                     </td>
                     <td class="tbl-actions-col">
+                      <button class="btn btn-sm btn-secondary change-cat-icon-btn" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" title="Upload a logo for this category">
+                        Change Icon
+                      </button>
                       <button class="btn btn-sm btn-danger req-del-cat-btn" data-id="${cat.id}" title="Requires approval from another Administrator before it takes effect">
                         🔒 Delete Category
                       </button>
@@ -322,14 +327,25 @@ export function renderMarketplaceAdmin(container) {
       });
     });
 
-    container.querySelector('#add-cat-btn')?.addEventListener('click', async () => {
-      const name = prompt('Enter New Category Name:');
-      if (name) {
-        const icon = prompt('Enter Category Emoji/Icon (e.g. 📦, 💻, 🌾):') || '📦';
-        try {
-          await stateEngine.addCategory(name, icon);
-        } catch (err) { /* handled via state.error */ }
-      }
+    container.querySelector('#add-cat-btn')?.addEventListener('click', () => {
+      openCategoryModal({
+        title: 'Add New Category',
+        confirmLabel: 'Create Category',
+        returnFocusTo: '#add-cat-btn',
+        onSubmit: ({ name, icon }) => stateEngine.addCategory(name, icon),
+      });
+    });
+
+    container.querySelectorAll('.change-cat-icon-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        openCategoryModal({
+          title: 'Change Category Icon',
+          categoryName: btn.dataset.name,
+          confirmLabel: 'Save Icon',
+          returnFocusTo: `.change-cat-icon-btn[data-id="${btn.dataset.id}"]`,
+          onSubmit: ({ icon }) => stateEngine.updateCategoryIcon(btn.dataset.id, icon),
+        });
+      });
     });
 
     container.querySelector('#add-banner-btn')?.addEventListener('click', async () => {
@@ -410,4 +426,222 @@ function escapeHtml(str) {
   return str.replace(/[&<>"']/g, function(m) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
   });
+}
+
+// The category-creation flow used two chained window.prompt() calls, the
+// second asking for an emoji. A native prompt can only return typed text, so
+// "give this category our logo" was not expressible - the best an admin could
+// do was paste an emoji and hope it read as a brand. This is the same flow
+// with a real form: a name, and an icon that can be an uploaded image.
+//
+// Appended to document.body rather than the panel's own container, because
+// the upload resolves through stateEngine and the resulting notify() re-renders
+// that container - a modal parented to it would be wiped out mid-upload.
+function openCategoryModal({ title, categoryName = '', confirmLabel, onSubmit, returnFocusTo }) {
+  const nameLocked = categoryName !== '';
+  let pickedFile = null;
+  let previewUrl = null;
+  let emoji = '';
+  let busy = false;
+  let error = '';
+  let close = () => {};
+  let nameDraft = categoryName;
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.7); z-index: 9998; display: flex; align-items: center; justify-content: center; padding: 1.5rem;';
+
+  function nameValue() {
+    return nameLocked ? categoryName : (overlay.querySelector('#cat-name-input')?.value.trim() || '');
+  }
+
+  function canSubmit() {
+    return !busy && nameValue().length >= 2 && Boolean(pickedFile || emoji.trim());
+  }
+
+  function paint() {
+    const ok = canSubmit();
+
+    overlay.innerHTML = `
+      <div style="background: #fff; border-radius: 16px; width: min(92vw, 460px); max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,0.35);">
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between;">
+          <strong style="font-size: 1.05rem; color: #0F172A;">${escapeHtml(title)}</strong>
+          <button id="cat-modal-close" title="Close" style="background: #F1F5F9; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 0.95rem; color: #475569;">&#10005;</button>
+        </div>
+
+        <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.15rem;">
+          ${nameLocked ? `
+            <div style="font-size: 0.9rem; color: #475569;">
+              Category: <strong style="color: #0F172A;">${escapeHtml(categoryName)}</strong>
+            </div>
+          ` : `
+            <label style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #334155;">
+              Category name
+              <input id="cat-name-input" type="text" value="${escapeHtml(nameDraft)}" placeholder="e.g. Electronics &amp; Tech" autocomplete="off"
+                style="border: 1px solid #CBD5E1; border-radius: 10px; padding: 0.6rem 0.75rem; font-size: 0.92rem; outline: none; font-family: inherit;">
+            </label>
+          `}
+
+          <div style="display: flex; flex-direction: column; gap: 0.55rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: #334155;">Category icon</span>
+
+            <div style="display: flex; align-items: center; gap: 0.9rem;">
+              <div style="width: 68px; height: 68px; border-radius: 12px; border: 1px dashed #CBD5E1; background: #F8FAFC; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                ${previewUrl
+                  ? `<img src="${previewUrl}" alt="" style="width: 100%; height: 100%; object-fit: contain;">`
+                  : emoji.trim()
+                    ? `<span style="font-size: 2rem;">${escapeHtml(emoji.trim())}</span>`
+                    : `<span style="color: #94A3B8; font-size: 1.4rem;">&#9633;</span>`}
+              </div>
+
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 0.4rem; min-width: 0;">
+                <button id="cat-pick-btn" type="button" style="background: #0F172A; color: #fff; border: none; border-radius: 9px; padding: 0.55rem 0.9rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                  Upload logo
+                </button>
+                <span style="font-size: 0.72rem; color: #64748B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${pickedFile ? escapeHtml(pickedFile.name) : 'PNG, JPG, WEBP or GIF &middot; up to 5MB'}
+                </span>
+                ${pickedFile ? `<button id="cat-clear-file" type="button" style="background: none; border: none; color: #DC2626; font-size: 0.75rem; cursor: pointer; text-align: left; padding: 0;">Remove image</button>` : ''}
+              </div>
+              <input id="cat-file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-top: 0.15rem;">
+              <span style="flex: 1; height: 1px; background: #E2E8F0;"></span>
+              <span style="font-size: 0.7rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.04em;">or use an emoji</span>
+              <span style="flex: 1; height: 1px; background: #E2E8F0;"></span>
+            </div>
+
+            <input id="cat-emoji-input" type="text" value="${escapeHtml(emoji)}" maxlength="4" ${pickedFile ? 'disabled' : ''}
+              style="border: 1px solid #CBD5E1; border-radius: 10px; padding: 0.5rem 0.7rem; font-size: 1.1rem; width: 90px; text-align: center; outline: none; font-family: inherit; ${pickedFile ? 'opacity: 0.45;' : ''}">
+          </div>
+
+          ${error ? `<div style="background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; border-radius: 9px; padding: 0.6rem 0.75rem; font-size: 0.82rem;">${escapeHtml(error)}</div>` : ''}
+        </div>
+
+        <div style="padding: 1rem 1.5rem; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 0.6rem;">
+          <button id="cat-cancel-btn" type="button" style="background: #F1F5F9; color: #334155; border: none; border-radius: 9px; padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">Cancel</button>
+          <button id="cat-submit-btn" type="button" ${ok ? '' : 'disabled'}
+            style="background: ${ok ? '#04562D' : '#94A3B8'}; color: #fff; border: none; border-radius: 9px; padding: 0.55rem 1.15rem; font-size: 0.85rem; font-weight: 700; cursor: ${ok ? 'pointer' : 'not-allowed'};">
+            ${busy ? 'Saving&hellip;' : escapeHtml(confirmLabel)}
+          </button>
+        </div>
+      </div>
+    `;
+    bind();
+  }
+
+  function refreshSubmitState() {
+    const btn = overlay.querySelector('#cat-submit-btn');
+    if (!btn) return;
+    const ok = canSubmit();
+    btn.disabled = !ok;
+    btn.style.background = ok ? '#04562D' : '#94A3B8';
+    btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+  }
+
+  function bind() {
+    const fileInput = overlay.querySelector('#cat-file-input');
+
+    overlay.querySelector('#cat-pick-btn')?.addEventListener('click', () => fileInput?.click());
+
+    fileInput?.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      // Same 5MB ceiling the server enforces (server/src/routes/uploads.routes.ts),
+      // checked here so an oversized file is refused before it is sent.
+      if (file.size > 5 * 1024 * 1024) {
+        error = 'That image is larger than 5MB. Please choose a smaller file.';
+        paint();
+        return;
+      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      pickedFile = file;
+      previewUrl = URL.createObjectURL(file);
+      emoji = '';
+      error = '';
+      paint();
+    });
+
+    overlay.querySelector('#cat-clear-file')?.addEventListener('click', () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      pickedFile = null;
+      previewUrl = null;
+      paint();
+    });
+
+    // Typing repaints for the live preview, which destroys the input, so the
+    // caret has to be put back by hand.
+    overlay.querySelector('#cat-emoji-input')?.addEventListener('input', (e) => {
+      emoji = e.target.value;
+      paint();
+      const next = overlay.querySelector('#cat-emoji-input');
+      next?.focus();
+    });
+
+    // The name field deliberately does NOT repaint - nothing on screen depends
+    // on it except whether Create is enabled, and repainting mid-word would
+    // scramble the caret.
+    overlay.querySelector('#cat-name-input')?.addEventListener('input', (e) => {
+      nameDraft = e.target.value;
+      refreshSubmitState();
+    });
+
+    overlay.querySelector('#cat-modal-close')?.addEventListener('click', () => close());
+    overlay.querySelector('#cat-cancel-btn')?.addEventListener('click', () => close());
+    overlay.querySelector('#cat-submit-btn')?.addEventListener('click', submit);
+  }
+
+  async function submit() {
+    if (busy) return;
+    const name = nameValue();
+    if (name.length < 2) {
+      error = 'Please enter a category name of at least 2 characters.';
+      paint();
+      return;
+    }
+    if (!pickedFile && !emoji.trim()) {
+      error = 'Upload a logo or enter an emoji for this category.';
+      paint();
+      return;
+    }
+
+    busy = true;
+    error = '';
+    paint();
+
+    try {
+      // Upload first. If storage fails there is no half-made category left
+      // behind holding a placeholder icon nobody chose.
+      const icon = pickedFile
+        ? await stateEngine.uploadCategoryIcon(pickedFile)
+        : emoji.trim();
+      await onSubmit({ name, icon });
+    } catch (err) {
+      busy = false;
+      error = err?.message || 'Something went wrong. Please try again.';
+      paint();
+      return;
+    }
+
+    // Deliberately outside the try. The category has been created by this
+    // point, so a throw in here is not a failed save and must not be reported
+    // as one - an earlier version had close() inside the try and a bug in it
+    // surfaced as "your category could not be created" over a category that
+    // very much had been.
+    close();
+  }
+
+  document.body.appendChild(overlay);
+  paint();
+
+  ({ close } = makeAccessibleModal(overlay, {
+    label: title,
+    returnFocusTo,
+    onClose: () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+  }));
+
+  overlay.querySelector(nameLocked ? '#cat-pick-btn' : '#cat-name-input')?.focus();
+  return close;
 }

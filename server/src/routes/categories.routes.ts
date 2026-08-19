@@ -63,6 +63,53 @@ categoriesRouter.post('/', requireAuth, requirePermission('CATEGORIES'), async (
   res.status(201).json({ category: { id: category.id, name: category.name, icon: category.iconUrl, order: category.order, count: 0 } });
 });
 
+const updateIconSchema = z.object({
+  icon: z.string().min(1),
+});
+
+// Changing a category's icon is cosmetic and reversible - a wrong logo is
+// fixed by uploading the right one - so it takes effect directly, unlike
+// deletion below, which cascades into listed products and needs a second
+// Administrator. It is still audited: an icon is the category's public face
+// and swapping one is worth a trail.
+categoriesRouter.patch('/:id/icon', requireAuth, requirePermission('CATEGORIES'), async (req, res) => {
+  const parsed = updateIconSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'An icon is required.' });
+
+  const category = await prisma.category.findUnique({ where: { id: req.params.id } });
+  if (!category) return res.status(404).json({ error: 'Category not found.' });
+
+  const updated = await prisma.category.update({
+    where: { id: category.id },
+    data: { iconUrl: parsed.data.icon },
+  });
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'CATEGORY_ICON_CHANGED',
+    module: 'Marketplace Admin',
+    targetId: category.id,
+    details: `Changed the icon for category "${category.name}".`,
+  });
+
+  const count = await prisma.product.count({
+    where: { categoryId: category.id, status: 'ACTIVE' },
+  });
+
+  res.json({
+    category: {
+      id: updated.id,
+      name: updated.name,
+      icon: updated.iconUrl,
+      order: updated.order,
+      count,
+    },
+  });
+});
+
+
 // Category deletion is high-risk (cascades to listed products elsewhere in the flow),
 // so it goes through the multi-admin approval workflow rather than deleting immediately.
 categoriesRouter.post('/:id/request-delete', requireAuth, requirePermission('CATEGORIES'), async (req, res) => {

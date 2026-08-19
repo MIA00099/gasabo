@@ -1,22 +1,12 @@
 /**
  * KIGALI MARKET - Seller Registration, Authentication & Seller Dashboard
+ * Ported to match delivered mockups (post-ad.html, stores.html, etc.).
  */
 import { stateEngine } from '../../store/stateEngine.js';
 import { renderLoginView } from '../../components/LoginView.js';
 
-// Every stateEngine.setUI() call triggers a full top-level remount, and the
-// parent (MarketplaceView.js) rebuilds its mount div and calls
-// renderSellerPortal() completely fresh on every one of those remounts too -
-// so a closure-local variable declared inside renderSellerDashboardView()
-// does NOT survive across renders like it would in LoginView.js (that view
-// is only mounted once per portal switch, this one is re-mounted on every
-// single notify while the seller tab is open). It has to live at module
-// scope instead, same as why imageMode/imagePreviewUrl already survive - the
-// difference is those are read from stateEngine's state.ui; this mirrors
-// that same "survives a remount" property without round-tripping through
-// setUI on every keystroke (which would remount and drop keyboard focus on
-// every character typed).
 let productFormValues = { title: '', category: '', price: '', district: '', condition: '', description: '' };
+
 function captureProductFormValues(container) {
   const title = container.querySelector('#p-title');
   if (title) productFormValues.title = title.value;
@@ -31,6 +21,7 @@ function captureProductFormValues(container) {
   const description = container.querySelector('#p-desc');
   if (description) productFormValues.description = description.value;
 }
+
 function resetProductFormValues(sellerDistrict) {
   productFormValues = { title: '', category: '', price: '', district: sellerDistrict, condition: '', description: '' };
 }
@@ -41,9 +32,6 @@ export function renderSellerPortal(container) {
   const isSeller = currentUser && currentUser.role === 'seller';
 
   if (!isSeller) {
-    // Reuse the exact same glass Sign Up / Login component as the header's
-    // Sign Up button and the standalone /login page - "Start Selling" should
-    // show the one real sign-up form, not a separate look-alike.
     renderLoginView(container, 'signup');
   } else {
     renderSellerDashboardView(container, currentUser);
@@ -81,206 +69,253 @@ function renderSellerDashboardView(container, sellerUser) {
     if (activeTab === 'expired') currentTabProds = expiredProds;
 
     container.innerHTML = `
-      <div class="seller-dash-wrap" style="max-width: 1280px; margin: 0 auto; padding: 2.5rem 1.5rem; width: 100%; box-sizing: border-box;">
+      <div class="seller-dash-wrap max-w-6xl mx-auto py-6 px-4 w-full">
         <!-- Seller Dashboard Header -->
-        <div class="glass-panel" style="padding: 2rem; border-radius: var(--radius-lg); margin-bottom: 2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm mb-6">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem;">
-                <h2 style="font-size: 1.8rem; color: #0F172A;">Welcome, ${escapeHtml(sellerUser.name)}</h2>
-                <span class="badge badge-active">✔ Verified Rwandan Seller</span>
+              <div class="flex items-center gap-2 mb-1">
+                <h2 class="text-2xl font-bold text-gray-900">Welcome, ${escapeHtml(sellerUser.name)}</h2>
+                <span class="bg-green-100 text-brand-green text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                  <i class="fa-solid fa-circle-check"></i> Verified Seller
+                </span>
               </div>
-              <p style="color: #64748B; font-size: 0.92rem;">
-                📍 ${escapeHtml(sellerUser.district)} District • ✉️ ${escapeHtml(sellerUser.email)} • 📞 ${escapeHtml(sellerUser.phone)}
+              <p class="text-xs text-gray-500">
+                <i class="fa-solid fa-location-dot text-brand-orange"></i> District: ${escapeHtml(sellerUser.district)} &bull; <i class="fa-regular fa-envelope"></i> ${escapeHtml(sellerUser.email)} &bull; <i class="fa-solid fa-phone text-brand-green"></i> ${escapeHtml(sellerUser.phone)}
               </p>
             </div>
 
-            <div style="display: flex; gap: 1rem;">
-              <button id="add-new-prod-btn" class="btn btn-gold" style="padding: 0.85rem 1.5rem; font-size: 0.95rem;">
-                ➕ Post New Product Listing
+            <div class="flex gap-3">
+              <button id="add-new-prod-btn" class="bg-brand-orange text-white font-bold px-5 py-2.5 rounded-xl hover:bg-orange-500 transition shadow text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-plus-circle"></i> Post Your Ad
               </button>
             </div>
           </div>
         </div>
 
         ${state.error ? `
-          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
-            ⚠️ ${escapeHtml(state.error)}
+          <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs font-semibold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>${escapeHtml(state.error)}</span>
           </div>
         ` : ''}
 
         ${activeTab === 'new_product' ? `
-          <!-- POST NEW PRODUCT FORM -->
-          <div class="glass-panel" style="padding: 2.5rem; border-radius: var(--radius-lg); margin-bottom: 3rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-              <h3 style="font-size: 1.4rem; color: #0F172A;">Post New Item on Kigali Marketplace</h3>
-              <button id="cancel-add-btn" class="btn btn-secondary btn-sm">Cancel</button>
+          <!-- POST YOUR AD FORM (ui,/post-ad.html template) -->
+          <div class="mb-6">
+            <div class="mb-3">
+              <h1 class="text-xl md:text-2xl font-bold text-gray-900">Post Your Ad</h1>
+              <p class="text-xs text-gray-500">Fill in the details below to post your ad</p>
             </div>
 
-            <form id="create-product-form">
-              <div class="grid-2">
-                <div class="form-group">
-                  <label>Product Title</label>
-                  <input type="text" id="p-title" class="form-control" placeholder="e.g. Rwandan Specialty Bourbon Coffee 1kg" value="${escapeHtml(productFormValues.title)}" required>
-                </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <form id="create-product-form" class="space-y-4">
+                <div class="flex flex-col lg:flex-row gap-6">
 
-                <div class="form-group">
-                  <label>Category</label>
-                  <select id="p-category" class="form-control">
-                    ${state.categories.map(c => `<option value="${c.id}" ${c.id===productFormValues.category?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-
-              <div class="grid-3">
-                <div class="form-group">
-                  <label>Price (RWF)</label>
-                  <input type="number" id="p-price" class="form-control" placeholder="15000" min="1" value="${escapeHtml(productFormValues.price)}" required>
-                </div>
-
-                <div class="form-group">
-                  <label>District Location</label>
-                  <select id="p-district" class="form-control">
-                    ${state.districts.map(d => `<option value="${d}" ${d===productFormValues.district?'selected':''}>${d} District</option>`).join('')}
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label>Item Condition</label>
-                  <input type="text" id="p-condition" class="form-control" placeholder="e.g. Brand New / Fresh Produce" value="${escapeHtml(productFormValues.condition)}" required>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>Product Description</label>
-                <textarea id="p-desc" class="form-control" rows="4" placeholder="Detailed product specifications, origin, delivery options..." required>${escapeHtml(productFormValues.description)}</textarea>
-              </div>
-
-              <div class="form-group">
-                <label>Product Photo</label>
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
-                  <button type="button" id="img-mode-upload-btn" class="btn btn-sm" style="background:${imageMode==='upload'?'var(--primary)':'#F1F5F9'}; color:${imageMode==='upload'?'#fff':'#64748B'};">
-                    📁 Upload from Device
-                  </button>
-                  <button type="button" id="img-mode-url-btn" class="btn btn-sm" style="background:${imageMode==='url'?'var(--primary)':'#F1F5F9'}; color:${imageMode==='url'?'#fff':'#64748B'};">
-                    🔗 Paste Image URL
-                  </button>
-                </div>
-
-                ${imageMode === 'upload' ? `
-                  <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" ${imageUploading ? 'disabled' : ''}>
-                  <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.4rem;">JPEG, PNG, WEBP, or GIF - max 5MB.</div>
-                  ${imageUploading ? `
-                    <div style="margin-top: 0.75rem; color: #64748B; font-size: 0.85rem;">⏳ Uploading...</div>
-                  ` : imagePreviewUrl ? `
-                    <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.75rem;">
-                      <img src="${imagePreviewUrl}" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #E2E8F0;">
-                      <span style="color: #10B981; font-size: 0.85rem; font-weight: 600;">✔ Photo uploaded</span>
+                  <!-- Left Column: Fields -->
+                  <div class="lg:w-[58%] space-y-3">
+                    <!-- Ad Type Selector -->
+                    <div>
+                      <label class="block text-xs font-bold text-gray-800 mb-1.5">Ad Type</label>
+                      <div class="flex flex-wrap gap-2" id="ad-type-group">
+                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-brand-green bg-green-50 text-brand-green font-semibold text-xs transition">
+                          <i class="fa-solid fa-box text-xs"></i> Product
+                        </button>
+                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition">
+                          <i class="fa-solid fa-car text-xs"></i> Vehicle
+                        </button>
+                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition">
+                          <i class="fa-solid fa-house text-xs"></i> Property
+                        </button>
+                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition">
+                          <i class="fa-solid fa-briefcase text-xs"></i> Service
+                        </button>
+                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition">
+                          <i class="fa-solid fa-user-tie text-xs"></i> Job
+                        </button>
+                      </div>
                     </div>
-                  ` : ''}
-                  <input type="hidden" id="p-image" value="${escapeHtml(imagePreviewUrl || '')}">
-                ` : `
-                  <input type="url" id="p-image" class="form-control" value="${escapeHtml(imagePreviewUrl && imageMode === 'url' ? imagePreviewUrl : 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1000&q=80')}" placeholder="https://...">
-                `}
-              </div>
 
-              <button type="submit" class="btn btn-primary" style="padding: 0.95rem 2rem; font-size: 1rem; margin-top: 1rem;" ${formSubmitting || imageUploading ? 'disabled' : ''}>
-                ${formSubmitting ? 'Publishing...' : '🚀 Publish Product Listing Now'}
-              </button>
-            </form>
+                    <!-- Category -->
+                    <div>
+                      <label class="block text-xs font-bold text-gray-800 mb-1">Category</label>
+                      <div class="relative">
+                        <select id="p-category" class="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                          ${state.categories.map(c => `<option value="${c.id}" ${c.id===productFormValues.category?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                          <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Title & Price -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-bold text-gray-800 mb-1">Title</label>
+                        <input type="text" id="p-title" required placeholder="Enter ad title" value="${escapeHtml(productFormValues.title)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
+                      </div>
+                      <div>
+                        <label class="block text-xs font-bold text-gray-800 mb-1">Price (RWF)</label>
+                        <input type="number" id="p-price" required placeholder="Price" min="1" value="${escapeHtml(productFormValues.price)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
+                      </div>
+                    </div>
+
+                    <!-- District & Condition -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-bold text-gray-800 mb-1">District Location</label>
+                        <select id="p-district" class="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
+                          ${state.districts.map(d => `<option value="${d}" ${d===productFormValues.district?'selected':''}>${d} District</option>`).join('')}
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-xs font-bold text-gray-800 mb-1">Item Condition</label>
+                        <input type="text" id="p-condition" required placeholder="e.g. Brand New" value="${escapeHtml(productFormValues.condition)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
+                      </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                      <label class="block text-xs font-bold text-gray-800 mb-1">Description</label>
+                      <textarea id="p-desc" rows="3" required placeholder="Describe your product, service or item..." class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green resize-none">${escapeHtml(productFormValues.description)}</textarea>
+                    </div>
+                  </div>
+
+                  <!-- Right Column: Upload Area -->
+                  <div class="lg:w-[42%] flex flex-col justify-between">
+                    <div class="border-2 border-dashed border-gray-300 rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition bg-white h-full min-h-[220px]">
+                      <div class="w-12 h-12 mb-2 text-brand-green">
+                        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                      </div>
+                      <h3 class="text-base font-bold text-brand-green mb-1">Upload Photos</h3>
+                      <p class="text-gray-500 text-xs mb-2">Drag & drop or click to upload</p>
+                      <p class="text-gray-400 text-[10px] mb-3">Max 10 photos</p>
+
+                      <div class="flex gap-2 mb-3">
+                        <button type="button" id="img-mode-upload-btn" class="px-2.5 py-1 text-[10px] font-bold rounded ${imageMode==='upload'?'bg-brand-green text-white':'bg-gray-200 text-gray-700'}">Device Upload</button>
+                        <button type="button" id="img-mode-url-btn" class="px-2.5 py-1 text-[10px] font-bold rounded ${imageMode==='url'?'bg-brand-green text-white':'bg-gray-200 text-gray-700'}">Image URL</button>
+                      </div>
+
+                      ${imageMode === 'upload' ? `
+                        <input type="file" id="p-image-file" accept="image/*" class="w-full text-xs">
+                        ${imagePreviewUrl ? `<div class="text-xs text-green-600 font-bold mt-2">✔ Photo uploaded</div>` : ''}
+                        <input type="hidden" id="p-image" value="${escapeHtml(imagePreviewUrl || '')}">
+                      ` : `
+                        <input type="url" id="p-image" class="w-full bg-gray-50 border border-gray-300 text-gray-900 py-1.5 px-2 rounded text-xs" value="${escapeHtml(imagePreviewUrl || 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1000&q=80')}" placeholder="Paste URL">
+                      `}
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
+                  <button type="button" id="cancel-add-btn" class="text-xs font-semibold text-gray-500 hover:underline">Cancel</button>
+                  <button type="submit" class="bg-brand-green text-white font-bold py-2.5 px-8 rounded-lg hover:bg-green-800 transition shadow-md text-xs" ${formSubmitting || imageUploading ? 'disabled' : ''}>
+                    ${formSubmitting ? 'Publishing...' : 'Continue'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         ` : ''}
 
         <!-- Product Status Tabs -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0; flex-wrap: wrap;">
-            <button id="tab-pending-btn" class="btn btn-sm" style="color:${activeTab==='pending'?'#fff':'#64748B'}; background:${activeTab==='pending'?'#D97706':'transparent'};">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+          <div class="flex gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200 flex-wrap text-xs">
+            <button id="tab-pending-btn" class="px-3 py-1.5 rounded-lg font-semibold ${activeTab==='pending'?'bg-amber-600 text-white':'text-gray-600 hover:bg-gray-200'}">
               🕒 Awaiting Review (${pendingProds.length})
             </button>
             ${rejectedProds.length > 0 ? `
-              <button id="tab-rejected-btn" class="btn btn-sm" style="color:${activeTab==='rejected'?'#fff':'#64748B'}; background:${activeTab==='rejected'?'var(--danger)':'transparent'};">
+              <button id="tab-rejected-btn" class="px-3 py-1.5 rounded-lg font-semibold ${activeTab==='rejected'?'bg-red-600 text-white':'text-gray-600 hover:bg-gray-200'}">
                 ❌ Rejected (${rejectedProds.length})
               </button>
             ` : ''}
-            <button id="tab-active-btn" class="btn btn-sm" style="color:${activeTab==='active'?'#fff':'#64748B'}; background:${activeTab==='active'?'var(--primary)':'transparent'};">
+            <button id="tab-active-btn" class="px-3 py-1.5 rounded-lg font-semibold ${activeTab==='active'?'bg-brand-green text-white':'text-gray-600 hover:bg-gray-200'}">
               Active Products (${activeProds.length})
             </button>
-            <button id="tab-expiring-btn" class="btn btn-sm" style="color:${activeTab==='expiring'?'#fff':'#64748B'}; background:${activeTab==='expiring'?'var(--warning)':'transparent'};">
+            <button id="tab-expiring-btn" class="px-3 py-1.5 rounded-lg font-semibold ${activeTab==='expiring'?'bg-amber-500 text-white':'text-gray-600 hover:bg-gray-200'}">
               Expiring Soon (${expiringProds.length})
             </button>
-            <button id="tab-expired-btn" class="btn btn-sm" style="color:${activeTab==='expired'?'#fff':'#64748B'}; background:${activeTab==='expired'?'var(--danger)':'transparent'};">
+            <button id="tab-expired-btn" class="px-3 py-1.5 rounded-lg font-semibold ${activeTab==='expired'?'bg-red-600 text-white':'text-gray-600 hover:bg-gray-200'}">
               Expired Archive (${expiredProds.length})
             </button>
           </div>
         </div>
 
         <!-- Products List Table -->
-        <div class="custom-table-container">
-          <table class="custom-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Category</th>
-                <th>Price (RWF)</th>
-                <th>Posted Date</th>
-                <th>Expiry Date</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${productsLoading ? `
-                <tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading your products...</td></tr>
-              ` : currentTabProds.length === 0 ? `
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-gray-50 text-gray-700 font-bold uppercase tracking-wider border-b border-gray-200">
                 <tr>
-                  <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                    No products found in this section.
-                  </td>
+                  <th class="p-3.5">Product</th>
+                  <th class="p-3.5">Category</th>
+                  <th class="p-3.5">Price (RWF)</th>
+                  <th class="p-3.5">Posted Date</th>
+                  <th class="p-3.5">Expiry Date</th>
+                  <th class="p-3.5">Status</th>
+                  <th class="p-3.5">Actions</th>
                 </tr>
-              ` : currentTabProds.map(prod => `
-                <tr>
-                  <td>
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                      <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
-                      <div>
-                        <div style="font-weight: 600; color: #0F172A;">${escapeHtml(prod.title)}</div>
-                        <div style="font-size: 0.78rem; color: #64748B;">📍 ${escapeHtml(prod.district)} • ${prod.condition}</div>
-                        ${prod.status === 'rejected' && prod.rejectionReason ? `
-                          <div style="font-size: 0.78rem; color: #991B1B; margin-top: 0.3rem; max-width: 320px;">
-                            <strong>Reason:</strong> ${escapeHtml(prod.rejectionReason)}
-                          </div>
-                        ` : ''}
-                        ${prod.status === 'pending' ? `
-                          <div style="font-size: 0.78rem; color: #92400E; margin-top: 0.3rem;">
-                            Not visible on the marketplace yet - an admin needs to approve it first.
-                          </div>
-                        ` : ''}
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                ${productsLoading ? `
+                  <tr><td colspan="7" class="p-8 text-center text-gray-400">Loading your products...</td></tr>
+                ` : currentTabProds.length === 0 ? `
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-gray-400">
+                      No products found in this section.
+                    </td>
+                  </tr>
+                ` : currentTabProds.map(prod => `
+                  <tr class="hover:bg-gray-50 transition">
+                    <td class="p-3.5">
+                      <div class="flex items-center gap-3">
+                        <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" class="w-12 h-12 rounded-lg object-cover bg-gray-100 shrink-0">
+                        <div>
+                          <div class="font-bold text-gray-900 text-xs">${escapeHtml(prod.title)}</div>
+                          <div class="text-[10px] text-gray-500 mt-0.5">📍 ${escapeHtml(prod.district)} &bull; ${prod.condition}</div>
+                          ${prod.status === 'rejected' && prod.rejectionReason ? `
+                            <div class="text-[10px] text-red-700 mt-1 max-w-xs">
+                              <strong>Reason:</strong> ${escapeHtml(prod.rejectionReason)}
+                            </div>
+                          ` : ''}
+                          ${prod.status === 'pending' ? `
+                            <div class="text-[10px] text-amber-700 mt-1">
+                              Under review by platform admins.
+                            </div>
+                          ` : ''}
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>${escapeHtml(prod.category || 'General')}</td>
-                  <td><strong style="color: var(--accent-gold);">${prod.price.toLocaleString()} RWF</strong></td>
-                  <td>${new Date(prod.postedDate).toLocaleDateString()}</td>
-                  <td>${prod.expiryDate ? new Date(prod.expiryDate).toLocaleDateString() : '—'}</td>
-                  <td>
-                    <span class="badge badge-${prod.status}">${prod.status.replace('_', ' ').toUpperCase()}</span>
-                  </td>
-                  <td>
-                    <div style="display: flex; gap: 0.4rem;">
-                      ${prod.status === 'expiring_soon' || prod.status === 'expired' ? `
-                        <button class="btn btn-sm btn-primary renew-prod-btn" data-id="${prod.id}">
-                          🔄 Renew (6 Months)
+                    </td>
+                    <td class="p-3.5 font-medium text-gray-700">${escapeHtml(prod.category || 'General')}</td>
+                    <td class="p-3.5"><strong class="text-brand-green font-black">RWF ${prod.price.toLocaleString()}</strong></td>
+                    <td class="p-3.5 text-gray-500">${new Date(prod.postedDate).toLocaleDateString()}</td>
+                    <td class="p-3.5 text-gray-500">${prod.expiryDate ? new Date(prod.expiryDate).toLocaleDateString() : '—'}</td>
+                    <td class="p-3.5">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${prod.status==='active'?'bg-green-100 text-brand-green':prod.status==='pending'?'bg-amber-100 text-amber-800':'bg-red-100 text-red-800'}">
+                        ${prod.status.replace('_', ' ').toUpperCase()}
+                      </span>
+                    </td>
+                    <td class="p-3.5">
+                      <div class="flex gap-2">
+                        ${prod.status === 'expiring_soon' || prod.status === 'expired' ? `
+                          <button class="btn btn-sm bg-brand-green text-white text-[10px] font-bold px-2.5 py-1 rounded-md hover:bg-green-800 transition renew-prod-btn" data-id="${prod.id}">
+                            Renew
+                          </button>
+                        ` : ''}
+                        <button class="text-red-600 hover:text-red-800 font-bold text-[10px] px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition del-prod-btn" data-id="${prod.id}">
+                          Delete
                         </button>
-                      ` : ''}
-                      <button class="btn btn-sm btn-danger del-prod-btn" data-id="${prod.id}">
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
@@ -293,6 +328,15 @@ function renderSellerDashboardView(container, sellerUser) {
     container.querySelector('#cancel-add-btn')?.addEventListener('click', () => {
       resetProductFormValues(sellerUser.district);
       stateEngine.setUI({ sellerDashboardTab: 'active' });
+    });
+
+    container.querySelectorAll('.ad-type-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        container.querySelectorAll('.ad-type-btn').forEach((b) => {
+          b.className = 'ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition';
+        });
+        btn.className = 'ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-brand-green bg-green-50 text-brand-green font-semibold text-xs transition';
+      });
     });
 
     container.querySelector('#tab-pending-btn')?.addEventListener('click', () => stateEngine.setUI({ sellerDashboardTab: 'pending' }));
@@ -332,9 +376,6 @@ function renderSellerDashboardView(container, sellerUser) {
       const description = container.querySelector('#p-desc').value;
       const image = container.querySelector('#p-image').value;
 
-      // #p-image is type="hidden" while in upload mode, so the browser's
-      // own `required` validation never runs on it (hidden inputs are
-      // excluded from constraint validation) - check by hand instead.
       if (!image) {
         captureProductFormValues(container);
         stateEngine.data.error = imageMode === 'upload'
@@ -346,13 +387,6 @@ function renderSellerDashboardView(container, sellerUser) {
 
       try {
         await stateEngine.createProduct({ title, category, price, district, condition, description, image });
-        // Stale copy from before the approval workflow existed - new listings
-        // start PENDING now, not live, and this was both lying to the seller
-        // ("published... to the Marketplace" - it isn't, yet) and then
-        // sending them to the "active" tab, where a pending listing never
-        // appears. That combination is exactly what read as "my product
-        // just vanished" - it was never broken, just told the wrong story
-        // and pointed at the wrong tab immediately after.
         alert('Product submitted! It will appear on the marketplace once an admin reviews and approves it - you can track its status under "Awaiting Review".');
         resetProductFormValues(sellerUser.district);
         stateEngine.setUI({ sellerDashboardTab: 'pending', productImageMode: 'url', productImagePreview: '' });
@@ -396,7 +430,7 @@ function renderSellerDashboardView(container, sellerUser) {
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/[&<>"']/g, function(m) {
+  return String(str).replace(/[&<>"']/g, function(m) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
   });
 }

@@ -14,24 +14,14 @@ import {
   renderMobileTabBarHtml, bindMobileTabBarEvents,
 } from './components/Header.js';
 import { renderProductDetailModal } from './modules/marketplace/ProductDetailModal.js';
-import { parseLocation, onRouteChange, pushHome, ROUTE_HOME, ROUTE_PRODUCT } from './store/router.js';
+import {
+  parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
+  ROUTE_HOME, ROUTE_PRODUCT,
+} from './store/router.js';
 
-// The admin portal is intentionally NOT linked from any public nav/footer - it's
-// only reachable by visiting this exact URL directly (bookmark it). This is on
-// top of, not instead of, the real Administrator/Sub-Administrator login gate
-// inside AdminDashboardView - the URL just keeps it off the public UI.
 const ADMIN_URL_HASH = '#/admin-portal';
 
-// Module scope, not a renderApp() local - renderApp() is called on every
-// single stateEngine notify (any state change anywhere), which would reset
-// a closure-local "is the dropdown open" back to false the instant anything
-// else in the app changed while it was open.
 let notifDropdownOpen = false;
-
-// Which listing detail is currently on screen, and the element showing it.
-// Module scope for the same reason as notifDropdownOpen: renderApp() runs on
-// every state change, and a closure-local would forget the open modal the
-// instant anything else in the app changed.
 let openListingKey = null;
 let openListingEl = null;
 
@@ -41,20 +31,11 @@ function listingKey(route) {
 
 function closeOpenListing() {
   if (openListingEl) openListingEl.remove();
-  // openPropertyModal locks body scroll while open; releasing it here covers
-  // the case where we removed the element rather than its own close running.
   document.body.style.overflow = 'auto';
   openListingEl = null;
   openListingKey = null;
 }
 
-/**
- * Keep the visible listing detail in agreement with the URL.
- *
- * Every route into a detail view - a card click, a shared link opened cold,
- * Back/Forward - ends up here, so there is one place that decides what is on
- * screen rather than three.
- */
 function syncListingModal(state) {
   const key = listingKey(state.route);
 
@@ -62,13 +43,8 @@ function syncListingModal(state) {
     closeOpenListing();
     return;
   }
-  // Already showing the right one; don't rebuild it and lose the chosen
-  // thumbnail or scroll position.
   if (key === openListingKey) return;
 
-  // The listing is still being fetched, or turned out not to exist. Leave
-  // any previous detail closed and wait - loadRouteListing() notifies again
-  // when it resolves.
   if (!state.routeListing) {
     closeOpenListing();
     return;
@@ -80,15 +56,23 @@ function syncListingModal(state) {
   const returnHome = () => {
     openListingKey = null;
     openListingEl = null;
+
+    // Step back through history rather than pushing "/". Opening a listing
+    // from the products page and closing it used to land on the homepage,
+    // losing the category and sort the reader had chosen. history.back()
+    // returns them to whichever page they opened it from, and popstate
+    // re-syncs the route.
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    // Opened directly on a listing URL (a shared link) - there is nothing to
+    // go back to, so fall through to the homepage.
     pushHome();
     stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
   };
 
-  // Where keyboard focus should land once the detail closes: the card that
-  // opened it. Passed as a selector rather than an element because closing
-  // re-renders the grid - the original node is gone by then, and only the
-  // freshly-rendered replacement can be focused. data-id survives the
-  // re-render, so it is what identifies the card.
   const returnFocusTo =
     state.route.kind === ROUTE_PRODUCT
       ? `.product-card-action[data-id="${state.route.id}"]`
@@ -117,13 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('hashchange', checkAdminRoute);
   checkAdminRoute();
 
-  // Back/Forward between listings and the marketplace. The state engine seeds
-  // state.route from the address bar at construction, so a cold load of
-  // /product/<id> is already correct before the first render; this only has
-  // to handle subsequent history moves.
   onRouteChange((route) => stateEngine.setRoute(route));
 
-  // Kick off the fetch for a listing URL opened directly.
   const initialRoute = parseLocation();
   if (initialRoute.kind !== ROUTE_HOME) {
     stateEngine.setRoute(initialRoute);
@@ -135,28 +114,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentUser = state.currentUser;
     const currentLang = state.currentLang || 'en';
     const isLoggedIn = currentUser.role !== 'guest';
-    // Admin/sub-admin identity and logout are only shown while actually
-    // inside the admin panel - the admin portal is deliberately unlinked
-    // from public nav (reachable only via its hidden URL), so surfacing
-    // "Jean-Luc / ADMINISTRATOR" on the public marketplace page would
-    // broadcast that an admin is logged in on this device to anyone looking
-    // at the screen, and give away a control (Logout) that shouldn't be
-    // visible outside the admin area at all.
     const isAdminRole = currentUser.role === 'admin' || currentUser.role === 'sub_admin';
     const isSellerRole = currentUser.role === 'seller';
     const showAccountChip = isLoggedIn && (!isAdminRole || activePortal === 'admin');
-    // GET /api/notifications now serves both admin roles (approvals,
-    // removals, etc.) and sellers (listing-expiry reminders) - shown exactly
-    // where each role's identity chip is, i.e. inside the admin portal for
-    // admins, and anywhere in the marketplace portal for a logged-in seller
-    // (their dashboard lives inside it, not as a separate top-level portal).
     const showNotifBell = isLoggedIn && ((isAdminRole && activePortal === 'admin') || (isSellerRole && activePortal === 'marketplace'));
+
     if (showNotifBell && state.loading.notifications === undefined) {
       stateEngine.loadNotifications().catch(() => {});
     }
     const unreadNotifCount = state.notifications.filter(n => !n.isRead).length;
-
-    const t = (key) => getTranslation(currentLang, key);
 
     cleanupFlashClock();
 
@@ -176,28 +142,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       bindHeaderEvents(headerMount, {
-        // The brand and the Home tab must land on the browse page from
-        // anywhere - not merely flip activePortal and leave marketplaceTab
-        // wherever it was (e.g. still 'seller_portal'), which would appear to
-        // do nothing when activePortal is already 'marketplace'.
         goHome: () => {
           stateEngine.setUI({ marketplaceTab: 'products' });
           stateEngine.setPortal('marketplace');
         },
         goRealEstate: () => stateEngine.setPortal('realestate'),
-        // The mockups' "Stores" is a seller directory; "Vehicles" is a
-        // category filter. Both reuse screens the app already has until their
-        // dedicated pages land.
         goStores: () => {
-          stateEngine.setUI({ marketplaceTab: 'products' });
+          stateEngine.setUI({ marketplaceTab: 'stores' });
           stateEngine.setPortal('marketplace');
-          setTimeout(() => document.querySelector('.cat-rail-wrap')?.scrollIntoView({ behavior: 'smooth' }), 120);
         },
         goVehicles: () => {
           const cats = stateEngine.getState().categories || [];
           const vehicles = cats.find(c => /vehicle|car/i.test(c.name));
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
-          stateEngine.setUI({ marketplaceTab: 'products', marketplaceFilters: { ...filters, selectedCategory: vehicles ? vehicles.id : 'all' } });
+          stateEngine.setUI({ marketplaceTab: 'catalog', marketplaceFilters: { ...filters, selectedCategory: vehicles ? vehicles.id : 'all' } });
           stateEngine.setPortal('marketplace');
           stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }).catch(() => {});
         },
@@ -213,12 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         markAllRead: () => stateEngine.markAllNotificationsRead().catch(() => {}),
         markRead: (id) => stateEngine.markNotificationRead(id).catch(() => {}),
-        // Search lives in the header now, so it drives the marketplace
-        // filters the grid already reads from.
         search: (query) => {
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
           stateEngine.setUI({
-            marketplaceTab: 'products',
+            marketplaceTab: 'catalog',
             marketplaceFilters: { ...filters, searchQuery: query },
           });
           stateEngine.setPortal('marketplace');
@@ -230,14 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
         },
       });
 
-      // The ported header sits in normal document flow, as the mockups have
-      // it - so the top padding the old fixed navbar needed must be cleared,
-      // or the page opens with a header-sized gap under the header.
       if (appElement) appElement.style.paddingTop = '';
     }
 
-    // Keep the address bar in sync with the admin portal's dedicated URL, without
-    // triggering an extra hashchange/scroll jump (replaceState, not location.hash=).
     const onAdminRoute = window.location.hash === ADMIN_URL_HASH;
     if (activePortal === 'admin' && !onAdminRoute) {
       history.replaceState(null, '', ADMIN_URL_HASH);
@@ -259,20 +210,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // After the portal is mounted, so the detail sits over a page that has
-    // finished rendering. The modal lives on document.body and therefore
-    // survives the appElement.innerHTML reset above.
-    // Mobile tab bar. Mounted outside #app so the portal re-render above does
-    // not tear it down, and hidden by CSS above 900px where the header
-    // already carries these actions.
+    // Mobile tab bar
     let tabMount = document.getElementById('mobile-tabbar-mount');
     if (!tabMount) {
       tabMount = document.createElement('div');
       tabMount.id = 'mobile-tabbar-mount';
       document.body.appendChild(tabMount);
     }
-    // The admin portal has its own dedicated navigation and is deliberately
-    // unlinked from the public UI - a Post Ad button over it makes no sense.
+
     if (activePortal === 'admin') {
       tabMount.innerHTML = '';
     } else {

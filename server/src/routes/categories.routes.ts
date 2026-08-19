@@ -42,13 +42,44 @@ categoriesRouter.post('/', requireAuth, requirePermission('CATEGORIES'), async (
   if (!parsed.success) return res.status(400).json({ error: 'Category name and icon are required.' });
 
   const { name, icon } = parsed.data;
-  const existing = await prisma.category.findUnique({ where: { name } });
-  if (existing) return res.status(409).json({ error: 'A category with this name already exists.' });
+
+  // Case-insensitively, because slugify() lowercases: "books" and "Books"
+  // are different values for the unique `name` column but produce the same
+  // unique `slug`. A case-sensitive findUnique here therefore let "books"
+  // past this guard and straight into a P2002 on slug, which nothing caught -
+  // an admin adding a category that already existed got a 500 reading
+  // "Something went wrong on our end" instead of being told it was a
+  // duplicate.
+  const existing = await prisma.category.findFirst({
+    where: { name: { equals: name, mode: 'insensitive' } },
+  });
+  if (existing) return res.status(409).json({ error: `"${existing.name}" already exists as a category.` });
+
+  // Separately, two genuinely different names can still collide once
+  // slugified - "Home & Furniture" and "Home Furniture" both become
+  // "home-furniture". Same 409 rather than a 500.
+  const slug = slugify(name);
+  const slugTaken = await prisma.category.findUnique({ where: { slug } });
+  if (slugTaken) {
+    return res.status(409).json({
+      error: `This name is too close to the existing category "${slugTaken.name}". Please choose a different one.`,
+    });
+  }
 
   const count = await prisma.category.count();
-  const category = await prisma.category.create({
-    data: { name, iconUrl: icon, slug: slugify(name), order: count },
-  });
+  let category;
+  try {
+    category = await prisma.category.create({
+      data: { name, iconUrl: icon, slug, order: count },
+    });
+  } catch (err: any) {
+    // P2002 = unique constraint violation. Reachable despite the checks
+    // above if two admins submit the same name at the same time.
+    if (err?.code === 'P2002') {
+      return res.status(409).json({ error: 'A category with this name already exists.' });
+    }
+    throw err;
+  }
 
   await logAudit({
     actorId: req.user!.id,

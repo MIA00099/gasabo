@@ -164,3 +164,65 @@ describe('GET /api/categories', () => {
     expect(icons).toContain(IMAGE_ICON);
   });
 });
+
+describe('POST /api/categories duplicate handling', () => {
+  // This is the bug an admin actually hit in production: the category "Books"
+  // existed, they typed "books", and got a 500 reading "Something went wrong
+  // on our end". The duplicate guard was findUnique on `name` - case
+  // sensitive, so "books" walked past it - while slugify() lowercases, so the
+  // insert hit the unique constraint on `slug` and threw P2002 with nothing
+  // to catch it.
+  beforeAll(async () => {
+    await request(app)
+      .post('/api/categories')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Books', icon: '📚' });
+  });
+
+  it('409s on the same name in a different case, not 500', async () => {
+    const res = await request(app)
+      .post('/api/categories')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'books', icon: '📚' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/already exists/i);
+  });
+
+  it('409s on the exact same name', async () => {
+    const res = await request(app)
+      .post('/api/categories')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Books', icon: '📚' });
+
+    expect(res.status).toBe(409);
+  });
+
+  it('409s when two different names slugify to the same value', async () => {
+    // "Books!!!" -> "books", which "Books" already owns.
+    const res = await request(app)
+      .post('/api/categories')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Books!!!', icon: '📚' });
+
+    expect(res.status).toBe(409);
+  });
+
+  it('does not create a second row for any of those attempts', async () => {
+    const rows = await prisma.category.findMany({
+      where: { name: { in: ['Books', 'books', 'Books!!!'] } },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].name).toBe('Books');
+  });
+
+  it('still creates a genuinely new category', async () => {
+    const res = await request(app)
+      .post('/api/categories')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Musical Instruments', icon: '🎸' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.category.name).toBe('Musical Instruments');
+  });
+});

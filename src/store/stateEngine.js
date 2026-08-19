@@ -56,6 +56,9 @@ class StateEngine {
       pendingProducts: [],
       categories: [],
       sellers: [],
+      // Storefront seller directory (GET /sellers/public). Kept apart from
+      // `sellers` above, which holds the admin-only records.
+      publicSellers: [],
       banners: [],
       realEstate: { hero: null, about: null, services: [], contact: null, properties: [] },
       approvalRequests: [],
@@ -432,6 +435,23 @@ class StateEngine {
     return this._run('sellers', async () => {
       const { sellers } = await api.get('/sellers');
       this.data.sellers = sellers;
+      this.notify();
+      return sellers;
+    });
+  }
+
+  /**
+   * Public seller directory for the storefront stores page.
+   *
+   * Deliberately separate from loadSellers() above: that one hits the
+   * admin-only GET /sellers and 401s for a shopper. This reads the public
+   * endpoint, which returns only what a store card shows - name, district,
+   * phone, member-since, and the seller's live listings.
+   */
+  async loadPublicSellers() {
+    return this._run('publicSellers', async () => {
+      const { sellers } = await api.get('/sellers/public');
+      this.data.publicSellers = sellers;
       this.notify();
       return sellers;
     });

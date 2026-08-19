@@ -12,51 +12,10 @@ function escapeHtml(str) {
   ));
 }
 
-// Sample verified stores dataset based on stores.html mockup, enriched with live products if available
-const DEFAULT_STORES = [
-  {
-    id: 'store-1',
-    name: 'Mike Rwagasabo',
-    initials: 'MR',
-    verified: true,
-    phone: '+250 788 123 456',
-    district: 'Gasabo',
-    categories: ['Electronics', 'Real Estate'],
-    products: [
-      { id: 'p1', title: 'iPhone 13 Pro Max 128GB', price: 950000, wasPrice: 1190000, discount: '-20%', rating: 4.8, reviews: 120, image: '/03454683-fd32-47bb-89ad-8a441c5169b1.png' },
-      { id: 'p2', title: 'Modern 3-Bedroom Villa in Gacuriro', price: 145000000, wasPrice: null, discount: null, rating: 5.0, reviews: 14, image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=600&q=80' },
-      { id: 'p3', title: 'MacBook Pro M2 16" (2023)', price: 1850000, wasPrice: 2100000, discount: '-12%', rating: 4.9, reviews: 42, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80' },
-      { id: 'p4', title: 'Samsung 55" QLED 4K Smart TV', price: 680000, wasPrice: 750000, discount: '-9%', rating: 4.7, reviews: 31, image: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=600&q=80' },
-    ]
-  },
-  {
-    id: 'store-2',
-    name: 'Kigali Tech Hub',
-    initials: 'KT',
-    verified: true,
-    phone: '+250 789 987 654',
-    district: 'Nyarugenge',
-    categories: ['Electronics'],
-    products: [
-      { id: 'p5', title: 'Sony WH-1000XM5 Headphones', price: 380000, wasPrice: 420000, discount: '-10%', rating: 4.9, reviews: 88, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80' },
-      { id: 'p6', title: 'iPad Air 5th Gen 256GB WiFi', price: 720000, wasPrice: 800000, discount: '-10%', rating: 4.8, reviews: 56, image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=600&q=80' },
-      { id: 'p7', title: 'Canon EOS R6 Mark II Body', price: 2400000, wasPrice: 2600000, discount: '-7%', rating: 5.0, reviews: 19, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80' },
-    ]
-  },
-  {
-    id: 'store-3',
-    name: 'Gasabo Motors & Auto',
-    initials: 'GM',
-    verified: true,
-    phone: '+250 783 111 222',
-    district: 'Kicukiro',
-    categories: ['Vehicles'],
-    products: [
-      { id: 'p8', title: 'Toyota RAV4 Hybrid 2022', price: 38000000, wasPrice: 42000000, discount: '-10%', rating: 4.9, reviews: 27, image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80' },
-      { id: 'p9', title: 'Mercedes-Benz C200 2020 AMG Line', price: 45000000, wasPrice: 49000000, discount: '-8%', rating: 5.0, reviews: 15, image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=600&q=80' },
-    ]
-  }
-];
+// Store cards are built from GET /api/sellers/public - every ACTIVE seller
+// with their live listings. No sample data here: the placeholder sellers this
+// file shipped with were invented names and phone numbers, which on a live
+// marketplace reads as contact details for businesses that do not exist.
 
 export function renderStoresPage(container) {
   let searchFilter = '';
@@ -65,7 +24,27 @@ export function renderStoresPage(container) {
 
   function render() {
     const state = stateEngine.getState();
-    const stores = DEFAULT_STORES;
+
+    // Fetch once; the loading flag is what records that it was attempted.
+    if (state.loading.publicSellers === undefined) {
+      stateEngine.loadPublicSellers().catch(() => {});
+    }
+    const loading = state.loading.publicSellers !== false;
+
+    const stores = (state.publicSellers || []).map((s) => ({
+      ...s,
+      phone: s.phone || '',
+      district: s.district || 'Rwanda',
+      initials: (s.name || '?').split(/\s+/).filter(Boolean).slice(0, 2)
+        .map((w) => w[0].toUpperCase()).join(''),
+      memberSinceYear: s.memberSince ? new Date(s.memberSince).getFullYear() : null,
+      verified: true,
+    }));
+
+    // Filter options come from the sellers actually on the page - a seller in
+    // Musanze must be reachable, and a category nobody trades in is dead UI.
+    const allCategories = [...new Set(stores.flatMap((s) => s.categories || []))].sort();
+    const allDistricts = [...new Set(stores.map((s) => s.district).filter(Boolean))].sort();
 
     const filteredStores = stores.filter((store) => {
       const matchSearch = !searchFilter ||
@@ -95,7 +74,7 @@ export function renderStoresPage(container) {
             <div class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-gray-200 shadow-sm text-xs">
               <span class="font-bold text-brand-green">Active Stores: ${stores.length}</span>
               <span class="text-gray-300">|</span>
-              <span class="text-gray-600">Total Listings: ${stores.reduce((acc, s) => acc + s.products.length, 0)}+</span>
+              <span class="text-gray-600">Total Listings: ${stores.reduce((acc, s) => acc + s.productCount, 0)}</span>
             </div>
           </div>
 
@@ -112,30 +91,30 @@ export function renderStoresPage(container) {
 
               <select id="category-filter" class="bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded-xl py-2 px-3 outline-none focus:border-brand-green">
                 <option value="all" ${categoryFilter === 'all' ? 'selected' : ''}>All Categories</option>
-                <option value="Electronics" ${categoryFilter === 'Electronics' ? 'selected' : ''}>Electronics</option>
-                <option value="Real Estate" ${categoryFilter === 'Real Estate' ? 'selected' : ''}>Real Estate</option>
-                <option value="Vehicles" ${categoryFilter === 'Vehicles' ? 'selected' : ''}>Vehicles</option>
-                <option value="Furniture" ${categoryFilter === 'Furniture' ? 'selected' : ''}>Furniture</option>
+                ${allCategories.map((c) => `<option value="${escapeHtml(c)}" ${categoryFilter === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
               </select>
 
               <select id="district-filter" class="bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded-xl py-2 px-3 outline-none focus:border-brand-green">
                 <option value="all" ${districtFilter === 'all' ? 'selected' : ''}>All Districts</option>
-                <option value="Gasabo" ${districtFilter === 'Gasabo' ? 'selected' : ''}>Gasabo</option>
-                <option value="Nyarugenge" ${districtFilter === 'Nyarugenge' ? 'selected' : ''}>Nyarugenge</option>
-                <option value="Kicukiro" ${districtFilter === 'Kicukiro' ? 'selected' : ''}>Kicukiro</option>
+                ${allDistricts.map((d) => `<option value="${escapeHtml(d)}" ${districtFilter === d ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('')}
               </select>
             </div>
 
-            <span class="text-xs text-gray-500 font-medium">Showing <strong class="text-gray-900" id="store-count">${filteredStores.length} Stores</strong></span>
+            <span class="text-xs text-gray-500 font-medium">Showing <strong class="text-gray-900" id="store-count">${filteredStores.length} ${filteredStores.length === 1 ? "Store" : "Stores"}</strong></span>
           </div>
 
           <!-- STORES GRID -->
           <div class="space-y-6" id="stores-list">
             ${filteredStores.length === 0 ? `
               <div class="bg-white rounded-2xl p-12 text-center border border-gray-200">
-                <i class="fa-solid fa-store-slash text-4xl text-gray-300 mb-3"></i>
-                <h3 class="font-bold text-gray-700 text-base mb-1">No verified stores found</h3>
-                <p class="text-xs text-gray-500">Try adjusting your search terms or filter criteria.</p>
+                ${loading ? `
+                  <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-300 mb-3"></i>
+                  <h3 class="font-bold text-gray-700 text-base mb-1">Loading verified sellers...</h3>
+                ` : `
+                  <i class="fa-solid fa-store-slash text-4xl text-gray-300 mb-3"></i>
+                  <h3 class="font-bold text-gray-700 text-base mb-1">No verified stores found</h3>
+                  <p class="text-xs text-gray-500">${stores.length ? 'Try adjusting your search terms or filter criteria.' : 'No sellers have been approved yet.'}</p>
+                `}
               </div>
             ` : filteredStores.map((store) => `
               <div class="store-card bg-white rounded-2xl p-5 shadow-sm border border-gray-200 transition hover:shadow-md">
@@ -155,26 +134,37 @@ export function renderStoresPage(container) {
                         ` : ''}
                       </div>
                       <div class="flex flex-wrap items-center gap-4 text-xs text-gray-600 mt-1">
-                        <span class="flex items-center gap-1 font-semibold text-gray-800">
-                          <i class="fa-solid fa-phone text-brand-green"></i> ${escapeHtml(store.phone)}
-                        </span>
+                        ${store.phone ? `
+                          <span class="flex items-center gap-1 font-semibold text-gray-800">
+                            <i class="fa-solid fa-phone text-brand-green"></i> ${escapeHtml(store.phone)}
+                          </span>
+                        ` : ''}
                         <span class="flex items-center gap-1">
                           <i class="fa-solid fa-location-dot text-brand-orange"></i> District: ${escapeHtml(store.district)}
                         </span>
                         <span class="flex items-center gap-1">
-                          <i class="fa-solid fa-box text-gray-400"></i> ${store.products.length} Products Listed
+                          <i class="fa-solid fa-box text-gray-400"></i> ${store.productCount} ${store.productCount === 1 ? "Product" : "Products"} Listed
                         </span>
+                        ${store.memberSinceYear ? `
+                          <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-check text-gray-400"></i> Member since ${store.memberSinceYear}
+                          </span>
+                        ` : ''}
                       </div>
                     </div>
                   </div>
 
                   <div class="flex items-center gap-2 shrink-0">
-                    <a href="tel:${store.phone.replace(/\s+/g, '')}" class="bg-brand-green text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-green-800 transition flex items-center gap-1.5 shadow">
-                      <i class="fa-solid fa-phone text-xs"></i> Call Seller
-                    </a>
-                    <a href="https://wa.me/${store.phone.replace(/[^0-9]/g, '')}" target="_blank" rel="noopener noreferrer" class="bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-emerald-700 transition flex items-center gap-1.5 shadow">
-                      <i class="fa-brands fa-whatsapp text-xs"></i> WhatsApp
-                    </a>
+                    ${store.phone ? `
+                      <a href="tel:${escapeHtml(store.phone.replace(/\s+/g, ''))}" class="bg-brand-green text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-green-800 transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-phone text-xs"></i> Call Seller
+                      </a>
+                      <a href="https://wa.me/${escapeHtml(store.phone.replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener noreferrer" class="bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-emerald-700 transition flex items-center gap-1.5 shadow">
+                        <i class="fa-brands fa-whatsapp text-xs"></i> WhatsApp
+                      </a>
+                    ` : `
+                      <span class="text-xs text-gray-400 italic">No contact number on file</span>
+                    `}
                   </div>
                 </div>
 
@@ -188,23 +178,30 @@ export function renderStoresPage(container) {
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    ${store.products.map((p) => `
+                    ${store.products.length === 0 ? `
+                      <p class="col-span-full text-xs text-gray-500 text-center py-4">This seller has no active listings right now.</p>
+                    ` : store.products.map((p) => `
                       <div class="bg-gray-50 rounded-xl p-3 border border-gray-100 hover:border-brand-green transition cursor-pointer flex flex-col justify-between group product-item-btn" data-id="${p.id}">
                         <div>
                           <div class="h-32 rounded-lg bg-white overflow-hidden flex items-center justify-center p-2 mb-2 relative border border-gray-100">
-                            ${p.discount ? `<span class="absolute top-1.5 left-1.5 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded">${p.discount}</span>` : ''}
-                            <img src="${p.image}" alt="${escapeHtml(p.title)}" class="max-h-full object-contain group-hover:scale-105 transition transform">
+                            ${p.image
+                              ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" class="max-h-full object-contain group-hover:scale-105 transition transform">`
+                              : '<i class="fa-solid fa-image text-2xl text-gray-300"></i>'}
                           </div>
                           <h4 class="text-xs font-bold text-gray-800 line-clamp-2 mb-1 group-hover:text-brand-green">${escapeHtml(p.title)}</h4>
                         </div>
                         <div>
                           <div class="flex items-baseline gap-1.5 mt-2">
-                            <span class="font-black text-sm text-brand-dark">RWF ${p.price.toLocaleString()}</span>
-                            ${p.wasPrice ? `<span class="text-[10px] text-gray-400 line-through">RWF ${p.wasPrice.toLocaleString()}</span>` : ''}
+                            <span class="font-black text-sm text-brand-dark">${escapeHtml(p.currency || 'RWF')} ${Number(p.price).toLocaleString()}</span>
                           </div>
-                          <div class="flex items-center text-[9px] text-yellow-400 mt-1">
-                            <i class="fa-solid fa-star"></i> <span class="font-bold text-gray-700 ml-1">${p.rating}</span>
-                            <span class="text-gray-400 ml-1">(${p.reviews})</span>
+                          <!-- The mockup showed a star rating here. Product has no
+                               rating or review column, so there is nothing to render
+                               that would not be invented; category and location are
+                               the real facts we hold about a listing. -->
+                          <div class="flex items-center gap-1 text-[9px] text-gray-500 mt-1">
+                            <i class="fa-solid fa-tag text-gray-300"></i>
+                            <span>${escapeHtml(p.category || 'Uncategorised')}</span>
+                            ${p.district ? `<span class="text-gray-300">|</span><span>${escapeHtml(p.district)}</span>` : ''}
                           </div>
                         </div>
                       </div>

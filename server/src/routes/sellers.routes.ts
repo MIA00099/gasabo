@@ -8,6 +8,92 @@ import { notifyAdmins } from '../utils/notify.js';
 
 export const sellersRouter = Router();
 
+// GET /api/sellers/public - the storefront seller directory (stores page).
+//
+// Unauthenticated on purpose: this is the public "Verified Sellers & Stores"
+// listing, and a shopper has to be able to browse sellers and reach them
+// before they have an account.
+//
+// It is a separate endpoint rather than an unauthenticated branch of GET /
+// below, because that one returns the full admin record - email, status,
+// lastLoginAt, every listing regardless of state. Selecting fields explicitly
+// here means a column added to Seller later cannot silently become public:
+//
+//   exposed   businessName, district, contactPhone, joined date, listings
+//   withheld  email, passwordHash, status, lastLoginAt
+//
+// contactPhone IS exposed - this is a classifieds marketplace where buyers
+// contact sellers directly, the mockups' store cards show it, and sellers
+// publish it on every listing already. Nothing else identifying is.
+//
+// MUST stay declared above '/:id' style routes so "public" is not read as an id.
+sellersRouter.get('/public', async (_req, res) => {
+  const sellers = await prisma.seller.findMany({
+    // Suspended sellers are not shown, and neither are their listings.
+    where: { status: 'ACTIVE' },
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      businessName: true,
+      contactPhone: true,
+      district: true,
+      createdAt: true,
+      products: {
+        // Only what the marketplace itself shows - a pending or rejected
+        // listing must not become visible by way of the seller directory.
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          currency: true,
+          images: true,
+          district: true,
+          category: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+
+  res.json({
+    sellers: sellers.map((s) => {
+      const products = s.products.map((p) => ({
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        currency: p.currency,
+        district: p.district,
+        category: p.category?.name ?? null,
+        categoryId: p.category?.id ?? null,
+        image: (() => {
+          try {
+            const parsed = JSON.parse(p.images || '[]');
+            return Array.isArray(parsed) && parsed.length ? String(parsed[0]) : null;
+          } catch {
+            return null;
+          }
+        })(),
+      }));
+
+      // Distinct categories this seller actually trades in, for the store
+      // card's "Categories Offered" chips.
+      const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+
+      return {
+        id: s.id,
+        name: s.businessName,
+        phone: s.contactPhone,
+        district: s.district,
+        memberSince: s.createdAt,
+        productCount: products.length,
+        categories,
+        products,
+      };
+    }),
+  });
+});
+
 sellersRouter.get('/', requireAuth, requirePermission('SELLERS'), async (_req, res) => {
   const sellers = await prisma.seller.findMany({
     orderBy: { createdAt: 'desc' },

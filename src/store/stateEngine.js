@@ -420,6 +420,27 @@ class StateEngine {
     });
   }
 
+  // The uploaded file becomes the category's iconUrl. It goes through the
+  // same /uploads endpoint product photos use, so it lands in Supabase
+  // Storage in production and on local disk in a bare checkout - a category
+  // icon written to Railway's ephemeral filesystem would vanish on redeploy.
+  async uploadCategoryIcon(file) {
+    return this._run('categoryIconUpload', async () => {
+      const { url } = await api.uploadFile('/uploads', file);
+      return url;
+    });
+  }
+
+  async updateCategoryIcon(categoryId, icon) {
+    return this._run('categories', async () => {
+      const { category } = await api.patch(`/categories/${categoryId}/icon`, { icon });
+      this.data.categories = this.data.categories.map((c) => (c.id === category.id ? category : c));
+      this.notify();
+      return category;
+    });
+  }
+
+
   async requestDeleteCategory(categoryId) {
     return this._run('approvalRequests', async () => {
       const { request } = await api.post(`/categories/${categoryId}/request-delete`, {});

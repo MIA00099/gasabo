@@ -2,6 +2,7 @@
  * KIGALI MARKET - Seller Registration, Authentication & Seller Dashboard
  * Ported to match delivered mockups (post-ad.html, stores.html, etc.).
  */
+import { categoryIconText } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { renderLoginView } from '../../components/LoginView.js';
 
@@ -141,7 +142,7 @@ function renderSellerDashboardView(container, sellerUser) {
                       <label class="block text-xs font-bold text-gray-800 mb-1">Category</label>
                       <div class="relative">
                         <select id="p-category" class="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
-                          ${state.categories.map(c => `<option value="${c.id}" ${c.id===productFormValues.category?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}
+                          ${state.categories.map(c => `<option value="${c.id}" ${c.id===productFormValues.category?'selected':''}>${categoryIconText(c.icon)} ${escapeHtml(c.name)}</option>`).join('')}
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                           <i class="fa-solid fa-chevron-down text-xs"></i>

@@ -1,3 +1,4 @@
+import { renderCategoryIcon } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 
@@ -105,7 +106,7 @@ export function renderProductsPage(container) {
                             ? 'bg-brand-green text-white rounded-r-lg mr-2 font-bold'
                             : 'hover:bg-gray-50'
                         }">
-                        <span class="w-5 text-center">${c.icon || '<i class="fa-solid fa-tag"></i>'}</span> ${escapeHtml(c.name)}
+                        <span class="w-5 text-center">${renderCategoryIcon(c.icon, { size: 18, alt: c.name })}</span> ${escapeHtml(c.name)}
                       </button>
                     </li>
                   `).join('')}

@@ -4,7 +4,20 @@ import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 import { renderSellerPortal } from './SellerPortal.js';
 import { renderStoresPage } from './StoresPage.js';
 import { renderProductsPage } from './ProductsPage.js';
+import { renderCategoryIcon } from '../../utils/categoryIcon.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
+
+// Grey circles, no labels. Deliberately not category-shaped placeholder
+// objects: the previous version of this strip rendered invented names
+// (Motorcycles, Bicycles, Land & Plots) that no category ever matched, and
+// a skeleton built the same way would reintroduce exactly that - text on
+// screen that stands for nothing in the database.
+const SKELETON_TILES = Array.from({ length: 5 }, () => `
+  <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1">
+      <div class="w-10 h-10 rounded-full bg-gray-100 animate-pulse"></div>
+      <div class="h-2 w-10 rounded bg-gray-100 animate-pulse"></div>
+  </div>
+`).join('');
 
 let flashClockTimer = null;
 let totalCountdownSeconds = (2 * 3600) + (45 * 60) + 30;
@@ -163,91 +176,44 @@ export function renderMarketplaceView(container) {
             </section>
 
             <!-- Category Bar -->
+            <!--
+              Built from state.categories - the rows an admin actually manages.
+              This strip used to be ten hardcoded tiles (Products, Cars,
+              Motorcycles, Bicycles, Land & Plots, Furniture, Electronics,
+              Home & Living, Fashion, More) that matched no category in the
+              database. Nine of them fell through the click handler's else
+              branch and just opened the unfiltered catalog, so Motorcycles,
+              Bicycles and Fashion all showed the identical grid; the tenth
+              filtered on the literal id 'cat_vehicles', which does not exist -
+              real ids are uuids - so "Cars" reliably showed nothing at all.
+            -->
             <section class="compact-container mt-[-15px] relative z-20 shrink-0">
                 <div class="flex justify-between items-center bg-white rounded-2xl shadow-md p-2 overflow-x-auto no-scrollbar gap-1 border border-gray-100">
-                    
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn ${filters.selectedCategory === 'all' ? 'opacity-100' : 'opacity-80'}" data-cat="all">
+
+                    <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn ${filters.selectedCategory === 'all' || !filters.selectedCategory ? 'opacity-100' : 'opacity-80'}" data-cat="all">
                         <div class="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center text-lg shadow-inner group-hover:bg-green-800 transition">
                             <i class="fa-solid fa-border-all"></i>
                         </div>
                         <span class="text-[9px] font-bold text-center leading-tight">All<br>Categories</span>
                     </div>
 
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="products">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-basket-shopping text-orange-500"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Products</span>
-                    </div>
+                    ${state.categories.length === 0 && !categoriesAttempted ? SKELETON_TILES : state.categories.map((c) => `
+                      <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn ${filters.selectedCategory === c.id ? 'opacity-100' : 'opacity-80'}" data-cat="${escapeHtml(c.id)}" title="${escapeHtml(c.name)}">
+                          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110 ${filters.selectedCategory === c.id ? 'ring-2 ring-brand-green' : ''}">
+                              ${renderCategoryIcon(c.icon, { size: 26, alt: c.name })}
+                          </div>
+                          <span class="text-[9px] font-semibold text-center text-gray-700 leading-tight line-clamp-2">${escapeHtml(c.name)}</span>
+                      </div>
+                    `).join('')}
 
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="vehicles">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-car text-gray-800"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Cars</span>
-                    </div>
-                    
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="motorcycles">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-motorcycle text-green-700"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Motorcycles</span>
-                    </div>
-
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="bicycles">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-bicycle text-gray-600"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Bicycles</span>
-                    </div>
-
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="realestate">
+                    <!-- Real estate is its own portal rather than a Category row,
+                         so it stays hardcoded - unlike the tiles above it, this
+                         one goes somewhere real. -->
+                    <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn" data-cat="realestate">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
                             <i class="fa-solid fa-house text-stone-600"></i>
                         </div>
                         <span class="text-[9px] font-semibold text-center text-gray-700">Real Estate</span>
-                    </div>
-
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="land">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-location-dot text-brand-green"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Land & Plots</span>
-                    </div>
-
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="furniture">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-couch text-yellow-600"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Furniture</span>
-                    </div>
-
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="electronics">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-tv text-gray-800"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Electronics</span>
-                    </div>
-
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="home">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-lamp text-orange-400"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700 whitespace-nowrap">Home & Living</span>
-                    </div>
-
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="fashion">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-shirt text-green-600"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Fashion</span>
-                    </div>
-                    
-                    <div class="flex flex-col items-center gap-1 w-[8%] min-w-[60px] p-1 cursor-pointer group cat-tile-btn" data-cat="all">
-                        <div class="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-sm shadow-inner group-hover:bg-white transition">
-                            <i class="fa-solid fa-ellipsis"></i>
-                        </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-800">More</span>
                     </div>
                 </div>
             </section>
@@ -560,15 +526,27 @@ export function renderMarketplaceView(container) {
     container.querySelectorAll('.cat-tile-btn').forEach((tile) => {
       tile.addEventListener('click', () => {
         const cat = tile.dataset.cat;
-        if (cat === 'vehicles') {
-          stateEngine.setUI({ marketplaceTab: 'catalog', marketplaceFilters: { ...filters, selectedCategory: 'cat_vehicles' } });
-        } else if (cat === 'stores') {
-          stateEngine.setUI({ marketplaceTab: 'stores' });
-        } else if (cat === 'realestate') {
+
+        if (cat === 'realestate') {
           stateEngine.setPortal('realestate');
-        } else {
-          stateEngine.setUI({ marketplaceTab: 'catalog' });
+          return;
         }
+
+        // Every other tile carries a real Category id (or 'all'), so the
+        // filter it sets is one the products endpoint understands. The old
+        // handler recognised three literal strings and dropped everything
+        // else into an unfiltered catalog, which is why nine of the ten
+        // tiles showed the same grid.
+        const selectedCategory = cat === 'all' ? 'all' : cat;
+        stateEngine.setUI({
+          marketplaceTab: 'catalog',
+          marketplaceFilters: { ...filters, selectedCategory },
+        });
+        stateEngine.loadProducts({
+          category: cat === 'all' ? undefined : cat,
+          search: filters.searchQuery || undefined,
+          district: filters.selectedDistrict,
+        }).catch(() => {});
       });
     });
 

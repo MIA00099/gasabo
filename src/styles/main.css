@@ -10,10 +10,10 @@
 /* The mockups' page gutter. Every ported screen uses it. */
 @layer components {
   .compact-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 1rem;
     width: 100%;
+    max-width: var(--page-max);
+    margin: 0 auto;
+    padding-inline: var(--page-gutter);
   }
 
   .hero-bg {
@@ -43,29 +43,55 @@
   .view-section.active { display: flex; flex-direction: column; }
 }
 
+/* ---------------------------------------------------------------------------
+   Page shell: full-bleed, and the document itself scrolls.
+
+   This block used to read `html, body { height: 100vh; overflow: hidden;
+   display: flex }`, which locked the whole app to exactly one screen. #app
+   below was a flex child of that with `overflow: hidden`, so anything past
+   the first viewport was clipped and unreachable - on a 375px phone the
+   homepage could not be scrolled at all, and `window.scrollTo` (used when
+   opening a related listing) had nothing to scroll.
+
+   100vh was the wrong unit for it besides: on mobile Safari and Chrome it
+   resolves against the viewport *including* the retracting URL bar, so the
+   bottom of every screen sat under browser chrome.
+
+   Now the document scrolls normally and the shell has no fixed height.
+   --------------------------------------------------------------------------- */
+html {
+  box-sizing: border-box;
+  /* Nothing may scroll sideways. Anything genuinely wider than the screen
+     (data tables, the category rail) scrolls inside its own container. */
+  overflow-x: hidden;
+}
+
 html, body {
   background-color: #F8F9FA;
   color: #333;
-  height: 100vh;
+  width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+}
+
+body {
+  min-height: 100vh;
+  /* dvh tracks the viewport as mobile browser chrome retracts; the vh line
+     above stays as the fallback for browsers without it. */
+  min-height: 100dvh;
 }
 
 #app {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  /* Plain block flow. As a fixed-height flex child with hidden overflow this
+     was the element doing the clipping. */
+  display: block;
+  width: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 #app-container {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  width: 100%;
 }
 
 #view-home {
@@ -129,6 +155,22 @@ html, body {
 }
 
 :root {
+  /* ---- Page width -------------------------------------------------------
+     Every centred container in this file and in the views resolves its width
+     from these two, so the whole site changes shape from one place.
+
+     --page-max: 100% is full-bleed - content runs to both screen edges with
+     no dead margin, which is what a marketplace grid wants. Set it to a
+     length (e.g. 1400px) to put the boxed layout back.
+
+     --page-gutter is the breathing room between content and the screen edge.
+     0 is edge-to-edge. Long lines of body copy are hard to read when they
+     run the full width of a wide monitor, so raise this (or --page-max) if
+     that becomes a complaint on desktop.
+     --------------------------------------------------------------------- */
+  --page-max: 100%;
+  --page-gutter: 0px;
+
   /* ---------------------------------------------------------------------
      Brand palette, taken from the delivered mockups (nmm/*.html
      tailwind.config). These are the authority - earlier values were an
@@ -225,7 +267,12 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   font-size: var(--font-body);
-  overflow-x: hidden;
+  /* No overflow declared here on purpose. html above owns the horizontal
+     clip and the vertical scroll. Setting overflow-x on body as well makes
+     body a second scroll container (per spec the other axis is forced to a
+     used value of auto), which is what broke position:sticky and
+     window.scrollTo before, and it puts a second scrollbar gutter inside
+     the page so content stops short of the right edge. */
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -289,12 +336,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .main-navbar {
   background: var(--surface);
   border-bottom: 1px solid var(--border-color);
-  /* Fixed rather than sticky: body has overflow-x:hidden (below), which per
-     spec forces overflow-y to a used value of auto, turning body into its
-     own scroll container and breaking position:sticky here (it was scrolling
-     away with the page instead of staying pinned). Fixed positioning is
-     immune to that. main.js compensates by padding #app by this navbar's
-     actual rendered height, since fixed removes it from normal flow. */
+  /* Fixed rather than sticky. This originally worked around body being its
+     own scroll container, which broke position:sticky here; the document is
+     the scroller again now, so sticky would work - but this bar is shared
+     with the admin and real-estate screens, and fixed behaves identically
+     for a bar pinned at top:0. Left as is rather than churn those screens.
+     main.js compensates by padding #app by this navbar's rendered height,
+     since fixed removes it from normal flow. */
   position: fixed;
   top: 0;
   left: 0;
@@ -326,7 +374,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 7px 24px;
 }
@@ -372,7 +420,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    between two fixed-width flanks.
    --------------------------------------------------------------------------- */
 .nav-main-bar {
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 12px 24px;
   display: flex;
@@ -560,7 +608,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   align-items: center;
   gap: 1rem;
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -647,7 +695,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .km-hero-inner {
   position: relative;
   z-index: 1;
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 3.5rem 1.5rem;
   display: grid;
@@ -713,7 +761,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    Flash Deals - dark countdown panel beside a rail of discounted listings.
    --------------------------------------------------------------------------- */
 .flash-wrap {
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 0 auto 3rem auto;
   padding: 0 1.5rem;
 }
@@ -808,7 +856,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 900px) {
   .mobile-tabbar {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    /* minmax(0, 1fr), not 1fr. A bare 1fr is minmax(auto, 1fr), and that
+       auto minimum refuses to shrink a column below its content - the five
+       labels needed 65px each, so the bar measured 334px on a 320px phone
+       and dragged the whole page into horizontal scroll. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: end;
     position: fixed;
     left: 0;
@@ -821,6 +873,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     z-index: 1100;
   }
   .mtab {
+    min-width: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -864,7 +918,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    any width, the way the spec draws it.
    --------------------------------------------------------------------------- */
 .cat-rail-wrap {
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 0 auto 2.5rem auto;
   padding: 0 1.5rem;
 }
@@ -1077,7 +1131,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-bottom: 1px solid var(--border-color);
 }
 .trust-bar-inner {
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 1.15rem 1.5rem;
   display: grid;
@@ -1363,7 +1417,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .cinematic-hero-content {
   position: relative;
   z-index: 2;
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 0 auto;
   width: 100%;
   padding: 0 2rem;
@@ -1379,7 +1433,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .hero-bottom-carousel {
   position: relative;
   z-index: 2;
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 3rem auto 0;
   width: 100%;
   padding: 0 2rem;
@@ -2030,7 +2084,7 @@ footer a:hover {
 }
 
 .nav-sub-container {
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -2137,7 +2191,7 @@ footer a:hover {
 }
 
 .home-hero-container {
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1.1fr 1fr;
@@ -2285,7 +2339,7 @@ footer a:hover {
 
 /* SECTION CONTAINER WRAPPER */
 .section-wrapper {
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: var(--space-6) var(--space-3);
 }
@@ -2316,7 +2370,7 @@ footer a:hover {
 }
 
 .footer-inner-grid {
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
@@ -2325,7 +2379,7 @@ footer a:hover {
 }
 
 .footer-bottom-bar {
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding-top: var(--space-3);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -2458,7 +2512,7 @@ footer a:hover {
 }
 
 .large-footer-container {
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 0 auto;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1.2fr;
@@ -2577,7 +2631,7 @@ footer a:hover {
 }
 
 .slim-sticky-inner {
-  max-width: 1280px;
+  max-width: var(--page-max);
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
@@ -2983,7 +3037,7 @@ th.tbl-actions-col {
 }
 
 .adm-main-inner {
-  max-width: 1300px;
+  max-width: var(--page-max);
   margin: 0 auto;
 }
 
@@ -3606,3 +3660,43 @@ select.glass-input-field option {
 
 
 
+
+/* ---------------------------------------------------------------------------
+   Overflow safety net.
+
+   With the page running edge-to-edge there is no longer a 1400px container
+   absorbing anything slightly too wide, so a single oversized asset is enough
+   to push the whole layout sideways. These are the usual culprits.
+   --------------------------------------------------------------------------- */
+img,
+video,
+iframe,
+embed,
+object {
+  max-width: 100%;
+}
+
+/* No blanket `height: auto` here. The usual img{max-width:100%;height:auto}
+   pairing breaks this codebase: `img:not([width]):not([height])` outranks a
+   Tailwind `.h-9` on specificity, so it overrode the sizing on every image
+   styled by class - the header logo went from 36px tall to 375px wide and
+   shoved the wordmark off the side of the screen. max-width above is the
+   part that prevents overflow; height stays with whatever styles the
+   element. */
+
+/* Long unbroken strings - a pasted URL in a listing description, an email
+   address in a seller card - are a common source of horizontal overflow on
+   narrow screens. */
+p,
+h1, h2, h3, h4, h5, h6,
+li,
+td, th,
+figcaption {
+  overflow-wrap: break-word;
+}
+
+/* A table is wider than a phone by nature. It scrolls inside its own box
+   rather than taking the page with it. */
+table {
+  max-width: 100%;
+}

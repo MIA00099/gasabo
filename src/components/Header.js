@@ -170,7 +170,12 @@ export function renderHeaderHtml(ctx) {
 
     <!-- Navigation Bar -->
     <nav class="bg-brand-dark text-white flex-none">
-      <div class="compact-container flex items-center h-10">
+      <!-- overflow-x-auto: eight nav items plus the Post an Ad button cannot
+           fit a 320px phone, and with the page running edge-to-edge there is
+           no container margin left to absorb the difference - the row was
+           pushing the whole document 13px wider than the screen. It scrolls
+           inside itself now, the same way the category rail below does. -->
+      <div class="compact-container flex items-center h-10 overflow-x-auto no-scrollbar">
 
         <button type="button" id="nav-all-categories-2"
           class="bg-brand-green h-full px-4 flex items-center gap-2 cursor-pointer w-48 mr-4 shrink-0">

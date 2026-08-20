@@ -227,20 +227,26 @@ export function renderMarketplaceView(container) {
                                 <button type="button" id="hero-explore-ads-btn" class="bg-white border-2 border-brand-dark text-brand-dark font-semibold py-2 px-6 rounded-md hover:bg-gray-50 transition shadow-sm text-sm">Explore Ads</button>
                             </div>
 
-                            <div class="flex gap-4 pt-3 border-t border-gray-300/50">
-                                <div class="flex items-center gap-1.5">
-                                    <div class="text-brand-orange"><i class="fa-solid fa-shield-halved text-lg"></i></div>
-                                    <div class="text-[9px] leading-tight"><p class="font-bold text-brand-dark">Secure Payments</p><p class="text-gray-600">100% Safe &amp; Secure</p></div>
-                                </div>
-                                <div class="flex items-center gap-1.5">
-                                    <div class="text-brand-green"><i class="fa-solid fa-certificate text-lg"></i></div>
-                                    <div class="text-[9px] leading-tight"><p class="font-bold text-brand-dark">Verified Sellers</p><p class="text-gray-600">Trusted</p></div>
-                                </div>
-                                <div class="flex items-center gap-1.5">
-                                    <div class="text-brand-dark"><i class="fa-solid fa-truck-fast text-lg"></i></div>
-                                    <div class="text-[9px] leading-tight"><p class="font-bold text-brand-dark">Fast Delivery</p><p class="text-gray-600">Across Rwanda</p></div>
-                                </div>
-                            </div>
+                            <!-- Was the Secure Payments / Verified Sellers /
+                                 Fast Delivery badge row. Same shape as the
+                                 header search so the two read as one control
+                                 in two places, and submitting either lands on
+                                 the same filtered catalog. -->
+                            <form id="hero-search-form" role="search"
+                              class="flex rounded-full border-2 border-brand-green overflow-hidden h-11 bg-white shadow-sm mt-1 w-full max-w-xl">
+                                <button type="button" id="hero-search-cat"
+                                  class="bg-gray-50 px-3 text-xs text-gray-600 border-r border-gray-200 items-center gap-1 hover:bg-gray-100 hidden sm:flex whitespace-nowrap shrink-0">
+                                    All Categories <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                                </button>
+                                <label class="sr-only" for="hero-search-input">Search listings</label>
+                                <input id="hero-search-input" type="text" autocomplete="off"
+                                  placeholder="Search for products, vehicles, properties and more..."
+                                  class="flex-1 px-3 outline-none text-xs min-w-0 bg-transparent">
+                                <button type="submit" aria-label="Search"
+                                  class="bg-brand-green text-white px-6 hover:bg-green-800 transition-colors shrink-0">
+                                    <i class="fa-solid fa-search text-sm"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
 
@@ -637,6 +643,32 @@ export function renderMarketplaceView(container) {
     startHeroSlider(container);
 
     // Event Bindings
+    // Submitting the hero search does what the header search does: put the
+    // query in the shared filter, switch to the catalog and refetch. Both
+    // read the same state, so whichever one is used the other shows the query
+    // afterwards rather than the two disagreeing.
+    container.querySelector('#hero-search-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = container.querySelector('#hero-search-input')?.value.trim() || '';
+      const current = stateEngine.getState().ui.marketplaceFilters || {};
+
+      stateEngine.setUI({
+        marketplaceTab: 'catalog',
+        marketplaceFilters: { ...current, searchQuery: query },
+      });
+      stateEngine.loadProducts({
+        search: query || undefined,
+        category: current.selectedCategory,
+        district: current.selectedDistrict,
+      }).catch(() => {});
+    });
+
+    // The category chip is the same affordance as the header's - it opens the
+    // full catalog, where the real category filter lives.
+    container.querySelector('#hero-search-cat')?.addEventListener('click', () => {
+      stateEngine.setUI({ marketplaceTab: 'catalog' });
+    });
+
     container.querySelector('#hero-shop-now-btn')?.addEventListener('click', () => {
       stateEngine.setUI({ marketplaceTab: 'catalog' });
     });

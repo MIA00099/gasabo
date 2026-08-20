@@ -192,17 +192,32 @@ class StateEngine {
   // shared link or a search result nothing has fetched a grid, so the
   // in-memory filter had nothing to match and the row vanished.
   async loadRelatedProducts(productId) {
-    if (!productId || this.data.relatedProductsFor === productId) return this.data.relatedProducts;
+    if (!productId) return this.data.relatedProducts;
+    if (this.data.relatedProductsFor === productId) return this.data.relatedProducts;
 
-    return this._run('relatedProducts', async () => {
-      const { products } = await api.get(`/products/${encodeURIComponent(productId)}/related`);
-      // The reader may have moved on while this was in flight.
-      if (this.data.route.id !== productId) return this.data.relatedProducts;
-      this.data.relatedProducts = products;
-      this.data.relatedProductsFor = productId;
-      this.notify();
-      return products;
-    });
+    // In-flight guard, and it is load-bearing rather than an optimisation.
+    // _run() flips its loading flag and calls notify() BEFORE it awaits, and
+    // this loader is called from render(). Without this the notify re-enters
+    // render synchronously, which calls this again, which notifies again -
+    // recursion until the stack blows, with a fetch fired at every level.
+    // The visible symptom is a related row stuck on its skeletons forever,
+    // because relatedProductsFor is never reached.
+    if (this._relatedInFlight === productId) return this.data.relatedProducts;
+    this._relatedInFlight = productId;
+
+    try {
+      return await this._run('relatedProducts', async () => {
+        const { products } = await api.get(`/products/${encodeURIComponent(productId)}/related`);
+        // The reader may have moved on while this was in flight.
+        if (this.data.route.id !== productId) return this.data.relatedProducts;
+        this.data.relatedProducts = products;
+        this.data.relatedProductsFor = productId;
+        this.notify();
+        return products;
+      });
+    } finally {
+      this._relatedInFlight = null;
+    }
   }
 
   async loadRouteListing(route = this.data.route) {

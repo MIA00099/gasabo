@@ -4,6 +4,7 @@
 import { stateEngine } from '../../store/stateEngine.js';
 import { makeAccessibleModal } from '../../components/modalA11y.js';
 import { renderCategoryIcon } from '../../utils/categoryIcon.js';
+import { openImageLightbox } from '../../components/imageLightbox.js';
 
 export function renderMarketplaceAdmin(container) {
   function render() {
@@ -374,52 +375,9 @@ export function renderMarketplaceAdmin(container) {
   render();
 }
 
-// Approval decisions were being made off an 84x84px thumbnail with no way to
-// see the rest of a listing's images - a moderator asked for a real way to
-// inspect the photo(s) before approving/rejecting. Appended to document.body
-// (not the module's own container) so it survives the next stateEngine
-// re-render, which would otherwise wipe out an open overlay mid-view.
-function openImageLightbox(images, title) {
-  let idx = 0;
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.88); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem;';
-
-  function paint() {
-    overlay.innerHTML = `
-      <div style="position: relative; max-width: min(90vw, 900px); max-height: 90vh; display: flex; flex-direction: column; align-items: center; gap: 0.85rem;">
-        <button id="lightbox-close-btn" title="Close" style="position: absolute; top: -46px; right: 0; background: rgba(255,255,255,0.12); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 1.1rem; cursor: pointer;">✕</button>
-        <img src="${images[idx]}" alt="${escapeHtml(title)}" style="max-width: 100%; max-height: 75vh; border-radius: 12px; object-fit: contain; background: #0F172A; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
-        <div style="color: #fff; font-weight: 700; font-size: 0.95rem; text-align: center;">${escapeHtml(title)}</div>
-        ${images.length > 1 ? `
-          <div style="display: flex; align-items: center; gap: 1rem; color: #fff; font-size: 0.85rem;">
-            <button id="lightbox-prev-btn" style="background: rgba(255,255,255,0.12); color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1.1rem;">‹</button>
-            <span>${idx + 1} / ${images.length}</span>
-            <button id="lightbox-next-btn" style="background: rgba(255,255,255,0.12); color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1.1rem;">›</button>
-          </div>
-        ` : ''}
-      </div>
-    `;
-    overlay.querySelector('#lightbox-close-btn').addEventListener('click', close);
-    overlay.querySelector('#lightbox-prev-btn')?.addEventListener('click', () => { idx = (idx - 1 + images.length) % images.length; paint(); });
-    overlay.querySelector('#lightbox-next-btn')?.addEventListener('click', () => { idx = (idx + 1) % images.length; paint(); });
-  }
-
-  function onKey(e) {
-    if (e.key === 'Escape') close();
-    else if (e.key === 'ArrowLeft' && images.length > 1) { idx = (idx - 1 + images.length) % images.length; paint(); }
-    else if (e.key === 'ArrowRight' && images.length > 1) { idx = (idx + 1) % images.length; paint(); }
-  }
-
-  function close() {
-    document.removeEventListener('keydown', onKey);
-    overlay.remove();
-  }
-
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-  document.addEventListener('keydown', onKey);
-  paint();
-  document.body.appendChild(overlay);
-}
+// The lightbox this module used to define lives in
+// src/components/imageLightbox.js now - the storefront gallery needs the
+// same viewer behind its expand control, and two copies would drift.
 
 function escapeHtml(str) {
   if (!str) return '';

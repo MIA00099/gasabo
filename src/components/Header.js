@@ -85,7 +85,7 @@ export function renderHeaderHtml(ctx) {
 
         <div class="flex items-center gap-2 cursor-pointer" id="nav-brand-home" role="button" tabindex="0"
           aria-label="Kigali Market - home">
-          <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo.svg'}" alt=""
+          <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo-km.png'}" alt=""
             class="h-9 md:h-10 w-auto object-contain shrink-0">
           <div class="leading-none">
             <h1 class="text-xl font-black text-brand-dark tracking-tight">${isRealEstate ? 'GASABO' : 'KIGALI'}</h1>

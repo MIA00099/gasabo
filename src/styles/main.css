@@ -2529,7 +2529,9 @@ footer a:hover {
 
 .footer-logo-img {
   height: 38px;
-  width: 38px;
+  /* auto, not 38px: the KM mark is about 1.74:1, and a square box letterboxed
+     it down to 22px tall inside 38px of empty space. */
+  width: auto;
   object-fit: contain;
 }
 
@@ -2656,7 +2658,7 @@ footer a:hover {
 
 .sticky-brand-logo {
   height: 24px;
-  width: 24px;
+  width: auto;
   object-fit: contain;
 }
 

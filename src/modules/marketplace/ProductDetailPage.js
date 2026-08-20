@@ -18,6 +18,7 @@
  */
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
+import { openImageLightbox } from '../../components/imageLightbox.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -129,25 +130,55 @@ export function renderProductDetailPage(container, product, handlers = {}) {
 
             <!-- LEFT: PRODUCT IMAGE GALLERY -->
             <div>
-              <div class="bg-gray-100 rounded-2xl h-64 md:h-72 flex items-center justify-center relative overflow-hidden mb-3 group shadow-lg">
+              <div class="bg-gray-100 rounded-2xl h-64 md:h-80 flex items-center justify-center relative overflow-hidden mb-3 group shadow-lg">
                 <img id="detail-main-img" src="${images[0]}" alt="${escapeHtml(product.title)}"
                   class="h-3/4 object-contain relative z-10 drop-shadow-2xl">
+
                 ${hasDiscount ? `
                   <div class="absolute top-4 right-4 bg-brand-orange text-white px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">-${pct}%</div>
                 ` : ''}
+
+                <!-- Opens the shared lightbox. A listing photo is the only
+                     thing a buyer has to judge condition by, and the inline
+                     frame caps out at 320px tall. -->
+                <button type="button" id="detail-zoom-btn"
+                  class="absolute bottom-3 right-3 z-20 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-brand-dark shadow-md flex items-center justify-center transition"
+                  aria-label="View ${escapeHtml(product.title)} full size">
+                  <i class="fa-solid fa-up-right-and-down-left-from-center text-xs"></i>
+                </button>
               </div>
 
               ${images.length > 1 ? `
-                <div class="flex gap-3 items-center justify-center">
-                  ${images.map((img, i) => `
-                    <button type="button" class="detail-thumb relative w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition ${i === 0 ? 'border-2 border-brand-green' : 'border-2 border-gray-300 opacity-60 hover:opacity-100'}"
-                      data-src="${img}" aria-label="Show image ${i + 1} of ${images.length}" aria-pressed="${i === 0}">
-                      <img src="${img}" alt="" class="h-3/4 object-contain relative z-10">
-                    </button>
-                  `).join('')}
+                <div class="flex items-center gap-2">
+                  <!-- Arrows scroll the strip rather than changing the main
+                       image: with more than four photos the later thumbnails
+                       are off-screen and were unreachable without a trackpad
+                       swipe. Hidden when everything already fits. -->
+                  <button type="button" id="thumb-prev"
+                    class="thumb-nav shrink-0 w-7 h-7 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green disabled:opacity-30 disabled:cursor-default flex items-center justify-center transition"
+                    aria-label="Scroll thumbnails left">
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                  </button>
+
+                  <div id="detail-thumb-strip" class="flex gap-3 items-center overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0 py-1">
+                    ${images.map((img, i) => `
+                      <button type="button" class="detail-thumb shrink-0 relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition ${i === 0 ? 'border-2 border-brand-green' : 'border-2 border-gray-300 opacity-60 hover:opacity-100'}"
+                        data-src="${img}" data-index="${i}"
+                        aria-label="Show photo ${i + 1} of ${images.length}" aria-pressed="${i === 0}">
+                        <img src="${img}" alt="" class="w-full h-full object-cover">
+                      </button>
+                    `).join('')}
+                  </div>
+
+                  <button type="button" id="thumb-next"
+                    class="thumb-nav shrink-0 w-7 h-7 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green disabled:opacity-30 disabled:cursor-default flex items-center justify-center transition"
+                    aria-label="Scroll thumbnails right">
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  </button>
                 </div>
               ` : ''}
             </div>
+
 
             <!-- RIGHT: PRODUCT DETAILS -->
             <div class="flex flex-col justify-start">
@@ -260,19 +291,88 @@ export function renderProductDetailPage(container, product, handlers = {}) {
     </div>
   `;
 
-  // Gallery thumbnails.
+  // ---- Gallery -----------------------------------------------------------
   const mainImg = container.querySelector('#detail-main-img');
-  container.querySelectorAll('.detail-thumb').forEach((thumb) => {
-    thumb.addEventListener('click', () => {
-      if (mainImg) mainImg.src = thumb.dataset.src;
-      container.querySelectorAll('.detail-thumb').forEach((t) => {
-        t.className = t.className
-          .replace('border-brand-green', 'border-gray-300 opacity-60 hover:opacity-100');
-        t.setAttribute('aria-pressed', 'false');
-      });
-      thumb.className = thumb.className
-        .replace('border-gray-300 opacity-60 hover:opacity-100', 'border-brand-green');
-      thumb.setAttribute('aria-pressed', 'true');
+  const strip = container.querySelector('#detail-thumb-strip');
+  const thumbs = [...container.querySelectorAll('.detail-thumb')];
+  let activeIndex = 0;
+
+  function selectImage(i) {
+    if (i < 0 || i >= images.length) return;
+    activeIndex = i;
+    if (mainImg) mainImg.src = images[i];
+
+    thumbs.forEach((t, n) => {
+      const on = n === i;
+      t.className = t.className
+        .replace('border-brand-green', 'border-gray-300 opacity-60 hover:opacity-100')
+        .replace('border-gray-300 opacity-60 hover:opacity-100', on ? 'border-brand-green' : 'border-gray-300 opacity-60 hover:opacity-100');
+      t.setAttribute('aria-pressed', String(on));
+    });
+
+    // Keep the selected thumbnail on screen when selection moves by keyboard
+    // or by the arrows, not only when it was clicked into view.
+    thumbs[i]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  }
+
+  thumbs.forEach((thumb) => {
+    thumb.addEventListener('click', () => selectImage(Number(thumb.dataset.index)));
+  });
+
+  // Left/Right move between photos while the strip has focus, which is what a
+  // row of images implies to anyone not using a mouse.
+  strip?.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const next = (activeIndex + (e.key === 'ArrowRight' ? 1 : -1) + images.length) % images.length;
+    selectImage(next);
+    thumbs[next]?.focus();
+  });
+
+  const prevBtn = container.querySelector('#thumb-prev');
+  const nextBtn = container.querySelector('#thumb-next');
+
+  function syncArrows() {
+    if (!strip || !prevBtn || !nextBtn) return;
+    // A strip that already fits has nothing to scroll, and two permanently
+    // dead arrows read as broken rather than as "no more photos".
+    const scrollable = strip.scrollWidth - strip.clientWidth > 2;
+    prevBtn.hidden = !scrollable;
+    nextBtn.hidden = !scrollable;
+    if (!scrollable) return;
+    prevBtn.disabled = strip.scrollLeft <= 1;
+    nextBtn.disabled = strip.scrollLeft >= strip.scrollWidth - strip.clientWidth - 1;
+  }
+
+  function scrollStrip(dir) {
+    if (!strip) return;
+    // Roughly one thumbnail plus its gap, so a press advances by a photo
+    // rather than an arbitrary distance.
+    const step = (thumbs[0]?.offsetWidth || 72) + 12;
+    strip.scrollBy({ left: dir * step * 2, behavior: 'smooth' });
+  }
+
+  prevBtn?.addEventListener('click', () => scrollStrip(-1));
+  nextBtn?.addEventListener('click', () => scrollStrip(1));
+  strip?.addEventListener('scroll', syncArrows, { passive: true });
+  // Three passes, because each catches a case the others miss:
+  //   now      - so the arrows are never briefly wrong, and so they are
+  //              still right where requestAnimationFrame is throttled
+  //              (background tab, hidden view) and never fires.
+  //   next frame - layout has settled and scrollWidth is final.
+  //   on load  - thumbnails arriving late change scrollWidth again.
+  syncArrows();
+  requestAnimationFrame(syncArrows);
+  thumbs.forEach((t) => {
+    const img = t.querySelector('img');
+    if (img && !img.complete) img.addEventListener('load', syncArrows, { once: true });
+  });
+  window.addEventListener('resize', syncArrows);
+
+  container.querySelector('#detail-zoom-btn')?.addEventListener('click', () => {
+    openImageLightbox(images, product.title, {
+      startIndex: activeIndex,
+      returnFocusTo: '#detail-zoom-btn',
     });
   });
 

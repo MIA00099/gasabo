@@ -74,6 +74,11 @@ class StateEngine {
       // is empty, and even once loaded the listing may be filtered out of the
       // current result set.
       routeListing: null,
+      // Siblings of routeListing, for the "More <category> Products" row.
+      // Keyed by listing id so a stale response from the previously viewed
+      // listing cannot paint under the current one.
+      relatedProducts: [],
+      relatedProductsFor: null,
       routeListingMissing: false,
       loading: {},
       error: null,
@@ -182,6 +187,24 @@ class StateEngine {
    * realEstate CMS payload rather than having their own endpoint, so they are
    * resolved from that once it is loaded.
    */
+  // Siblings come from the server rather than being filtered out of
+  // this.data.products, which only ever holds the last grid fetch. On a
+  // shared link or a search result nothing has fetched a grid, so the
+  // in-memory filter had nothing to match and the row vanished.
+  async loadRelatedProducts(productId) {
+    if (!productId || this.data.relatedProductsFor === productId) return this.data.relatedProducts;
+
+    return this._run('relatedProducts', async () => {
+      const { products } = await api.get(`/products/${encodeURIComponent(productId)}/related`);
+      // The reader may have moved on while this was in flight.
+      if (this.data.route.id !== productId) return this.data.relatedProducts;
+      this.data.relatedProducts = products;
+      this.data.relatedProductsFor = productId;
+      this.notify();
+      return products;
+    });
+  }
+
   async loadRouteListing(route = this.data.route) {
     if (!route || route.kind === ROUTE_HOME || !route.id) return null;
 

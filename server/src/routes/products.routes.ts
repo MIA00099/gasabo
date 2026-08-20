@@ -104,6 +104,44 @@ productsRouter.get('/pending', requireAuth, requireExclusivePermission('PRODUCT_
 // MUST stay declared below the literal '/mine' and '/pending' routes.
 // Express matches in registration order, so a '/:id' placed above them would
 // swallow both and treat "mine"/"pending" as an id.
+// GET /api/products/:id/related - the "More <category> Products" row on a
+// listing page.
+//
+// Server-side rather than filtering state.products in the browser, because
+// that array only holds whatever the last grid fetch returned. Opening a
+// listing from a shared link, a Google result, or the sitemap fetches the one
+// listing and nothing else, so the in-memory filter found no siblings and the
+// whole section silently disappeared - exactly the entry points where a
+// related row matters most.
+//
+// Declared above '/:id' for readability; there is no conflict either way,
+// since '/:id' matches a single path segment and cannot swallow two.
+productsRouter.get('/:id/related', async (req, res) => {
+  const product = await prisma.product.findFirst({
+    where: { id: req.params.id, status: 'ACTIVE' },
+    select: { id: true, categoryId: true },
+  });
+
+  // A missing or unapproved listing has no siblings to show. Empty list, not
+  // a 404 - the detail page above it already decides what a missing listing
+  // means, and this row must never be what breaks the page.
+  if (!product) return res.json({ products: [] });
+
+  const related = await prisma.product.findMany({
+    where: {
+      status: 'ACTIVE',
+      categoryId: product.categoryId,
+      id: { not: product.id },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 8,
+    include: { seller: true, category: true },
+  });
+
+  res.json({ products: related.map(serializeProduct) });
+});
+
+
 productsRouter.get('/:id', async (req, res) => {
   const product = await prisma.product.findFirst({
     where: { id: req.params.id, status: 'ACTIVE' },

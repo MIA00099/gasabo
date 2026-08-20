@@ -139,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
         activePortal,
         currentUser,
         currentLang,
-        searchQuery: state.ui.marketplaceFilters?.searchQuery || '',
         showAccountChip,
         showNotifBell,
         unreadNotifCount,
@@ -177,19 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         markAllRead: () => stateEngine.markAllNotificationsRead().catch(() => {}),
         markRead: (id) => stateEngine.markNotificationRead(id).catch(() => {}),
-        search: (query) => {
-          const filters = stateEngine.getState().ui.marketplaceFilters || {};
-          stateEngine.setUI({
-            marketplaceTab: 'catalog',
-            marketplaceFilters: { ...filters, searchQuery: query },
-          });
-          stateEngine.setPortal('marketplace');
-          stateEngine.loadProducts({
-            search: query,
-            category: filters.selectedCategory,
-            district: filters.selectedDistrict,
-          }).catch(() => {});
-        },
       });
 
       if (appElement) appElement.style.paddingTop = '';

@@ -3699,123 +3699,138 @@ table {
 }
 
 /* ---------------------------------------------------------------------------
-   HERO - white panel, gold arc, navy inset, rotating slider.
-
-   The two arcs are oversized circles positioned off the top of the panel, so
-   only the lower curve shows. The navy one is the same circle nudged right
-   and down, which leaves the gold visible as a rim rather than needing a
-   second shape or an image. Both are decorative and pointer-events: none, so
-   they never sit between a reader and a control.
+   HERO - taken from preview(2).html as delivered. The arcs, the sizes, the
+   breakpoints and the slider styles below are that file's, unchanged.
    --------------------------------------------------------------------------- */
 
-/* Hero background */
+/* --- Hero Section: responsive white / gold arc / navy design --- */
 .hero-section-wrapper {
     position: relative;
     width: 100%;
-    min-height: 280px;
+    height: clamp(320px, 38vh, 430px);
+    min-height: 320px;
     background: #fff;
+    border-radius: 0 0 0 48px;
     overflow: hidden;
-    border-radius: 0 0 0 80px;
+    display: flex;
+    align-items: center;
+    isolation: isolate;
 }
 
-/* Gold outer arc */
+/*
+ * The reference design is built with two oversized ellipses.
+ * Keeping the shapes in CSS makes the hero sharp at every screen size.
+ */
 .hero-section-wrapper::before {
     content: "";
     position: absolute;
+    z-index: 0;
+    pointer-events: none;
 
-    width: 850px;
-    height: 850px;
-
-    left: 14%;
-    top: -520px;
+    /* GOLD OUTER ARC */
+    width: 128%;
+    height: 235%;
+    left: 17%;
+    top: -67%;
 
     border-radius: 50%;
     background: #D99500;
-
-    z-index: 0;
-    pointer-events: none;
 }
 
-/* Navy inner area */
 .hero-section-wrapper::after {
     content: "";
     position: absolute;
+    z-index: 0;
+    pointer-events: none;
 
-    width: 850px;
-    height: 850px;
-
-    left: calc(14% + 23px);
-    top: -520px;
+    /* NAVY INNER AREA */
+    width: calc(128% - 18px);
+    height: calc(235% - 18px);
+    left: calc(17% + 18px);
+    top: calc(-67% + 18px);
 
     border-radius: 50%;
     background: #001B45;
-
-    z-index: 0;
-    pointer-events: none;
 }
 
-/* Keep hero content above the background */
+/* Keep hero content above the background shapes */
 .hero-section-wrapper > * {
     position: relative;
     z-index: 5;
 }
 
+.hero-section-wrapper .slider-container {
+    z-index: 10;
+}
+
 /* Desktop sizing */
 @media (min-width: 1024px) {
+    .hero-section-wrapper {
+        height: clamp(330px, 40vh, 430px);
+        border-radius: 0 0 0 64px;
+    }
+
     .hero-section-wrapper::before {
-        width: 850px;
-        height: 850px;
-        left: 14%;
-        top: -520px;
+        width: 132%;
+        height: 250%;
+        left: 45%;
+        top: -72%;
     }
 
     .hero-section-wrapper::after {
-        width: 850px;
-        height: 850px;
-        left: calc(14% + 23px);
-        top: -520px;
+        width: calc(132% - 18px);
+        height: calc(250% - 18px);
+        left: calc(45% + 18px);
+        top: calc(-72% + 18px);
     }
 }
 
 /* Tablet */
 @media (max-width: 1023px) {
+    .hero-section-wrapper {
+        height: 390px;
+    }
+
     .hero-section-wrapper::before {
-        width: 700px;
-        height: 700px;
-        left: 18%;
-        top: -430px;
+        width: 145%;
+        height: 245%;
+        left: 40%;
+        top: -72%;
     }
 
     .hero-section-wrapper::after {
-        width: 700px;
-        height: 700px;
-        left: calc(18% + 20px);
-        top: -430px;
+        width: calc(145% - 16px);
+        height: calc(245% - 16px);
+        left: calc(40% + 16px);
+        top: calc(-72% + 16px);
     }
 }
 
-/* Mobile */
+/* Mobile: keep the arc visible without covering the copy */
 @media (max-width: 767px) {
     .hero-section-wrapper {
-        min-height: 420px;
+        height: 520px;
+        min-height: 520px;
+        border-radius: 0 0 0 32px;
+        align-items: flex-start;
     }
 
     .hero-section-wrapper::before {
-        width: 600px;
-        height: 600px;
-        left: 35%;
-        top: -300px;
+        width: 185%;
+        height: 170%;
+        left: 12%;
+        top: 34%;
     }
 
     .hero-section-wrapper::after {
-        width: 600px;
-        height: 600px;
-        left: calc(35% + 18px);
-        top: -300px;
+        width: calc(185% - 14px);
+        height: calc(170% - 14px);
+        left: calc(12% + 14px);
+        top: calc(34% + 14px);
     }
 }
 
-/* --- Image slider ------------------------------------------------------- */
+/* --- Image Slider Styles --- */
 .slider-container {
     position: absolute;
     top: 0;
@@ -3841,18 +3856,19 @@ table {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Inert while hidden: without this an off-screen slide's contents stay in
-       the tab order and a keyboard reader tabs into pictures nobody can see. */
+    /* Not in the source file. Without it the three hidden slides keep their
+       contents in the tab order, so a keyboard reader tabs through pictures
+       nobody can see. */
     visibility: hidden;
 }
 
 .slide img {
-    max-height: 88%;
-    max-width: 94%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.30));
+     max-height: 88%;
+     max-width: 94%;
+     width: auto;
+     height: auto;
+     object-fit: contain;
+     filter: drop-shadow(0 12px 20px rgba(0,0,0,0.30));
 }
 
 .slide.active {
@@ -3861,11 +3877,11 @@ table {
     z-index: 10;
 }
 
-/* Slider indicators */
+/* Slider Indicators (Dots) */
 .slider-dots {
     position: absolute;
     bottom: 10px;
-    right: 40px;
+    right: 40px; /* Align with the slider content */
     display: flex;
     gap: 8px;
     z-index: 20;
@@ -3874,36 +3890,19 @@ table {
 .dot {
     width: 8px;
     height: 8px;
-    padding: 0;
-    border: none;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
     transition: background-color 0.3s, width 0.3s;
+    /* The dots are <button> here rather than <div>, so that a keyboard can
+       reach them at all; these two lines strip the button chrome back to the
+       source file's appearance. */
+    padding: 0;
+    border: none;
 }
 
 .dot.active {
-    background-color: #F5A623;
+    background-color: #F5A623; /* Brand orange to stand out on dark blue */
     width: 16px;
     border-radius: 4px;
-}
-
-/* The slider sits over the navy arc on wide screens. On a phone the arc is
-   low and the copy fills the panel, so the slider stacks underneath it at
-   full width instead of overlapping the text. */
-@media (max-width: 767px) {
-    .slider-container {
-        position: relative;
-        width: 100%;
-        height: 190px;
-        justify-content: center;
-        padding: 8px;
-        margin-top: 0.75rem;
-    }
-
-    .slider-dots {
-        right: 50%;
-        transform: translateX(50%);
-        bottom: 6px;
-    }
 }

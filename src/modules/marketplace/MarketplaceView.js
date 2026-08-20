@@ -201,19 +201,20 @@ export function renderMarketplaceView(container) {
             
             <!-- Hero Section -->
             <section class="compact-container mt-1 shrink-0">
+                <!-- Markup from preview(2).html. Two changes it needs to work
+                     inside the app rather than as a standalone page:
+                       - the dots are <button data-dot> instead of
+                         <div onclick="goToSlide(n)">, because that global does
+                         not exist in a bundled module (and a div cannot be
+                         reached by keyboard);
+                       - the buttons carry ids so the existing handlers can wire
+                         Shop Now / Explore Ads to the catalog. -->
                 <div class="hero-section-wrapper flex flex-col md:flex-row items-center justify-between p-4 md:p-6 min-h-[280px]">
 
-                    <!-- Hero Text Content - stays on the white/left side -->
-                    <div class="w-full min-w-0 md:w-[45%] lg:w-[43%] z-20 relative">
-                        <!-- The panel your file added "for text readability if the
-                             curve overlaps", kept at every width rather than only
-                             below md. With the arc at left:14% the navy reaches
-                             x=241 at the headline's height while the headline runs
-                             to x=551, so at desktop the copy sits on the arc -
-                             #0B1C3A text on a #001B45 background. Moving the arc to
-                             left:45% (as your preview file does at >=1024px) frees
-                             the copy and this can go back to md:bg-transparent. -->
-                        <div class="bg-white/85 p-4 md:p-5 rounded-xl backdrop-blur-sm">
+                    <!-- Hero Text Content - Make sure it stays on the white/left side -->
+                    <div class="w-full md:w-[45%] lg:w-[43%] z-20 relative">
+                        <!-- Added a subtle background for text readability if the curve overlaps slightly on smaller screens -->
+                        <div class="bg-white/80 md:bg-transparent p-4 md:p-0 rounded-xl backdrop-blur-sm md:backdrop-blur-none">
                             <h1 class="text-3xl md:text-4xl lg:text-5xl font-black text-brand-dark leading-[1.05] mb-3">
                                 Everything you need,<br>all in one place.
                             </h1>
@@ -221,12 +222,12 @@ export function renderMarketplaceView(container) {
                                 Buy, sell and discover thousands of products, vehicles, properties and more.
                             </p>
 
-                            <div class="flex flex-wrap gap-3 mb-4">
+                            <div class="flex gap-3 mb-4">
                                 <button type="button" id="hero-shop-now-btn" class="bg-brand-dark text-white font-semibold py-2 px-6 rounded-md hover:bg-gray-800 transition shadow-lg text-sm">Shop Now</button>
                                 <button type="button" id="hero-explore-ads-btn" class="bg-white border-2 border-brand-dark text-brand-dark font-semibold py-2 px-6 rounded-md hover:bg-gray-50 transition shadow-sm text-sm">Explore Ads</button>
                             </div>
 
-                            <div class="flex flex-wrap gap-4 pt-3 border-t border-gray-300/50">
+                            <div class="flex gap-4 pt-3 border-t border-gray-300/50">
                                 <div class="flex items-center gap-1.5">
                                     <div class="text-brand-orange"><i class="fa-solid fa-shield-halved text-lg"></i></div>
                                     <div class="text-[9px] leading-tight"><p class="font-bold text-brand-dark">Secure Payments</p><p class="text-gray-600">100% Safe &amp; Secure</p></div>
@@ -243,44 +244,52 @@ export function renderMarketplaceView(container) {
                         </div>
                     </div>
 
-                    <!-- Slider, sitting over the navy side -->
-                    <div class="slider-container" id="heroSlider" aria-roledescription="carousel" aria-label="Kigali Market highlights">
-                        <div class="slide active" data-slide="0" role="group" aria-roledescription="slide" aria-label="1 of 4">
-                            <img src="/hero-banner.png" alt="Vehicles, property, appliances and groceries on Kigali Market"
+                    <!-- Hero Image Slider Container positioned over the dark blue right side -->
+                    <div class="slider-container" id="heroSlider">
+
+                        <!-- Slide 1: Original Image Focus -->
+                        <div class="slide active" data-slide="0">
+                            <img src="/hero-banner.png" alt="All in one place showcase"
                               onerror="this.onerror=null;this.src='/hero-section.png'">
                         </div>
 
-                        <div class="slide" data-slide="1" role="group" aria-roledescription="slide" aria-label="2 of 4">
+                        <!-- Slide 2: Real Estate Text (Matching your screenshot) -->
+                        <div class="slide" data-slide="1">
                             <div class="text-center text-white">
-                                <h2 class="text-3xl lg:text-4xl font-bold mb-2 tracking-wide text-white">Real Estate</h2>
-                                <h3 class="text-2xl lg:text-3xl font-medium text-white">Houses</h3>
+                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">Real Estate</h2>
+                                <h3 class="text-3xl font-medium text-white">Houses</h3>
                             </div>
                         </div>
 
-                        <div class="slide" data-slide="2" role="group" aria-roledescription="slide" aria-label="3 of 4">
+                        <!-- Slide 3: Vehicles Focus -->
+                        <div class="slide" data-slide="2">
                             <div class="text-center text-white">
-                                <h2 class="text-3xl lg:text-4xl font-bold mb-2 tracking-wide text-white">Vehicles</h2>
-                                <h3 class="text-2xl lg:text-3xl font-medium text-white">Cars &amp; Bikes</h3>
+                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">Vehicles</h2>
+                                <h3 class="text-3xl font-medium text-white">Cars &amp; Bikes</h3>
                             </div>
                         </div>
 
-                        <div class="slide" data-slide="3" role="group" aria-roledescription="slide" aria-label="4 of 4">
+                        <!-- Slide 4: Electronics -->
+                        <div class="slide" data-slide="3">
                             <div class="text-center text-white">
-                                <h2 class="text-3xl lg:text-4xl font-bold mb-2 tracking-wide text-white">Electronics</h2>
-                                <h3 class="text-2xl lg:text-3xl font-medium text-white">Laptops &amp; Phones</h3>
+                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">Electronics</h2>
+                                <h3 class="text-3xl font-medium text-white">Laptops &amp; Phones</h3>
                             </div>
                         </div>
+
                     </div>
 
-                    <div class="slider-dots" id="sliderDots" role="tablist" aria-label="Choose a slide">
-                        <button type="button" class="dot active" data-dot="0" role="tab" aria-selected="true" aria-label="Show slide 1"></button>
-                        <button type="button" class="dot" data-dot="1" role="tab" aria-selected="false" aria-label="Show slide 2"></button>
-                        <button type="button" class="dot" data-dot="2" role="tab" aria-selected="false" aria-label="Show slide 3"></button>
-                        <button type="button" class="dot" data-dot="3" role="tab" aria-selected="false" aria-label="Show slide 4"></button>
+                    <!-- Slider Navigation Dots -->
+                    <div class="slider-dots" id="sliderDots">
+                        <button type="button" class="dot active" data-dot="0" aria-label="Show slide 1"></button>
+                        <button type="button" class="dot" data-dot="1" aria-label="Show slide 2"></button>
+                        <button type="button" class="dot" data-dot="2" aria-label="Show slide 3"></button>
+                        <button type="button" class="dot" data-dot="3" aria-label="Show slide 4"></button>
                     </div>
 
                 </div>
             </section>
+
 
 
             <!-- Category Bar -->

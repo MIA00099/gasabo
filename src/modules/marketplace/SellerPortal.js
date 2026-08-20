@@ -6,6 +6,10 @@ import { categoryIconText } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { renderLoginView } from '../../components/LoginView.js';
 
+// Matches the "Max 10 photos" the form has always advertised, and the cap
+// enforced in createProductSchema (server/src/routes/products.routes.ts).
+const MAX_IMAGES = 10;
+
 let productFormValues = { title: '', category: '', price: '', district: '', condition: '', description: '' };
 
 function captureProductFormValues(container) {
@@ -50,7 +54,8 @@ function renderSellerDashboardView(container, sellerUser) {
     const productsLoading = !!state.loading.myProducts || !myProductsAttempted;
     const imageMode = state.ui.productImageMode || 'url';
     const imageUploading = !!state.loading.imageUpload;
-    const imagePreviewUrl = state.ui.productImagePreview || '';
+    // A list now, not one url. Both upload mode and URL mode append to it.
+    const images = state.ui.productImages || [];
 
     if (!myProductsAttempted) {
       stateEngine.loadMyProducts().catch(() => {});
@@ -200,12 +205,36 @@ function renderSellerDashboardView(container, sellerUser) {
                         <button type="button" id="img-mode-url-btn" class="px-2.5 py-1 text-[10px] font-bold rounded ${imageMode==='url'?'bg-brand-green text-white':'bg-gray-200 text-gray-700'}">Image URL</button>
                       </div>
 
-                      ${imageMode === 'upload' ? `
-                        <input type="file" id="p-image-file" accept="image/*" class="w-full text-xs">
-                        ${imagePreviewUrl ? `<div class="text-xs text-green-600 font-bold mt-2">✔ Photo uploaded</div>` : ''}
-                        <input type="hidden" id="p-image" value="${escapeHtml(imagePreviewUrl || '')}">
+                      ${images.length ? `
+                        <div class="grid grid-cols-4 sm:grid-cols-5 gap-2 mb-3">
+                          ${images.map((url, i) => `
+                            <div class="relative group aspect-square rounded-lg overflow-hidden border ${i === 0 ? 'border-brand-green border-2' : 'border-gray-200'} bg-white">
+                              <img src="${escapeHtml(url)}" alt="Photo ${i + 1}" class="w-full h-full object-cover">
+                              ${i === 0 ? `
+                                <span class="absolute bottom-0 inset-x-0 bg-brand-green text-white text-[8px] font-bold text-center py-0.5">COVER</span>
+                              ` : ''}
+                              <button type="button" class="remove-img-btn absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] leading-none flex items-center justify-center hover:bg-red-600 transition"
+                                data-index="${i}" title="Remove photo ${i + 1}" aria-label="Remove photo ${i + 1}">&#10005;</button>
+                            </div>
+                          `).join('')}
+                        </div>
+                        <p class="text-[10px] text-gray-500 mb-2">
+                          ${images.length} of ${MAX_IMAGES} &middot; the first photo is the cover buyers see in the grid
+                        </p>
+                      ` : ''}
+
+                      ${images.length >= MAX_IMAGES ? `
+                        <p class="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                          That is the maximum of ${MAX_IMAGES} photos. Remove one to add another.
+                        </p>
+                      ` : imageMode === 'upload' ? `
+                        <input type="file" id="p-image-file" accept="image/*" multiple class="w-full text-xs" ${imageUploading ? 'disabled' : ''}>
+                        ${imageUploading ? `<div class="text-xs text-gray-600 font-semibold mt-2">Uploading&hellip;</div>` : ''}
                       ` : `
-                        <input type="url" id="p-image" class="w-full bg-gray-50 border border-gray-300 text-gray-900 py-1.5 px-2 rounded text-xs" value="${escapeHtml(imagePreviewUrl || 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1000&q=80')}" placeholder="Paste URL">
+                        <div class="flex gap-1.5">
+                          <input type="url" id="p-image-url" class="flex-1 min-w-0 bg-gray-50 border border-gray-300 text-gray-900 py-1.5 px-2 rounded text-xs" placeholder="Paste an image URL">
+                          <button type="button" id="add-image-url-btn" class="bg-brand-dark text-white text-[10px] font-bold px-3 rounded shrink-0">Add</button>
+                        </div>
                       `}
                     </div>
                   </div>
@@ -328,7 +357,9 @@ function renderSellerDashboardView(container, sellerUser) {
     });
     container.querySelector('#cancel-add-btn')?.addEventListener('click', () => {
       resetProductFormValues(sellerUser.district);
-      stateEngine.setUI({ sellerDashboardTab: 'active' });
+      // Also drop the photos. Abandoning a draft and starting another one
+      // otherwise carries the previous listing's photos into it.
+      stateEngine.setUI({ sellerDashboardTab: 'active', productImages: [] });
     });
 
     container.querySelectorAll('.ad-type-btn').forEach((btn) => {
@@ -356,15 +387,71 @@ function renderSellerDashboardView(container, sellerUser) {
     });
 
     container.querySelector('#p-image-file')?.addEventListener('change', async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const picked = Array.from(e.target.files || []);
+      if (!picked.length) return;
       captureProductFormValues(container);
+
+      const current = stateEngine.getState().ui.productImages || [];
+      const room = MAX_IMAGES - current.length;
+      // Trim to what still fits rather than uploading files that would be
+      // rejected afterwards.
+      const files = picked.slice(0, room);
+      const skipped = picked.length - files.length;
+
       try {
-        const url = await stateEngine.uploadProductImage(file);
-        stateEngine.setUI({ productImagePreview: url });
+        const { urls, failed } = await stateEngine.uploadProductImages(files);
+        stateEngine.setUI({ productImages: [...current, ...urls] });
+
+        const notes = [];
+        if (failed.length) notes.push(`${failed.length} photo${failed.length > 1 ? 's' : ''} failed to upload`);
+        if (skipped) notes.push(`${skipped} skipped - the limit is ${MAX_IMAGES}`);
+        if (notes.length) {
+          stateEngine.data.error = `${notes.join('. ')}.`;
+          stateEngine.notify();
+        }
       } catch (err) {
         render();
       }
+    });
+
+    container.querySelector('#add-image-url-btn')?.addEventListener('click', () => {
+      const input = container.querySelector('#p-image-url');
+      const url = (input?.value || '').trim();
+      if (!url) return;
+
+      captureProductFormValues(container);
+      const current = stateEngine.getState().ui.productImages || [];
+
+      if (current.includes(url)) {
+        stateEngine.data.error = 'That photo is already on the listing.';
+        stateEngine.notify();
+        return;
+      }
+      if (current.length >= MAX_IMAGES) {
+        stateEngine.data.error = `You can add up to ${MAX_IMAGES} photos.`;
+        stateEngine.notify();
+        return;
+      }
+
+      stateEngine.setUI({ productImages: [...current, url] });
+    });
+
+    // Enter in the URL field adds the photo instead of submitting the whole
+    // listing, which is what a single-input row implies.
+    container.querySelector('#p-image-url')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        container.querySelector('#add-image-url-btn')?.click();
+      }
+    });
+
+    container.querySelectorAll('.remove-img-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        captureProductFormValues(container);
+        const idx = Number(btn.dataset.index);
+        const current = stateEngine.getState().ui.productImages || [];
+        stateEngine.setUI({ productImages: current.filter((_, i) => i !== idx) });
+      });
     });
 
     container.querySelector('#create-product-form')?.addEventListener('submit', async (e) => {
@@ -375,22 +462,22 @@ function renderSellerDashboardView(container, sellerUser) {
       const district = container.querySelector('#p-district').value;
       const condition = container.querySelector('#p-condition').value;
       const description = container.querySelector('#p-desc').value;
-      const image = container.querySelector('#p-image').value;
+      const chosenImages = stateEngine.getState().ui.productImages || [];
 
-      if (!image) {
+      if (!chosenImages.length) {
         captureProductFormValues(container);
         stateEngine.data.error = imageMode === 'upload'
-          ? 'Please choose and wait for a product photo to finish uploading.'
-          : 'Please provide a product image URL.';
+          ? 'Add at least one photo - choose files and wait for the upload to finish.'
+          : 'Add at least one photo URL.';
         stateEngine.notify();
         return;
       }
 
       try {
-        await stateEngine.createProduct({ title, category, price, district, condition, description, image });
+        await stateEngine.createProduct({ title, category, price, district, condition, description, images: chosenImages });
         alert('Product submitted! It will appear on the marketplace once an admin reviews and approves it - you can track its status under "Awaiting Review".');
         resetProductFormValues(sellerUser.district);
-        stateEngine.setUI({ sellerDashboardTab: 'pending', productImageMode: 'url', productImagePreview: '' });
+        stateEngine.setUI({ sellerDashboardTab: 'pending', productImageMode: 'url', productImages: [] });
       } catch (err) {
         captureProductFormValues(container);
         render();

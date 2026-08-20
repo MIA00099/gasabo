@@ -365,6 +365,28 @@ class StateEngine {
     });
   }
 
+  // Uploads run concurrently rather than one after another - a seller adding
+  // eight photos on a Kigali mobile connection should not wait for eight
+  // sequential round trips. Each file is a separate request to the same
+  // endpoint, so one failure loses one photo instead of the whole batch;
+  // the caller gets back only what actually landed, plus what did not.
+  async uploadProductImages(files) {
+    return this._run('imageUpload', async () => {
+      const results = await Promise.allSettled(
+        Array.from(files).map((file) => api.uploadFile('/uploads', file)),
+      );
+
+      const urls = [];
+      const failed = [];
+      results.forEach((r, i) => {
+        if (r.status === 'fulfilled' && r.value?.url) urls.push(r.value.url);
+        else failed.push(Array.from(files)[i]?.name || 'image');
+      });
+
+      return { urls, failed };
+    });
+  }
+
   async createProduct(productData) {
     return this._run('productForm', async () => {
       const { product } = await api.post('/products', {
@@ -374,7 +396,11 @@ class StateEngine {
         district: productData.district,
         condition: productData.condition,
         description: productData.description,
-        images: [productData.image].filter(Boolean),
+        // A list now. The single `image` form is still accepted because
+        // RealEstateAdmin passes one.
+        images: (productData.images && productData.images.length
+          ? productData.images
+          : [productData.image]).filter(Boolean),
       });
       this.data.myProducts = [product, ...this.data.myProducts];
       this.notify();

@@ -54,9 +54,14 @@ productsRouter.get('/', async (req, res) => {
       ...(district ? { district } : {}),
       ...(search
         ? {
+            // mode: 'insensitive' because Prisma's `contains` is
+            // case-sensitive on PostgreSQL - searching "macbook" returned
+            // nothing while a listing titled "Apple MacBook Pro" sat right
+            // there. Now that the hero search is the main way into the
+            // catalog, that is not a small miss.
             OR: [
-              { title: { contains: search } },
-              { description: { contains: search } },
+              { title: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
             ],
           }
         : {}),

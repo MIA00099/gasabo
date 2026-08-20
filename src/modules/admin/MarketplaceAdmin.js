@@ -178,6 +178,23 @@ export function renderMarketplaceAdmin(container) {
                           🔥 Trending
                         </button>
                       </div>
+                      <div style="display: flex; gap: 4px; align-items: center; margin-top: 4px;">
+                        <!-- Five clickable stars. Clicking the one already set
+                             clears the rating, which is the only way back to
+                             "no stars" once one is given. -->
+                        <span style="display: inline-flex; gap: 1px;" title="Rate this listing">
+                          ${[1, 2, 3, 4, 5].map((n) => `
+                            <button class="rate-prod-btn" data-id="${prod.id}" data-rating="${n}"
+                              aria-label="Rate ${n} of 5"
+                              style="background: none; border: none; padding: 0 1px; cursor: pointer; font-size: 0.85rem; line-height: 1;
+                                     color: ${(prod.rating || 0) >= n ? '#F5A623' : '#CBD5E1'};">★</button>
+                          `).join('')}
+                        </span>
+                        <span style="font-size: 0.7rem; color: #64748B;">
+                          ${prod.rating ? Number(prod.rating).toFixed(1) : 'unrated'}
+                        </span>
+                        ${prod.likeCount ? `<span style="font-size: 0.7rem; color: #64748B; margin-left: 6px;" title="Buyer likes">❤ ${prod.likeCount}</span>` : ''}
+                      </div>
                     </td>
                     <td class="tbl-actions-col">
                       <div style="display: flex; gap: 4px;">
@@ -298,6 +315,20 @@ export function renderMarketplaceAdmin(container) {
         try {
           await stateEngine.rejectProduct(btn.dataset.id, reason);
         } catch (err) { /* handled via state.error */ }
+      });
+    });
+
+    container.querySelectorAll('.rate-prod-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const value = Number(btn.dataset.rating);
+        const current = (state.products.find((p) => p.id === id) || {}).rating || 0;
+        // Clicking the star that is already the rating clears it - otherwise
+        // there is no way back to unrated once a listing has been rated.
+        const next = current === value ? null : value;
+        try {
+          await stateEngine.setProductRating(id, next);
+        } catch (err) { /* state.error already set, re-render shows it */ }
       });
     });
 

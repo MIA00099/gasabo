@@ -1,3 +1,4 @@
+import { starsHtml } from '../../utils/stars.js';
 import { renderCategoryIcon } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
@@ -9,17 +10,6 @@ function escapeHtml(str) {
   ));
 }
 
-function starsHtml(rating) {
-  const r = Number(rating) || 0;
-  if (r <= 0) return '';
-  let out = '';
-  for (let i = 1; i <= 5; i++) {
-    if (r >= i) out += '<i class="fa-solid fa-star"></i>';
-    else if (r >= i - 0.5) out += '<i class="fa-solid fa-star-half-stroke"></i>';
-    else out += '<i class="fa-regular fa-star text-gray-300"></i>';
-  }
-  return out;
-}
 
 function productCard(prod) {
   const was = Number(prod.originalPrice) || 0;
@@ -46,7 +36,8 @@ function productCard(prod) {
         ${stars ? `
           <div class="flex items-center text-[10px] text-yellow-400">
             ${stars}
-            <span class="text-gray-400 ml-1">(${prod.reviewCount || 120})</span>
+            <span class="text-gray-600 font-semibold ml-0.5">${Number(prod.rating).toFixed(1)}</span>
+            ${prod.likeCount ? `<span class="text-gray-400 ml-1.5"><i class="fa-solid fa-heart text-red-400"></i> ${prod.likeCount}</span>` : ''}
           </div>
         ` : `
           <div class="flex items-center gap-1 text-[10px] text-gray-500">

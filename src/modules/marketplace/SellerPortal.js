@@ -2,6 +2,7 @@
  * KIGALI MARKET - Seller Registration, Authentication & Seller Dashboard
  * Ported to match delivered mockups (post-ad.html, stores.html, etc.).
  */
+import { starsHtml } from '../../utils/stars.js';
 import { categoryIconText } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { renderLoginView } from '../../components/LoginView.js';
@@ -307,6 +308,16 @@ function renderSellerDashboardView(container, sellerUser) {
                         <div>
                           <div class="font-bold text-gray-900 text-xs">${escapeHtml(prod.title)}</div>
                           <div class="text-[10px] text-gray-500 mt-0.5">📍 ${escapeHtml(prod.district)} &bull; ${prod.condition}</div>
+                          <!-- What buyers have done with this listing. The
+                               rating is set by an admin; the likes are from
+                               buyers tapping the heart on the listing page. -->
+                          <div class="text-[10px] text-gray-600 mt-0.5 flex items-center gap-2">
+                            ${prod.rating ? `<span class="text-yellow-500">${starsHtml(prod.rating)} <span class="text-gray-600 font-semibold">${Number(prod.rating).toFixed(1)}</span></span>` : '<span class="text-gray-400">Not yet rated</span>'}
+                            <span class="${prod.likeCount ? 'text-gray-700 font-semibold' : 'text-gray-400'}">
+                              <i class="fa-${prod.likeCount ? 'solid' : 'regular'} fa-heart ${prod.likeCount ? 'text-red-500' : ''}"></i>
+                              ${prod.likeCount || 0} ${prod.likeCount === 1 ? 'like' : 'likes'}
+                            </span>
+                          </div>
                           ${prod.status === 'rejected' && prod.rejectionReason ? `
                             <div class="text-[10px] text-red-700 mt-1 max-w-xs">
                               <strong>Reason:</strong> ${escapeHtml(prod.rejectionReason)}

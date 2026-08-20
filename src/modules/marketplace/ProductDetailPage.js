@@ -16,6 +16,7 @@
  * they do - a saving or a review score shown against a listing that has
  * neither is a claim about a seller nobody has made.
  */
+import { starsHtml } from '../../utils/stars.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 import { openImageLightbox } from '../../components/imageLightbox.js';
@@ -27,17 +28,6 @@ function escapeHtml(str) {
   ));
 }
 
-function starsHtml(rating) {
-  const r = Number(rating) || 0;
-  if (r <= 0) return '';
-  let out = '';
-  for (let i = 1; i <= 5; i++) {
-    if (r >= i) out += '<i class="fa-solid fa-star"></i>';
-    else if (r >= i - 0.5) out += '<i class="fa-solid fa-star-half-stroke"></i>';
-    else out += '<i class="fa-regular fa-star"></i>';
-  }
-  return out;
-}
 
 function whatsappHref(product) {
   const phone = (product.sellerPhone || '').replace(/[^0-9+]/g, '').replace('+', '');
@@ -278,9 +268,15 @@ export function renderProductDetailPage(container, product, handlers = {}) {
                     <i class="fa-regular fa-comment-dots"></i> Chat
                   </a>
                 </div>
-                <button type="button" data-soon="Wishlist"
-                  class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm">
-                  <i class="fa-regular fa-heart"></i> Add to Wishlist
+                <!-- This was "Add to Wishlist" with a data-soon stub behind it,
+                     so it did nothing at all. It is the like button now: the
+                     count is what the seller sees on their dashboard. -->
+                <button type="button" id="detail-like-btn"
+                  class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm"
+                  aria-pressed="false">
+                  <i id="detail-like-icon" class="fa-regular fa-heart"></i>
+                  <span id="detail-like-label">Like</span>
+                  <span id="detail-like-count" class="text-gray-500 font-semibold"></span>
                 </button>
               </div>
             </div>
@@ -438,6 +434,37 @@ export function renderProductDetailPage(container, product, handlers = {}) {
       returnFocusTo: '#detail-zoom-btn',
     });
   });
+
+  // ---- Like ---------------------------------------------------------------
+  const likeBtn = container.querySelector('#detail-like-btn');
+  if (likeBtn) {
+    const likeIcon = container.querySelector('#detail-like-icon');
+    const likeLabel = container.querySelector('#detail-like-label');
+    const likeCountEl = container.querySelector('#detail-like-count');
+
+    const paintLike = ({ liked, likeCount }) => {
+      likeIcon.className = liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart';
+      likeLabel.textContent = liked ? 'Liked' : 'Like';
+      likeCountEl.textContent = likeCount ? `(${likeCount})` : '';
+      likeBtn.setAttribute('aria-pressed', String(liked));
+    };
+
+    const known = stateEngine.getState().likes?.[product.id];
+    if (known) paintLike(known);
+    // Ask the server whether THIS visitor already liked it, so a heart the
+    // reader filled last week is still filled when they come back.
+    stateEngine.loadLikeState(product.id).then(paintLike).catch(() => {});
+
+    likeBtn.addEventListener('click', () => {
+      // Paint first, reconcile after - see toggleLike. A heart that waits on
+      // the network before moving feels broken.
+      const now = stateEngine.getState().likes?.[product.id] || { liked: false, likeCount: 0 };
+      paintLike({ liked: !now.liked, likeCount: Math.max(0, now.likeCount + (now.liked ? -1 : 1)) });
+      stateEngine.toggleLike(product.id)
+        .then(paintLike)
+        .catch(() => paintLike(stateEngine.getState().likes?.[product.id] || now));
+    });
+  }
 
   container.querySelector('#detail-back')?.addEventListener('click', () => {
     if (handlers.onBack) handlers.onBack();

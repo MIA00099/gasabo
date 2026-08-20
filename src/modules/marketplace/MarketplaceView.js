@@ -5,6 +5,7 @@ import { renderSellerPortal } from './SellerPortal.js';
 import { renderStoresPage } from './StoresPage.js';
 import { renderProductsPage } from './ProductsPage.js';
 import { renderCategoryIcon } from '../../utils/categoryIcon.js';
+import { starsHtml } from '../../utils/stars.js';
 import { openCategoryDropdown } from '../../components/categoryDropdown.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
@@ -394,10 +395,17 @@ export function renderMarketplaceView(container) {
                                             <span class="font-bold text-sm text-brand-dark leading-none">RWF ${prod.price.toLocaleString()}</span>
                                             ${was ? `<span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF ${was.toLocaleString()}</span>` : ''}
                                         </div>
-                                        <div class="flex items-center text-[9px] text-yellow-400">
-                                            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-gray-300"></i>
-                                            <span class="text-gray-400 ml-1">(${prod.reviewCount || 128})</span>
-                                        </div>
+                                        ${prod.rating ? `
+                                          <div class="flex items-center gap-1 text-[9px] text-yellow-400">
+                                            ${starsHtml(prod.rating)}
+                                            <span class="text-gray-600 font-semibold ml-0.5">${Number(prod.rating).toFixed(1)}</span>
+                                            ${prod.likeCount ? `<span class="text-gray-400 ml-1"><i class="fa-solid fa-heart text-red-400"></i> ${prod.likeCount}</span>` : ''}
+                                          </div>
+                                        ` : prod.likeCount ? `
+                                          <div class="flex items-center gap-1 text-[9px] text-gray-500">
+                                            <i class="fa-solid fa-heart text-red-400"></i> ${prod.likeCount}
+                                          </div>
+                                        ` : ''}
                                     </div>
                                 </div>
                             `;

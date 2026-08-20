@@ -136,7 +136,7 @@ export function renderMarketplaceView(container) {
             <!-- Hero Section -->
             <section class="compact-container mt-1 shrink-0">
                 <div class="hero-bg flex flex-col md:flex-row items-center justify-between p-4 md:p-6 min-h-[220px] relative">
-                    <div class="md:w-[60%] z-10">
+                    <div class="w-full min-w-0 md:w-[60%] z-10">
                         <h1 class="text-3xl md:text-5xl font-black text-brand-dark leading-[1.1] mb-2">
                             Everything you need,<br>all in one place.
                         </h1>
@@ -144,12 +144,12 @@ export function renderMarketplaceView(container) {
                             Buy, sell and discover thousands of products, vehicles, properties and more.
                         </p>
                         
-                        <div class="flex gap-3 mb-4">
+                        <div class="flex flex-wrap gap-3 mb-4">
                             <button id="hero-shop-now-btn" class="bg-brand-dark text-white font-semibold py-2 px-6 rounded-md hover:bg-gray-800 transition shadow-lg text-sm">Shop Now</button>
                             <button id="hero-explore-ads-btn" class="bg-white border-2 border-brand-dark text-brand-dark font-semibold py-2 px-6 rounded-md hover:bg-gray-50 transition shadow-sm text-sm">Explore Ads</button>
                         </div>
                         
-                        <div class="flex gap-2 sm:gap-3 lg:gap-4 pt-3 border-t border-gray-300/50">
+                        <div class="flex flex-wrap gap-2 sm:gap-3 lg:gap-4 pt-3 border-t border-gray-300/50">
                             <div class="flex items-center gap-1.5 shrink-0">
                                 <div class="text-brand-orange"><i class="fa-solid fa-shield-halved text-lg"></i></div>
                                 <div class="text-[9px] leading-tight"><p class="font-bold text-brand-dark whitespace-nowrap">Secure Payments</p><p class="text-gray-500 whitespace-nowrap">100% Safe & Secure</p></div>
@@ -371,7 +371,11 @@ export function renderMarketplaceView(container) {
                         `}
                         
                         <!-- Scroll Arrow -->
-                        <div class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-brand-dark text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-gray-800 -mr-3 z-20 hidden lg:flex">
+                        <!-- Sits flush with the container edge rather than
+                             overhanging it by -mr-3. The page is edge-to-edge
+                             now, so that overhang had nothing to hang into and
+                             poked 4px off the right of the screen. -->
+                        <div class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-brand-dark text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-gray-800 z-20 hidden lg:flex">
                             <i class="fa-solid fa-chevron-right text-xs"></i>
                         </div>
                     </div>

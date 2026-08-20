@@ -91,7 +91,7 @@ export function renderRealEstateView(container) {
              the reference mockup's simpler 4-item nav (not the marketplace's
              main site nav, which stays above this). -->
         <div style="background: #ffffff; border-bottom: 1px solid #E2E8F0; padding: 0.85rem 1.5rem; margin-bottom: 0; position: sticky; top: 70px; z-index: 30;">
-          <div style="max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="max-width: var(--page-max); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
             <div id="re-logo-home" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
               <img src="/real-estate-logo.png" alt="Gasabo Real Estate Logo" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; border: 1px solid #E2E8F0;">
               <span style="font-weight: 800; font-size: 1.15rem; color: ${RE_BLUE};">Gasabo Real Estate</span>
@@ -189,7 +189,7 @@ function renderHomeView(reData, properties) {
         <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,23,42,0.96), ${RE_BLUE}CC);"></div>
       </div>
 
-      <div style="position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 3.5rem 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 2.5rem;">
+      <div style="position: relative; z-index: 1; max-width: var(--page-max); margin: 0 auto; padding: 3.5rem 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 2.5rem;">
         <div style="flex: 1 1 420px;">
           <span style="display: inline-block; padding: 4px 14px; border-radius: 9999px; background: rgba(220,167,58,0.18); color: ${RE_GOLD}; border: 1px solid rgba(220,167,58,0.35); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 1rem;">
             Opening doors to extraordinary spaces
@@ -243,7 +243,7 @@ function renderHomeView(reData, properties) {
 
     <!-- FEATURED LISTINGS -->
     <section style="padding: 3.5rem 1.5rem; background: #F8FAFC;">
-      <div style="max-width: 1280px; margin: 0 auto;">
+      <div style="max-width: var(--page-max); margin: 0 auto;">
         <div style="text-align: center; margin-bottom: 2.5rem;">
           <h2 style="font-size: 1.9rem; font-weight: 800; color: #0F172A;">Featured Listings</h2>
           <p style="color: #64748B; margin-top: 0.3rem;">Explore all our available plots and houses.</p>
@@ -262,7 +262,7 @@ function renderPropertiesView(title, filteredProperties, filters, availableLocat
     </div>
 
     <div style="padding: 2.5rem 1.5rem; background: #F8FAFC;">
-      <div style="max-width: 1280px; margin: 0 auto;">
+      <div style="max-width: var(--page-max); margin: 0 auto;">
         ${filteredProperties.length === 0 ? `
           <div style="text-align: center; padding: 4rem 1.5rem;">
             <div style="width: 96px; height: 96px; border-radius: 50%; background: #F1F5F9; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2.5rem;">🔍</div>
@@ -281,7 +281,7 @@ function renderServicesView(services) {
 
   return `
     <section style="padding: 3.5rem 1.5rem; background: #ffffff;">
-      <div style="max-width: 1280px; margin: 0 auto;">
+      <div style="max-width: var(--page-max); margin: 0 auto;">
         <div style="text-align: center; max-width: 700px; margin: 0 auto 3rem auto;">
           <span style="color: ${RE_GOLD}; font-weight: 800; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.15em;">Our Expertise</span>
           <h2 style="font-size: 2.2rem; font-weight: 700; color: #0F172A; margin: 0.5rem 0;">Tailored <strong style="color: ${RE_BLUE};">Real Estate</strong> Solutions</h2>
@@ -330,7 +330,7 @@ function renderAboutView(reData) {
     </section>
 
     <section style="padding: 3.5rem 1.5rem; background: #ffffff;">
-      <div style="max-width: 1280px; margin: 0 auto;">
+      <div style="max-width: var(--page-max); margin: 0 auto;">
 
         <!-- VIDEO TOURS CTA -->
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 2.5rem; background: #F8FAFC; padding: 2.5rem; border-radius: 24px; margin-bottom: 3.5rem;">
@@ -366,7 +366,7 @@ function renderAboutView(reData) {
 
     <!-- CONTACT -->
     <section style="padding: 3.5rem 1.5rem; background: #F8FAFC; border-top: 1px solid #E2E8F0;">
-      <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 3rem;">
+      <div style="max-width: var(--page-max); margin: 0 auto; display: flex; flex-wrap: wrap; gap: 3rem;">
         <div style="flex: 1 1 300px;">
           <h3 style="font-size: 1.75rem; font-weight: 800; color: #0F172A; margin-bottom: 0.75rem;">Contact Us</h3>
           <p style="color: #64748B; margin-bottom: 1.75rem;">Ready to find your dream property? Reach out to our expert agents today.</p>

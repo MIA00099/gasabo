@@ -107,7 +107,7 @@ export function makeAccessibleModal(overlay, { label, onClose, returnFocusTo } =
 
     document.removeEventListener('keydown', onKeydown, true);
     overlay.remove();
-    document.body.style.overflow = 'auto';
+    document.body.style.removeProperty('overflow');
 
     // onClose FIRST, then focus. Closing a listing modal changes the route,
     // and the resulting re-render replaces the card that was focused - so

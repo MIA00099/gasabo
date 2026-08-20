@@ -32,7 +32,7 @@ function listingKey(route) {
 
 function closeOpenListing() {
   if (openListingEl) openListingEl.remove();
-  document.body.style.overflow = 'auto';
+  document.body.style.removeProperty('overflow');
   openListingEl = null;
   openListingKey = null;
 }

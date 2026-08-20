@@ -5,6 +5,7 @@ import { renderSellerPortal } from './SellerPortal.js';
 import { renderStoresPage } from './StoresPage.js';
 import { renderProductsPage } from './ProductsPage.js';
 import { renderCategoryIcon } from '../../utils/categoryIcon.js';
+import { openCategoryDropdown } from '../../components/categoryDropdown.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
 // Grey circles, no labels. Deliberately not category-shaped placeholder
@@ -234,7 +235,7 @@ export function renderMarketplaceView(container) {
                                  the same filtered catalog. -->
                             <form id="hero-search-form" role="search"
                               class="flex rounded-full border-2 border-brand-green overflow-hidden h-11 bg-white shadow-sm mt-1 w-full max-w-xl">
-                                <button type="button" id="hero-search-cat"
+                                <button type="button" id="hero-search-cat" aria-haspopup="menu" aria-expanded="false"
                                   class="bg-gray-50 px-3 text-xs text-gray-600 border-r border-gray-200 items-center gap-1 hover:bg-gray-100 hidden sm:flex whitespace-nowrap shrink-0">
                                     All Categories <i class="fa-solid fa-chevron-down text-[10px]"></i>
                                 </button>
@@ -663,10 +664,28 @@ export function renderMarketplaceView(container) {
       }).catch(() => {});
     });
 
-    // The category chip is the same affordance as the header's - it opens the
-    // full catalog, where the real category filter lives.
-    container.querySelector('#hero-search-cat')?.addEventListener('click', () => {
-      stateEngine.setUI({ marketplaceTab: 'catalog' });
+    // The chevron on this chip promises a menu; it used to just open the
+    // catalog. Now it lists the real categories and filters by the one picked.
+    container.querySelector('#hero-search-cat')?.addEventListener('click', (e) => {
+      const anchor = e.currentTarget;
+      const s = stateEngine.getState();
+
+      openCategoryDropdown(anchor, {
+        categories: s.categories || [],
+        selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
+        onSelect: (id) => {
+          const filters = stateEngine.getState().ui.marketplaceFilters || {};
+          stateEngine.setUI({
+            marketplaceTab: 'catalog',
+            marketplaceFilters: { ...filters, selectedCategory: id },
+          });
+          stateEngine.loadProducts({
+            category: id === 'all' ? undefined : id,
+            search: filters.searchQuery || undefined,
+            district: filters.selectedDistrict,
+          }).catch(() => {});
+        },
+      });
     });
 
     container.querySelector('#hero-shop-now-btn')?.addEventListener('click', () => {

@@ -15,6 +15,7 @@ import {
 } from './components/Header.js';
 // Listings render as a full page now (product-detail.html), not an overlay.
 import { renderProductDetailPage } from './modules/marketplace/ProductDetailPage.js';
+import { openCategoryDropdown } from './components/categoryDropdown.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
   ROUTE_HOME, ROUTE_PRODUCT,
@@ -176,6 +177,28 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         markAllRead: () => stateEngine.markAllNotificationsRead().catch(() => {}),
         markRead: (id) => stateEngine.markNotificationRead(id).catch(() => {}),
+        openCategories: (anchor) => {
+          const s = stateEngine.getState();
+          openCategoryDropdown(anchor, {
+            categories: s.categories || [],
+            selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
+            onSelect: (id) => {
+              const filters = stateEngine.getState().ui.marketplaceFilters || {};
+              stateEngine.setUI({
+                marketplaceTab: 'catalog',
+                marketplaceFilters: { ...filters, selectedCategory: id },
+              });
+              // The chip is in the header, so it is reachable from the admin
+              // and real-estate portals too - land back on the marketplace.
+              stateEngine.setPortal('marketplace');
+              stateEngine.loadProducts({
+                category: id === 'all' ? undefined : id,
+                search: filters.searchQuery || undefined,
+                district: filters.selectedDistrict,
+              }).catch(() => {});
+            },
+          });
+        },
       });
 
       if (appElement) appElement.style.paddingTop = '';

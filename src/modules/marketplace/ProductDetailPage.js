@@ -48,6 +48,20 @@ function whatsappHref(product) {
   return `https://wa.me/${phone}?text=${msg}`;
 }
 
+// Grey blocks, no text. The row is fetched separately from the listing, so
+// without this the page renders complete, then a whole section appears
+// underneath it a moment later and pushes the footer down.
+const RELATED_SKELETON = Array.from({ length: 5 }, () => `
+  <div class="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+    <div class="bg-gray-100 h-48 animate-pulse"></div>
+    <div class="p-4 space-y-3">
+      <div class="h-3 bg-gray-100 rounded animate-pulse"></div>
+      <div class="h-3 bg-gray-100 rounded w-2/3 animate-pulse"></div>
+      <div class="h-4 bg-gray-100 rounded w-1/2 animate-pulse"></div>
+    </div>
+  </div>
+`).join('');
+
 function relatedCard(p) {
   const was = Number(p.originalPrice) || 0;
   const hasDiscount = was > p.price;
@@ -58,8 +72,9 @@ function relatedCard(p) {
     <div class="related-card bg-gray-50 rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl transition transform hover:scale-105 border border-gray-100"
       data-id="${p.id}" role="button" tabindex="0">
       <div class="relative bg-gray-100 h-48 flex items-center justify-center overflow-hidden">
-        <img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy"
-          class="h-3/4 object-contain drop-shadow-lg">
+        ${p.images && p.images[0]
+          ? `<img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy" class="h-3/4 object-contain drop-shadow-lg">`
+          : '<i class="fa-solid fa-image text-4xl text-gray-300"></i>'}
         ${hasDiscount ? `<span class="absolute top-3 right-3 bg-brand-green text-white text-xs font-bold px-3 py-1 rounded-full">-${pct}%</span>` : ''}
       </div>
       <div class="p-4">
@@ -87,10 +102,17 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   const stars = starsHtml(product.rating);
   const images = Array.isArray(product.images) && product.images.length ? product.images : [''];
 
-  // "More <category> Products" - same category, this listing excluded.
-  const related = (state.products || [])
-    .filter((p) => p.id !== product.id && (!product.categoryId || p.categoryId === product.categoryId))
+  // "More <category> Products" - fetched for this listing, not filtered out
+  // of whatever the last grid returned. state.products is empty on a shared
+  // link or a search result, which is where a related row earns its keep.
+  if (state.relatedProductsFor !== product.id) {
+    stateEngine.loadRelatedProducts(product.id).catch(() => {});
+  }
+  const relatedReady = state.relatedProductsFor === product.id;
+  const related = (relatedReady ? state.relatedProducts : [])
+    .filter((p) => p.id !== product.id)
     .slice(0, 6);
+  const relatedLoading = !relatedReady;
 
   container.innerHTML = `
     <div id="view-product" class="py-4 bg-brand-light min-h-screen">
@@ -212,7 +234,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
         </div>
 
         <!-- ====== RELATED PRODUCTS SECTION ====== -->
-        ${related.length ? `
+        ${related.length || relatedLoading ? `
           <div class="bg-white rounded-3xl shadow-md border border-gray-100 p-8">
             <div class="mb-8">
               <h2 class="text-2xl md:text-4xl font-black text-brand-dark mb-2">
@@ -222,15 +244,15 @@ export function renderProductDetailPage(container, product, handlers = {}) {
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              ${related.map(relatedCard).join('')}
+              ${relatedLoading ? RELATED_SKELETON : related.map(relatedCard).join('')}
             </div>
 
-            <div class="text-center mt-10">
+            ${relatedLoading ? '' : `<div class="text-center mt-10">
               <button type="button" id="detail-view-all"
                 class="bg-brand-dark text-white font-bold text-base md:text-lg px-10 py-4 rounded-2xl hover:bg-gray-800 transition shadow-lg transform hover:scale-105">
                 View All ${escapeHtml(product.category || 'Marketplace')} Products
               </button>
-            </div>
+            </div>`}
           </div>
         ` : ''}
 

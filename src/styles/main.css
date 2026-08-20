@@ -16,12 +16,9 @@
     padding-inline: var(--page-gutter);
   }
 
-  .hero-bg {
-    background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
-    border-radius: 0 0 0 80px;
-    overflow: hidden;
-    position: relative;
-  }
+  /* .hero-bg was the old gradient panel. The hero is .hero-section-wrapper
+     now (see the block at the end of this file); the class is gone from the
+     markup and the rule with it. */
 
   .auth-card {
     background: #ffffff;
@@ -3699,4 +3696,214 @@ figcaption {
    rather than taking the page with it. */
 table {
   max-width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   HERO - white panel, gold arc, navy inset, rotating slider.
+
+   The two arcs are oversized circles positioned off the top of the panel, so
+   only the lower curve shows. The navy one is the same circle nudged right
+   and down, which leaves the gold visible as a rim rather than needing a
+   second shape or an image. Both are decorative and pointer-events: none, so
+   they never sit between a reader and a control.
+   --------------------------------------------------------------------------- */
+
+/* Hero background */
+.hero-section-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 280px;
+    background: #fff;
+    overflow: hidden;
+    border-radius: 0 0 0 80px;
+}
+
+/* Gold outer arc */
+.hero-section-wrapper::before {
+    content: "";
+    position: absolute;
+
+    width: 850px;
+    height: 850px;
+
+    left: 14%;
+    top: -520px;
+
+    border-radius: 50%;
+    background: #D99500;
+
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Navy inner area */
+.hero-section-wrapper::after {
+    content: "";
+    position: absolute;
+
+    width: 850px;
+    height: 850px;
+
+    left: calc(14% + 23px);
+    top: -520px;
+
+    border-radius: 50%;
+    background: #001B45;
+
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Keep hero content above the background */
+.hero-section-wrapper > * {
+    position: relative;
+    z-index: 5;
+}
+
+/* Desktop sizing */
+@media (min-width: 1024px) {
+    .hero-section-wrapper::before {
+        width: 850px;
+        height: 850px;
+        left: 14%;
+        top: -520px;
+    }
+
+    .hero-section-wrapper::after {
+        width: 850px;
+        height: 850px;
+        left: calc(14% + 23px);
+        top: -520px;
+    }
+}
+
+/* Tablet */
+@media (max-width: 1023px) {
+    .hero-section-wrapper::before {
+        width: 700px;
+        height: 700px;
+        left: 18%;
+        top: -430px;
+    }
+
+    .hero-section-wrapper::after {
+        width: 700px;
+        height: 700px;
+        left: calc(18% + 20px);
+        top: -430px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+    .hero-section-wrapper {
+        min-height: 420px;
+    }
+
+    .hero-section-wrapper::before {
+        width: 600px;
+        height: 600px;
+        left: 35%;
+        top: -300px;
+    }
+
+    .hero-section-wrapper::after {
+        width: 600px;
+        height: 600px;
+        left: calc(35% + 18px);
+        top: -300px;
+    }
+}
+
+/* --- Image slider ------------------------------------------------------- */
+.slider-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 12px 24px 12px 10px;
+    z-index: 10;
+}
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Inert while hidden: without this an off-screen slide's contents stay in
+       the tab order and a keyboard reader tabs into pictures nobody can see. */
+    visibility: hidden;
+}
+
+.slide img {
+    max-height: 88%;
+    max-width: 94%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.30));
+}
+
+.slide.active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 10;
+}
+
+/* Slider indicators */
+.slider-dots {
+    position: absolute;
+    bottom: 10px;
+    right: 40px;
+    display: flex;
+    gap: 8px;
+    z-index: 20;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: background-color 0.3s, width 0.3s;
+}
+
+.dot.active {
+    background-color: #F5A623;
+    width: 16px;
+    border-radius: 4px;
+}
+
+/* The slider sits over the navy arc on wide screens. On a phone the arc is
+   low and the copy fills the panel, so the slider stacks underneath it at
+   full width instead of overlapping the text. */
+@media (max-width: 767px) {
+    .slider-container {
+        position: relative;
+        width: 100%;
+        height: 190px;
+        justify-content: center;
+        padding: 8px;
+        margin-top: 0.75rem;
+    }
+
+    .slider-dots {
+        right: 50%;
+        transform: translateX(50%);
+        bottom: 6px;
+    }
 }

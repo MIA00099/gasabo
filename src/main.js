@@ -5,7 +5,7 @@
 import './styles/main.css';
 import { stateEngine } from './store/stateEngine.js';
 import { getTranslation } from './store/i18n.js';
-import { renderMarketplaceView, cleanupFlashClock } from './modules/marketplace/MarketplaceView.js';
+import { renderMarketplaceView, cleanupFlashClock, cleanupHeroSlider } from './modules/marketplace/MarketplaceView.js';
 import { renderRealEstateView, openPropertyModal } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
 import { renderLoginView } from './components/LoginView.js';
@@ -128,6 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const unreadNotifCount = state.notifications.filter(n => !n.isRead).length;
 
     cleanupFlashClock();
+    // Same reason as the clock: this view is about to be replaced, and the
+    // slider's interval would keep firing against slides that no longer exist.
+    cleanupHeroSlider();
 
     // Header Mount
     const headerMount = document.getElementById('header-mount');

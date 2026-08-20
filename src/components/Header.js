@@ -158,7 +158,7 @@ export function renderHeaderHtml(ctx) {
            inside itself now, the same way the category rail below does. -->
       <div class="compact-container flex items-center h-10 overflow-x-auto no-scrollbar">
 
-        <button type="button" id="nav-all-categories-2"
+        <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
           class="bg-brand-green h-full px-4 flex items-center gap-2 cursor-pointer w-48 mr-4 shrink-0">
           <i class="fa-solid fa-bars text-sm"></i>
           <span class="font-semibold text-sm">All Categories</span>
@@ -230,7 +230,7 @@ export function renderMobileTabBarHtml(ctx) {
 export function bindHeaderEvents(root, handlers) {
   const {
     goHome, goRealEstate, goSignup, logout, setLanguage,
-    toggleNotifications, markAllRead, markRead, goStores, goVehicles,
+    toggleNotifications, markAllRead, markRead, goStores, goVehicles, openCategories,
   } = handlers;
 
   const on = (sel, ev, fn) => root.querySelector(sel)?.addEventListener(ev, fn);
@@ -251,7 +251,9 @@ export function bindHeaderEvents(root, handlers) {
   on('#nav-link-vehicles', 'click', goVehicles);
   // #nav-all-categories was the chip inside the header search form and went
   // with it; the nav bar's own #nav-all-categories-2 is the one left.
-  on('#nav-all-categories-2', 'click', goHome);
+  // Same chevron, same promise. main.js supplies the handler because it is
+  // the one with the store; this component stays free of it.
+  on('#nav-all-categories-2', 'click', (e) => openCategories?.(e.currentTarget));
   on('#header-post-ad-btn', 'click', goSignup);
   on('#header-signin-btn', 'click', goSignup);
   on('#util-become-seller', 'click', goSignup);

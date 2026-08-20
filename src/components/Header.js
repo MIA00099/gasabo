@@ -52,7 +52,7 @@ function notReadyToast(label) {
 
 export function renderHeaderHtml(ctx) {
   const {
-    activePortal, currentUser, currentLang, searchQuery,
+    activePortal, currentUser, currentLang,
     showAccountChip, showNotifBell, unreadNotifCount, notifications, notifDropdownOpen,
   } = ctx;
 
@@ -93,25 +93,6 @@ export function renderHeaderHtml(ctx) {
           </div>
         </div>
 
-        <!-- Search Bar -->
-        <div class="flex-1 w-full md:w-auto order-3 md:order-none max-w-3xl">
-          <form id="header-search-form" role="search"
-            class="flex rounded-full border-2 border-brand-green overflow-hidden h-10">
-            <button type="button" id="nav-all-categories"
-              class="bg-gray-50 px-3 py-1 text-xs text-gray-600 border-r border-gray-200 items-center gap-1 hover:bg-gray-100 hidden sm:flex whitespace-nowrap">
-              All Categories <i class="fa-solid fa-chevron-down text-[10px]"></i>
-            </button>
-            <label class="sr-only" for="header-search-input">Search listings</label>
-            <input id="header-search-input" type="text" autocomplete="off"
-              value="${escapeHtml(searchQuery)}"
-              placeholder="Search for products, vehicles, properties and more..."
-              class="flex-1 px-3 outline-none text-xs min-w-0">
-            <button type="submit" aria-label="Search"
-              class="bg-brand-green text-white px-6 hover:bg-green-800 transition-colors">
-              <i class="fa-solid fa-search text-sm"></i>
-            </button>
-          </form>
-        </div>
 
         <!-- User Actions -->
         <div class="flex items-center gap-4 order-2 md:order-none shrink-0">
@@ -249,7 +230,7 @@ export function renderMobileTabBarHtml(ctx) {
 export function bindHeaderEvents(root, handlers) {
   const {
     goHome, goRealEstate, goSignup, logout, setLanguage,
-    toggleNotifications, markAllRead, markRead, search, goStores, goVehicles,
+    toggleNotifications, markAllRead, markRead, goStores, goVehicles,
   } = handlers;
 
   const on = (sel, ev, fn) => root.querySelector(sel)?.addEventListener(ev, fn);
@@ -268,7 +249,8 @@ export function bindHeaderEvents(root, handlers) {
   on('#nav-link-re', 'click', goRealEstate);
   on('#nav-link-stores', 'click', goStores);
   on('#nav-link-vehicles', 'click', goVehicles);
-  on('#nav-all-categories', 'click', goHome);
+  // #nav-all-categories was the chip inside the header search form and went
+  // with it; the nav bar's own #nav-all-categories-2 is the one left.
   on('#nav-all-categories-2', 'click', goHome);
   on('#header-post-ad-btn', 'click', goSignup);
   on('#header-signin-btn', 'click', goSignup);
@@ -284,10 +266,6 @@ export function bindHeaderEvents(root, handlers) {
     btn.addEventListener('click', () => markRead(btn.dataset.id));
   });
 
-  on('#header-search-form', 'submit', (e) => {
-    e.preventDefault();
-    search(root.querySelector('#header-search-input')?.value.trim() || '');
-  });
 }
 
 export function bindMobileTabBarEvents(root, handlers) {

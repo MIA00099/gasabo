@@ -160,7 +160,11 @@ const createProductSchema = z.object({
   district: z.string().min(2),
   condition: z.string().min(1),
   description: z.string().min(1),
-  images: z.array(z.string()).min(1),
+  // Capped server-side, not just in the form: the UI has always promised
+  // "Max 10 photos" and never enforced it, and a client can post whatever it
+  // likes. Ten thumbnails is also about where the detail page gallery stops
+  // being usable.
+  images: z.array(z.string().min(1)).min(1).max(10),
 });
 
 productsRouter.post('/', requireAuth, requireRole('SELLER'), async (req, res) => {

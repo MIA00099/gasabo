@@ -138,6 +138,29 @@ export function renderProductDetailPage(container, product, handlers = {}) {
                   <div class="absolute top-4 right-4 bg-brand-orange text-white px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">-${pct}%</div>
                 ` : ''}
 
+
+                ${images.length > 1 ? `
+                  <!-- Prev/next on the image itself. The thumbnail strip below
+                       scrolls; these change the photo, which is the gesture
+                       most people reach for first. They wrap rather than
+                       disable - there is nowhere to get stuck in a loop of
+                       six pictures, and the strip underneath already shows
+                       which one is current. -->
+                  <button type="button" id="main-prev"
+                    class="main-nav absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-brand-dark shadow-md flex items-center justify-center transition"
+                    aria-label="Previous photo">
+                    <i class="fa-solid fa-arrow-left text-sm"></i>
+                  </button>
+                  <button type="button" id="main-next"
+                    class="main-nav absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-brand-dark shadow-md flex items-center justify-center transition"
+                    aria-label="Next photo">
+                    <i class="fa-solid fa-arrow-right text-sm"></i>
+                  </button>
+
+                  <span id="main-counter"
+                    class="absolute bottom-3 left-3 z-20 bg-black/55 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                    aria-live="polite">1 / ${images.length}</span>
+                ` : ''}
                 <!-- Opens the shared lightbox. A listing photo is the only
                      thing a buyer has to judge condition by, and the inline
                      frame caps out at 320px tall. -->
@@ -294,6 +317,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   // ---- Gallery -----------------------------------------------------------
   const mainImg = container.querySelector('#detail-main-img');
   const strip = container.querySelector('#detail-thumb-strip');
+  const counter = container.querySelector('#main-counter');
   const thumbs = [...container.querySelectorAll('.detail-thumb')];
   let activeIndex = 0;
 
@@ -312,12 +336,51 @@ export function renderProductDetailPage(container, product, handlers = {}) {
 
     // Keep the selected thumbnail on screen when selection moves by keyboard
     // or by the arrows, not only when it was clicked into view.
+    if (counter) counter.textContent = `${i + 1} / ${images.length}`;
+
     thumbs[i]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   }
 
   thumbs.forEach((thumb) => {
     thumb.addEventListener('click', () => selectImage(Number(thumb.dataset.index)));
   });
+
+  function step(delta) {
+    // Wraps. See the markup comment - the strip below shows position, so
+    // there is nothing to be lost by looping.
+    selectImage((activeIndex + delta + images.length) % images.length);
+  }
+
+  container.querySelector('#main-prev')?.addEventListener('click', () => step(-1));
+  container.querySelector('#main-next')?.addEventListener('click', () => step(1));
+
+  // Swipe. Most of this marketplace is read on a phone, where reaching for a
+  // 36px arrow is worse than the gesture people already use on every other
+  // photo they look at.
+  const frame = mainImg?.parentElement;
+  if (frame && images.length > 1) {
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    frame.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = true;
+    }, { passive: true });
+
+    frame.addEventListener('touchend', (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      // Horizontal intent only, or every attempt to scroll the page past the
+      // image would flick the gallery instead.
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      step(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  }
 
   // Left/Right move between photos while the strip has focus, which is what a
   // row of images implies to anyone not using a mouse.

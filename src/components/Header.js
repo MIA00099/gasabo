@@ -196,7 +196,7 @@ export function renderHeaderHtml(ctx) {
             <button type="button" id="nav-link-vehicles" class="${navLink}">Vehicles</button>
           </li>
           <li class="h-full flex items-center">
-            <button type="button" id="nav-link-re" class="${isRealEstate ? navLinkActive : navLink}">Real Estate</button>
+            <button type="button" id="nav-link-re" class="${navLink}">Real Estate</button>
           </li>
           <li class="h-full flex items-center">
             <button type="button" data-soon="Services" class="${navLink}">Services</button>
@@ -250,7 +250,7 @@ export function renderMobileTabBarHtml(ctx) {
 export function bindHeaderEvents(root, handlers) {
   const {
     goHome, goRealEstate, goSignup, logout, setLanguage,
-    toggleNotifications, markAllRead, markRead, goStores, goVehicles, openCategories,
+    toggleNotifications, markAllRead, markRead, goStores, goVehicles, openCategories, goRealEstateCategory,
   } = handlers;
 
   const on = (sel, ev, fn) => root.querySelector(sel)?.addEventListener(ev, fn);
@@ -266,7 +266,7 @@ export function bindHeaderEvents(root, handlers) {
   });
 
   on('#nav-link-mkt', 'click', goHome);
-  on('#nav-link-re', 'click', goRealEstate);
+  on('#nav-link-re', 'click', goRealEstateCategory);
   // Same destination as the Real Estate item in the nav bar below it.
   on('#nav-gasabo-brand', 'click', goRealEstate);
   on('#nav-link-stores', 'click', goStores);

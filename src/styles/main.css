@@ -3908,3 +3908,214 @@ table {
     width: 16px;
     border-radius: 4px;
 }
+
+/* ---------------------------------------------------------------------------
+   GASABO TOP NAV - the delivered stylesheet, rule for rule.
+   Only two rules from that file are not here: its `*` reset and its `body`
+   background/font. Those are a standalone page's globals; dropped in here they
+   would restyle the whole application rather than this bar.
+   --------------------------------------------------------------------------- */
+
+.top-nav {
+  width: calc(100% - 20px);
+  height: 68px;
+  margin: 6px 10px;
+
+  background: #fff;
+  border-radius: 11px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 30px;
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* LEFT */
+
+.top-nav .nav-left {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* BRAND */
+
+.top-nav .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  text-decoration: none;
+  color: #0b2b61;
+
+  white-space: nowrap;
+}
+
+.top-nav .brand img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.top-nav .brand-name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* DIVIDER */
+
+.top-nav .nav-divider {
+  width: 1px;
+  height: 36px;
+  background: #e5e9ef;
+
+  margin-left: 32px;
+  margin-right: 38px;
+}
+
+/* NAV LINKS */
+
+.top-nav .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+}
+
+.top-nav .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  text-decoration: none;
+  color: #183b6b;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  white-space: nowrap;
+
+  transition: 0.2s ease;
+}
+
+.top-nav .nav-item:hover {
+  color: #0b2b61;
+}
+
+/* ICONS */
+
+.top-nav .icon {
+  width: 21px;
+  height: 21px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #183b6b;
+  font-size: 20px;
+}
+
+/* INFO ICON */
+
+.top-nav .info-icon {
+  width: 17px;
+  height: 17px;
+
+  border: 1.6px solid #183b6b;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ARROWS */
+
+.top-nav .arrow {
+  font-size: 16px;
+  margin-left: 1px;
+  margin-top: -3px;
+}
+
+/* KIGALI MARKET */
+
+.top-nav .market-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  text-decoration: none;
+
+  color: #315787;
+
+  font-size: 16px;
+  font-weight: 500;
+
+  white-space: nowrap;
+
+  transition: 0.2s ease;
+}
+
+.top-nav .market-link:hover {
+  color: #0b2b61;
+}
+
+.top-nav .back-arrow {
+  font-size: 21px;
+  line-height: 1;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 950px) {
+
+  .top-nav {
+    padding: 0 20px;
+  }
+
+  .top-nav .nav-divider {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .top-nav .nav-links {
+    gap: 20px;
+  }
+
+  .top-nav .brand-name {
+    font-size: 15px;
+  }
+
+  .top-nav .market-link {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 750px) {
+
+  .top-nav {
+    height: 65px;
+    padding: 0 15px;
+  }
+
+  .top-nav .nav-links {
+    display: none;
+  }
+
+  .top-nav .nav-divider {
+    display: none;
+  }
+
+  .top-nav .market-link {
+    margin-left: auto;
+  }
+}

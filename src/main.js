@@ -136,6 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Header Mount
     const headerMount = document.getElementById('header-mount');
     if (headerMount) {
+      // The Gasabo portal carries its own nav bar and nothing else: no
+      // marketplace header, and no announcement strip advertising delivery on
+      // a property page. This is the "nav must be this only" instruction -
+      // the bar in RealEstateView is the whole navigation there.
+      if (activePortal === 'realestate') {
+        headerMount.innerHTML = '';
+      } else {
       headerMount.innerHTML = renderHeaderHtml({
         activePortal,
         currentUser,
@@ -219,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
       });
 
+      }
       if (appElement) appElement.style.paddingTop = '';
     }
 

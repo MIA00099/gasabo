@@ -143,66 +143,72 @@ export function renderRealEstateView(container) {
 
     container.innerHTML = `
       <div>
-        <!-- SUB-NAV: brand, a divider, four icon items, and the way back to
-             the marketplace on the right. Matches the reference exactly, with
-             one condition attached: the three chevrons open real menus.
-             Plots and Houses list the locations that actually have that kind
-             of property, Services lists the services the CMS holds. A chevron
-             that opens nothing is the complaint this design would otherwise
-             invite. About has no chevron because it is a single page. -->
-        <div style="background: #ffffff; border-bottom: 1px solid #E2E8F0; padding: 0.7rem 1.5rem; position: sticky; top: 0; z-index: 30; box-shadow: 0 1px 3px rgba(15,23,42,0.05);">
-          <div style="max-width: var(--page-max); margin: 0 auto; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+        <!-- NAVBAR - the delivered markup, class for class. Three changes it
+             needs to work inside the app rather than as a standalone page:
+             the logo points at the asset in public/, the anchors carry ids so
+             they can be wired, and their clicks are prevented so href="#" does
+             not push a hash the router would then have to strip.
 
-            <div id="re-logo-home" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; flex-shrink: 0;"
-              role="button" tabindex="0" aria-label="Gasabo Real Estate - home">
-              <img src="/real-estate-logo.png" alt="" style="height: 38px; width: 38px; border-radius: 50%; object-fit: contain; border: 1px solid #E2E8F0;">
-              <span style="font-weight: 800; font-size: 1.1rem; color: ${RE_BLUE}; white-space: nowrap;">Gasabo Real Estate</span>
+             Plots, Houses and Services keep their chevrons and open the real
+             lists the CMS holds. -->
+        <nav class="top-nav">
+
+          <!-- LEFT SIDE -->
+          <div class="nav-left">
+
+            <!-- BRAND -->
+            <a href="#" class="brand" id="re-logo-home">
+              <img src="/real-estate-logo.png" alt="Gasabo Logo">
+              <span class="brand-name">
+                Gasabo Real Estate
+              </span>
+            </a>
+
+            <!-- DIVIDER -->
+            <div class="nav-divider"></div>
+
+            <!-- NAVIGATION -->
+            <div class="nav-links">
+
+              <!-- PLOTS -->
+              <a href="#" class="nav-item re-nav-item" data-nav="plot" aria-haspopup="menu" aria-expanded="false">
+                <span class="icon">&#9831;</span>
+                <span>Plots</span>
+                <span class="arrow">&#8964;</span>
+              </a>
+
+              <!-- HOUSES -->
+              <a href="#" class="nav-item re-nav-item" data-nav="house" aria-haspopup="menu" aria-expanded="false">
+                <span class="icon">&#8962;</span>
+                <span>Houses</span>
+                <span class="arrow">&#8964;</span>
+              </a>
+
+              <!-- SERVICES -->
+              <a href="#" class="nav-item re-nav-item" data-nav="services" aria-haspopup="menu" aria-expanded="false">
+                <span class="icon">&#9635;</span>
+                <span>Services</span>
+                <span class="arrow">&#8964;</span>
+              </a>
+
+              <!-- ABOUT -->
+              <a href="#" class="nav-item re-nav-item" data-nav="about">
+                <span class="info-icon">i</span>
+                <span>About</span>
+              </a>
+
             </div>
 
-            <span style="width: 1px; height: 26px; background: #E2E8F0; flex-shrink: 0;" aria-hidden="true"></span>
-
-            <!-- Scrolls rather than wraps: four icon items plus the brand and
-                 the back link do not fit a 375px phone, and wrapping them
-                 pushed one 29px off the screen. The bar stays one line at
-                 every width, the way the reference draws it. -->
-            <nav class="no-scrollbar" style="display: flex; align-items: center; gap: 0.35rem; flex: 1; min-width: 0; overflow-x: auto;"
-              aria-label="Gasabo Real Estate">
-              ${[
-                { id: 'plot', icon: 'fa-location-dot', label: 'Plots', menu: true },
-                { id: 'house', icon: 'fa-house', label: 'Houses', menu: true },
-                { id: 'services', icon: 'fa-briefcase', label: 'Services', menu: true },
-                { id: 'about', icon: 'fa-circle-info', label: 'About', menu: false },
-              ].map((item) => {
-                const on = item.id === 'about'
-                  ? activeTab === 'about'
-                  : item.id === 'services'
-                    ? activeTab === 'services'
-                    : activeTab === 'properties' && filters.type === item.id;
-                return `
-                  <button class="re-nav-item" data-nav="${item.id}"
-                    ${item.menu ? 'aria-haspopup="menu" aria-expanded="false"' : ''}
-                    style="display: inline-flex; align-items: center; gap: 0.45rem; background: ${on ? '#EFF4FF' : 'none'};
-                           border: none; border-radius: 9px; padding: 0.45rem 0.7rem; cursor: pointer;
-                           font-weight: 600; font-size: 0.92rem; white-space: nowrap;
-                           color: ${on ? RE_BLUE : '#475569'};">
-                    <i class="fa-solid ${item.icon}" style="font-size: 0.85rem; color: ${on ? RE_BLUE : '#64748B'};"></i>
-                    ${item.label}
-                    ${item.menu ? `<i class="fa-solid fa-chevron-down" style="font-size: 0.6rem; opacity: 0.7;"></i>` : ''}
-                  </button>
-                `;
-              }).join('')}
-            </nav>
-
-            <!-- The one route out of the portal. It sat in the site header
-                 before; the reference puts it at the end of this bar. -->
-            <button id="re-back-to-market-nav"
-              style="display: inline-flex; align-items: center; gap: 0.5rem; background: none; border: none;
-                     cursor: pointer; font-weight: 600; font-size: 0.9rem; color: ${RE_BLUE};
-                     white-space: nowrap; flex-shrink: 0;">
-              <i class="fa-solid fa-arrow-left" style="font-size: 0.8rem;"></i> Kigali Market
-            </button>
           </div>
-        </div>
+
+          <!-- KIGALI MARKET -->
+          <a href="#" class="market-link" id="re-back-to-market-nav">
+            <span class="back-arrow">&#8592;</span>
+            <span>Kigali Market</span>
+          </a>
+
+        </nav>
+
 
 
         ${activeTab === 'home' ? renderHomeView(reData, properties) : ''}
@@ -216,7 +222,8 @@ export function renderRealEstateView(container) {
     // The marketplace footer bindings and its slim sticky bar go with it.
 
     // Event Handlers
-    container.querySelector('#re-logo-home')?.addEventListener('click', () => {
+    container.querySelector('#re-logo-home')?.addEventListener('click', (e) => {
+      e.preventDefault();
       stateEngine.setUI({ realEstateTab: 'home' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -241,7 +248,10 @@ export function renderRealEstateView(container) {
     };
 
     container.querySelectorAll('.re-nav-item').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        // href="#" comes from the delivered markup; without this every click
+        // pushes a hash the router then has to strip back off.
+        e.preventDefault();
         const nav = btn.dataset.nav;
 
         if (nav === 'about') {
@@ -297,7 +307,8 @@ export function renderRealEstateView(container) {
       });
     });
 
-    container.querySelector('#re-back-to-market-nav')?.addEventListener('click', () => {
+    container.querySelector('#re-back-to-market-nav')?.addEventListener('click', (e) => {
+      e.preventDefault();
       stateEngine.setUI({ marketplaceTab: 'products' });
       stateEngine.setPortal('marketplace');
     });

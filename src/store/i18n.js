@@ -102,6 +102,8 @@ export const translations = {
     ui_tab_messages: "Messages",
     ui_tab_account: "Account",
     ui_loading_items: "Loading featured items...",
+    ui_more_products: "More products",
+    ui_view_all: "View all",
   },
   rw: {
     // Nav & General
@@ -201,6 +203,8 @@ export const translations = {
     ui_tab_messages: "Ubutumwa",
     ui_tab_account: "Konti",
     ui_loading_items: "Turimo gushakisha ibicuruzwa...",
+    ui_more_products: "Ibindi bicuruzwa",
+    ui_view_all: "Reba byose",
   },
   fr: {
     // Nav & General
@@ -300,6 +304,8 @@ export const translations = {
     ui_tab_messages: "Messages",
     ui_tab_account: "Compte",
     ui_loading_items: "Chargement des articles...",
+    ui_more_products: "Plus de produits",
+    ui_view_all: "Voir tout",
   }
 };
 

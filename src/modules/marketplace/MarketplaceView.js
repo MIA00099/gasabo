@@ -9,6 +9,60 @@ import { starsHtml } from '../../utils/stars.js';
 import { openCategoryDropdown } from '../../components/dropdownMenu.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
+// How many products sit in the top row, beside the Flash Deals card. The
+// rest continue in the grid underneath it.
+const TOP_ROW = 5;
+
+// Beyond this the homepage stops being a homepage. The catalog is what the
+// "View all" button below the grid is for.
+const HOME_MAX_MORE = 15;
+
+/**
+ * One product tile.
+ *
+ * Used by the top row and by the grid of everything else underneath, which is
+ * the point of it existing: the tile carries the discount badge, the price,
+ * the strikethrough, the stars and the like count, and a second pasted copy
+ * would drift from this one the first time any of those changed.
+ *
+ * `compact` is the five-across row beside the Flash Deals card, where the
+ * image has to stay short enough that the row does not outgrow the card.
+ */
+function productCardHtml(prod, { compact = false } = {}) {
+  const was = Number(prod.originalPrice) || 0;
+  const hasDiscount = was > prod.price;
+  const pct = hasDiscount ? Math.round((1 - prod.price / was) * 100) : 20;
+  const imgHeight = compact ? 'max-h-[100px]' : 'max-h-[128px]';
+
+  return `
+    <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
+        <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-${pct}%</div>
+        <div class="flex-1 flex items-center justify-center mb-2">
+            <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
+              class="${imgHeight} w-auto object-contain group-hover:scale-105 transition transform">
+        </div>
+        <div class="mt-auto">
+            <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">${escapeHtml(prod.title)}</h3>
+            <div class="flex items-end gap-1.5 mb-1">
+                <span class="font-bold text-sm text-brand-dark leading-none">RWF ${prod.price.toLocaleString()}</span>
+                ${was ? `<span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF ${was.toLocaleString()}</span>` : ''}
+            </div>
+            ${prod.rating ? `
+              <div class="flex items-center gap-1 text-[9px] text-yellow-400">
+                ${starsHtml(prod.rating)}
+                <span class="text-gray-600 font-semibold ml-0.5">${Number(prod.rating).toFixed(1)}</span>
+                ${prod.likeCount ? `<span class="text-gray-400 ml-1"><i class="fa-solid fa-heart text-red-400"></i> ${prod.likeCount}</span>` : ''}
+              </div>
+            ` : prod.likeCount ? `
+              <div class="flex items-center gap-1 text-[9px] text-gray-500">
+                <i class="fa-solid fa-heart text-red-400"></i> ${prod.likeCount}
+              </div>
+            ` : ''}
+        </div>
+    </div>
+  `;
+}
+
 // Grey circles, no labels. Deliberately not category-shaped placeholder
 // objects: the previous version of this strip rendered invented names
 // (Motorcycles, Bicycles, Land & Plots) that no category ever matched, and
@@ -440,37 +494,10 @@ export function renderMarketplaceView(container) {
                             <div class="col-span-5 bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100 flex items-center justify-center">
                                 ${t('ui_loading_items')}
                             </div>
-                        ` : state.products.length > 0 ? state.products.slice(0, 5).map((prod) => {
-                            const was = Number(prod.originalPrice) || 0;
-                            const hasDiscount = was > prod.price;
-                            const pct = hasDiscount ? Math.round((1 - prod.price / was) * 100) : 20;
-                            return `
-                                <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
-                                    <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-${pct}%</div>
-                                    <div class="flex-1 flex items-center justify-center mb-2">
-                                        <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" class="max-h-[100px] w-auto object-contain group-hover:scale-105 transition transform">
-                                    </div>
-                                    <div class="mt-auto">
-                                        <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">${escapeHtml(prod.title)}</h3>
-                                        <div class="flex items-end gap-1.5 mb-1">
-                                            <span class="font-bold text-sm text-brand-dark leading-none">RWF ${prod.price.toLocaleString()}</span>
-                                            ${was ? `<span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF ${was.toLocaleString()}</span>` : ''}
-                                        </div>
-                                        ${prod.rating ? `
-                                          <div class="flex items-center gap-1 text-[9px] text-yellow-400">
-                                            ${starsHtml(prod.rating)}
-                                            <span class="text-gray-600 font-semibold ml-0.5">${Number(prod.rating).toFixed(1)}</span>
-                                            ${prod.likeCount ? `<span class="text-gray-400 ml-1"><i class="fa-solid fa-heart text-red-400"></i> ${prod.likeCount}</span>` : ''}
-                                          </div>
-                                        ` : prod.likeCount ? `
-                                          <div class="flex items-center gap-1 text-[9px] text-gray-500">
-                                            <i class="fa-solid fa-heart text-red-400"></i> ${prod.likeCount}
-                                          </div>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('') : `
+                        ` : state.products.length > 0 ? state.products
+                            .slice(0, TOP_ROW)
+                            .map((prod) => productCardHtml(prod, { compact: true }))
+                            .join('') : `
                             <!-- Sample Mockup Product Cards from index.html -->
                             <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col sample-item-btn">
                                 <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-20%</div>
@@ -574,6 +601,45 @@ export function renderMarketplaceView(container) {
                     </div>
                 </div>
             </section>
+
+            <!-- Everything past the top row.
+
+                 The homepage used to render products.slice(0, 5) and stop.
+                 With eight products in the database that left three with
+                 nowhere to appear, and anything a seller posted after the
+                 fifth was invisible from the front page.
+
+                 The row above keeps its five beside the Flash Deals card -
+                 that layout was delivered as a unit. The rest continue here,
+                 wrapping row under row, in a grid that goes two-across on a
+                 phone and five on a desktop. -->
+            ${state.products.length > TOP_ROW ? `
+              <section class="compact-container mt-4 shrink-0">
+                  <div class="flex items-baseline justify-between mb-2">
+                      <h2 class="text-base font-black text-gray-900">${t('ui_more_products')}</h2>
+                      <button type="button" id="home-view-all-btn"
+                        class="text-xs font-bold text-brand-green hover:underline">
+                          ${t('ui_view_all')} (${state.products.length})
+                      </button>
+                  </div>
+
+                  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      ${state.products
+                        .slice(TOP_ROW, TOP_ROW + HOME_MAX_MORE)
+                        .map((prod) => productCardHtml(prod))
+                        .join('')}
+                  </div>
+
+                  ${state.products.length > TOP_ROW + HOME_MAX_MORE ? `
+                    <div class="flex justify-center mt-3">
+                        <button type="button" id="home-view-all-btn-2"
+                          class="bg-brand-dark text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-gray-800 transition">
+                            ${t('ui_view_all')} (${state.products.length})
+                        </button>
+                    </div>
+                  ` : ''}
+              </section>
+            ` : ''}
       </div>
 
       <!-- FLASH DEALS COUNTDOWN MODAL -->
@@ -763,6 +829,15 @@ export function renderMarketplaceView(container) {
 
     container.querySelector('#hero-explore-ads-btn')?.addEventListener('click', () => {
       stateEngine.setUI({ marketplaceTab: 'catalog' });
+    });
+
+    // Both "View all" buttons on the more-products section - the one in its
+    // header, and the one under the grid that only appears when the homepage
+    // is holding back more than it shows.
+    container.querySelectorAll('#home-view-all-btn, #home-view-all-btn-2').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        stateEngine.setUI({ marketplaceTab: 'catalog' });
+      });
     });
 
     container.querySelectorAll('.cat-tile-btn').forEach((tile) => {

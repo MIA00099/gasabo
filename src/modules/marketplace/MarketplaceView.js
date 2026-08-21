@@ -262,7 +262,9 @@ export function renderMarketplaceView(container) {
                               onerror="this.onerror=null;this.src='/hero-section.png'">
                         </div>
 
-                        <!-- Slide 2: Real Estate Text (Matching your screenshot) -->
+                        <!-- Slide 2: Real Estate. Still a text panel - the
+                             houses photo is the one piece of artwork not
+                             supplied yet. -->
                         <div class="slide" data-slide="1">
                             <div class="text-center text-white">
                                 <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">${t('ui_real_estate')}</h2>
@@ -270,19 +272,45 @@ export function renderMarketplaceView(container) {
                             </div>
                         </div>
 
-                        <!-- Slide 3: Vehicles Focus -->
-                        <div class="slide" data-slide="2">
-                            <div class="text-center text-white">
-                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">${t('ui_vehicles')}</h2>
-                                <h3 class="text-3xl font-medium text-white">${t('ui_slide_cars_bikes')}</h3>
+                        <!-- Slides 3-6: the supplied product photos. These
+                             replace the text-only panels that stood in while
+                             there was no artwork.
+
+                             The two studio photos ship as JPEG; the two
+                             cut-outs keep their alpha and stay PNG, because
+                             the mobile hero puts white behind the top of the
+                             slider column. All four are resized to about
+                             1.7x their largest rendered size - 490KB for the
+                             set, down from 7.1MB of originals. -->
+                        <div class="slide has-caption" data-slide="2">
+                            <img src="/slide-vehicles.jpg" alt="">
+                            <div class="slide-caption text-center text-white">
+                                <h2>${t('ui_vehicles')}</h2>
+                                <h3>${t('ui_slide_cars_bikes')}</h3>
                             </div>
                         </div>
 
-                        <!-- Slide 4: Electronics -->
-                        <div class="slide" data-slide="3">
-                            <div class="text-center text-white">
-                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">${t('ui_slide_electronics')}</h2>
-                                <h3 class="text-3xl font-medium text-white">${t('ui_slide_laptops')}</h3>
+                        <div class="slide has-caption" data-slide="3">
+                            <img src="/slide-laptops.jpg" alt="">
+                            <div class="slide-caption text-center text-white">
+                                <h2>${t('ui_slide_electronics')}</h2>
+                                <h3>${t('ui_slide_laptops')}</h3>
+                            </div>
+                        </div>
+
+                        <div class="slide has-caption" data-slide="4">
+                            <img src="/slide-headphones.png" alt="">
+                            <div class="slide-caption text-center text-white">
+                                <h2>${t('ui_slide_electronics')}</h2>
+                                <h3>${t('ui_slide_audio')}</h3>
+                            </div>
+                        </div>
+
+                        <div class="slide has-caption" data-slide="5">
+                            <img src="/slide-fashion.png" alt="">
+                            <div class="slide-caption text-center text-white">
+                                <h2>${t('ui_slide_fashion')}</h2>
+                                <h3>${t('ui_slide_clothing')}</h3>
                             </div>
                         </div>
 
@@ -294,6 +322,8 @@ export function renderMarketplaceView(container) {
                         <button type="button" class="dot" data-dot="1" aria-label="Show slide 2"></button>
                         <button type="button" class="dot" data-dot="2" aria-label="Show slide 3"></button>
                         <button type="button" class="dot" data-dot="3" aria-label="Show slide 4"></button>
+                        <button type="button" class="dot" data-dot="4" aria-label="Show slide 5"></button>
+                        <button type="button" class="dot" data-dot="5" aria-label="Show slide 6"></button>
                     </div>
 
                 </div>
@@ -320,7 +350,7 @@ export function renderMarketplaceView(container) {
                         <div class="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center text-lg shadow-inner group-hover:bg-green-800 transition">
                             <i class="fa-solid fa-border-all"></i>
                         </div>
-                        <span class="text-[9px] font-bold text-center leading-tight">All<br>Categories</span>
+                        <span class="text-[11px] font-bold text-center leading-tight text-gray-900">All<br>Categories</span>
                     </div>
 
                     ${state.categories.length === 0 && !categoriesAttempted ? SKELETON_TILES : state.categories.map((c) => `
@@ -328,7 +358,7 @@ export function renderMarketplaceView(container) {
                           <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110 ${filters.selectedCategory === c.id ? 'ring-2 ring-brand-green' : ''}">
                               ${renderCategoryIcon(c.icon, { size: 26, alt: c.name })}
                           </div>
-                          <span class="text-[9px] font-semibold text-center text-gray-700 leading-tight line-clamp-2">${escapeHtml(c.name)}</span>
+                          <span class="text-[11px] font-bold text-center text-gray-900 leading-tight line-clamp-2">${escapeHtml(c.name)}</span>
                       </div>
                     `).join('')}
 
@@ -339,7 +369,7 @@ export function renderMarketplaceView(container) {
                         <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
                             <i class="fa-solid fa-house text-stone-600"></i>
                         </div>
-                        <span class="text-[9px] font-semibold text-center text-gray-700">Real Estate</span>
+                        <span class="text-[11px] font-bold text-center text-gray-900">${t('ui_real_estate')}</span>
                     </div>
                 </div>
             </section>
@@ -361,9 +391,10 @@ export function renderMarketplaceView(container) {
                          off. -->
                     <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card cursor-pointer hover:opacity-95 transition lg:shrink-0">
 
-                      <h2>${t('ui_flash_deals')} <span>&#9889;</span></h2>
-
-                      <a href="#" class="view-deals" id="open-flash-deals-btn" role="button">${t('ui_view_all_deals')}</a>
+                      <div class="flash-head">
+                        <h2>${t('ui_flash_deals')} <span>&#9889;</span></h2>
+                        <a href="#" class="view-deals" id="open-flash-deals-btn" role="button">${t('ui_view_all_deals')}</a>
+                      </div>
 
                       <div class="countdown">
 

@@ -4109,9 +4109,37 @@ table {
   width: 100%;
   max-width: 360px;
   min-height: 230px;
-  padding: 18px 19px;
+  padding: 18px 19px 33px;
   background: #063f2b;
   color: white;
+
+  /* A column, so .countdown can sit on the floor of the card with
+     margin-top:auto instead of being pushed there by a fixed margin that
+     only happens to land in the right place at one card height. */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Heading left, "View all deals" right, on one row.
+
+   In English that is exactly the reference: the heading measures 175px and
+   the link 94px inside 322px of content, leaving the 53px gap the design
+   shows. Kinyarwanda and French are longer in both halves - "Ibiciro
+   Byihuse" is 214px and "Voir toutes les offres" 142px - and together they
+   do not fit one row. flex-wrap lets the link drop under the heading in
+   those two rather than squeezing the heading until it breaks mid-phrase;
+   the space it drops into is empty anyway, because the countdown is pinned
+   to the floor of the card. */
+.flash-deals .flash-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.flash-deals .flash-head h2 {
+  white-space: nowrap;
 }
 
 .flash-deals h2 {
@@ -4128,8 +4156,8 @@ table {
 
 .flash-deals .view-deals {
   display: inline-block;
-  margin-top: 26px;
   color: white;
+  white-space: nowrap;
   font-size: 14px;
   font-weight: 700;
   text-decoration: underline;
@@ -4138,8 +4166,9 @@ table {
 .flash-deals .countdown {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
-  margin-top: 34px;
+  margin-top: auto;
 }
 
 .flash-deals .time-box {
@@ -4171,4 +4200,56 @@ table {
   font-size: 24px;
   font-weight: 800;
   color: #fff;
+}
+
+/* ---------------------------------------------------------------------------
+   HERO SLIDER - photo slides with a caption.
+   .has-caption is only on the slides that carry a product photo; the Real
+   Estate panel is still text alone and keeps the full-size type.
+   --------------------------------------------------------------------------- */
+
+/* Picture over label, centred as one block. The caption travels with the
+   image rather than sitting at the foot of the slide, so it stays next to
+   what it names whatever height the slider column happens to be. */
+.slide.has-caption {
+  flex-direction: column;
+  justify-content: center;
+  gap: 9px;
+}
+
+.slide.has-caption img {
+  max-height: 74%;
+  border-radius: 10px;
+}
+
+.slide .slide-caption {
+  padding: 0 8px;
+  /* The photos are dark at the edges and the navy behind them is darker
+     still, so the label needs its own contrast rather than borrowing the
+     slide's. */
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+}
+
+.slide .slide-caption h2 {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.slide .slide-caption h3 {
+  margin: 2px 0 0;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: #fff;
+}
+
+@media (max-width: 1023px) {
+  .slide.has-caption img { max-height: 68%; }
+
+  .slide .slide-caption h2 { font-size: 17px; }
+  .slide .slide-caption h3 { font-size: 12px; }
 }

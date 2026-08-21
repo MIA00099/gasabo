@@ -48,7 +48,7 @@ function productCardHtml(prod, { compact = false } = {}) {
                 ${was ? `<span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF ${was.toLocaleString()}</span>` : ''}
             </div>
             ${prod.rating ? `
-              <div class="flex items-center gap-1 text-[9px] text-yellow-400">
+              <div class="flex flex-wrap items-center gap-1 text-[9px] text-yellow-400 min-w-0">
                 ${starsHtml(prod.rating)}
                 <span class="text-gray-600 font-semibold ml-0.5">${Number(prod.rating).toFixed(1)}</span>
                 ${prod.likeCount ? `<span class="text-gray-400 ml-1"><i class="fa-solid fa-heart text-red-400"></i> ${prod.likeCount}</span>` : ''}
@@ -254,7 +254,7 @@ export function renderMarketplaceView(container) {
 
     // Default Home View
     container.innerHTML = `
-      <div id="view-home" class="view-section active h-full flex flex-col justify-between p-2">
+      <div id="view-home" class="view-section active h-full flex flex-col justify-between py-2">
             
             <!-- Hero Section -->
             <section class="compact-container mt-1 shrink-0">
@@ -623,7 +623,7 @@ export function renderMarketplaceView(container) {
                       </button>
                   </div>
 
-                  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  <div class="home-more-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                       ${state.products
                         .slice(TOP_ROW, TOP_ROW + HOME_MAX_MORE)
                         .map((prod) => productCardHtml(prod))

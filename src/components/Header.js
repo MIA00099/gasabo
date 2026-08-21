@@ -114,6 +114,7 @@ export function renderHeaderHtml(ctx) {
             </span>
           </button>
         `}
+        ${isRealEstate ? '' : `
         <!-- User Actions -->
         <div class="flex items-center gap-4 order-2 md:order-none shrink-0">
           ${showNotifBell ? `
@@ -166,9 +167,22 @@ export function renderHeaderHtml(ctx) {
             </div>
           `}
         </div>
+        `}
+
+        ${isRealEstate ? `
+          <button type="button" id="re-back-to-market"
+            class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-green shrink-0">
+            <i class="fa-solid fa-arrow-left text-[10px]"></i> Kigali Market
+          </button>
+        ` : ''}
       </div>
     </header>
 
+    <!-- Marketplace navigation, and the Post an Ad button inside it. Both
+         are marketplace furniture: on the Gasabo portal the page carries its
+         own Plots / Houses / Services / About sub-nav, and there is nothing
+         to post an ad to. -->
+    ${isRealEstate ? '' : `
     <!-- Navigation Bar -->
     <nav class="bg-brand-dark text-white flex-none">
       <!-- overflow-x-auto: eight nav items plus the Post an Ad button cannot
@@ -212,6 +226,7 @@ export function renderHeaderHtml(ctx) {
         </button>
       </div>
     </nav>
+    `}
   `;
 }
 
@@ -259,11 +274,20 @@ export function bindHeaderEvents(root, handlers) {
     btn.addEventListener('click', () => notReadyToast(btn.dataset.soon));
   });
 
+  // On the Gasabo portal the brand block IS Gasabo, so clicking it should stay
+  // there rather than jumping to the marketplace - that is what the "Kigali
+  // Market" link beside it is for. #re-back-to-market only renders on that
+  // portal, which is the cheapest way for this component to tell where it is.
+  const onRealEstate = Boolean(root.querySelector('#re-back-to-market'));
+  const brandHome = onRealEstate ? goRealEstate : goHome;
+
   const brand = root.querySelector('#nav-brand-home');
-  brand?.addEventListener('click', goHome);
+  brand?.addEventListener('click', brandHome);
   brand?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); brandHome(); }
   });
+
+  on('#re-back-to-market', 'click', goHome);
 
   on('#nav-link-mkt', 'click', goHome);
   on('#nav-link-re', 'click', goRealEstateCategory);

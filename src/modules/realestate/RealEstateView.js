@@ -9,7 +9,6 @@
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PROPERTY } from '../../store/router.js';
 import { makeAccessibleModal } from '../../components/modalA11y.js';
-import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
 // Mockup's own brand palette (Gasabo Real Estate's tailwind.config), kept
 // as its own identity separate from the marketplace's green/gold/flag-blue
@@ -29,6 +28,62 @@ const TESTIMONIALS = [
   { quote: 'Gasabo Real Estate made buying a plot in Nyamata so incredibly easy. Their investment advice gave me full confidence.', name: 'Eric N. - Investor' },
   { quote: 'Their property management services are top tier. I live abroad and they collect rent and maintain my apartments perfectly.', name: 'Jean Claude - Property Owner' },
 ];
+
+
+/**
+ * Gasabo's own footer.
+ *
+ * The page used to end with the Kigali Market footer - KIGALI MARKET branding,
+ * Quick Links to the marketplace catalog and Start Selling, the 30-districts
+ * blurb. All of it belongs to the other half of the business and pulled the
+ * reader straight back out of the portal.
+ *
+ * This is built from the real-estate content the CMS already holds, so there
+ * is nothing invented in it: the address, phone and email are the ones an
+ * admin maintains under Real Estate CMS.
+ */
+function gasaboFooterHtml(contact) {
+  const c = contact || {};
+  return `
+    <footer style="background: ${RE_BLUE}; color: #fff; padding: 2.5rem 1.5rem 1.75rem;">
+      <div style="max-width: var(--page-max); margin: 0 auto; display: flex; flex-wrap: wrap; gap: 2.5rem; justify-content: space-between;">
+
+        <div style="min-width: 240px; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+            <img src="/real-estate-logo.png" alt="" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; background: #fff;">
+            <span style="font-weight: 800; font-size: 1.15rem;">Gasabo Real Estate</span>
+          </div>
+          <p style="color: #C7D7F5; font-size: 0.9rem; line-height: 1.6; max-width: 34ch;">
+            Plots, houses and property services across Gasabo District and greater Kigali.
+          </p>
+        </div>
+
+        <div style="min-width: 170px;">
+          <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.85rem;">Browse</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+            <button class="re-foot-link" data-tab="properties" data-type="plot" style="background: none; border: none; padding: 0; text-align: left; color: #C7D7F5; font-size: 0.9rem; cursor: pointer;">Plots</button>
+            <button class="re-foot-link" data-tab="properties" data-type="house" style="background: none; border: none; padding: 0; text-align: left; color: #C7D7F5; font-size: 0.9rem; cursor: pointer;">Houses</button>
+            <button class="re-foot-link" data-tab="services" style="background: none; border: none; padding: 0; text-align: left; color: #C7D7F5; font-size: 0.9rem; cursor: pointer;">Services</button>
+            <button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: #C7D7F5; font-size: 0.9rem; cursor: pointer;">About</button>
+          </div>
+        </div>
+
+        <div style="min-width: 220px;">
+          <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.85rem;">Contact</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.6rem; color: #C7D7F5; font-size: 0.9rem;">
+            ${c.address ? `<span>${escapeHtml(c.address)}</span>` : ''}
+            ${c.phone ? `<a href="tel:${escapeHtml(String(c.phone).replace(/\s+/g, ''))}" style="color: #fff; font-weight: 700; text-decoration: none;">${escapeHtml(c.phone)}</a>` : ''}
+            ${c.email ? `<a href="mailto:${escapeHtml(c.email)}" style="color: #C7D7F5; text-decoration: none;">${escapeHtml(c.email)}</a>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div style="max-width: var(--page-max); margin: 1.75rem auto 0; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.18); color: #A9BFE8; font-size: 0.8rem;">
+        &copy; ${new Date().getFullYear()} Gasabo Real Estate. All rights reserved.
+      </div>
+    </footer>
+  `;
+}
 
 export function renderRealEstateView(container) {
   function render() {
@@ -111,11 +166,10 @@ export function renderRealEstateView(container) {
         ${activeTab === 'services' ? renderServicesView(reData.services || []) : ''}
         ${activeTab === 'about' ? renderAboutView(reData) : ''}
       </div>
-      ${getLargeFooterHtml(state.currentLang || 'en')}
+      ${gasaboFooterHtml(reData.contact)}
     `;
 
-    bindLargeFooterEvents(container);
-    initSlimStickyFooter();
+    // The marketplace footer bindings and its slim sticky bar go with it.
 
     // Event Handlers
     container.querySelector('#re-logo-home')?.addEventListener('click', () => {
@@ -123,7 +177,7 @@ export function renderRealEstateView(container) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    container.querySelectorAll('.re-nav-link').forEach(btn => {
+    container.querySelectorAll('.re-nav-link, .re-foot-link').forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
         if (tab === 'properties' && btn.dataset.type) {

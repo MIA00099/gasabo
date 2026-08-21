@@ -165,6 +165,24 @@ document.addEventListener('DOMContentLoaded', () => {
           stateEngine.setPortal('marketplace');
           stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }).catch(() => {});
         },
+        // The nav item is a category filter now, like Vehicles beside it -
+        // Gasabo has its own brand in the middle of the header, so this no
+        // longer needs to be the way into that portal.
+        //
+        // The pattern is loose because the category is named by an admin and
+        // has been spelt "realestate" in production and "Real Estate" in the
+        // mockups; "propert" catches "Property" and "Properties" too.
+        goRealEstateCategory: () => {
+          const cats = stateEngine.getState().categories || [];
+          const re = cats.find((c) => /real[\s_-]?estate|propert/i.test(c.name));
+          const filters = stateEngine.getState().ui.marketplaceFilters || {};
+          stateEngine.setUI({
+            marketplaceTab: 'catalog',
+            marketplaceFilters: { ...filters, selectedCategory: re ? re.id : 'all' },
+          });
+          stateEngine.setPortal('marketplace');
+          stateEngine.loadProducts({ category: re ? re.id : undefined }).catch(() => {});
+        },
         goSignup: () => stateEngine.setPortal('signup'),
         logout: () => {
           stateEngine.logout();

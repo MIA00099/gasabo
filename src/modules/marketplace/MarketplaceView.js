@@ -276,14 +276,22 @@ export function renderMarketplaceView(container) {
                              replace the text-only panels that stood in while
                              there was no artwork.
 
-                             The two studio photos ship as JPEG; the two
-                             cut-outs keep their alpha and stay PNG, because
-                             the mobile hero puts white behind the top of the
-                             slider column. All four are resized to about
-                             1.7x their largest rendered size - 490KB for the
-                             set, down from 7.1MB of originals. -->
+                             All four are cut out, so all four need an
+                             alpha channel - the mobile arc puts white behind
+                             the top of the slider column, and a rectangle
+                             would show there. That means WebP or PNG, and on
+                             photographs PNG is ten times the bytes: 115KB for
+                             the set against 1.2MB. The PNGs ship too, as the
+                             onerror fallback for anything too old to decode
+                             WebP.
+
+                             The car and the laptop arrived with studio
+                             backgrounds baked in and were keyed out here;
+                             the headphones and the sweatshirt came already
+                             cut out. -->
                         <div class="slide has-caption" data-slide="2">
-                            <img src="/slide-vehicles.jpg" alt="">
+                            <img src="/slide-vehicles.webp" alt=""
+                              onerror="this.onerror=null;this.src='/slide-vehicles.png'">
                             <div class="slide-caption text-center text-white">
                                 <h2>${t('ui_vehicles')}</h2>
                                 <h3>${t('ui_slide_cars_bikes')}</h3>
@@ -291,7 +299,8 @@ export function renderMarketplaceView(container) {
                         </div>
 
                         <div class="slide has-caption" data-slide="3">
-                            <img src="/slide-laptops.jpg" alt="">
+                            <img src="/slide-laptops.webp" alt=""
+                              onerror="this.onerror=null;this.src='/slide-laptops.png'">
                             <div class="slide-caption text-center text-white">
                                 <h2>${t('ui_slide_electronics')}</h2>
                                 <h3>${t('ui_slide_laptops')}</h3>
@@ -299,7 +308,8 @@ export function renderMarketplaceView(container) {
                         </div>
 
                         <div class="slide has-caption" data-slide="4">
-                            <img src="/slide-headphones.png" alt="">
+                            <img src="/slide-headphones.webp" alt=""
+                              onerror="this.onerror=null;this.src='/slide-headphones.png'">
                             <div class="slide-caption text-center text-white">
                                 <h2>${t('ui_slide_electronics')}</h2>
                                 <h3>${t('ui_slide_audio')}</h3>
@@ -307,7 +317,8 @@ export function renderMarketplaceView(container) {
                         </div>
 
                         <div class="slide has-caption" data-slide="5">
-                            <img src="/slide-fashion.png" alt="">
+                            <img src="/slide-fashion.webp" alt=""
+                              onerror="this.onerror=null;this.src='/slide-fashion.png'">
                             <div class="slide-caption text-center text-white">
                                 <h2>${t('ui_slide_fashion')}</h2>
                                 <h3>${t('ui_slide_clothing')}</h3>

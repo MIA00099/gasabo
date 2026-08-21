@@ -50,12 +50,28 @@ describe('hero slider', () => {
     expect(missing, `not in public/: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('also ships the fallback the first slide falls back to', () => {
-    // Slide 1 carries onerror="...src='/hero-section.png'". If that file goes
-    // missing the fallback fails silently and the slide stays blank.
-    const fallback = HOME.match(/this\.src='(\/[^']+)'/);
-    expect(fallback, 'onerror fallback not found').toBeTruthy();
-    expect(existsSync(`public${fallback![1]}`), `${fallback![1]} is missing`).toBe(true);
+  it('ships every file an onerror fallback points at', () => {
+    // The photo slides are WebP with a PNG behind them for browsers too old
+    // to decode it, and slide 1 falls back to a second banner. A fallback is
+    // by definition only exercised on the machines least likely to be
+    // testing, so a missing one is invisible until it is someone's blank
+    // slide.
+    const fallbacks = [...HOME.matchAll(/this\.src='(\/[^']+)'/g)].map((m) => m[1]);
+    expect(fallbacks.length, 'no onerror fallbacks found').toBeGreaterThanOrEqual(5);
+
+    const missing = fallbacks.filter((src) => !existsSync(`public${src}`));
+    expect(missing, `fallbacks not in public/: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('gives every WebP slide a PNG fallback', () => {
+    const webps = [...SLIDER.matchAll(/<img src="(\/[^"]+\.webp)"/g)].map((m) => m[1]);
+    expect(webps.length, 'no WebP slides found').toBeGreaterThan(0);
+
+    for (const webp of webps) {
+      const png = webp.replace(/\.webp$/, '.png');
+      expect(SLIDER, `${webp} has no onerror fallback`).toContain(`this.src='${png}'`);
+      expect(existsSync(`public${png}`), `${png} is missing`).toBe(true);
+    }
   });
 
   it('gives every photo slide a caption, and every caption a photo', () => {

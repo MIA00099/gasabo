@@ -142,6 +142,7 @@ export function renderMarketplaceView(container) {
   function render() {
     const state = stateEngine.getState();
     const currentLang = state.currentLang || 'en';
+    const t = (key) => getTranslation(currentLang, key);
     const activeTab = state.ui.marketplaceTab || 'products';
     const filters = state.ui.marketplaceFilters || { searchQuery: '', selectedCategory: 'all', selectedDistrict: 'all' };
     const productsAttempted = state.loading.products !== undefined;
@@ -218,15 +219,15 @@ export function renderMarketplaceView(container) {
                         <!-- Added a subtle background for text readability if the curve overlaps slightly on smaller screens -->
                         <div class="bg-white/80 md:bg-transparent p-4 md:p-0 rounded-xl backdrop-blur-sm md:backdrop-blur-none">
                             <h1 class="text-3xl md:text-4xl lg:text-5xl font-black text-brand-dark leading-[1.05] mb-3">
-                                Everything you need,<br>all in one place.
+                                ${t('ui_hero_line1')}<br>${t('ui_hero_line2')}
                             </h1>
                             <p class="text-sm md:text-[13px] text-gray-700 mb-4 max-w-md font-medium leading-relaxed">
-                                Buy, sell and discover thousands of products, vehicles, properties and more.
+                                ${t('ui_hero_sub')}
                             </p>
 
                             <div class="flex gap-3 mb-4">
-                                <button type="button" id="hero-shop-now-btn" class="bg-brand-dark text-white font-semibold py-2 px-6 rounded-md hover:bg-gray-800 transition shadow-lg text-sm">Shop Now</button>
-                                <button type="button" id="hero-explore-ads-btn" class="bg-white border-2 border-brand-dark text-brand-dark font-semibold py-2 px-6 rounded-md hover:bg-gray-50 transition shadow-sm text-sm">Explore Ads</button>
+                                <button type="button" id="hero-shop-now-btn" class="bg-brand-dark text-white font-semibold py-2 px-6 rounded-md hover:bg-gray-800 transition shadow-lg text-sm">${t('ui_shop_now')}</button>
+                                <button type="button" id="hero-explore-ads-btn" class="bg-white border-2 border-brand-dark text-brand-dark font-semibold py-2 px-6 rounded-md hover:bg-gray-50 transition shadow-sm text-sm">${t('ui_explore_ads')}</button>
                             </div>
 
                             <!-- Was the Secure Payments / Verified Sellers /
@@ -238,11 +239,11 @@ export function renderMarketplaceView(container) {
                               class="flex rounded-full border-2 border-brand-green overflow-hidden h-11 bg-white shadow-sm mt-1 w-full max-w-xl">
                                 <button type="button" id="hero-search-cat" aria-haspopup="menu" aria-expanded="false"
                                   class="bg-gray-50 px-3 text-xs text-gray-600 border-r border-gray-200 items-center gap-1 hover:bg-gray-100 hidden sm:flex whitespace-nowrap shrink-0">
-                                    All Categories <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                                    ${t('ui_all_categories')} <i class="fa-solid fa-chevron-down text-[10px]"></i>
                                 </button>
                                 <label class="sr-only" for="hero-search-input">Search listings</label>
                                 <input id="hero-search-input" type="text" autocomplete="off"
-                                  placeholder="Search for products, vehicles, properties and more..."
+                                  placeholder="${t('ui_search_placeholder')}"
                                   class="flex-1 px-3 outline-none text-xs min-w-0 bg-transparent">
                                 <button type="submit" aria-label="Search"
                                   class="bg-brand-green text-white px-6 hover:bg-green-800 transition-colors shrink-0">
@@ -264,24 +265,24 @@ export function renderMarketplaceView(container) {
                         <!-- Slide 2: Real Estate Text (Matching your screenshot) -->
                         <div class="slide" data-slide="1">
                             <div class="text-center text-white">
-                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">Real Estate</h2>
-                                <h3 class="text-3xl font-medium text-white">Houses</h3>
+                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">${t('ui_real_estate')}</h2>
+                                <h3 class="text-3xl font-medium text-white">${t('ui_slide_houses')}</h3>
                             </div>
                         </div>
 
                         <!-- Slide 3: Vehicles Focus -->
                         <div class="slide" data-slide="2">
                             <div class="text-center text-white">
-                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">Vehicles</h2>
-                                <h3 class="text-3xl font-medium text-white">Cars &amp; Bikes</h3>
+                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">${t('ui_vehicles')}</h2>
+                                <h3 class="text-3xl font-medium text-white">${t('ui_slide_cars_bikes')}</h3>
                             </div>
                         </div>
 
                         <!-- Slide 4: Electronics -->
                         <div class="slide" data-slide="3">
                             <div class="text-center text-white">
-                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">Electronics</h2>
-                                <h3 class="text-3xl font-medium text-white">Laptops &amp; Phones</h3>
+                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">${t('ui_slide_electronics')}</h2>
+                                <h3 class="text-3xl font-medium text-white">${t('ui_slide_laptops')}</h3>
                             </div>
                         </div>
 
@@ -360,29 +361,29 @@ export function renderMarketplaceView(container) {
                          off. -->
                     <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card cursor-pointer hover:opacity-95 transition lg:shrink-0">
 
-                      <h2>Flash Deals <span>&#9889;</span></h2>
+                      <h2>${t('ui_flash_deals')} <span>&#9889;</span></h2>
 
-                      <a href="#" class="view-deals" id="open-flash-deals-btn" role="button">View all deals</a>
+                      <a href="#" class="view-deals" id="open-flash-deals-btn" role="button">${t('ui_view_all_deals')}</a>
 
                       <div class="countdown">
 
                         <div class="time-box">
                           <div class="number" id="deal-hours">02</div>
-                          <div class="label">Hours</div>
+                          <div class="label">${t('ui_hours')}</div>
                         </div>
 
                         <div class="separator">:</div>
 
                         <div class="time-box">
                           <div class="number" id="deal-mins">44</div>
-                          <div class="label">Mins</div>
+                          <div class="label">${t('ui_mins')}</div>
                         </div>
 
                         <div class="separator">:</div>
 
                         <div class="time-box">
                           <div class="number" id="deal-secs">54</div>
-                          <div class="label">Secs</div>
+                          <div class="label">${t('ui_secs')}</div>
                         </div>
 
                       </div>
@@ -395,7 +396,7 @@ export function renderMarketplaceView(container) {
                     <div class="lg:flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-3 relative">
                         ${productsLoading && state.products.length === 0 ? `
                             <div class="col-span-5 bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100 flex items-center justify-center">
-                                Loading featured items...
+                                ${t('ui_loading_items')}
                             </div>
                         ` : state.products.length > 0 ? state.products.slice(0, 5).map((prod) => {
                             const was = Number(prod.originalPrice) || 0;

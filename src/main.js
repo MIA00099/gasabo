@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activePortal === 'admin') {
       tabMount.innerHTML = '';
     } else {
-      tabMount.innerHTML = renderMobileTabBarHtml({ activePortal, currentUser });
+      tabMount.innerHTML = renderMobileTabBarHtml({ activePortal, currentUser, currentLang });
       bindMobileTabBarEvents(tabMount, {
         goHome: () => {
           stateEngine.setUI({ marketplaceTab: 'products' });

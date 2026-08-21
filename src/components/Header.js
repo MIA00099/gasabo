@@ -19,7 +19,7 @@
  * decision was to keep the mockups' wording, so it stands as delivered.
  */
 
-import { LANGUAGES, languageFor } from '../store/i18n.js';
+import { LANGUAGES, languageFor, getTranslation } from '../store/i18n.js';
 import { openDropdownMenu } from './dropdownMenu.js';
 
 const ROLE_LABELS = {
@@ -62,6 +62,7 @@ export function renderHeaderHtml(ctx) {
   const roleLabel = ROLE_LABELS[currentUser.role] || '';
   const isRealEstate = activePortal === 'realestate';
   const activeLang = languageFor(currentLang);
+  const t = (key) => getTranslation(currentLang, key);
   const navLink = 'h-full flex items-center px-1 hover:text-gray-300';
   const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange';
 
@@ -71,7 +72,7 @@ export function renderHeaderHtml(ctx) {
       <div class="compact-container flex justify-between items-center">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-truck"></i>
-          <span>Free Delivery on orders over RWF 50,000</span>
+          <span>${escapeHtml(t('ui_free_delivery'))}</span>
         </div>
         <div class="hidden md:flex items-center gap-3">
           <!-- Shows the language currently in use, and the chevron opens the
@@ -138,7 +139,7 @@ export function renderHeaderHtml(ctx) {
               ${notifDropdownOpen ? `
                 <div id="notif-dropdown" class="absolute top-11 right-0 w-80 max-h-96 overflow-y-auto bg-white border border-gray-200 rounded-2xl shadow-xl z-[100]">
                   <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-                    <span class="font-bold text-sm text-gray-900">Notifications</span>
+                    <span class="font-bold text-sm text-gray-900">${escapeHtml(t('ui_notifications'))}</span>
                     ${unreadNotifCount > 0 ? `<button type="button" id="notif-mark-all-read" class="text-brand-green text-xs font-bold hover:underline">Mark all read</button>` : ''}
                   </div>
                   ${notifications.length === 0 ? `
@@ -162,7 +163,7 @@ export function renderHeaderHtml(ctx) {
               </div>
               <button type="button" id="header-logout-btn"
                 class="bg-brand-dark text-white text-xs font-bold px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
-                Logout
+                ${escapeHtml(t('ui_logout'))}
               </button>
             </div>
           ` : `
@@ -171,8 +172,8 @@ export function renderHeaderHtml(ctx) {
                 <i class="fa-regular fa-user text-sm"></i>
               </div>
               <div class="hidden lg:block leading-tight text-xs">
-                <p class="text-gray-500 font-medium">Sign In</p>
-                <p class="font-bold flex items-center gap-1">My Account <i class="fa-solid fa-chevron-down text-[8px]"></i></p>
+                <p class="text-gray-500 font-medium">${escapeHtml(t('ui_sign_in'))}</p>
+                <p class="font-bold flex items-center gap-1">${escapeHtml(t('ui_my_account'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></p>
               </div>
             </div>
           `}
@@ -202,34 +203,34 @@ export function renderHeaderHtml(ctx) {
         <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
           class="bg-brand-green h-full px-4 flex items-center gap-2 cursor-pointer w-48 mr-4 shrink-0">
           <i class="fa-solid fa-bars text-sm"></i>
-          <span class="font-semibold text-sm">All Categories</span>
+          <span class="font-semibold text-sm">${escapeHtml(t('ui_all_categories'))}</span>
           <i class="fa-solid fa-chevron-down ml-auto text-[10px]"></i>
         </button>
 
         <ul class="hidden lg:flex items-center gap-5 font-medium text-xs flex-1 h-full">
           <li class="h-full flex items-center">
-            <button type="button" id="nav-link-mkt" class="${activePortal === 'marketplace' ? navLinkActive : navLink}">Home</button>
+            <button type="button" id="nav-link-mkt" class="${activePortal === 'marketplace' ? navLinkActive : navLink}">${escapeHtml(t('ui_home'))}</button>
           </li>
           <li class="h-full flex items-center">
-            <button type="button" id="nav-link-stores" class="${navLink}">Stores</button>
+            <button type="button" id="nav-link-stores" class="${navLink}">${escapeHtml(t('ui_stores'))}</button>
           </li>
           <li class="h-full flex items-center">
-            <button type="button" id="nav-link-vehicles" class="${navLink}">Vehicles</button>
+            <button type="button" id="nav-link-vehicles" class="${navLink}">${escapeHtml(t('ui_vehicles'))}</button>
           </li>
           <li class="h-full flex items-center">
-            <button type="button" id="nav-link-re" class="${navLink}">Real Estate</button>
+            <button type="button" id="nav-link-re" class="${navLink}">${escapeHtml(t('ui_real_estate'))}</button>
           </li>
           <li class="h-full flex items-center">
-            <button type="button" data-soon="Services" class="${navLink}">Services</button>
+            <button type="button" data-soon="Services" class="${navLink}">${escapeHtml(t('ui_services'))}</button>
           </li>
           <li class="h-full flex items-center gap-1 cursor-pointer hover:text-gray-300 px-1">
-            <button type="button" data-soon="More sections" class="flex items-center gap-1">More <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
+            <button type="button" data-soon="More sections" class="flex items-center gap-1">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
           </li>
         </ul>
 
         <button type="button" id="header-post-ad-btn"
           class="bg-brand-orange text-white font-bold py-1.5 px-4 rounded-full flex items-center gap-1.5 hover:bg-orange-500 transition-colors shadow-md ml-auto lg:ml-0 text-sm shrink-0">
-          <i class="fa-solid fa-plus-circle"></i> Post an Ad
+          <i class="fa-solid fa-plus-circle"></i> ${escapeHtml(t('ui_post_ad'))}
         </button>
       </div>
     </nav>
@@ -242,7 +243,8 @@ export function renderHeaderHtml(ctx) {
  * only - the desktop header already carries these actions.
  */
 export function renderMobileTabBarHtml(ctx) {
-  const { activePortal, currentUser } = ctx;
+  const { activePortal, currentUser, currentLang } = ctx;
+  const t = (key) => getTranslation(currentLang, key);
   const signedIn = currentUser.role !== 'guest';
   const tab = 'flex flex-col items-center gap-0.5 py-1 text-[10px] font-semibold';
 
@@ -250,20 +252,20 @@ export function renderMobileTabBarHtml(ctx) {
     <nav class="mobile-tabbar lg:hidden fixed left-0 right-0 bottom-0 bg-white border-t border-gray-200 shadow-[0_-4px_18px_rgba(15,23,42,0.08)] z-[1100] grid grid-cols-5 items-end px-1 pt-1"
       style="padding-bottom: calc(0.25rem + env(safe-area-inset-bottom, 0px));" aria-label="Primary">
       <button type="button" id="mtab-home" class="${tab} ${activePortal === 'marketplace' ? 'text-brand-green' : 'text-gray-500'}">
-        <i class="fa-solid fa-house text-base"></i> Home
+        <i class="fa-solid fa-house text-base"></i> ${escapeHtml(t('ui_home'))}
       </button>
       <button type="button" id="mtab-categories" class="${tab} text-gray-500">
-        <i class="fa-solid fa-border-all text-base"></i> Categories
+        <i class="fa-solid fa-border-all text-base"></i> ${escapeHtml(t('ui_tab_categories'))}
       </button>
       <button type="button" id="mtab-post" class="${tab} text-gray-500">
         <span class="w-11 h-11 -mt-5 rounded-full bg-brand-green text-white text-2xl font-light flex items-center justify-center shadow-lg">+</span>
-        Post Ad
+        ${escapeHtml(t('ui_tab_post'))}
       </button>
       <button type="button" data-soon="Messages" class="${tab} text-gray-500">
-        <i class="fa-regular fa-comment-dots text-base"></i> Messages
+        <i class="fa-regular fa-comment-dots text-base"></i> ${escapeHtml(t('ui_tab_messages'))}
       </button>
       <button type="button" id="mtab-account" class="${tab} text-gray-500">
-        <i class="fa-regular fa-user text-base"></i> ${signedIn ? 'Account' : 'Sign In'}
+        <i class="fa-regular fa-user text-base"></i> ${escapeHtml(signedIn ? t('ui_tab_account') : t('ui_sign_in'))}
       </button>
     </nav>
   `;

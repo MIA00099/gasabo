@@ -169,12 +169,9 @@ export function renderHeaderHtml(ctx) {
         </div>
         `}
 
-        ${isRealEstate ? `
-          <button type="button" id="re-back-to-market"
-            class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-green shrink-0">
-            <i class="fa-solid fa-arrow-left text-[10px]"></i> Kigali Market
-          </button>
-        ` : ''}
+        <!-- The way back to the marketplace lives in the Gasabo nav bar now,
+             which is where the reference design puts it. -->
+        ${isRealEstate ? '<span data-on-real-estate hidden></span>' : ''}
       </div>
     </header>
 
@@ -276,9 +273,10 @@ export function bindHeaderEvents(root, handlers) {
 
   // On the Gasabo portal the brand block IS Gasabo, so clicking it should stay
   // there rather than jumping to the marketplace - that is what the "Kigali
-  // Market" link beside it is for. #re-back-to-market only renders on that
-  // portal, which is the cheapest way for this component to tell where it is.
-  const onRealEstate = Boolean(root.querySelector('#re-back-to-market'));
+  // Market" link in the Gasabo nav bar is for. The marker below only
+  // renders on that portal, which is the cheapest way for this component
+  // to tell where it is.
+  const onRealEstate = Boolean(root.querySelector('[data-on-real-estate]'));
   const brandHome = onRealEstate ? goRealEstate : goHome;
 
   const brand = root.querySelector('#nav-brand-home');
@@ -287,7 +285,6 @@ export function bindHeaderEvents(root, handlers) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); brandHome(); }
   });
 
-  on('#re-back-to-market', 'click', goHome);
 
   on('#nav-link-mkt', 'click', goHome);
   on('#nav-link-re', 'click', goRealEstateCategory);

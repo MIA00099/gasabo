@@ -18,6 +18,7 @@ import { readFileSync } from 'node:fs';
 const CSS = readFileSync('src/styles/main.css', 'utf8');
 const HOME = readFileSync('src/modules/marketplace/MarketplaceView.js', 'utf8');
 const STORES = readFileSync('src/modules/marketplace/StoresPage.js', 'utf8');
+const INDEX = readFileSync('index.html', 'utf8');
 
 describe('the page runs to both edges', () => {
   it('keeps the container tokens full-bleed', () => {
@@ -41,9 +42,17 @@ describe('the page runs to both edges', () => {
   it('never sizes anything to 100vw', () => {
     // 100vw is the viewport including the scrollbar, so a full-width element
     // measured that way overflows by exactly the scrollbar's width.
-    const offenders = [...CSS.matchAll(/^[^\n]*\b(width|min-width|max-width|margin-left|margin-right)\s*:\s*[^;\n]*100vw[^;\n]*/gm)]
-      .map((m) => m[0].trim());
-    expect(offenders, `100vw found: ${offenders.join(' | ')}`).toEqual([]);
+    //
+    // index.html is checked as well as the stylesheet. The first version of
+    // this test looked only at main.css and passed while the preloader in
+    // index.html still carried width:100vw - a horizontal scrollbar on the
+    // very first paint, before the app had even booted. Production is where
+    // that turned up, not here.
+    for (const [name, text] of [['main.css', CSS], ['index.html', INDEX]] as const) {
+      const offenders = [...text.matchAll(/^[^\n]*\b(width|min-width|max-width|margin-left|margin-right)\s*:\s*[^;\n]*100vw[^;\n]*/gm)]
+        .map((m) => m[0].trim());
+      expect(offenders, `100vw in ${name}: ${offenders.join(' | ')}`).toEqual([]);
+    }
   });
 });
 

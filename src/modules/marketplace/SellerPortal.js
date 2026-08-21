@@ -234,7 +234,7 @@ function renderSellerDashboardView(container, sellerUser) {
                       ` : `
                         <div class="flex gap-1.5">
                           <input type="url" id="p-image-url" class="flex-1 min-w-0 bg-gray-50 border border-gray-300 text-gray-900 py-1.5 px-2 rounded text-xs" placeholder="Paste an image URL">
-                          <button type="button" id="add-image-url-btn" class="bg-brand-dark text-white text-[10px] font-bold px-3 rounded shrink-0">Add</button>
+                          <button type="button" id="add-image-url-btn" class="bg-brand-dark text-white text-[10px] font-bold px-3 rounded shrink-0 transition-colors hover:bg-gray-700">Add</button>
                         </div>
                       `}
                     </div>

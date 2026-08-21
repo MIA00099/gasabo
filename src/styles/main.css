@@ -4252,3 +4252,205 @@ table {
   .slide .slide-caption h2 { font-size: 17px; }
   .slide .slide-caption h3 { font-size: 12px; }
 }
+
+/* ---------------------------------------------------------------------------
+   HOVER AFFORDANCES
+
+   An audit of the rendered pages found 73 of 194 clickable elements with no
+   hover feedback at all - the slider dots, "View all deals", the language
+   switcher, the logo, the green All Categories button, every admin action
+   button, and most of the Gasabo portal.
+
+   Two groups, because they need different tools:
+
+   1. Named elements below get an explicit rule, chosen to suit the control.
+   2. Anything with an inline 'style' gets a brightness shift instead. The
+      admin panels and the Gasabo portal write their colours inline, and an
+      inline declaration wins over any stylesheet rule for the same property,
+      so a 'background' hover there does nothing at all. 'filter' is not set
+      inline anywhere in this codebase, so it is the one property that lands.
+   --------------------------------------------------------------------------- */
+
+/* --- 1. inline-styled controls ------------------------------------------- */
+
+button[style]:not([disabled]):hover,
+a[style]:hover,
+[role="button"][style]:not([aria-disabled="true"]):hover {
+  filter: brightness(0.93);
+  transition: filter 0.15s ease;
+}
+
+/* A dark control cannot get much darker; lift those instead. */
+.btn-primary[style]:hover,
+.btn-dark[style]:hover {
+  filter: brightness(1.12);
+}
+
+/* --- 2. named controls ---------------------------------------------------- */
+
+/* Slider dots. They already animate width and colour when they become
+   active; this is the same language for the ones you are only pointing at. */
+.dot:not(.active):hover {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.dot.active:hover {
+  background-color: #ffb648;
+}
+
+/* "View all deals" - white underlined text on dark green, so the only room
+   left to move is weight of the underline and a little transparency. */
+.flash-deals .view-deals {
+  transition: opacity 0.15s ease, text-decoration-thickness 0.15s ease;
+  text-underline-offset: 2px;
+}
+
+.flash-deals .view-deals:hover {
+  opacity: 0.85;
+  text-decoration-thickness: 2px;
+}
+
+/* The whole card is clickable, so it should say so. */
+#flash-deals-card:hover {
+  box-shadow: 0 10px 26px rgba(6, 63, 43, 0.32);
+}
+
+/* Language switcher, on the green announcement strip. */
+#lang-toggle {
+  transition: opacity 0.15s ease;
+}
+
+#lang-toggle:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Brand lockups - marketplace header, and the Gasabo portal's own. */
+#nav-brand-home,
+#re-logo-home {
+  transition: opacity 0.15s ease;
+}
+
+#nav-brand-home:hover,
+#re-logo-home:hover {
+  opacity: 0.82;
+}
+
+/* The green All Categories button in the nav bar. */
+#nav-all-categories-2 {
+  transition: background-color 0.15s ease;
+}
+
+#nav-all-categories-2:hover {
+  background-color: #14532d;
+}
+
+/* Notification rows. The unread ones carry bg-green-50 and the read ones
+   bg-white as utilities, so this needs the extra class to outrank them. */
+.notif-item.notif-item:hover {
+  background-color: #f1f5f9;
+}
+
+/* The hero search box. The input itself is not the affordance - the whole
+   pill is - so the frame reacts rather than the field. */
+#hero-search-form {
+  transition: box-shadow 0.15s ease;
+}
+
+#hero-search-form:hover,
+#hero-search-form:focus-within {
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.16);
+}
+
+/* Gasabo portal footer links: pale blue on navy, set inline. */
+.re-foot-link {
+  transition: color 0.15s ease;
+}
+
+.re-foot-link:hover {
+  color: #ffffff !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Gasabo property cards. role="button" on a div, so nothing came for free. */
+.re-property-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.re-property-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(0, 27, 69, 0.22);
+}
+
+/* Seller portal: the ad-type chooser and the upload/URL mode toggles. Their
+   selected state is a background utility, so hover moves the border and the
+   shadow instead of fighting it. */
+.ad-type-btn {
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.ad-type-btn:hover {
+  box-shadow: 0 3px 10px rgba(21, 128, 61, 0.22);
+  transform: translateY(-1px);
+}
+
+#img-mode-upload-btn,
+#img-mode-url-btn {
+  transition: filter 0.15s ease;
+}
+
+#img-mode-upload-btn:hover,
+#img-mode-url-btn:hover {
+  filter: brightness(0.93);
+}
+
+/* Lightbox chrome sits over the photo, so it brightens rather than darkens. */
+#lightbox-close-btn:hover,
+#lightbox-prev-btn:hover,
+#lightbox-next-btn:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Dropdown menu rows. */
+[role="menuitem"]:hover,
+[role="menuitemradio"]:hover {
+  background-color: #f1f5f9;
+}
+
+/* Form controls you click to open: the catalog sort and category pickers,
+   and the three filters on the Gasabo search bar. Several of those carry
+   inline borders, so this moves the ring rather than the border itself. */
+select:not([disabled]):hover,
+.products-cat:hover,
+#products-sort:hover {
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.09);
+  cursor: pointer;
+}
+
+select,
+.products-cat {
+  transition: box-shadow 0.15s ease;
+}
+
+/* Nobody should get feedback from a control that will not respond. */
+button[disabled]:hover,
+[aria-disabled="true"]:hover {
+  filter: none;
+  cursor: not-allowed;
+}
+
+@media (hover: none) {
+  /* Touch screens have no pointer to hover with, and a sticky :hover left
+     behind after a tap reads as a stuck selection. */
+  button[style]:hover,
+  a[style]:hover,
+  [role="button"][style]:hover,
+  .re-property-card:hover,
+  .ad-type-btn:hover {
+    filter: none;
+    transform: none;
+    box-shadow: none;
+  }
+}

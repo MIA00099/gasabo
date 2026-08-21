@@ -11,6 +11,7 @@ export const translations = {
     nav_admin: 'Admin & Services',
     lang_toggle_en: '🇬🇧 English',
     lang_toggle_rw: '🇷🇼 Kinyarwanda',
+    lang_toggle_fr: '🇫🇷 Français',
     
     // Hero Section
     hero_title1: 'This is where',
@@ -71,6 +72,7 @@ export const translations = {
     nav_admin: 'Ubuyobozi n\'Serivisi',
     lang_toggle_en: '🇬🇧 Icyongereza',
     lang_toggle_rw: '🇷🇼 Kinyarwanda',
+    lang_toggle_fr: '🇫🇷 Français',
     
     // Hero Section
     hero_title1: 'Aha ni ho',
@@ -123,10 +125,92 @@ export const translations = {
     link_re: 'Imitungo n\'Inzu za Gasabo',
     link_sell: 'Tangira Kugurisha',
     link_admin: 'Urubuga rw\'Ubuyobozi'
+  },
+  fr: {
+    // Nav & General
+    nav_marketplace: 'Marché',
+    nav_realestate: 'Immobilier',
+    nav_admin: 'Administration et services',
+    lang_toggle_en: '🇬🇧 English',
+    lang_toggle_rw: '🇷🇼 Kinyarwanda',
+    lang_toggle_fr: '🇫🇷 Français',
+    lang_toggle_fr: '🇫🇷 Français',
+
+    // Hero Section
+    hero_title1: "C'est ici que l'on",
+    hero_title2: 'achète et découvre.',
+    hero_sub: 'La différence, c\'est l\'offre.',
+    browse_products: '🔍 Parcourir les produits',
+    start_selling: '✏️ Commencer à vendre',
+
+    // Floating Search Bar
+    search_placeholder: 'Rechercher produits, café, voitures, paniers artisanaux, électronique...',
+    cat_all: 'Catégorie : toutes',
+    district_all: 'Lieu : tous',
+    all_categories: 'Catégorie : toutes',
+    all_districts: 'Lieu : tous',
+    search_btn: 'Rechercher',
+    search_button: 'Rechercher',
+
+    // Section Headers
+    popular_categories: 'Catégories populaires',
+    browse_categories: 'Catégories populaires',
+    explore_sector: 'Explorer les articles par secteur',
+    featured_products: 'Produits en vedette',
+    handpicked: 'Articles vérifiés, sélectionnés dans tout le Rwanda',
+    latest_products: 'Derniers produits',
+    active_duration: 'Annonces actives (durée : 6 mois)',
+
+    // Badges & Card Actions
+    featured_badge: 'EN VEDETTE',
+    vvip_badge: 'VVIP',
+    verified_badge: 'Vérifié',
+    view_btn: 'Voir',
+    contact_btn: 'Contacter',
+    sold_by: 'Vendu par',
+    whatsapp_btn: 'WhatsApp',
+    details_btn: 'Détails',
+
+    // Category Names
+    cat_electronics: 'Électronique',
+    cat_vehicles: 'Véhicules',
+    cat_furniture: 'Mobilier',
+    cat_agri: 'Agriculture',
+    cat_fashion: 'Mode',
+
+    // Footer
+    footer_desc: "Le premier marché direct officiel du Rwanda et le portail immobilier de Gasabo. Le commerce direct entre particuliers dans les 30 districts.",
+    quick_links: 'Liens rapides',
+    districts: 'Districts',
+    headquarters: 'Siège social',
+    link_catalog: 'Catalogue du marché',
+    link_re: 'Gasabo Immobilier',
+    link_sell: 'Commencer à vendre',
+    link_admin: 'Portail administrateur'
   }
 };
 
 export function getTranslation(lang, key) {
   const dictionary = translations[lang] || translations['en'];
   return dictionary[key] || translations['en'][key] || key;
+}
+
+/**
+ * The languages the switcher offers.
+ *
+ * Each label is written in its own language rather than translated into the
+ * active one - someone who has landed on a page they cannot read needs to
+ * recognise their own language in the list, and "Kinyarwanda" spelt in French
+ * helps nobody.
+ *
+ * `flag` is a flagcdn country code, matching the image the header already uses.
+ */
+export const LANGUAGES = [
+  { code: 'en', label: 'English', flag: 'gb' },
+  { code: 'rw', label: 'Kinyarwanda', flag: 'rw' },
+  { code: 'fr', label: 'Français', flag: 'fr' },
+];
+
+export function languageFor(code) {
+  return LANGUAGES.find((l) => l.code === code) || LANGUAGES[0];
 }

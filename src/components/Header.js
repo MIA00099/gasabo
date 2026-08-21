@@ -19,6 +19,9 @@
  * decision was to keep the mockups' wording, so it stands as delivered.
  */
 
+import { LANGUAGES, languageFor } from '../store/i18n.js';
+import { openDropdownMenu } from './dropdownMenu.js';
+
 const ROLE_LABELS = {
   admin: 'Administrator',
   sub_admin: 'Sub-Administrator',
@@ -58,6 +61,7 @@ export function renderHeaderHtml(ctx) {
 
   const roleLabel = ROLE_LABELS[currentUser.role] || '';
   const isRealEstate = activePortal === 'realestate';
+  const activeLang = languageFor(currentLang);
   const navLink = 'h-full flex items-center px-1 hover:text-gray-300';
   const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange';
 
@@ -70,11 +74,17 @@ export function renderHeaderHtml(ctx) {
           <span>Free Delivery on orders over RWF 50,000</span>
         </div>
         <div class="hidden md:flex items-center gap-3">
-          <div class="flex items-center gap-1 cursor-pointer" id="lang-toggle-en">
-            <img src="https://flagcdn.com/w20/gb.png" alt="English" class="w-4 h-3 rounded-sm">
-            <span>English</span>
+          <!-- Shows the language currently in use, and the chevron opens the
+               rest. It used to be hard-coded to English and wired to
+               setLanguage('en'), so clicking "English" set English - the
+               chevron promised a list that did not exist, and the binding for
+               Kinyarwanda pointed at an element that was never rendered. -->
+          <button type="button" id="lang-toggle" aria-haspopup="menu" aria-expanded="false"
+            class="flex items-center gap-1 cursor-pointer">
+            <img src="https://flagcdn.com/w20/${activeLang.flag}.png" alt="" class="w-4 h-3 rounded-sm">
+            <span>${escapeHtml(activeLang.label)}</span>
             <i class="fa-solid fa-chevron-down text-[8px]"></i>
-          </div>
+          </button>
         </div>
       </div>
     </div>
@@ -262,7 +272,7 @@ export function renderMobileTabBarHtml(ctx) {
 export function bindHeaderEvents(root, handlers) {
   const {
     goHome, goRealEstate, goSignup, logout, setLanguage,
-    toggleNotifications, markAllRead, markRead, goStores, goVehicles, openCategories, goRealEstateCategory,
+    toggleNotifications, markAllRead, markRead, goStores, goVehicles, openCategories, goRealEstateCategory, currentLangCode,
   } = handlers;
 
   const on = (sel, ev, fn) => root.querySelector(sel)?.addEventListener(ev, fn);
@@ -302,8 +312,20 @@ export function bindHeaderEvents(root, handlers) {
   on('#util-become-seller', 'click', goSignup);
   on('#header-logout-btn', 'click', logout);
 
-  on('#lang-toggle-en', 'click', () => setLanguage('en'));
-  on('#lang-toggle-rw', 'click', () => setLanguage('rw'));
+  // The chevron opens the list. Each entry carries its own flag, and the one
+  // in use is marked so the reader can see which they are on.
+  on('#lang-toggle', 'click', (e) => {
+    openDropdownMenu(e.currentTarget, {
+      label: 'Choose a language',
+      selectedId: currentLangCode,
+      onSelect: (code) => setLanguage(code),
+      items: LANGUAGES.map((l) => ({
+        id: l.code,
+        label: l.label,
+        iconHtml: `<img src="https://flagcdn.com/w20/${l.flag}.png" alt="" style="width:16px;height:12px;border-radius:2px;">`,
+      })),
+    });
+  });
 
   on('#header-notif-btn', 'click', toggleNotifications);
   on('#notif-mark-all-read', 'click', (e) => { e.stopPropagation(); markAllRead(); });

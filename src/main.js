@@ -196,6 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
           stateEngine.setPortal('marketplace');
         },
         setLanguage: (lang) => stateEngine.setLanguage(lang),
+        // So the menu can mark the language already in use.
+        currentLangCode: currentLang,
         toggleNotifications: () => {
           notifDropdownOpen = !notifDropdownOpen;
           renderApp();

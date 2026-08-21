@@ -106,6 +106,68 @@ authRouter.post('/login', async (req, res) => {
   return res.status(401).json({ error: 'Incorrect email or password.' });
 });
 
+/**
+ * Who the caller actually is, right now.
+ *
+ * This used to answer `req.user` - the decoded JWT - which is only a record of
+ * who they were when they signed in. Tokens last 7 days, so that answer stayed
+ * "Administrator" for a week after the account was deleted, demoted or
+ * suspended, and stayed stale for a Sub-Administrator whose permissions were
+ * changed that morning. Every route already re-reads permissions from the
+ * database on each request (see hasModulePermission); this endpoint is what
+ * lets the client's own idea of the user keep up with them.
+ *
+ * A row that has gone away, or an account since suspended, is a 401 - the
+ * client treats that exactly like an expired token and signs the person out.
+ */
 authRouter.get('/me', requireAuth, async (req, res) => {
-  res.json({ user: req.user });
+  const claim = req.user!;
+  const gone = () => res.status(401).json({ error: 'This session is no longer valid. Please sign in again.' });
+
+  if (claim.role === 'ADMINISTRATOR') {
+    const admin = await prisma.administrator.findUnique({ where: { id: claim.id } });
+    if (!admin) return gone();
+    return res.json({
+      user: { id: admin.id, email: admin.email, name: admin.name, role: 'ADMINISTRATOR', permissions: fullPermissions() },
+    });
+  }
+
+  if (claim.role === 'SUB_ADMINISTRATOR') {
+    const subAdmin = await prisma.subAdministrator.findUnique({ where: { id: claim.id } });
+    if (!subAdmin) return gone();
+    let modules: string[] = [];
+    try {
+      modules = JSON.parse(subAdmin.permissions || '[]');
+    } catch {
+      modules = [];
+    }
+    return res.json({
+      user: {
+        id: subAdmin.id,
+        email: subAdmin.email,
+        name: subAdmin.name,
+        role: 'SUB_ADMINISTRATOR',
+        permissions: permissionsFromModuleList(modules),
+      },
+    });
+  }
+
+  if (claim.role === 'SELLER') {
+    const seller = await prisma.seller.findUnique({ where: { id: claim.id } });
+    if (!seller || seller.status === 'SUSPENDED') return gone();
+    return res.json({
+      user: {
+        id: seller.id,
+        email: seller.email,
+        name: seller.businessName,
+        role: 'SELLER',
+        phone: seller.contactPhone,
+        district: seller.district,
+      },
+    });
+  }
+
+  const user = await prisma.platformUser.findUnique({ where: { id: claim.id } });
+  if (!user || user.status === 'SUSPENDED') return gone();
+  return res.json({ user: { id: user.id, email: user.email, name: user.name, role: 'USER' } });
 });

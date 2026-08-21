@@ -39,7 +39,7 @@ model SubAdministrator {
   passwordHash String
   name         String
   role         String        @default("SUB_ADMINISTRATOR")
-  permissions  String        // JSON array of assigned module permissions, e.g. ["PRODUCTS","SELLERS"]
+  permissions  String // JSON array of assigned module permissions, e.g. ["PRODUCTS","SELLERS"]
   createdById  String
   createdBy    Administrator @relation("AdminCreatedSubAdmin", fields: [createdById], references: [id])
   createdAt    DateTime      @default(now())
@@ -89,42 +89,66 @@ model Category {
 
 // 6. Product Model
 model Product {
-  id            String   @id @default(uuid())
-  title         String
-  description   String
-  price         Float
-  currency      String   @default("RWF")
-  district      String   @default("Gasabo")
-  condition     String   @default("New")
-  images        String   @default("[]") // JSON array of image URLs
-  sellerId      String
-  seller        Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  categoryId    String
-  category      Category @relation(fields: [categoryId], references: [id])
+  id                   String        @id @default(uuid())
+  title                String
+  description          String
+  price                Float
+  currency             String        @default("RWF")
+  district             String        @default("Gasabo")
+  condition            String        @default("New")
+  images               String        @default("[]") // JSON array of image URLs
+  sellerId             String
+  seller               Seller        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  categoryId           String
+  category             Category      @relation(fields: [categoryId], references: [id])
   // "PENDING" (just posted, awaiting admin review - not visible on the public
   // marketplace) | "ACTIVE" | "REJECTED" (admin declined it, see
   // rejectionReason) | "SUSPENDED". Every new listing starts at PENDING now -
   // sellers no longer go straight to live without a moderation pass.
-  status          String    @default("PENDING")
-  rejectionReason String?
-  isFeatured    Boolean  @default(false)
-  isTrending    Boolean  @default(false)
-  isRecommended Boolean  @default(false)
-  expiresAt     DateTime?
+  status               String        @default("PENDING")
+  rejectionReason      String?
+  isFeatured           Boolean       @default(false)
+  isTrending           Boolean       @default(false)
+  isRecommended        Boolean       @default(false)
+  // Set by an administrator, 0-5 in half steps. Null until one is given, and
+  // the storefront shows no stars at all in that case rather than inventing
+  // a number - the cards used to hard-code 4.8 and "(128)".
+  rating               Float?
+  likes                ProductLike[]
+  expiresAt            DateTime?
   // Set once the "last week before expiry" reminder notification has been
   // sent for the CURRENT 6-month cycle, so the sweep doesn't re-notify the
   // seller every time it runs. Cleared back to null whenever expiresAt is
   // pushed forward (POST /:id/renew), starting a fresh cycle.
   expiryReminderSentAt DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+// A buyer tapping the heart on a listing. Rows rather than a counter on
+// Product so the same visitor cannot run the number up by refreshing, and so
+// a like can be taken back.
+//
+// visitorKey is the account id when someone is signed in, and otherwise a
+// random id their browser keeps. That stops accidental double counting and
+// casual refresh-spam. It is not proof against someone who sets out to game
+// it - that needs accounts to like at all, which is a product decision.
+model ProductLike {
+  id         String   @id @default(uuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  visitorKey String
+  createdAt  DateTime @default(now())
+
+  @@unique([productId, visitorKey])
+  @@index([productId])
 }
 
 // 7. Advertisement Model
 model Advertisement {
   id        String   @id @default(uuid())
   title     String
-  type      String   // "HOMEPAGE_BANNER" | "HERO_SLIDER" | "PROMOTIONAL_BANNER"
+  type      String // "HOMEPAGE_BANNER" | "HERO_SLIDER" | "PROMOTIONAL_BANNER"
   imageUrl  String
   targetUrl String?
   startDate DateTime
@@ -142,11 +166,11 @@ model AuditLog {
   id        String   @id @default(uuid())
   actorId   String
   actorName String   @default("")
-  actorType String   // "ADMINISTRATOR" | "SUB_ADMINISTRATOR" | "SELLER" | "SYSTEM"
-  action    String   // e.g. "SUSPEND_SELLER", "CREATE_PRODUCT"
-  module    String   // e.g. "SELLERS", "PRODUCTS"
+  actorType String // "ADMINISTRATOR" | "SUB_ADMINISTRATOR" | "SELLER" | "SYSTEM"
+  action    String // e.g. "SUSPEND_SELLER", "CREATE_PRODUCT"
+  module    String // e.g. "SELLERS", "PRODUCTS"
   targetId  String?
-  details   String?  // JSON string of change diff/metadata
+  details   String? // JSON string of change diff/metadata
   ipAddress String?
   createdAt DateTime @default(now())
 }
@@ -155,16 +179,16 @@ model AuditLog {
 model RealEstateContent {
   id         String   @id @default(uuid())
   sectionKey String   @unique // e.g. "HERO", "ABOUT", "SERVICES", "PROJECTS", "GALLERY", "CONTACT"
-  content    String   // JSON formatted content object
+  content    String // JSON formatted content object
   updatedAt  DateTime @updatedAt
 }
 
 // 10. Notification Model
 model Notification {
   id            String   @id @default(uuid())
-  recipientType String   // "SELLER" | "ADMIN"
-  recipientId   String?  // Seller ID or Admin ID (null for all admins)
-  type          String   // e.g. "EXPIRY_WARNING", "SUSPENSION", "NEW_SELLER_REGISTRATION"
+  recipientType String // "SELLER" | "ADMIN"
+  recipientId   String? // Seller ID or Admin ID (null for all admins)
+  type          String // e.g. "EXPIRY_WARNING", "SUSPENSION", "NEW_SELLER_REGISTRATION"
   message       String
   isRead        Boolean  @default(false)
   createdAt     DateTime @default(now())
@@ -172,28 +196,28 @@ model Notification {
 
 // 11. Approval Request Model (Multi-Admin Dual Authorization Workflow)
 model ApprovalRequest {
-  id                String    @id @default(uuid())
-  actionType        String    // e.g. "DELETE_SELLER_ACCOUNT", "DELETE_CATEGORY", "CHANGE_ADMIN_PERMISSIONS"
-  targetName        String
-  targetId          String?
-  requestedById     String
-  requestedByName   String
-  requestedByEmail  String
-  reason            String
-  newPermissions    String?   // JSON array of module keys (e.g. ["PRODUCTS","SELLERS"]) - set for
-                               // CHANGE_ADMIN_PERMISSIONS (the target's requested permission set) and
-                               // CREATE_SUB_ADMIN (the new account's initial permission set) requests.
+  id                  String    @id @default(uuid())
+  actionType          String // e.g. "DELETE_SELLER_ACCOUNT", "DELETE_CATEGORY", "CHANGE_ADMIN_PERMISSIONS"
+  targetName          String
+  targetId            String?
+  requestedById       String
+  requestedByName     String
+  requestedByEmail    String
+  reason              String
+  newPermissions      String? // JSON array of module keys (e.g. ["PRODUCTS","SELLERS"]) - set for
+  // CHANGE_ADMIN_PERMISSIONS (the target's requested permission set) and
+  // CREATE_SUB_ADMIN (the new account's initial permission set) requests.
   pendingEmail        String? // CREATE_SUB_ADMIN only - the not-yet-created account's email.
   pendingPasswordHash String? // CREATE_SUB_ADMIN only - bcrypt hash of the chosen initial password.
-                               // Never stored plaintext, not even temporarily - hashed before this
-                               // row is written, same as SubAdministrator.passwordHash.
-  status            String    @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
-  riskLevel         String    @default("HIGH")     // "LOW" | "MEDIUM" | "HIGH"
-  requiredRole      String    @default("ADMINISTRATOR")
-  approvedByName    String?
-  approvalDate      DateTime?
-  rejectedByName    String?
-  rejectionDate     DateTime?
-  note              String?
-  createdAt         DateTime  @default(now())
+  // Never stored plaintext, not even temporarily - hashed before this
+  // row is written, same as SubAdministrator.passwordHash.
+  status              String    @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
+  riskLevel           String    @default("HIGH") // "LOW" | "MEDIUM" | "HIGH"
+  requiredRole        String    @default("ADMINISTRATOR")
+  approvedByName      String?
+  approvalDate        DateTime?
+  rejectedByName      String?
+  rejectionDate       DateTime?
+  note                String?
+  createdAt           DateTime  @default(now())
 }

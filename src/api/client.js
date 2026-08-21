@@ -30,10 +30,32 @@ export function setSession(session) {
 // surfaced, since the request() promise itself never settles.
 const REQUEST_TIMEOUT_MS = 15000;
 
+// A stable id for this browser, so a signed-out visitor's likes belong to
+// somebody. Generated once and kept; it identifies nothing about the person
+// and is only ever compared against itself.
+const VISITOR_KEY_STORAGE = 'KIGALIMARKET_VISITOR_V1';
+
+export function getVisitorKey() {
+  try {
+    let key = localStorage.getItem(VISITOR_KEY_STORAGE);
+    if (!key) {
+      key = (crypto.randomUUID && crypto.randomUUID()) ||
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+      localStorage.setItem(VISITOR_KEY_STORAGE, key);
+    }
+    return key;
+  } catch {
+    // Private mode with storage blocked. The like still registers for this
+    // page view; it just will not be remembered on the next one.
+    return `ephemeral-${Math.random().toString(36).slice(2, 14)}`;
+  }
+}
+
 async function request(method, path, body) {
   const session = getSession();
   const headers = { 'Content-Type': 'application/json' };
   if (session?.token) headers.Authorization = `Bearer ${session.token}`;
+  headers['x-visitor-key'] = getVisitorKey();
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);

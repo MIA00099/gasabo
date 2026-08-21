@@ -40,8 +40,18 @@ function serializeProduct(p: any) {
     isRecommended: p.isRecommended,
     postedDate: p.createdAt,
     expiryDate: p.expiresAt,
+    // Null until an administrator gives one. The storefront then shows no
+    // stars at all rather than the hard-coded 4.8 the cards used to print.
+    rating: p.rating ?? null,
+    // Present whenever the query counted likes. A caller that did not ask for
+    // them gets 0 rather than undefined, so nothing renders "undefined".
+    likeCount: p._count?.likes ?? 0,
   };
 }
+
+// Counting likes on every product read costs one join; on a catalog this size
+// that is cheaper than keeping a denormalised counter on Product honest.
+const WITH_LIKES = { _count: { select: { likes: true } } } as const;
 
 // GET /api/products - public listing with optional filters
 productsRouter.get('/', async (req, res) => {
@@ -66,7 +76,7 @@ productsRouter.get('/', async (req, res) => {
           }
         : {}),
     },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -79,7 +89,7 @@ productsRouter.get('/', async (req, res) => {
 productsRouter.get('/mine', requireAuth, requireRole('SELLER'), async (req, res) => {
   const products = await prisma.product.findMany({
     where: { sellerId: req.user!.id },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
     orderBy: { createdAt: 'desc' },
   });
   res.json({ products: products.map(serializeProduct) });
@@ -91,7 +101,7 @@ productsRouter.get('/mine', requireAuth, requireRole('SELLER'), async (req, res)
 productsRouter.get('/pending', requireAuth, requireExclusivePermission('PRODUCT_APPROVAL'), async (_req, res) => {
   const products = await prisma.product.findMany({
     where: { status: 'PENDING' },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
     orderBy: { createdAt: 'asc' },
   });
   res.json({ products: products.map(serializeProduct) });
@@ -109,6 +119,136 @@ productsRouter.get('/pending', requireAuth, requireExclusivePermission('PRODUCT_
 // MUST stay declared below the literal '/mine' and '/pending' routes.
 // Express matches in registration order, so a '/:id' placed above them would
 // swallow both and treat "mine"/"pending" as an id.
+// ---------------------------------------------------------------------------
+// Rating - set by an administrator
+// ---------------------------------------------------------------------------
+//
+// A single number an admin assigns, not an average of buyer reviews. There is
+// no review model here, and the star row on the storefront was printing a
+// hard-coded 4.8 with "(128)" beside it on every listing, which is worse than
+// showing nothing. Null clears it back to no stars.
+const ratingSchema = z.object({
+  rating: z.union([
+    z.number().min(0).max(5).multipleOf(0.5),
+    z.null(),
+  ]),
+});
+
+productsRouter.patch('/:id/rating', requireAuth, requirePermission('PRODUCTS'), async (req, res) => {
+  const parsed = ratingSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Rating must be a number from 0 to 5 in half steps, or null to clear it.' });
+  }
+
+  const existing = await prisma.product.findUnique({ where: { id: req.params.id } });
+  if (!existing) return res.status(404).json({ error: 'Listing not found.' });
+
+  const product = await prisma.product.update({
+    where: { id: existing.id },
+    data: { rating: parsed.data.rating },
+    include: { seller: true, category: true, ...WITH_LIKES },
+  });
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'PRODUCT_RATING_SET',
+    module: 'Marketplace Admin',
+    targetId: product.id,
+    details: parsed.data.rating === null
+      ? `Cleared the rating on "${product.title}".`
+      : `Rated "${product.title}" ${parsed.data.rating} of 5.`,
+  });
+
+  res.json({ product: serializeProduct(product) });
+});
+
+// ---------------------------------------------------------------------------
+// Likes - left by buyers
+// ---------------------------------------------------------------------------
+//
+// Deliberately open to signed-out visitors: this is a classifieds site where
+// most people browse without an account, and requiring a sign-up to tap a
+// heart would mean almost no listing ever gets one.
+//
+// The trade is that a like has to be attributed to something. A signed-in
+// account is used when there is one; otherwise the browser sends a random key
+// it generated and kept. That stops the same visitor counting twice by
+// refreshing, and lets them take the like back. It does not stop somebody who
+// sets out to inflate a number by clearing storage or scripting the endpoint -
+// that requires accounts to like at all, which is the client's call, not a
+// detail to decide here.
+const VISITOR_HEADER = 'x-visitor-key';
+
+function visitorKeyFor(req: any): string | null {
+  if (req.user?.id) return `user:${req.user.id}`;
+  const header = req.header(VISITOR_HEADER);
+  if (typeof header !== 'string') return null;
+  const key = header.trim();
+  // Bounded so the column cannot be used as free storage.
+  if (key.length < 8 || key.length > 100) return null;
+  return `visitor:${key}`;
+}
+
+productsRouter.post('/:id/like', async (req, res) => {
+  const key = visitorKeyFor(req);
+  if (!key) return res.status(400).json({ error: 'Missing visitor key.' });
+
+  const product = await prisma.product.findFirst({
+    where: { id: req.params.id, status: 'ACTIVE' },
+    select: { id: true },
+  });
+  // Only a live listing can be liked - a pending one is not public, and
+  // answering 404 keeps this from being a way to probe for unmoderated ids.
+  if (!product) return res.status(404).json({ error: 'Listing not found.' });
+
+  // Liking twice is the same as liking once rather than an error: the button
+  // can be double-tapped, and two tabs can be open on the same listing.
+  await prisma.productLike.upsert({
+    where: { productId_visitorKey: { productId: product.id, visitorKey: key } },
+    create: { productId: product.id, visitorKey: key },
+    update: {},
+  });
+
+  const likeCount = await prisma.productLike.count({ where: { productId: product.id } });
+  res.status(201).json({ liked: true, likeCount });
+});
+
+productsRouter.delete('/:id/like', async (req, res) => {
+  const key = visitorKeyFor(req);
+  if (!key) return res.status(400).json({ error: 'Missing visitor key.' });
+
+  const product = await prisma.product.findFirst({
+    where: { id: req.params.id, status: 'ACTIVE' },
+    select: { id: true },
+  });
+  if (!product) return res.status(404).json({ error: 'Listing not found.' });
+
+  // deleteMany, not delete: removing a like that was never there is a no-op
+  // rather than a 500, which is what a double-tap on the filled heart sends.
+  await prisma.productLike.deleteMany({
+    where: { productId: product.id, visitorKey: key },
+  });
+
+  const likeCount = await prisma.productLike.count({ where: { productId: product.id } });
+  res.json({ liked: false, likeCount });
+});
+
+// Whether THIS visitor has already liked a listing, so the heart renders
+// filled on a page they come back to.
+productsRouter.get('/:id/like', async (req, res) => {
+  const key = visitorKeyFor(req);
+  const likeCount = await prisma.productLike.count({ where: { productId: req.params.id } });
+  if (!key) return res.json({ liked: false, likeCount });
+
+  const mine = await prisma.productLike.findUnique({
+    where: { productId_visitorKey: { productId: req.params.id, visitorKey: key } },
+    select: { id: true },
+  });
+  res.json({ liked: Boolean(mine), likeCount });
+});
+
 // GET /api/products/:id/related - the "More <category> Products" row on a
 // listing page.
 //
@@ -140,7 +280,7 @@ productsRouter.get('/:id/related', async (req, res) => {
     },
     orderBy: { createdAt: 'desc' },
     take: 8,
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
   });
 
   res.json({ products: related.map(serializeProduct) });
@@ -150,7 +290,7 @@ productsRouter.get('/:id/related', async (req, res) => {
 productsRouter.get('/:id', async (req, res) => {
   const product = await prisma.product.findFirst({
     where: { id: req.params.id, status: 'ACTIVE' },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
   });
 
   if (!product) return res.status(404).json({ error: 'Listing not found.' });
@@ -198,7 +338,7 @@ productsRouter.post('/', requireAuth, requireRole('SELLER'), async (req, res) =>
       sellerId: req.user!.id,
       status: 'PENDING',
     },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
   });
 
   await logAudit({
@@ -239,7 +379,7 @@ productsRouter.post('/:id/approve', requireAuth, requireExclusivePermission('PRO
   const updated = await prisma.product.update({
     where: { id: product.id },
     data: { status: 'ACTIVE', expiresAt: new Date(Date.now() + SIX_MONTHS_MS), rejectionReason: null },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
   });
 
   await logAudit({
@@ -274,7 +414,7 @@ productsRouter.post('/:id/reject', requireAuth, requireExclusivePermission('PROD
   const updated = await prisma.product.update({
     where: { id: product.id },
     data: { status: 'REJECTED', rejectionReason: parsed.data.reason },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
   });
 
   await logAudit({
@@ -314,7 +454,7 @@ productsRouter.post('/:id/renew', requireAuth, requireRole('SELLER'), async (req
   const updated = await prisma.product.update({
     where: { id: product.id },
     data: { status: 'ACTIVE', expiresAt: new Date(Date.now() + SIX_MONTHS_MS), expiryReminderSentAt: null },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
   });
 
   await logAudit({
@@ -371,7 +511,7 @@ productsRouter.patch('/:id/flags', requireAuth, requirePermission('PRODUCTS'), a
   const updated = await prisma.product.update({
     where: { id: product.id },
     data: { [parsed.data.flag]: parsed.data.value },
-    include: { seller: true, category: true },
+    include: { seller: true, category: true, ...WITH_LIKES },
   });
 
   await logAudit({

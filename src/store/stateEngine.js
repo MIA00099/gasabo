@@ -77,6 +77,8 @@ class StateEngine {
       // Siblings of routeListing, for the "More <category> Products" row.
       // Keyed by listing id so a stale response from the previously viewed
       // listing cannot paint under the current one.
+      // Per-listing like state, keyed by product id: { liked, likeCount }.
+      likes: {},
       relatedProducts: [],
       relatedProductsFor: null,
       routeListingMissing: false,
@@ -187,6 +189,60 @@ class StateEngine {
    * realEstate CMS payload rather than having their own endpoint, so they are
    * resolved from that once it is loaded.
    */
+  // --- Ratings and likes -------------------------------------------------
+
+  // Admin-assigned, 0-5 in half steps, or null to clear it.
+  async setProductRating(productId, rating) {
+    return this._run('products', async () => {
+      const { product } = await api.patch(`/products/${productId}/rating`, { rating });
+      const swap = (list) => list.map((p) => (p.id === product.id ? product : p));
+      this.data.products = swap(this.data.products);
+      this.data.myProducts = swap(this.data.myProducts);
+      if (this.data.routeListing?.id === product.id) this.data.routeListing = product;
+      this.notify();
+      return product;
+    });
+  }
+
+  // Whether this visitor already liked a listing, and how many likes it has.
+  async loadLikeState(productId) {
+    const { liked, likeCount } = await api.get(`/products/${productId}/like`);
+    this.data.likes = { ...this.data.likes, [productId]: { liked, likeCount } };
+    this.notify();
+    return { liked, likeCount };
+  }
+
+  // Deliberately not wrapped in _run: a heart that greys the whole page out
+  // while it saves feels broken. The button paints its new state immediately
+  // and this reconciles it against what the server actually recorded.
+  async toggleLike(productId) {
+    const current = this.data.likes?.[productId] || { liked: false, likeCount: 0 };
+    const optimistic = {
+      liked: !current.liked,
+      likeCount: Math.max(0, current.likeCount + (current.liked ? -1 : 1)),
+    };
+    this.data.likes = { ...this.data.likes, [productId]: optimistic };
+    this.notify();
+
+    try {
+      const res = current.liked
+        ? await api.delete(`/products/${productId}/like`)
+        : await api.post(`/products/${productId}/like`, {});
+      this.data.likes = {
+        ...this.data.likes,
+        [productId]: { liked: res.liked, likeCount: res.likeCount },
+      };
+      this.notify();
+      return res;
+    } catch (e) {
+      // Put the old state back rather than leaving a heart that lies.
+      this.data.likes = { ...this.data.likes, [productId]: current };
+      this.data.error = 'Could not save that. Please try again.';
+      this.notify();
+      throw e;
+    }
+  }
+
   // Siblings come from the server rather than being filtered out of
   // this.data.products, which only ever holds the last grid fetch. On a
   // shared link or a search result nothing has fetched a grid, so the

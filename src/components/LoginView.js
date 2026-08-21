@@ -103,7 +103,7 @@ export function renderLoginView(container, initialMode = 'login') {
                 </div>
 
                 <div class="flex items-center justify-between text-xs pt-1">
-                  <label class="flex items-center gap-2 cursor-pointer text-gray-600">
+                  <label class="flex items-center gap-2 cursor-pointer text-gray-600 transition-colors hover:text-gray-900">
                     <input type="checkbox" class="accent-brand-green rounded" checked>
                     <span>Remember me</span>
                   </label>
@@ -199,7 +199,7 @@ export function renderLoginView(container, initialMode = 'login') {
 
                 <div class="flex items-center gap-2 pt-1 text-xs">
                   <input type="checkbox" required id="terms" class="accent-brand-green rounded" checked>
-                  <label for="terms" class="text-gray-600 cursor-pointer">I agree to the <a href="#" class="text-brand-green font-bold hover:underline">Terms & Privacy Policy</a></label>
+                  <label for="terms" class="text-gray-600 cursor-pointer transition-colors hover:text-gray-900">I agree to the <a href="#" class="text-brand-green font-bold hover:underline">Terms & Privacy Policy</a></label>
                 </div>
 
                 <button type="submit" class="w-full bg-brand-green text-white font-bold py-3 rounded-xl hover:bg-green-800 transition shadow-md text-xs mt-2" ${submitting ? 'disabled' : ''}>

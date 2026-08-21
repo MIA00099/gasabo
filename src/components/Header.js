@@ -64,7 +64,7 @@ export function renderHeaderHtml(ctx) {
   const activeLang = languageFor(currentLang);
   const t = (key) => getTranslation(currentLang, key);
   const navLink = 'h-full flex items-center px-1 hover:text-gray-300';
-  const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange';
+  const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange hover:text-orange-300 hover:border-orange-300';
 
   return `
     <!-- Top Announcement Bar -->
@@ -246,7 +246,7 @@ export function renderMobileTabBarHtml(ctx) {
   const { activePortal, currentUser, currentLang } = ctx;
   const t = (key) => getTranslation(currentLang, key);
   const signedIn = currentUser.role !== 'guest';
-  const tab = 'flex flex-col items-center gap-0.5 py-1 text-[10px] font-semibold';
+  const tab = 'flex flex-col items-center gap-0.5 py-1 text-[10px] font-semibold transition-colors hover:text-brand-green';
 
   return `
     <nav class="mobile-tabbar lg:hidden fixed left-0 right-0 bottom-0 bg-white border-t border-gray-200 shadow-[0_-4px_18px_rgba(15,23,42,0.08)] z-[1100] grid grid-cols-5 items-end px-1 pt-1"

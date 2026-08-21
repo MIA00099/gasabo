@@ -24,6 +24,25 @@ export function setSession(session) {
   }
 }
 
+/**
+ * Called when the server rejects our credentials mid-session.
+ *
+ * Clearing localStorage on a 401 was only half the job: storage emptied but
+ * nothing told the app, so an admin whose token had expired went on looking
+ * at the dashboard - their name, their role, the Logout button, the whole
+ * shell - while every click failed with "Invalid or expired session". Signed
+ * out and unaware of it, with no way back except guessing that Logout would
+ * fix a session they no longer had.
+ *
+ * The state engine registers here at construction, so a 401 from any request
+ * ends the session in the UI as well as in storage.
+ */
+let onExpired = null;
+
+export function setSessionExpiredHandler(fn) {
+  onExpired = fn;
+}
+
 // fetch() has no built-in timeout - a hung request (a dropped connection, a
 // server mid-restart, a backend query that never resolves) would otherwise
 // leave the caller's loading state stuck indefinitely with no error ever
@@ -85,7 +104,14 @@ async function request(method, path, body) {
   }
 
   if (!res.ok) {
-    if (res.status === 401) setSession(null);
+    if (res.status === 401) {
+      const had = !!session?.token;
+      setSession(null);
+      // Only for someone who thought they were signed in. A 401 on a public
+      // endpoint from a signed-out visitor is not an expiry, and announcing
+      // one would be a lie.
+      if (had && onExpired) onExpired(data?.error || 'Your session has expired.');
+    }
     throw new Error(data?.error || `Request failed (${res.status}).`);
   }
 

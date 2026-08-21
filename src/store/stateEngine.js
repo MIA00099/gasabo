@@ -5,7 +5,7 @@
  * fetched from and written to the real backend API - nothing here is the
  * source of truth anymore, it's a reactive cache the views read from.
  */
-import { api, getSession, setSession } from '../api/client.js';
+import { api, getSession, setSession, setSessionExpiredHandler } from '../api/client.js';
 import { parseLocation, ROUTE_HOME, ROUTE_PRODUCT } from './router.js';
 
 const LANG_KEY = 'KIGALIMARKET_LANG';
@@ -42,56 +42,81 @@ function guestUser() {
   return { id: null, name: 'Guest', email: '', role: 'guest', phone: '', district: '', permissions: {} };
 }
 
+/**
+ * The state a signed-out browser starts with.
+ *
+ * Extracted so logout() can return to it. It used to reset only currentUser
+ * and activePortal, which left the previous person's sellers directory,
+ * approval queue, audit logs, pending products and notifications sitting in
+ * memory - and rendering - for whoever signed in next on the same browser
+ * without a page reload. A Sub-Administrator with no audit permission would
+ * inherit an Administrator's audit logs that way.
+ *
+ * `currentLang` and `route` are passed through rather than reset: the chosen
+ * language is a browser preference, not session data, and logging out should
+ * leave you on the page you were reading, not throw you to the homepage.
+ */
+function initialData({ currentUser, currentLang, route }) {
+  return {
+    activePortal: 'marketplace',
+    currentLang,
+    currentUser,
+    districts: DISTRICTS,
+    products: [],
+    myProducts: [],
+    pendingProducts: [],
+    categories: [],
+    sellers: [],
+    // Storefront seller directory (GET /sellers/public). Kept apart from
+    // `sellers` above, which holds the admin-only records.
+    publicSellers: [],
+    banners: [],
+    realEstate: { hero: null, about: null, services: [], contact: null, properties: [] },
+    approvalRequests: [],
+    auditLogs: [],
+    systemUsers: [],
+    notifications: [],
+    // Current URL route (see store/router.js). Seeded from the address bar
+    // so a cold load of /product/<id> already knows what to open before
+    // anything renders.
+    route,
+    // The listing behind a /product/:id or /property/:id URL, fetched on
+    // demand. Deep links cannot rely on state.products: on a cold load it
+    // is empty, and even once loaded the listing may be filtered out of the
+    // current result set.
+    routeListing: null,
+    // Siblings of routeListing, for the "More <category> Products" row.
+    // Keyed by listing id so a stale response from the previously viewed
+    // listing cannot paint under the current one.
+    // Per-listing like state, keyed by product id: { liked, likeCount }.
+    likes: {},
+    relatedProducts: [],
+    relatedProductsFor: null,
+    routeListingMissing: false,
+    loading: {},
+    error: null,
+    // Every stateEngine mutation (even just a loading-flag flip) notifies subscribers,
+    // and main.js's subscriber fully remounts whichever view is on screen. Views that
+    // trigger an async stateEngine call from within their own tab/wizard/filter state
+    // would otherwise lose that local state to the remount mid-interaction - so any UI
+    // state that needs to survive across such a call lives here instead of in a local
+    // closure variable.
+    ui: {},
+  };
+}
+
 class StateEngine {
   constructor() {
     this.listeners = [];
     const session = getSession();
-    this.data = {
-      activePortal: 'marketplace',
-      currentLang: localStorage.getItem(LANG_KEY) || 'en',
+    this.data = initialData({
       currentUser: session?.user ? normalizeUser(session.user) : guestUser(),
-      districts: DISTRICTS,
-      products: [],
-      myProducts: [],
-      pendingProducts: [],
-      categories: [],
-      sellers: [],
-      // Storefront seller directory (GET /sellers/public). Kept apart from
-      // `sellers` above, which holds the admin-only records.
-      publicSellers: [],
-      banners: [],
-      realEstate: { hero: null, about: null, services: [], contact: null, properties: [] },
-      approvalRequests: [],
-      auditLogs: [],
-      systemUsers: [],
-      notifications: [],
-      // Current URL route (see store/router.js). Seeded from the address bar
-      // so a cold load of /product/<id> already knows what to open before
-      // anything renders.
+      currentLang: localStorage.getItem(LANG_KEY) || 'en',
       route: parseLocation(),
-      // The listing behind a /product/:id or /property/:id URL, fetched on
-      // demand. Deep links cannot rely on state.products: on a cold load it
-      // is empty, and even once loaded the listing may be filtered out of the
-      // current result set.
-      routeListing: null,
-      // Siblings of routeListing, for the "More <category> Products" row.
-      // Keyed by listing id so a stale response from the previously viewed
-      // listing cannot paint under the current one.
-      // Per-listing like state, keyed by product id: { liked, likeCount }.
-      likes: {},
-      relatedProducts: [],
-      relatedProductsFor: null,
-      routeListingMissing: false,
-      loading: {},
-      error: null,
-      // Every stateEngine mutation (even just a loading-flag flip) notifies subscribers,
-      // and main.js's subscriber fully remounts whichever view is on screen. Views that
-      // trigger an async stateEngine call from within their own tab/wizard/filter state
-      // would otherwise lose that local state to the remount mid-interaction - so any UI
-      // state that needs to survive across such a call lives here instead of in a local
-      // closure variable.
-      ui: {},
-    };
+    });
+
+    // A 401 from anywhere ends the session in the UI, not just in storage.
+    setSessionExpiredHandler((message) => this.sessionExpired(message));
   }
 
   subscribe(listener) {
@@ -384,9 +409,112 @@ class StateEngine {
 
   logout() {
     setSession(null);
-    this.data.currentUser = guestUser();
-    this.data.activePortal = 'marketplace';
+    this._resetToSignedOut();
     this.notify();
+  }
+
+  /**
+   * Back to a signed-out browser, keeping the language and the current page.
+   *
+   * Everything else goes. Resetting only currentUser left the previous
+   * person's sellers directory, approval queue, audit logs, pending products
+   * and notifications in memory for whoever signed in next on the same
+   * browser without a reload.
+   */
+  _resetToSignedOut() {
+    this.data = initialData({
+      currentUser: guestUser(),
+      currentLang: this.data.currentLang,
+      route: this.data.route,
+    });
+  }
+
+  /**
+   * The server has stopped accepting our credentials mid-session - an expired
+   * token, a deleted account, a suspension, a revoked role.
+   *
+   * The API client clears storage on any 401; this is what makes the UI agree.
+   * Without it the person stayed on the dashboard, name and role and all,
+   * while every click failed, signed out and with no way of knowing it.
+   *
+   * The message is carried into state so the sign-in screen can explain what
+   * happened rather than just appearing for no reason.
+   */
+  sessionExpired(message) {
+    if (this.data.currentUser.role === 'guest') return; // already out; nothing to announce
+
+    // Where they were decides where they end up. Someone in the admin portal
+    // or the seller dashboard cannot stay there signed out, so they go to the
+    // sign-in screen with an explanation. Someone browsing the marketplace
+    // can simply carry on as a guest - throwing a shopper onto a login form
+    // because a background call expired would be the more annoying bug.
+    const wasInProtectedArea =
+      this.data.activePortal === 'admin' ||
+      this.data.ui?.marketplaceTab === 'seller_portal';
+
+    const notice = message || 'Your session has expired. Please sign in again.';
+    this._resetToSignedOut();
+    this.data.error = notice;
+
+    if (wasInProtectedArea) {
+      this.data.activePortal = 'login';
+      this.data.ui = { ...this.data.ui, authNotice: notice };
+    }
+    this.notify();
+  }
+
+  /**
+   * Drop the "why are you seeing this sign-in screen" message.
+   *
+   * The notice lives in state and the login view reads it on every render,
+   * rather than consuming it on mount. Two earlier attempts got this wrong:
+   * clearing it through setUI re-rendered the view, which then read the value
+   * it had just cleared; and reading-and-clearing on mount lost it to the
+   * next notify(), since every notify rebuilds the view and re-runs its
+   * initialisers. Either way the explanation was gone a frame before anyone
+   * could read it.
+   *
+   * So it stays until the person does something with the form - types,
+   * switches tab, submits - at which point they have seen it.
+   *
+   * Does not notify: it is called from inside handlers that re-render anyway,
+   * and notifying here would recurse.
+   */
+  clearAuthNotice() {
+    if (this.data.ui?.authNotice) {
+      this.data.ui = { ...this.data.ui, authNotice: null };
+    }
+  }
+
+  /**
+   * Check a stored session against the server before trusting it.
+   *
+   * Everything the UI decides about a person - which dashboard they land on,
+   * which admin modules appear - comes from the `user` object in
+   * localStorage, which is only a snapshot of who they were when they signed
+   * in. Tokens last 7 days, so without this a deleted, suspended or demoted
+   * account keeps its old shell for a week, and a Sub-Administrator whose
+   * permissions were changed this morning keeps seeing modules that now
+   * refuse every request.
+   *
+   * GET /auth/me answers from the database, so the answer is current. A 401
+   * there is handled by the client's own expiry path.
+   */
+  async verifySession() {
+    const session = getSession();
+    if (!session?.token) return null;
+    try {
+      const { user } = await api.get('/auth/me');
+      setSession({ ...session, user });
+      this.data.currentUser = normalizeUser(user);
+      this.notify();
+      return this.data.currentUser;
+    } catch {
+      // A 401 has already signed us out through setSessionExpiredHandler.
+      // Anything else (offline, server restarting) is not a reason to throw
+      // someone out of a session that may well still be good.
+      return null;
+    }
   }
 
   // --- Products (Marketplace) ---

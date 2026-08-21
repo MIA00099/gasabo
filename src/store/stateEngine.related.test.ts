@@ -48,6 +48,9 @@ vi.mock('../api/client.js', () => ({
   },
   getSession: () => null,
   setSession: vi.fn(),
+  // The state engine registers a 401 handler at construction, so this has to
+  // exist even for tests that never authenticate.
+  setSessionExpiredHandler: vi.fn(),
 }));
 
 const PRODUCT_ID = 'product-under-test';

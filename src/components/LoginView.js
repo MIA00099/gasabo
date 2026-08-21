@@ -9,7 +9,16 @@ export function renderLoginView(container, initialMode = 'login') {
   let mode = initialMode; // 'login' | 'signup'
   let showPassword = false;
   let showConfirmPassword = false;
+
+  // If the server stopped accepting the session while the person was working -
+  // an expired token, a suspended account, a revoked role - they land here
+  // having been signed out by something they did not do. Say so. Being
+  // dropped onto a sign-in screen with no explanation reads as a bug, and the
+  // natural response is to distrust the site rather than to sign back in.
+  //
+  // Read once and cleared, so it explains this arrival and not the next one.
   let errorMessage = '';
+
   let submitting = false;
 
   let formData = {
@@ -64,10 +73,10 @@ export function renderLoginView(container, initialMode = 'login') {
             </button>
           </div>
 
-          ${errorMessage ? `
+          ${(errorMessage || stateEngine.getState().ui?.authNotice) ? `
             <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs font-semibold mb-4 flex items-center gap-2">
               <i class="fa-solid fa-triangle-exclamation text-sm"></i>
-              <span>${escapeHtml(errorMessage)}</span>
+              <span>${escapeHtml(errorMessage || stateEngine.getState().ui?.authNotice)}</span>
             </div>
           ` : ''}
 
@@ -222,6 +231,7 @@ export function renderLoginView(container, initialMode = 'login') {
       tabLogin.addEventListener('click', () => {
         captureInputs();
         errorMessage = '';
+        stateEngine.clearAuthNotice();
         mode = 'login';
         update();
       });
@@ -232,6 +242,7 @@ export function renderLoginView(container, initialMode = 'login') {
       tabSignup.addEventListener('click', () => {
         captureInputs();
         errorMessage = '';
+        stateEngine.clearAuthNotice();
         mode = 'signup';
         update();
       });
@@ -242,6 +253,7 @@ export function renderLoginView(container, initialMode = 'login') {
       switchToSignup.addEventListener('click', () => {
         captureInputs();
         errorMessage = '';
+        stateEngine.clearAuthNotice();
         mode = 'signup';
         update();
       });
@@ -252,6 +264,7 @@ export function renderLoginView(container, initialMode = 'login') {
       switchToLogin.addEventListener('click', () => {
         captureInputs();
         errorMessage = '';
+        stateEngine.clearAuthNotice();
         mode = 'login';
         update();
       });
@@ -281,6 +294,7 @@ export function renderLoginView(container, initialMode = 'login') {
         e.preventDefault();
         captureInputs();
         errorMessage = '';
+        stateEngine.clearAuthNotice();
 
         if (mode === 'signup' && formData.password !== formData.confirmPassword) {
           errorMessage = 'Passwords do not match.';

@@ -309,6 +309,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   stateEngine.subscribe(renderApp);
   renderApp();
+
+  // Paint first, then check the stored session against the server.
+  //
+  // Everything the UI decides about a signed-in person comes from the `user`
+  // object in localStorage, which is only who they were when they signed in.
+  // Tokens last 7 days, so a deleted, suspended or demoted account kept its
+  // old shell for a week, and a Sub-Administrator whose permissions changed
+  // this morning kept seeing modules that now refuse every request.
+  //
+  // Deliberately after the first render: the check is a network round trip,
+  // and blocking the whole app on it would trade a stale role for a blank
+  // screen on every cold load. A 401 signs the person out through the API
+  // client's expiry path; anything else leaves the session alone.
+  stateEngine.verifySession();
 });
 
 function escapeHtml(str) {

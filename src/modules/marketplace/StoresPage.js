@@ -120,11 +120,15 @@ export function renderStoresPage(container) {
               <div class="store-card bg-white rounded-2xl p-5 shadow-sm border border-gray-200 transition hover:shadow-md">
                 <!-- Top Info Row -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-100">
-                  <div class="flex items-center gap-3">
+                  <!-- min-w-0 on both: a flex item defaults to min-width:auto,
+                       which means it cannot shrink below its own content. At
+                       320px a long seller name pushed this block 14px past the
+                       row it sits in. -->
+                  <div class="flex items-center gap-3 min-w-0">
                     <div class="w-14 h-14 rounded-full bg-green-100 border-2 border-brand-green flex items-center justify-center text-brand-green font-black text-xl shadow-inner shrink-0">
                       ${store.initials}
                     </div>
-                    <div>
+                    <div class="min-w-0">
                       <div class="flex items-center gap-2">
                         <h2 class="text-lg font-bold text-gray-900">${escapeHtml(store.name)}</h2>
                         ${store.verified ? `

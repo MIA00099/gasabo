@@ -4315,15 +4315,15 @@ a[style]:hover,
   box-shadow: 0 10px 26px rgba(6, 63, 43, 0.32);
 }
 
-/* Language switcher, on the green announcement strip. */
-#lang-toggle {
-  transition: opacity 0.15s ease;
+/* Language switcher. The three sit on the green strip in a row now
+   rather than behind a chevron, so each needs its own response - and the
+   one already in use should not look clickable in the same way. */
+.lang-pick {
+  transition: background-color 0.15s ease, opacity 0.15s ease;
 }
 
-#lang-toggle:hover {
-  opacity: 0.8;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+.lang-pick[aria-current='true'] {
+  cursor: default;
 }
 
 /* Brand lockups - marketplace header, and the Gasabo portal's own. */

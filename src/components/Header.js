@@ -19,8 +19,7 @@
  * decision was to keep the mockups' wording, so it stands as delivered.
  */
 
-import { LANGUAGES, languageFor, getTranslation } from '../store/i18n.js';
-import { openDropdownMenu } from './dropdownMenu.js';
+import { LANGUAGES, getTranslation } from '../store/i18n.js';
 
 const ROLE_LABELS = {
   admin: 'Administrator',
@@ -61,7 +60,6 @@ export function renderHeaderHtml(ctx) {
 
   const roleLabel = ROLE_LABELS[currentUser.role] || '';
   const isRealEstate = activePortal === 'realestate';
-  const activeLang = languageFor(currentLang);
   const t = (key) => getTranslation(currentLang, key);
   const navLink = 'h-full flex items-center px-1 hover:text-gray-300';
   const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange hover:text-orange-300 hover:border-orange-300';
@@ -74,18 +72,28 @@ export function renderHeaderHtml(ctx) {
           <i class="fa-solid fa-truck"></i>
           <span>${escapeHtml(t('ui_free_delivery'))}</span>
         </div>
-        <div class="hidden md:flex items-center gap-3">
-          <!-- Shows the language currently in use, and the chevron opens the
-               rest. It used to be hard-coded to English and wired to
-               setLanguage('en'), so clicking "English" set English - the
-               chevron promised a list that did not exist, and the binding for
-               Kinyarwanda pointed at an element that was never rendered. -->
-          <button type="button" id="lang-toggle" aria-haspopup="menu" aria-expanded="false"
-            class="flex items-center gap-1 cursor-pointer">
-            <img src="https://flagcdn.com/w20/${activeLang.flag}.png" alt="" class="w-4 h-3 rounded-sm">
-            <span>${escapeHtml(activeLang.label)}</span>
-            <i class="fa-solid fa-chevron-down text-[8px]"></i>
-          </button>
+        <!-- All three languages on the strip itself, in a row.
+
+             This was a button showing the current language with a chevron
+             that opened the other two stacked in a dropdown. Three options
+             is small enough that the menu was costing a click to show what
+             fits on the line it was already on - and a language switcher
+             hidden behind a chevron is one a reader has to go looking for.
+
+             Still hidden below md: the strip has no room beside the delivery
+             notice on a phone, which is why the toggle was hidden there too. -->
+        <div class="hidden md:flex items-center gap-1" role="group" aria-label="Choose a language">
+          ${LANGUAGES.map((l, i) => `
+            ${i ? '<span aria-hidden="true" class="text-white/40">|</span>' : ''}
+            <button type="button" class="lang-pick flex items-center gap-1 px-1.5 py-0.5 rounded ${
+              l.code === currentLang
+                ? 'font-bold bg-white/15'
+                : 'opacity-80 hover:opacity-100 hover:bg-white/10'
+            }" data-lang="${l.code}" ${l.code === currentLang ? 'aria-current="true"' : ''}>
+              <img src="https://flagcdn.com/w20/${l.flag}.png" alt="" class="w-4 h-3 rounded-sm">
+              <span>${escapeHtml(l.label)}</span>
+            </button>
+          `).join('')}
         </div>
       </div>
     </div>
@@ -314,18 +322,13 @@ export function bindHeaderEvents(root, handlers) {
   on('#util-become-seller', 'click', goSignup);
   on('#header-logout-btn', 'click', logout);
 
-  // The chevron opens the list. Each entry carries its own flag, and the one
-  // in use is marked so the reader can see which they are on.
-  on('#lang-toggle', 'click', (e) => {
-    openDropdownMenu(e.currentTarget, {
-      label: 'Choose a language',
-      selectedId: currentLangCode,
-      onSelect: (code) => setLanguage(code),
-      items: LANGUAGES.map((l) => ({
-        id: l.code,
-        label: l.label,
-        iconHtml: `<img src="https://flagcdn.com/w20/${l.flag}.png" alt="" style="width:16px;height:12px;border-radius:2px;">`,
-      })),
+  // One button per language, sitting on the strip rather than behind a
+  // chevron. Clicking the one already in use is a no-op rather than a
+  // re-render of the whole app for no change.
+  root.querySelectorAll('.lang-pick').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const code = btn.dataset.lang;
+      if (code && code !== currentLangCode) setLanguage(code);
     });
   });
 

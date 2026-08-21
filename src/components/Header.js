@@ -81,7 +81,7 @@ export function renderHeaderHtml(ctx) {
 
     <!-- Header -->
     <header class="bg-white py-2 shadow-sm z-50 flex-none">
-      <div class="compact-container flex flex-wrap md:flex-nowrap items-center justify-between gap-3">
+      <div class="compact-container relative flex flex-wrap md:flex-nowrap items-center justify-between gap-3">
 
         <div class="flex items-center gap-2 cursor-pointer" id="nav-brand-home" role="button" tabindex="0"
           aria-label="Kigali Market - home">
@@ -94,6 +94,26 @@ export function renderHeaderHtml(ctx) {
         </div>
 
 
+
+        <!-- Gasabo Real Estate, centred between the two brands. Removing the
+             header search left this space empty; this is the other half of the
+             business and previously had no route in from the marketplace
+             header at all except the nav bar link.
+
+             Hidden on the real-estate portal itself - the logo on the left has
+             already become Gasabo there, and two of the same mark in one
+             header reads as a mistake. -->
+        ${isRealEstate ? '' : `
+          <button type="button" id="nav-gasabo-brand"
+            class="hidden md:flex items-center gap-2 shrink-0 md:absolute md:left-1/2 md:-translate-x-1/2 group"
+            aria-label="Gasabo Real Estate">
+            <img src="/real-estate-logo.png" alt=""
+              class="h-9 w-auto object-contain shrink-0">
+            <span class="text-lg font-black tracking-tight text-[#1D4ED8] group-hover:underline whitespace-nowrap">
+              Gasabo Real Estate
+            </span>
+          </button>
+        `}
         <!-- User Actions -->
         <div class="flex items-center gap-4 order-2 md:order-none shrink-0">
           ${showNotifBell ? `
@@ -247,6 +267,8 @@ export function bindHeaderEvents(root, handlers) {
 
   on('#nav-link-mkt', 'click', goHome);
   on('#nav-link-re', 'click', goRealEstate);
+  // Same destination as the Real Estate item in the nav bar below it.
+  on('#nav-gasabo-brand', 'click', goRealEstate);
   on('#nav-link-stores', 'click', goStores);
   on('#nav-link-vehicles', 'click', goVehicles);
   // #nav-all-categories was the chip inside the header search form and went

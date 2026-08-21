@@ -6,6 +6,7 @@
  * icons) rather than the mockup's Tailwind CDN + Lucide - keeps one bundled
  * CSS system instead of loading a second framework at runtime.
  */
+import { openDropdownMenu } from '../../components/dropdownMenu.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PROPERTY } from '../../store/router.js';
 import { makeAccessibleModal } from '../../components/modalA11y.js';
@@ -142,24 +143,67 @@ export function renderRealEstateView(container) {
 
     container.innerHTML = `
       <div>
-        <!-- SUB-NAV: logo (home) + Plots / Houses / Services / About, matching
-             the reference mockup's simpler 4-item nav (not the marketplace's
-             main site nav, which stays above this). -->
-        <div style="background: #ffffff; border-bottom: 1px solid #E2E8F0; padding: 0.85rem 1.5rem; margin-bottom: 0; position: sticky; top: 70px; z-index: 30;">
-          <div style="max-width: var(--page-max); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-            <div id="re-logo-home" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-              <img src="/real-estate-logo.png" alt="Gasabo Real Estate Logo" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; border: 1px solid #E2E8F0;">
-              <span style="font-weight: 800; font-size: 1.15rem; color: ${RE_BLUE};">Gasabo Real Estate</span>
+        <!-- SUB-NAV: brand, a divider, four icon items, and the way back to
+             the marketplace on the right. Matches the reference exactly, with
+             one condition attached: the three chevrons open real menus.
+             Plots and Houses list the locations that actually have that kind
+             of property, Services lists the services the CMS holds. A chevron
+             that opens nothing is the complaint this design would otherwise
+             invite. About has no chevron because it is a single page. -->
+        <div style="background: #ffffff; border-bottom: 1px solid #E2E8F0; padding: 0.7rem 1.5rem; position: sticky; top: 0; z-index: 30; box-shadow: 0 1px 3px rgba(15,23,42,0.05);">
+          <div style="max-width: var(--page-max); margin: 0 auto; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+
+            <div id="re-logo-home" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; flex-shrink: 0;"
+              role="button" tabindex="0" aria-label="Gasabo Real Estate - home">
+              <img src="/real-estate-logo.png" alt="" style="height: 38px; width: 38px; border-radius: 50%; object-fit: contain; border: 1px solid #E2E8F0;">
+              <span style="font-weight: 800; font-size: 1.1rem; color: ${RE_BLUE}; white-space: nowrap;">Gasabo Real Estate</span>
             </div>
 
-            <div style="display: flex; gap: 1.75rem; flex-wrap: wrap;">
-              <button class="re-nav-link" data-tab="properties" data-type="plot" style="background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: ${activeTab==='properties' && filters.type==='plot' ? RE_BLUE : '#475569'};">Plots</button>
-              <button class="re-nav-link" data-tab="properties" data-type="house" style="background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: ${activeTab==='properties' && filters.type==='house' ? RE_BLUE : '#475569'};">Houses</button>
-              <button class="re-nav-link" data-tab="services" style="background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: ${activeTab==='services' ? RE_BLUE : '#475569'};">Services</button>
-              <button class="re-nav-link" data-tab="about" style="background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: ${activeTab==='about' ? RE_BLUE : '#475569'};">About</button>
-            </div>
+            <span style="width: 1px; height: 26px; background: #E2E8F0; flex-shrink: 0;" aria-hidden="true"></span>
+
+            <!-- Scrolls rather than wraps: four icon items plus the brand and
+                 the back link do not fit a 375px phone, and wrapping them
+                 pushed one 29px off the screen. The bar stays one line at
+                 every width, the way the reference draws it. -->
+            <nav class="no-scrollbar" style="display: flex; align-items: center; gap: 0.35rem; flex: 1; min-width: 0; overflow-x: auto;"
+              aria-label="Gasabo Real Estate">
+              ${[
+                { id: 'plot', icon: 'fa-location-dot', label: 'Plots', menu: true },
+                { id: 'house', icon: 'fa-house', label: 'Houses', menu: true },
+                { id: 'services', icon: 'fa-briefcase', label: 'Services', menu: true },
+                { id: 'about', icon: 'fa-circle-info', label: 'About', menu: false },
+              ].map((item) => {
+                const on = item.id === 'about'
+                  ? activeTab === 'about'
+                  : item.id === 'services'
+                    ? activeTab === 'services'
+                    : activeTab === 'properties' && filters.type === item.id;
+                return `
+                  <button class="re-nav-item" data-nav="${item.id}"
+                    ${item.menu ? 'aria-haspopup="menu" aria-expanded="false"' : ''}
+                    style="display: inline-flex; align-items: center; gap: 0.45rem; background: ${on ? '#EFF4FF' : 'none'};
+                           border: none; border-radius: 9px; padding: 0.45rem 0.7rem; cursor: pointer;
+                           font-weight: 600; font-size: 0.92rem; white-space: nowrap;
+                           color: ${on ? RE_BLUE : '#475569'};">
+                    <i class="fa-solid ${item.icon}" style="font-size: 0.85rem; color: ${on ? RE_BLUE : '#64748B'};"></i>
+                    ${item.label}
+                    ${item.menu ? `<i class="fa-solid fa-chevron-down" style="font-size: 0.6rem; opacity: 0.7;"></i>` : ''}
+                  </button>
+                `;
+              }).join('')}
+            </nav>
+
+            <!-- The one route out of the portal. It sat in the site header
+                 before; the reference puts it at the end of this bar. -->
+            <button id="re-back-to-market-nav"
+              style="display: inline-flex; align-items: center; gap: 0.5rem; background: none; border: none;
+                     cursor: pointer; font-weight: 600; font-size: 0.9rem; color: ${RE_BLUE};
+                     white-space: nowrap; flex-shrink: 0;">
+              <i class="fa-solid fa-arrow-left" style="font-size: 0.8rem;"></i> Kigali Market
+            </button>
           </div>
         </div>
+
 
         ${activeTab === 'home' ? renderHomeView(reData, properties) : ''}
         ${activeTab === 'properties' ? renderPropertiesView(propertiesTitle, filteredProperties, filters, availableLocations) : ''}
@@ -177,7 +221,89 @@ export function renderRealEstateView(container) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    container.querySelectorAll('.re-nav-link, .re-foot-link').forEach(btn => {
+    // Nav items. Plots, Houses and Services carry a chevron and so must open
+    // something; the lists are built from the properties and services the CMS
+    // actually holds, not from a fixed menu that could go stale.
+    const goProperties = (type, location = 'all') => {
+      stateEngine.setUI({
+        realEstateTab: 'properties',
+        realEstateFilters: { type, location, price: 'all' },
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const locationsFor = (type) => {
+      const seen = new Set();
+      (properties || []).forEach((p) => {
+        if (p.type === type && p.location) seen.add(p.location);
+      });
+      return [...seen].sort();
+    };
+
+    container.querySelectorAll('.re-nav-item').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const nav = btn.dataset.nav;
+
+        if (nav === 'about') {
+          stateEngine.setUI({ realEstateTab: 'about' });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
+        if (nav === 'services') {
+          const services = reData.services || [];
+          openDropdownMenu(btn, {
+            label: 'Gasabo services',
+            items: [
+              { id: '__all', label: 'All services', iconHtml: '<i class="fa-solid fa-briefcase" style="color:#1D4ED8"></i>' },
+              ...services.map((s, i) => ({
+                id: String(i),
+                label: s.title || s.name || `Service ${i + 1}`,
+                iconHtml: '<i class="fa-regular fa-circle-check" style="color:#1D4ED8"></i>',
+              })),
+            ],
+            // Every entry lands on the services page - there are no per-service
+            // pages to send anyone to, and inventing routes that 404 would be
+            // worse than a menu that scrolls you to the list.
+            onSelect: () => {
+              stateEngine.setUI({ realEstateTab: 'services' });
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+          });
+          return;
+        }
+
+        // plot | house
+        const locs = locationsFor(nav);
+        openDropdownMenu(btn, {
+          label: nav === 'plot' ? 'Plots by location' : 'Houses by location',
+          selectedId: activeTab === 'properties' && filters.type === nav ? (filters.location || 'all') : null,
+          items: [
+            {
+              id: 'all',
+              label: nav === 'plot' ? 'All plots' : 'All houses',
+              iconHtml: `<i class="fa-solid ${nav === 'plot' ? 'fa-location-dot' : 'fa-house'}" style="color:#1D4ED8"></i>`,
+              meta: String((properties || []).filter((p) => p.type === nav).length),
+            },
+            ...locs.map((loc) => ({
+              id: loc,
+              label: loc,
+              iconHtml: '<i class="fa-solid fa-location-dot" style="color:#94A3B8"></i>',
+              meta: String((properties || []).filter((p) => p.type === nav && p.location === loc).length),
+            })),
+          ],
+          onSelect: (id) => goProperties(nav, id === 'all' ? 'all' : id),
+        });
+      });
+    });
+
+    container.querySelector('#re-back-to-market-nav')?.addEventListener('click', () => {
+      stateEngine.setUI({ marketplaceTab: 'products' });
+      stateEngine.setPortal('marketplace');
+    });
+
+    // Footer Browse column - same destinations, simpler markup.
+    container.querySelectorAll('.re-foot-link').forEach((btn) => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
         if (tab === 'properties' && btn.dataset.type) {

@@ -6,7 +6,7 @@ import { renderStoresPage } from './StoresPage.js';
 import { renderProductsPage } from './ProductsPage.js';
 import { renderCategoryIcon } from '../../utils/categoryIcon.js';
 import { starsHtml } from '../../utils/stars.js';
-import { openCategoryDropdown } from '../../components/categoryDropdown.js';
+import { openCategoryDropdown } from '../../components/dropdownMenu.js';
 import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
 // Grey circles, no labels. Deliberately not category-shaped placeholder

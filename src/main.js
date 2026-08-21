@@ -15,7 +15,7 @@ import {
 } from './components/Header.js';
 // Listings render as a full page now (product-detail.html), not an overlay.
 import { renderProductDetailPage } from './modules/marketplace/ProductDetailPage.js';
-import { openCategoryDropdown } from './components/categoryDropdown.js';
+import { openCategoryDropdown } from './components/dropdownMenu.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
   ROUTE_HOME, ROUTE_PRODUCT,

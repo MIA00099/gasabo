@@ -71,7 +71,8 @@ describe('named controls each keep their hover', () => {
   // that control.
   const NAMED = [
     '#nav-all-categories-2',
-    '#lang-toggle',
+    // .lang-pick is not here: the three language buttons take their hover
+    // from utilities in the markup, so it is guarded against Header.js below.
     '#nav-brand-home',
     '#re-logo-home',
     '#hero-search-form',
@@ -109,6 +110,17 @@ describe('Header.js class constants', () => {
     const line = HEADER.match(/const tab = '([^']+)'/);
     expect(line, 'tab constant not found').toBeTruthy();
     expect(line![1], 'the tab bar has no hover').toContain('hover:');
+  });
+
+  it('gives each language button a hover, and none to the one in use', () => {
+    // The three sit on the green strip in a row now rather than behind a
+    // chevron. The active one is deliberately inert - it is already selected,
+    // and offering hover feedback on a no-op is a promise the click cannot
+    // keep.
+    const block = HEADER.slice(HEADER.indexOf('lang-pick'), HEADER.indexOf('</button>', HEADER.indexOf('lang-pick')));
+    expect(block, 'the inactive language buttons have no hover').toContain('hover:');
+    expect(block, 'the active language is marked so it can be styled apart')
+      .toContain("l.code === currentLang");
   });
 
   it('still has both nav constants distinct', () => {

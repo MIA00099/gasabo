@@ -762,34 +762,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   margin: 0 auto 3rem auto;
   padding: 0 1.5rem;
 }
-.flash-deals {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 1rem;
-  align-items: stretch;
-}
-.flash-panel {
-  background: var(--primary-green);
-  color: #fff;
-  border-radius: 16px;
-  padding: 1.4rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.flash-panel h2 { font-size: 1.35rem; font-weight: 800; margin: 0 0 0.2rem; color: #fff; }
-.flash-panel-sub { font-size: 0.78rem; opacity: 0.85; margin: 0 0 0.9rem; }
-.flash-clock { display: flex; gap: 0.5rem; }
-.flash-unit {
-  flex: 1;
-  background: #fff;
-  border-radius: 10px;
-  padding: 8px 4px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+/* The old .flash-deals grid and its .flash-panel / .flash-clock / .flash-unit
+   companions lived here. Nothing references those classes any more, and the
+   grid was still applying to the rebuilt card and blockifying its children.
+   The card is styled by the delivered stylesheet at the end of this file. */
 .flash-unit strong {
   font-size: 1.15rem;
   font-weight: 800;
@@ -841,7 +817,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .flash-card-price s { font-size: 0.68rem; color: #94A3B8; }
 
 @media (max-width: 760px) {
-  .flash-deals { grid-template-columns: 1fr; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -4118,4 +4093,82 @@ table {
   .top-nav .market-link {
     margin-left: auto;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   FLASH DEALS - the delivered stylesheet, rule for rule.
+   Its `*` and `body` rules are not here: box-sizing is already set globally,
+   and that file's body margin and font-family would restyle the whole app
+   rather than this card.
+
+   .flash-deals h2 outranks the global h2 colour in the typography block, which
+   is what had been rendering this heading near-black on dark green.
+   --------------------------------------------------------------------------- */
+
+.flash-deals {
+  width: 100%;
+  max-width: 360px;
+  min-height: 230px;
+  padding: 18px 19px;
+  background: #063f2b;
+  color: white;
+}
+
+.flash-deals h2 {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: white;
+}
+
+.flash-deals h2 span {
+  color: #ffd21c;
+}
+
+.flash-deals .view-deals {
+  display: inline-block;
+  margin-top: 26px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.flash-deals .countdown {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 34px;
+}
+
+.flash-deals .time-box {
+  width: 58px;
+  height: 64px;
+  background: #fff;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.flash-deals .time-box .number {
+  color: #063f2b;
+  font-size: 26px;
+  line-height: 26px;
+  font-weight: 800;
+}
+
+.flash-deals .time-box .label {
+  color: #063f2b;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.flash-deals .separator {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
 }

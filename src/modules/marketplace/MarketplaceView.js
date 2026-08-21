@@ -345,70 +345,54 @@ export function renderMarketplaceView(container) {
 
             <!-- Flash Deals & Products Section -->
             <section class="compact-container mt-2 flex-1 flex flex-col justify-center min-h-0">
-                <div class="flex flex-col lg:flex-row gap-3 h-[180px]">
+                <!-- No fixed height here: the card asks for min-height 230px,
+                     and a 180px row would simply clip it - which is the whole
+                     complaint. The row takes its height from the card and the
+                     product grid stretches to match. -->
+                <div class="flex flex-col lg:flex-row gap-3 lg:items-stretch">
                     
-                    <!-- Flash Deals Banner.
-                         Proportions taken from the reference: the card is
-                         253x180 here against the reference's 1460x1060, near
-                         enough the same 1.4 ratio, so its measurements scale
-                         straight across - digits about a fifth of the box
-                         width, boxes about a sixth of the card.
+                    <!-- Flash Deals - the delivered markup, class for class.
+                         Two adjustments so it works inside the app: the
+                         countdown keeps the ids the existing clock drives
+                         (it also feeds the modal), and the "View all deals"
+                         anchor has its click prevented, since href="#" would
+                         otherwise push a hash the router strips straight back
+                         off. -->
+                    <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card cursor-pointer hover:opacity-95 transition lg:shrink-0">
 
-                         text-white is set on the h2 itself rather than left to
-                         inherit from the card. The stylesheet gives every h2 an
-                         explicit color (see the typography block in main.css),
-                         which beat the inherited white and rendered this
-                         heading in near-black on dark green - legible in the
-                         markup, invisible on the page. -->
-                    <div id="flash-deals-card" class="bg-[#0f3b25] rounded-2xl p-5 text-white lg:w-1/5 flex flex-col justify-between relative overflow-hidden shadow-card shrink-0 cursor-pointer hover:opacity-95 transition">
-                        <div class="absolute -top-2 -right-2 opacity-[0.13] text-[5.5rem] leading-none pointer-events-none select-none">
-                            <i class="fa-solid fa-bolt"></i>
+                      <h2>Flash Deals <span>&#9889;</span></h2>
+
+                      <a href="#" class="view-deals" id="open-flash-deals-btn" role="button">View all deals</a>
+
+                      <div class="countdown">
+
+                        <div class="time-box">
+                          <div class="number" id="deal-hours">02</div>
+                          <div class="label">Hours</div>
                         </div>
 
-                        <div class="relative">
-                            <h2 class="text-white text-xl font-extrabold flex items-center gap-1.5 mb-2 tracking-tight">
-                                Flash Deals
-                                <span class="flex text-yellow-400 text-base"><i class="fa-solid fa-bolt"></i><i class="fa-solid fa-bolt -ml-1.5"></i></span>
-                            </h2>
-                            <button type="button" id="open-flash-deals-btn"
-                                class="text-[11px] text-white hover:text-yellow-300 underline underline-offset-2 font-semibold">
-                                View all deals
-                            </button>
+                        <div class="separator">:</div>
+
+                        <div class="time-box">
+                          <div class="number" id="deal-mins">44</div>
+                          <div class="label">Mins</div>
                         </div>
 
-                        <div class="flex items-center gap-1.5 relative">
-                            <div class="bg-white text-[#0f3b25] rounded-lg flex-1 min-w-0 max-w-[46px] h-[52px] flex flex-col items-center justify-center shadow-sm">
-                                <span class="text-[20px] font-black leading-none tracking-tight" id="deal-hours">02</span>
-                                <span class="text-[9px] font-bold mt-0.5">Hours</span>
-                            </div>
+                        <div class="separator">:</div>
 
-                            <!-- Two stacked dots rather than a text colon, which
-                                 sat on the baseline and looked dropped. -->
-                            <div class="flex flex-col gap-1 shrink-0" aria-hidden="true">
-                                <span class="w-[3px] h-[3px] rounded-full bg-white/45"></span>
-                                <span class="w-[3px] h-[3px] rounded-full bg-white/45"></span>
-                            </div>
-
-                            <div class="bg-white text-[#0f3b25] rounded-lg flex-1 min-w-0 max-w-[46px] h-[52px] flex flex-col items-center justify-center shadow-sm">
-                                <span class="text-[20px] font-black leading-none tracking-tight" id="deal-mins">45</span>
-                                <span class="text-[9px] font-bold mt-0.5">Mins</span>
-                            </div>
-
-                            <div class="flex flex-col gap-1 shrink-0" aria-hidden="true">
-                                <span class="w-[3px] h-[3px] rounded-full bg-white/45"></span>
-                                <span class="w-[3px] h-[3px] rounded-full bg-white/45"></span>
-                            </div>
-
-                            <div class="bg-white text-[#0f3b25] rounded-lg flex-1 min-w-0 max-w-[46px] h-[52px] flex flex-col items-center justify-center shadow-sm">
-                                <span class="text-[20px] font-black leading-none tracking-tight" id="deal-secs">30</span>
-                                <span class="text-[9px] font-bold mt-0.5">Secs</span>
-                            </div>
+                        <div class="time-box">
+                          <div class="number" id="deal-secs">54</div>
+                          <div class="label">Secs</div>
                         </div>
-                    </div>
+
+                      </div>
+
+                    </section>
+
 
 
                     <!-- Products Grid -->
-                    <div class="lg:w-4/5 grid grid-cols-2 md:grid-cols-5 gap-3 relative h-full">
+                    <div class="lg:flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-3 relative">
                         ${productsLoading && state.products.length === 0 ? `
                             <div class="col-span-5 bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100 flex items-center justify-center">
                                 Loading featured items...
@@ -772,6 +756,8 @@ export function renderMarketplaceView(container) {
 
     container.querySelector('#flash-deals-card')?.addEventListener('click', openModal);
     container.querySelector('#open-flash-deals-btn')?.addEventListener('click', (e) => {
+      // href="#" comes from the delivered markup.
+      e.preventDefault();
       e.stopPropagation();
       openModal();
     });

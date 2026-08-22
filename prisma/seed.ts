@@ -34,9 +34,9 @@ async function main() {
   });
 
   const sellerSeeds = [
-    { email: 'eric.m@rwandaagri.rw', businessName: 'Eric Mugisha (AgriCoop)', contactPhone: '+250 788 345 678', district: 'Musanze' },
-    { email: 'uwase.mc@gmail.com', businessName: 'Marie Claire Uwase', contactPhone: '+250 789 987 654', district: 'Gasabo' },
-    { email: 'patrick.tech@kigali.rw', businessName: 'Patrick Ndayishimiye (TechHub)', contactPhone: '+250 783 112 233', district: 'Kicukiro' },
+    { email: 'eric.m@rwandaagri.rw', businessName: 'Eric Mugisha (AgriCoop)', contactPhone: '0788350555', district: 'Musanze' },
+    { email: 'uwase.mc@gmail.com', businessName: 'Marie Claire Uwase', contactPhone: '0788350555', district: 'Gasabo' },
+    { email: 'patrick.tech@kigali.rw', businessName: 'Patrick Ndayishimiye (TechHub)', contactPhone: '0788350555', district: 'Kicukiro' },
   ];
 
   const sellers: Record<string, Awaited<ReturnType<typeof prisma.seller.upsert>>> = {};

@@ -233,15 +233,18 @@ function openAddPropertyModal() {
           </div>
         </div>
 
-        <div class="grid-2">
-          <div class="form-group">
-            <label>Price (display text)</label>
-            <input name="price" type="text" class="form-control" placeholder="e.g. 150,000,000 Rwf or Rent: $800/mo" required>
-          </div>
-          <div class="form-group">
-            <label>Price (number, for search filtering)</label>
-            <input name="priceNum" type="number" min="0" class="form-control" placeholder="e.g. 150000000" required>
-          </div>
+        <!-- One price field, not two.
+
+             This used to ask for the price as text and again as a number
+             "for search filtering", with nothing keeping them in step. In the
+             live data they had drifted badly: a property priced 70,000,000
+             carried a filter number of 500,000, another priced 502,000
+             carried 780,000. Five of seven listings disagreed with
+             themselves, so the price search was sorting them by a figure the
+             page never showed. The number is derived from this text now. -->
+        <div class="form-group">
+          <label>Price</label>
+          <input name="price" type="text" class="form-control" placeholder="e.g. 150,000,000 Rwf or Rent: 800,000/mo" required>
         </div>
 
         <div class="form-group">
@@ -287,7 +290,6 @@ function openAddPropertyModal() {
       type: form.type.value,
       location: form.location.value,
       price: form.price.value.trim(),
-      priceNum: Number(form.priceNum.value) || 0,
       area: form.area.value.trim(),
       image: form.image.value.trim() || undefined,
       description: form.description.value.trim(),

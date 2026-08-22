@@ -50,7 +50,7 @@ export function getLargeFooterHtml(currentLang = 'en') {
             Gasabo Tower, 4th Floor<br>
             KG 7 Ave, Kacyiru<br>
             Kigali, Rwanda<br>
-            <a href="tel:+250788100200" class="footer-phone-link">📞 +250 788 100 200</a>
+            <a href="tel:+250788350555" class="footer-phone-link">📞 0788350555</a>
           </p>
         </div>
       </div>
@@ -104,10 +104,10 @@ export function initSlimStickyFooter() {
       <div class="sticky-divider"></div>
 
       <!-- Quick Contact Item -->
-      <a href="tel:+250788100200" class="sticky-item sticky-contact-link">
+      <a href="tel:+250788350555" class="sticky-item sticky-contact-link">
         <span class="sticky-icon">📞</span>
         <span class="sticky-label">Support:</span>
-        <span class="sticky-val">+250 788 100 200</span>
+        <span class="sticky-val">0788350555</span>
       </a>
 
       <div class="sticky-divider"></div>

@@ -7,7 +7,7 @@ export function renderProductDetailModal(product, onClose, returnFocusTo) {
   const modalContainer = document.createElement('div');
   modalContainer.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 overflow-y-auto';
 
-  const cleanPhone = (product.sellerPhone || '+250 788 123 456').replace(/[^0-9+]/g, '');
+  const cleanPhone = (product.sellerPhone || '0788350555').replace(/[^0-9+]/g, '');
   const whatsappMessage = encodeURIComponent(
     `Hello ${product.sellerName || 'Seller'}, I found your product "${product.title}" (${product.price.toLocaleString()} RWF) on Kigali Market (kigalimarket.com). Is it still available?`
   );

@@ -4,7 +4,60 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KIGALI MARKET PLATFORM | Kigali Marketplace & Gasabo Real Estate (kigalimarket.com)</title>
-  <meta name="description" content="KIGALI MARKET PLATFORM - Official portal for Kigali Marketplace peer-to-peer trading and Gasabo Real Estate luxury estate developments and commercial property in Rwanda.">
+  <meta name="description" content="Kigali Market (kigalimarket.com) - Rwanda's online marketplace to buy and sell products, vehicles, electronics, fashion and more, plus Gasabo Real Estate for houses and plots in Kigali. Post a free ad or find what you need.">
+
+  <!-- Site-wide branding for search engines and social scrapers.
+       Product and property pages override the title/description/og:* below
+       with their own, injected server-side (see server/src/seo/meta.ts); this
+       is what every other route - the homepage above all - carries. Before
+       this, the homepage was an SPA shell with a title but no canonical, no
+       Open Graph and no structured data, which is the thinnest a brand's most
+       important page can be. -->
+  <link rel="canonical" href="https://www.kigalimarket.com/">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Kigali Market">
+  <meta property="og:title" content="Kigali Market - Buy & Sell in Rwanda | kigalimarket.com">
+  <meta property="og:description" content="Rwanda's online marketplace to buy and sell products, vehicles and property. Post a free ad or find what you need, plus Gasabo Real Estate.">
+  <meta property="og:url" content="https://www.kigalimarket.com/">
+  <meta property="og:image" content="https://www.kigalimarket.com/logo-kigali-market.jpg">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Kigali Market - Buy & Sell in Rwanda">
+  <meta name="twitter:description" content="Rwanda's online marketplace to buy and sell products, vehicles and property. Post a free ad or find what you need.">
+  <meta name="twitter:image" content="https://www.kigalimarket.com/logo-kigali-market.jpg">
+
+  <!-- Structured data: tells Google this is a named organisation and a
+       searchable website, which is what a search for the brand name needs to
+       resolve to this site rather than to nothing. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.kigalimarket.com/#organization",
+        "name": "Kigali Market",
+        "url": "https://www.kigalimarket.com/",
+        "logo": "https://www.kigalimarket.com/logo-kigali-market.jpg",
+        "description": "Rwanda's online marketplace for buying and selling products, vehicles and property, and the Gasabo Real Estate portal.",
+        "areaServed": "RW"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.kigalimarket.com/#website",
+        "url": "https://www.kigalimarket.com/",
+        "name": "Kigali Market",
+        "publisher": { "@id": "https://www.kigalimarket.com/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.kigalimarket.com/?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
+
   <link rel="icon" type="image/jpeg" href="/logo-kigali-market.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,6 +105,26 @@
       <h2 style="font-weight: 700; letter-spacing: -0.02em;">Loading KIGALI MARKET PLATFORM...</h2>
       <p style="font-size: 0.88rem; color: #F4EDE2; margin-top: 0.25rem;">Connecting Kigali Marketplace & Gasabo Real Estate (kigalimarket.com)</p>
     </div>
+
+    <!-- Real, indexable content for anything that reads the page without
+         running JavaScript. The app replaces #app the moment it boots, so a
+         normal visitor never sees this; a crawler that does not execute JS,
+         or executes it late, gets a genuine description of the site instead
+         of the "Loading..." splash above - which was the only body text the
+         homepage offered a crawler before. -->
+    <noscript>
+      <div style="max-width: 780px; margin: 0 auto; padding: 2rem 1.25rem; font-family: sans-serif; color: #111;">
+        <h1>Kigali Market - Buy &amp; Sell in Rwanda</h1>
+        <p>Kigali Market (kigalimarket.com) is Rwanda's online marketplace. Buy and
+           sell products, vehicles, electronics, fashion, furniture and more, or
+           post your own free advertisement to reach buyers across all 30 districts.</p>
+        <h2>Gasabo Real Estate</h2>
+        <p>Browse houses, plots and commercial property for sale and rent through
+           the Gasabo Real Estate portal.</p>
+        <p>This site works best with JavaScript enabled. Please enable JavaScript,
+           or contact us at 0788350555.</p>
+      </div>
+    </noscript>
   </main>
 
   <script>

@@ -224,4 +224,52 @@ describe('Listing pages', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('Modern 4-Bedroom Villa');
   });
+
+  it.skipIf(!HAS_DIST)('does not leave the shell\'s site-wide tags on a listing page', async () => {
+    // The shell (index.html) now carries site-wide og:/twitter:/canonical
+    // tags and an Organization/WebSite JSON-LD block for the homepage. A
+    // product page injects its own, so it must strip the shell's first -
+    // two og:title tags, or the homepage canonical on a product URL, is a
+    // worse signal than none. This is what the strip in renderListingHtml
+    // guarantees.
+    const res = await request(app).get(`/product/${activeProductId}`);
+
+    expect(res.text.match(/property="og:title"/g) || []).toHaveLength(1);
+    expect(res.text.match(/<link rel="canonical"/g) || []).toHaveLength(1);
+    // The homepage's WebSite/Organization block must not ride along on a
+    // product URL.
+    expect(res.text).not.toContain('application/ld+json');
+    expect(res.text).not.toContain('#organization');
+  });
+});
+
+// The homepage is not served by the SEO router - it is the static shell -
+// so these assert on the built file directly. Before this, the homepage
+// (a brand's most important page for a name search) shipped with a title
+// but no canonical, no Open Graph and no structured data.
+describe.skipIf(!HAS_DIST)('the built homepage shell', () => {
+  const shell = HAS_DIST ? fs.readFileSync(path.resolve('dist', 'index.html'), 'utf8') : '';
+
+  it('declares a canonical URL', () => {
+    expect(shell).toContain('<link rel="canonical" href="https://www.kigalimarket.com/">');
+  });
+
+  it('carries Open Graph and Twitter tags', () => {
+    expect(shell).toContain('property="og:title"');
+    expect(shell).toContain('property="og:image"');
+    expect(shell).toContain('name="twitter:card"');
+  });
+
+  it('carries Organization + WebSite structured data', () => {
+    expect(shell).toContain('application/ld+json');
+    expect(shell).toContain('"@type": "Organization"');
+    expect(shell).toContain('"@type": "WebSite"');
+  });
+
+  it('gives a no-JavaScript crawler real body text, not just the loader', () => {
+    const noscript = shell.match(/<noscript>[\s\S]*?<\/noscript>/i)?.[0] || '';
+    expect(noscript).toContain('Kigali Market');
+    expect(noscript.toLowerCase()).toContain('buy');
+    expect(noscript.toLowerCase()).toContain('sell');
+  });
 });

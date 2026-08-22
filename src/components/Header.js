@@ -37,7 +37,7 @@ function escapeHtml(str) {
   ));
 }
 
-/**
+/**
  * The signal a control gives when it has no destination yet. Exported so
  * main.js can use it for a nav item whose category an admin has not created.
  */
@@ -105,10 +105,20 @@ export function renderHeaderHtml(ctx) {
     <header class="bg-white py-2 shadow-sm z-50 flex-none">
       <div class="compact-container relative flex flex-wrap md:flex-nowrap items-center justify-between gap-3">
 
+        <!-- The marketplace mark is the supplied artwork, used unaltered.
+             rounded-lg only softens the corners of the square it already is.
+
+             The artwork is a full lockup and carries its own "KIGALI
+             MARKET.com", so the wordmark beside it looks like a duplicate on
+             paper. It is not one in practice: the lockup's own text is 7% of
+             a square that renders 44px tall on a phone, which measures 3.3px
+             - texture, not words. Dropping the HTML wordmark was the first
+             thing I tried and it left the brand name unreadable at every
+             size the header actually uses. -->
         <div class="flex items-center gap-2 cursor-pointer" id="nav-brand-home" role="button" tabindex="0"
-          aria-label="Kigali Market - home">
-          <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo-km.png'}" alt=""
-            class="h-9 md:h-10 w-auto object-contain shrink-0">
+          aria-label="${isRealEstate ? 'Gasabo Real Estate - home' : 'Kigali Market - home'}">
+          <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo-kigali-market.jpg'}" alt=""
+            class="h-9 md:h-11 w-auto object-contain shrink-0 ${isRealEstate ? '' : 'rounded-lg'}">
           <div class="leading-none">
             <h1 class="text-xl font-black text-brand-dark tracking-tight">${isRealEstate ? 'GASABO' : 'KIGALI'}</h1>
             <h1 class="text-xl font-black text-brand-green tracking-tight flex items-center">${isRealEstate ? 'REAL ESTATE' : 'MARKET'}<span class="text-brand-orange text-sm">.COM</span></h1>

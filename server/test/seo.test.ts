@@ -225,6 +225,34 @@ describe('Listing pages', () => {
     expect(res.text).toContain('Modern 4-Bedroom Villa');
   });
 
+  it.skipIf(!HAS_DIST)('emits valid Product structured data with a price', async () => {
+    // This is what makes a listing eligible for Google's rich product
+    // results - the price shown in the search listing itself. It must be one
+    // JSON-LD block, valid JSON, of @type Product with an Offer carrying a
+    // numeric price and currency.
+    const res = await request(app).get(`/product/${activeProductId}`);
+
+    const blocks = res.text.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g) || [];
+    expect(blocks, 'expected exactly one JSON-LD block on a product page').toHaveLength(1);
+
+    const raw = blocks[0].replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '').replace(/<\\\//g, '</');
+    const data = JSON.parse(raw); // throws if the injection produced invalid JSON
+    expect(data['@type']).toBe('Product');
+    expect(data.offers['@type']).toBe('Offer');
+    expect(typeof data.offers.price).toBe('number');
+    expect(data.offers.priceCurrency).toBeTruthy();
+    expect(data.offers.availability).toContain('schema.org');
+  });
+
+  it.skipIf(!HAS_DIST)('does not put a price Offer on a property (free-text price)', async () => {
+    // Properties price as free text ("Rent: 800,000/mo"), which Offer.price
+    // cannot represent, so they must not emit a Product/Offer with a bogus
+    // number.
+    const res = await request(app).get('/property/prop_1');
+    const blocks = res.text.match(/<script type="application\/ld\+json">/g) || [];
+    expect(blocks).toHaveLength(0);
+  });
+
   it.skipIf(!HAS_DIST)('does not leave the shell\'s site-wide tags on a listing page', async () => {
     // The shell (index.html) now carries site-wide og:/twitter:/canonical
     // tags and an Organization/WebSite JSON-LD block for the homepage. A
@@ -236,10 +264,10 @@ describe('Listing pages', () => {
 
     expect(res.text.match(/property="og:title"/g) || []).toHaveLength(1);
     expect(res.text.match(/<link rel="canonical"/g) || []).toHaveLength(1);
-    // The homepage's WebSite/Organization block must not ride along on a
-    // product URL.
-    expect(res.text).not.toContain('application/ld+json');
+    // The product page has its own Product JSON-LD, but the homepage's
+    // Organization/WebSite graph must not ride along on a product URL.
     expect(res.text).not.toContain('#organization');
+    expect(res.text).not.toContain('"@type": "WebSite"');
   });
 });
 

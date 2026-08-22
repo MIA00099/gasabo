@@ -76,6 +76,34 @@ function buildHead(listing: SeoListing): string {
     tags.push(`<meta name="twitter:image" content="${escapeAttr(image)}">`);
   }
 
+  // Product structured data - what makes a listing eligible for Google's
+  // rich product results (the price shown right in the search listing, and
+  // review stars where ratings exist). The guide's "next steps" points at
+  // exactly this. Emitted only for products that carry a numeric price;
+  // properties price as free text, which Offer.price cannot use.
+  if (listing.name && typeof listing.priceAmount === 'number') {
+    const productLd: Record<string, unknown> = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: listing.name,
+      description: listing.description,
+      url,
+      offers: {
+        '@type': 'Offer',
+        price: listing.priceAmount,
+        priceCurrency: listing.priceCurrency || 'RWF',
+        availability: 'https://schema.org/InStock',
+        url,
+      },
+    };
+    if (image) productLd.image = image;
+    // JSON.stringify escapes </script> safely enough for a JSON island, but
+    // a literal "</" inside a string would still close the tag in an HTML
+    // parser - guard it the standard way.
+    const json = JSON.stringify(productLd).replace(/<\//g, '<\\/');
+    tags.push(`<script type="application/ld+json">${json}</script>`);
+  }
+
   return tags.join('\n    ');
 }
 

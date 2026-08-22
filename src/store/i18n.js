@@ -66,7 +66,6 @@ export const translations = {
     link_admin: 'Admin Portal',
 
     // Interface strings rendered on screen
-    ui_free_delivery: "Free Delivery on orders over RWF 50,000",
     ui_all_categories: "All Categories",
     ui_home: "Home",
     ui_stores: "Stores",
@@ -74,6 +73,8 @@ export const translations = {
     ui_real_estate: "Real Estate",
     ui_services: "Services",
     ui_more: "More",
+    ui_jobs: "Jobs",
+    ui_dashboard: "Dashboard",
     ui_post_ad: "Post an Ad",
     ui_sign_in: "Sign In",
     ui_my_account: "My Account",
@@ -167,7 +168,6 @@ export const translations = {
     link_admin: 'Urubuga rw\'Ubuyobozi',
 
     // Interface strings rendered on screen
-    ui_free_delivery: "Kohereza ku buntu ku byaguzwe birenga RWF 50,000",
     ui_all_categories: "Ibyiciro Byose",
     ui_home: "Ahabanza",
     ui_stores: "Amaduka",
@@ -175,6 +175,8 @@ export const translations = {
     ui_real_estate: "Imitungo n'Inzu",
     ui_services: "Serivisi",
     ui_more: "Ibindi",
+    ui_jobs: "Akazi",
+    ui_dashboard: "Ikibaho",
     ui_post_ad: "Tanga Itangazo",
     ui_sign_in: "Injira",
     ui_my_account: "Konti Yanjye",
@@ -268,7 +270,6 @@ export const translations = {
     link_admin: 'Portail administrateur',
 
     // Interface strings rendered on screen
-    ui_free_delivery: "Livraison gratuite pour les commandes de plus de 50 000 RWF",
     ui_all_categories: "Toutes les catégories",
     ui_home: "Accueil",
     ui_stores: "Boutiques",
@@ -276,6 +277,8 @@ export const translations = {
     ui_real_estate: "Immobilier",
     ui_services: "Services",
     ui_more: "Plus",
+    ui_jobs: "Emplois",
+    ui_dashboard: "Tableau de bord",
     ui_post_ad: "Publier une annonce",
     ui_sign_in: "Se connecter",
     ui_my_account: "Mon compte",

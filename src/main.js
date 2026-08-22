@@ -12,6 +12,7 @@ import { renderLoginView } from './components/LoginView.js';
 import {
   renderHeaderHtml, bindHeaderEvents,
   renderMobileTabBarHtml, bindMobileTabBarEvents,
+  notReadyToast,
 } from './components/Header.js';
 // Listings render as a full page now (product-detail.html), not an overlay.
 import { renderProductDetailPage } from './modules/marketplace/ProductDetailPage.js';
@@ -112,6 +113,50 @@ document.addEventListener('DOMContentLoaded', () => {
     stateEngine.setRoute(initialRoute);
   }
 
+
+  /**
+   * Send the catalog to a category matched by name.
+   *
+   * The same shape as goVehicles / goRealEstateCategory: an admin creates and
+   * names these rows, so they are found by pattern rather than by id.
+   *
+   * Returns false without navigating when nothing matches, so a caller can
+   * decide what that means. Opening the unfiltered catalog instead would show
+   * every listing on the site under a heading the reader asked to filter by -
+   * which is exactly how the old category strip behaved, and it read as
+   * broken rather than as empty.
+   */
+  function goCategoryByName(pattern) {
+    const cats = stateEngine.getState().categories || [];
+    const match = cats.find((c) => pattern.test(c.name));
+    if (!match) return false;
+    const filters = stateEngine.getState().ui.marketplaceFilters || {};
+    stateEngine.setUI({
+      marketplaceTab: 'catalog',
+      marketplaceFilters: { ...filters, selectedCategory: match.id },
+    });
+    stateEngine.setPortal('marketplace');
+    stateEngine.loadProducts({ category: match.id }).catch(() => {});
+    return true;
+  }
+
+  /**
+   * Where a click on "Post an Ad", the account chip or the mobile Account tab
+   * should go.
+   *
+   * All three used to call setPortal('signup') unconditionally, so a seller
+   * who was already signed in got a form to create the account they were
+   * signed into. Signed in, go to your own dashboard; signed out, sign up.
+   */
+  function goAccountOrSignup() {
+    const role = stateEngine.getState().currentUser.role;
+    if (role === 'guest') {
+      stateEngine.setPortal('signup');
+      return;
+    }
+    stateEngine.routeToDashboard();
+  }
+
   function renderApp() {
     const state = stateEngine.getState();
     const activePortal = state.activePortal;
@@ -190,7 +235,35 @@ document.addEventListener('DOMContentLoaded', () => {
           stateEngine.setPortal('marketplace');
           stateEngine.loadProducts({ category: re ? re.id : undefined }).catch(() => {});
         },
-        goSignup: () => stateEngine.setPortal('signup'),
+        goSignup: goAccountOrSignup,
+        // Jobs is a nav item for a category an admin has to create, and no
+        // database has one yet. If it is missing, say so rather than opening
+        // the unfiltered catalog - a filter that silently shows everything is
+        // how the old category strip behaved, and it reads as broken.
+        goJobs: () => {
+          const found = goCategoryByName(/job|employ|career|vacanc/i);
+          if (!found) notReadyToast('Jobs');
+        },
+        openMore: (anchor) => {
+          // Everything that is not already its own item in the nav row.
+          const s = stateEngine.getState();
+          const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|job|employ|career|vacanc/i;
+          const rest = (s.categories || []).filter((c) => !alreadyInNav.test(c.name));
+          openCategoryDropdown(anchor, {
+            categories: rest,
+            selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
+            onSelect: (id) => {
+              const filters = stateEngine.getState().ui.marketplaceFilters || {};
+              stateEngine.setUI({
+                marketplaceTab: 'catalog',
+                marketplaceFilters: { ...filters, selectedCategory: id },
+              });
+              stateEngine.setPortal('marketplace');
+              stateEngine.loadProducts({ category: id === 'all' ? undefined : id }).catch(() => {});
+            },
+          });
+        },
+        goDashboard: () => stateEngine.routeToDashboard(),
         logout: () => {
           stateEngine.logout();
           stateEngine.setPortal('marketplace');
@@ -300,7 +373,12 @@ document.addEventListener('DOMContentLoaded', () => {
           stateEngine.setUI({ marketplaceTab: 'products' });
           stateEngine.setPortal('marketplace');
         },
-        goSignup: () => stateEngine.setPortal('signup'),
+        goSignup: goAccountOrSignup,
+        goStores: () => {
+          stateEngine.setUI({ marketplaceTab: 'stores' });
+          stateEngine.setPortal('marketplace');
+        },
+        goAccount: goAccountOrSignup,
       });
     }
 

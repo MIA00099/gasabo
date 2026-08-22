@@ -8,15 +8,17 @@
  * are left alone so the rendering stays theirs rather than an approximation.
  *
  * NOT-YET-BUILT CONTROLS
- * "More" and "Help Center" have no destination in this app yet. They are kept
- * because the mockups have them, but they say so when clicked rather than
- * silently doing nothing.
+ * "Services" and "Help Center" still have no destination in this app. They
+ * are kept because the mockups have them, but they say so when clicked rather
+ * than silently doing nothing. "More" used to be one of these; it opens the
+ * categories that have no item of their own in the nav row.
  *
  * COPY
- * The announcement strip reads exactly as the mockups write it. I had
- * replaced the delivery line - this platform is classifieds, buyers contact
- * sellers directly and no delivery is arranged - and raised that twice. The
- * decision was to keep the mockups' wording, so it stands as delivered.
+ * The strip above the header carried "Free Delivery on orders over RWF
+ * 50,000" through several rounds of this build. It has now been removed by
+ * request. It was never true of this platform - buyers contact sellers
+ * directly and the site arranges no delivery - which is why I had queried it
+ * twice before; the decision at the time was to keep the mockups' wording.
  */
 
 import { LANGUAGES, getTranslation } from '../store/i18n.js';
@@ -35,7 +37,11 @@ function escapeHtml(str) {
   ));
 }
 
-function notReadyToast(label) {
+/**
+ * The signal a control gives when it has no destination yet. Exported so
+ * main.js can use it for a nav item whose category an admin has not created.
+ */
+export function notReadyToast(label) {
   document.querySelector('.km-toast')?.remove();
   const el = document.createElement('div');
   el.className = 'km-toast fixed left-1/2 bottom-7 -translate-x-1/2 translate-y-3 bg-brand-dark text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-2xl opacity-0 transition-all duration-200 z-[12000]';
@@ -65,24 +71,21 @@ export function renderHeaderHtml(ctx) {
   const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange hover:text-orange-300 hover:border-orange-300';
 
   return `
-    <!-- Top Announcement Bar -->
+    <!-- Top strip: the three languages, and nothing else.
+
+         It used to carry "Free Delivery on orders over RWF 50,000" on the
+         left. That has been removed everywhere by request - it was never true
+         of this platform anyway: buyers contact sellers directly and no
+         delivery is arranged by the site.
+
+         Losing it is what finally makes room for the languages on a phone.
+         They were hidden below md because the strip had no room beside the
+         notice, which left mobile visitors with no way to change language at
+         all. With the left half gone the row fits at 320px, so the class that
+         hid it is gone too. -->
     <div class="bg-brand-green text-white text-[10px] py-1 flex-none">
-      <div class="compact-container flex justify-between items-center">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-truck"></i>
-          <span>${escapeHtml(t('ui_free_delivery'))}</span>
-        </div>
-        <!-- All three languages on the strip itself, in a row.
-
-             This was a button showing the current language with a chevron
-             that opened the other two stacked in a dropdown. Three options
-             is small enough that the menu was costing a click to show what
-             fits on the line it was already on - and a language switcher
-             hidden behind a chevron is one a reader has to go looking for.
-
-             Still hidden below md: the strip has no room beside the delivery
-             notice on a phone, which is why the toggle was hidden there too. -->
-        <div class="hidden md:flex items-center gap-1" role="group" aria-label="Choose a language">
+      <div class="compact-container flex justify-center md:justify-end items-center">
+        <div class="flex items-center gap-0.5 sm:gap-1" role="group" aria-label="Choose a language">
           ${LANGUAGES.map((l, i) => `
             ${i ? '<span aria-hidden="true" class="text-white/40">|</span>' : ''}
             <button type="button" class="lang-pick flex items-center gap-1 px-1.5 py-0.5 rounded ${
@@ -165,6 +168,16 @@ export function renderHeaderHtml(ctx) {
 
           ${showAccountChip ? `
             <div class="flex items-center gap-2">
+              <!-- Signed in and browsing the shop: the way back to your own
+                   dashboard. Without it a seller who wandered out to the
+                   marketplace had no route home - "Post an Ad" and the
+                   account button both went to the sign-up page, which is a
+                   strange thing to offer somebody who is already signed in. -->
+              <button type="button" id="header-dashboard-btn"
+                class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-brand-green bg-gray-50 hover:bg-brand-green hover:text-white transition"
+                title="${escapeHtml(t('ui_dashboard'))}" aria-label="${escapeHtml(t('ui_dashboard'))}">
+                <i class="fa-solid fa-gauge-high text-sm"></i>
+              </button>
               <div class="hidden lg:block leading-tight text-xs text-right">
                 <p class="text-gray-500 font-medium">${escapeHtml(currentUser.name.split(' ')[0])}</p>
                 <p class="font-bold">${roleLabel}</p>
@@ -231,13 +244,24 @@ export function renderHeaderHtml(ctx) {
           <li class="h-full flex items-center">
             <button type="button" data-soon="Services" class="${navLink}">${escapeHtml(t('ui_services'))}</button>
           </li>
-          <li class="h-full flex items-center gap-1 cursor-pointer hover:text-gray-300 px-1">
-            <button type="button" data-soon="More sections" class="flex items-center gap-1">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
+          <li class="h-full flex items-center">
+            <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
+          </li>
+          <!-- More was data-soon: a chevron that promised a list and then
+               said "coming soon". It opens the categories that are not
+               already their own item in this row. -->
+          <li class="h-full flex items-center">
+            <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
+              class="${navLink} gap-1">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
           </li>
         </ul>
 
+        <!-- The two oranges were the wrong way round: the deeper one only
+             appeared on hover, so the button sat in the paler shade until
+             you touched it - and on a phone, where there is no hover, it
+             never showed the intended colour at all. -->
         <button type="button" id="header-post-ad-btn"
-          class="bg-brand-orange text-white font-bold py-1.5 px-4 rounded-full flex items-center gap-1.5 hover:bg-orange-500 transition-colors shadow-md ml-auto lg:ml-0 text-sm shrink-0">
+          class="bg-orange-500 text-white font-bold py-1.5 px-4 rounded-full flex items-center gap-1.5 hover:bg-brand-orange transition-colors shadow-md ml-auto lg:ml-0 text-sm shrink-0">
           <i class="fa-solid fa-plus-circle"></i> ${escapeHtml(t('ui_post_ad'))}
         </button>
       </div>
@@ -269,8 +293,11 @@ export function renderMobileTabBarHtml(ctx) {
         <span class="w-11 h-11 -mt-5 rounded-full bg-brand-green text-white text-2xl font-light flex items-center justify-center shadow-lg">+</span>
         ${escapeHtml(t('ui_tab_post'))}
       </button>
-      <button type="button" data-soon="Messages" class="${tab} text-gray-500">
-        <i class="fa-regular fa-comment-dots text-base"></i> ${escapeHtml(t('ui_tab_messages'))}
+      <!-- Was a data-soon "Messages" button: it existed to say "coming soon"
+           and nothing else, taking a fifth of the only navigation a phone
+           gets. Stores is a real destination and had none on mobile at all. -->
+      <button type="button" id="mtab-stores" class="${tab} text-gray-500">
+        <i class="fa-solid fa-shop text-base"></i> ${escapeHtml(t('ui_stores'))}
       </button>
       <button type="button" id="mtab-account" class="${tab} text-gray-500">
         <i class="fa-regular fa-user text-base"></i> ${escapeHtml(signedIn ? t('ui_tab_account') : t('ui_sign_in'))}
@@ -283,6 +310,7 @@ export function bindHeaderEvents(root, handlers) {
   const {
     goHome, goRealEstate, goSignup, logout, setLanguage,
     toggleNotifications, markAllRead, markRead, goStores, goVehicles, openCategories, goRealEstateCategory, currentLangCode,
+    goJobs, openMore, goDashboard,
   } = handlers;
 
   const on = (sel, ev, fn) => root.querySelector(sel)?.addEventListener(ev, fn);
@@ -317,6 +345,13 @@ export function bindHeaderEvents(root, handlers) {
   // Same chevron, same promise. main.js supplies the handler because it is
   // the one with the store; this component stays free of it.
   on('#nav-all-categories-2', 'click', (e) => openCategories?.(e.currentTarget));
+  on('#nav-link-jobs', 'click', goJobs);
+  // 'More' used to be a data-soon button - a chevron promising a list and
+  // then saying 'coming soon'. It opens the categories that do not already
+  // have their own item in the nav row.
+  on('#nav-link-more', 'click', (e) => openMore?.(e.currentTarget));
+  // The way back into a seller's or admin's own dashboard from the shop.
+  on('#header-dashboard-btn', 'click', goDashboard);
   on('#header-post-ad-btn', 'click', goSignup);
   on('#header-signin-btn', 'click', goSignup);
   on('#util-become-seller', 'click', goSignup);
@@ -341,15 +376,19 @@ export function bindHeaderEvents(root, handlers) {
 }
 
 export function bindMobileTabBarEvents(root, handlers) {
-  const { goHome, goSignup } = handlers;
+  const { goHome, goSignup, goStores, goAccount } = handlers;
 
   root.querySelectorAll('[data-soon]').forEach((btn) => {
     btn.addEventListener('click', () => notReadyToast(btn.dataset.soon));
   });
 
   root.querySelector('#mtab-home')?.addEventListener('click', goHome);
-  root.querySelector('#mtab-post')?.addEventListener('click', goSignup);
-  root.querySelector('#mtab-account')?.addEventListener('click', goSignup);
+  root.querySelector('#mtab-stores')?.addEventListener('click', goStores);
+  // Post and Account both went to the sign-up page unconditionally, so a
+  // signed-in seller tapping either was offered a form to create the account
+  // they already had. These route by role now.
+  root.querySelector('#mtab-post')?.addEventListener('click', goAccount || goSignup);
+  root.querySelector('#mtab-account')?.addEventListener('click', goAccount || goSignup);
   root.querySelector('#mtab-categories')?.addEventListener('click', () => {
     goHome();
     setTimeout(() => {

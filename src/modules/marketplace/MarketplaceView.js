@@ -331,7 +331,7 @@ export function renderMarketplaceView(container) {
                              the headphones and the sweatshirt came already
                              cut out. -->
                         <div class="slide has-caption" data-slide="2">
-                            <img src="/slide-vehicles.webp" alt=""
+                            <img src="/slide-vehicles.webp" alt="Cars and motorbikes for sale on Kigali Market"
                               onerror="this.onerror=null;this.src='/slide-vehicles.png'">
                             <div class="slide-caption text-center text-white">
                                 <h2>${t('ui_vehicles')}</h2>
@@ -340,7 +340,7 @@ export function renderMarketplaceView(container) {
                         </div>
 
                         <div class="slide has-caption" data-slide="3">
-                            <img src="/slide-laptops.webp" alt=""
+                            <img src="/slide-laptops.webp" alt="Laptops and phones for sale on Kigali Market"
                               onerror="this.onerror=null;this.src='/slide-laptops.png'">
                             <div class="slide-caption text-center text-white">
                                 <h2>${t('ui_slide_electronics')}</h2>
@@ -349,7 +349,7 @@ export function renderMarketplaceView(container) {
                         </div>
 
                         <div class="slide has-caption" data-slide="4">
-                            <img src="/slide-headphones.webp" alt=""
+                            <img src="/slide-headphones.webp" alt="Headphones and audio gear for sale on Kigali Market"
                               onerror="this.onerror=null;this.src='/slide-headphones.png'">
                             <div class="slide-caption text-center text-white">
                                 <h2>${t('ui_slide_electronics')}</h2>
@@ -358,7 +358,7 @@ export function renderMarketplaceView(container) {
                         </div>
 
                         <div class="slide has-caption" data-slide="5">
-                            <img src="/slide-fashion.webp" alt=""
+                            <img src="/slide-fashion.webp" alt="Fashion and clothing for sale on Kigali Market"
                               onerror="this.onerror=null;this.src='/slide-fashion.png'">
                             <div class="slide-caption text-center text-white">
                                 <h2>${t('ui_slide_fashion')}</h2>

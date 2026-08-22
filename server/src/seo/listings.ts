@@ -22,6 +22,14 @@ export interface SeoListing {
   description: string;
   image: string | null;
   updatedAt: Date | null;
+  // Optional structured fields, used to emit Product JSON-LD (see
+  // server/src/seo/meta.ts). Only products carry a numeric price here;
+  // properties price as free text, which schema.org offers cannot use, so
+  // they are left off rather than guessed. `name` is the plain product title
+  // without the "- price | Kigali Market" suffix the display title carries.
+  name?: string;
+  priceAmount?: number;
+  priceCurrency?: string;
 }
 
 /** Absolute URL against PUBLIC_SITE_URL - scrapers ignore relative ones. */
@@ -71,6 +79,9 @@ export async function findProductListing(id: string): Promise<SeoListing | null>
     ),
     image: firstImage(product.images),
     updatedAt: product.updatedAt,
+    name: product.title,
+    priceAmount: product.price,
+    priceCurrency: product.currency,
   };
 }
 

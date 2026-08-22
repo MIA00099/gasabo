@@ -86,6 +86,61 @@ function gasaboFooterHtml(contact) {
   `;
 }
 
+
+/**
+ * The price bands the search offers, worked out from the listings on the site.
+ *
+ * They used to be three fixed numbers - under 50M, 50-100M, over 100M -
+ * written into the markup. Whether those matched anything depended entirely on
+ * what happened to be listed: with the seven properties currently live, every
+ * one of them falls in the first band, so two of the three choices return an
+ * empty page and the third returns everything. A filter that cannot divide
+ * what it is filtering is decoration.
+ *
+ * Terciles instead: split the actual prices into three, and label the bands
+ * with the amounts that fall there. Below four listings there is nothing
+ * meaningful to divide, so the search offers "Any Price" alone rather than
+ * inventing distinctions.
+ */
+function priceBands(properties) {
+  const prices = (properties || [])
+    .map((p) => Number(p.priceNum) || 0)
+    .filter((n) => n > 0)
+    .sort((a, b) => a - b);
+
+  if (prices.length < 4) return [];
+
+  const at = (fraction) => prices[Math.floor((prices.length - 1) * fraction)];
+  const low = at(1 / 3);
+  const high = at(2 / 3);
+
+  // Terciles can collapse when most listings share a price; two identical
+  // edges would produce a band that cannot match anything.
+  if (!(low < high)) return [];
+
+  // Half-open, so a property sitting exactly on a boundary belongs to one
+  // band and not two. The first version used closed ranges and a listing
+  // priced at the tercile showed up under both "Under 12.5M" and
+  // "12.5M - 25M", which makes the counts add up to more than the catalogue.
+  return [
+    { id: 'band1', label: `Under ${money(low)}`, below: low },
+    { id: 'band2', label: `${money(low)} - ${money(high)}`, from: low, below: high },
+    { id: 'band3', label: `${money(high)} and above`, from: high },
+  ];
+}
+
+/** 150000000 -> "150M Rwf", 12500000 -> "12.5M Rwf", 850000 -> "850,000 Rwf". */
+function money(n) {
+  if (n >= 1000000) {
+    // One decimal, dropped when it is a whole number. Rounding 12.5 to 13
+    // put a label on the band that did not match the boundary it filtered
+    // on - "Under 13M" excluding a property priced 12.5M reads as a bug.
+    const m = Math.round((n / 1000000) * 10) / 10;
+    return `${m}M Rwf`;
+  }
+  return `${n.toLocaleString()} Rwf`;
+}
+
 export function renderRealEstateView(container) {
   function render() {
     const state = stateEngine.getState();
@@ -127,9 +182,17 @@ export function renderRealEstateView(container) {
     let filteredProperties = properties;
     if (filters.type !== 'all') filteredProperties = filteredProperties.filter(p => p.type === filters.type);
     if (filters.location !== 'all') filteredProperties = filteredProperties.filter(p => p.location === filters.location);
-    if (filters.price === 'under50') filteredProperties = filteredProperties.filter(p => p.priceNum < 50000000);
-    if (filters.price === '50to100') filteredProperties = filteredProperties.filter(p => p.priceNum >= 50000000 && p.priceNum <= 100000000);
-    if (filters.price === 'over100') filteredProperties = filteredProperties.filter(p => p.priceNum > 100000000);
+    const bands = priceBands(properties);
+    const band = bands.find((b) => b.id === filters.price);
+    if (band) {
+      filteredProperties = filteredProperties.filter((p) => {
+        const n = Number(p.priceNum) || 0;
+        // from is inclusive, below is exclusive - see priceBands.
+        if (band.from !== undefined && n < band.from) return false;
+        if (band.below !== undefined && n >= band.below) return false;
+        return true;
+      });
+    }
 
     const propertiesTitle = filters.type === 'plot' ? 'Plots & Land'
       : filters.type === 'house' ? 'Houses & Villas'
@@ -372,6 +435,9 @@ export function renderRealEstateView(container) {
 }
 
 function renderHomeView(reData, properties) {
+  // Worked out here rather than passed in: this is a separate top-level
+  // function from render(), so a variable computed there is not in scope.
+  const bands = priceBands(properties);
   return `
     <!-- HERO SECTION -->
     <section style="position: relative; overflow: hidden; background: ${RE_DARK};">
@@ -418,9 +484,7 @@ function renderHomeView(reData, properties) {
                 <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.3rem;">Price Range</label>
                 <select id="re-search-price" style="width: 100%; padding: 0.7rem 0.9rem; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; font-size: 0.92rem;">
                   <option value="all">Any Price</option>
-                  <option value="under50">Under 50,000,000 Rwf</option>
-                  <option value="50to100">50M - 100M Rwf</option>
-                  <option value="over100">Over 100,000,000 Rwf</option>
+                  ${bands.map((b) => `<option value="${b.id}">${b.label}</option>`).join('')}
                 </select>
               </div>
               <button type="submit" style="width: 100%; background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.85rem; border: none; border-radius: 10px; font-size: 0.95rem; cursor: pointer; margin-top: 0.25rem;">

@@ -127,12 +127,12 @@ export function renderHeaderHtml(ctx) {
              header reads as a mistake. -->
         ${isRealEstate ? '' : `
           <button type="button" id="nav-gasabo-brand"
-            class="hidden md:flex items-center gap-2 shrink-0 md:absolute md:left-1/2 md:-translate-x-1/2 group"
+            class="flex items-center gap-1.5 md:gap-2 shrink-0 md:absolute md:left-1/2 md:-translate-x-1/2 group"
             aria-label="Gasabo Real Estate">
             <img src="/real-estate-logo.png" alt=""
-              class="h-9 w-auto object-contain shrink-0">
-            <span class="text-lg font-black tracking-tight text-[#1D4ED8] group-hover:underline whitespace-nowrap">
-              Gasabo Real Estate
+              class="h-7 md:h-9 w-auto object-contain shrink-0">
+            <span class="text-sm md:text-lg font-black tracking-tight text-[#1D4ED8] group-hover:underline whitespace-nowrap">
+              <span class="sm:hidden">Gasabo</span><span class="hidden sm:inline">Gasabo Real Estate</span>
             </span>
           </button>
         `}
@@ -176,7 +176,7 @@ export function renderHeaderHtml(ctx) {
               <button type="button" id="header-dashboard-btn"
                 class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-brand-green bg-gray-50 hover:bg-brand-green hover:text-white transition"
                 title="${escapeHtml(t('ui_dashboard'))}" aria-label="${escapeHtml(t('ui_dashboard'))}">
-                <i class="fa-solid fa-gauge-high text-sm"></i>
+                <i class="fa-solid fa-table-cells-large text-sm"></i>
               </button>
               <div class="hidden lg:block leading-tight text-xs text-right">
                 <p class="text-gray-500 font-medium">${escapeHtml(currentUser.name.split(' ')[0])}</p>

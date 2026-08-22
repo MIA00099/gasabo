@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../config/db.js';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
+import { withDerivedPrices, priceToNumber } from '../utils/price.js';
 
 export const realEstateRouter = Router();
 
@@ -25,7 +26,7 @@ const DEFAULTS: Record<string, unknown> = {
   ],
   CONTACT: {
     address: 'Gasabo District, Kigali, Rwanda',
-    phone: '+250 788 350 555',
+    phone: '0788350555',
     email: 'info@gasaborealestate.rw',
   },
 };
@@ -96,7 +97,10 @@ realEstateRouter.get('/', async (_req, res) => {
     getSection('CONTACT', DEFAULTS.CONTACT),
     getSection('PROPERTIES', DEFAULT_PROPERTIES),
   ]);
-  res.json({ hero, about, services, contact, properties });
+  // Derived here as well as on write, so the listings already stored - the
+  // ones whose hand-typed filter number had drifted from their price - are
+  // corrected without a destructive rewrite of live data.
+  res.json({ hero, about, services, contact, properties: withDerivedPrices(properties as any[]) });
 });
 
 realEstateRouter.put('/hero', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
@@ -120,7 +124,7 @@ realEstateRouter.put('/hero', requireAuth, requirePermission('REAL_ESTATE_CONTEN
 const PROPERTY_TYPES = ['house', 'plot', 'commercial'];
 
 realEstateRouter.post('/properties', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
-  const { title, type, location, price, priceNum, beds, baths, area, image, description } = req.body || {};
+  const { title, type, location, price, beds, baths, area, image, description } = req.body || {};
   if (!title) return res.status(400).json({ error: 'Property title is required.' });
 
   const properties = await getSection('PROPERTIES', DEFAULT_PROPERTIES);
@@ -130,7 +134,7 @@ realEstateRouter.post('/properties', requireAuth, requirePermission('REAL_ESTATE
     title,
     location: location || 'Gasabo',
     price: price || 'Contact for price',
-    priceNum: Number.isFinite(priceNum) ? priceNum : 0,
+    priceNum: priceToNumber(price),
     beds: Number.isFinite(beds) ? beds : 0,
     baths: Number.isFinite(baths) ? baths : 0,
     area: area || 'N/A',

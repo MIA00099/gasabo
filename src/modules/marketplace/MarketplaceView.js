@@ -7,7 +7,6 @@ import { renderProductsPage } from './ProductsPage.js';
 import { renderCategoryIcon } from '../../utils/categoryIcon.js';
 import { starsHtml } from '../../utils/stars.js';
 import { openCategoryDropdown } from '../../components/dropdownMenu.js';
-import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 
 // How many products sit in the top row, beside the Flash Deals card. The
 // rest continue in the grid underneath it.
@@ -211,12 +210,8 @@ export function renderMarketplaceView(container) {
       cleanupFlashClock();
       cleanupHeroSlider();
       container.innerHTML = `
-        <div style="min-height: 100vh; display: flex; flex-direction: column;">
-          <div style="flex: 1;" id="stores-mount"></div>
-          ${getLargeFooterHtml(currentLang)}
-        </div>
+        <div style="min-height: 100vh;" id="stores-mount"></div>
       `;
-      bindLargeFooterEvents(container);
       const storesMount = container.querySelector('#stores-mount');
       if (storesMount) renderStoresPage(storesMount);
       return;
@@ -226,12 +221,8 @@ export function renderMarketplaceView(container) {
       cleanupFlashClock();
       cleanupHeroSlider();
       container.innerHTML = `
-        <div style="min-height: 100vh; display: flex; flex-direction: column;">
-          <div style="flex: 1;" id="products-mount"></div>
-          ${getLargeFooterHtml(currentLang)}
-        </div>
+        <div style="min-height: 100vh;" id="products-mount"></div>
       `;
-      bindLargeFooterEvents(container);
       const productsMount = container.querySelector('#products-mount');
       if (productsMount) renderProductsPage(productsMount);
       return;
@@ -241,12 +232,8 @@ export function renderMarketplaceView(container) {
       cleanupFlashClock();
       cleanupHeroSlider();
       container.innerHTML = `
-        <div style="min-height: 100vh; display: flex; flex-direction: column;">
-          <div style="flex: 1;" id="seller-portal-mount"></div>
-          ${getLargeFooterHtml(currentLang)}
-        </div>
+        <div style="min-height: 100vh;" id="seller-portal-mount"></div>
       `;
-      bindLargeFooterEvents(container);
       const sellerMount = container.querySelector('#seller-portal-mount');
       if (sellerMount) renderSellerPortal(sellerMount);
       return;

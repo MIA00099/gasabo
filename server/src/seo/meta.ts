@@ -100,11 +100,22 @@ export async function renderListingHtml(listing: SeoListing): Promise<string | n
     '',
   );
 
-  if (/<\/head>/i.test(withoutDescription)) {
-    return withoutDescription.replace(/<\/head>/i, `    ${head}\n  </head>`);
+  // The shell now carries site-wide og:/twitter:/canonical tags and an
+  // Organization/WebSite JSON-LD block for the homepage. A listing page must
+  // not inherit those - two og:title tags, or the homepage's canonical on a
+  // product URL, is worse than none. Strip them before injecting this
+  // listing's own, which buildHead() supplies in full.
+  const cleaned = withoutDescription
+    .replace(/\s*<link\s+rel=["']canonical["'][^>]*>/gi, '')
+    .replace(/\s*<meta\s+property=["']og:[^"']*["'][^>]*>/gi, '')
+    .replace(/\s*<meta\s+name=["']twitter:[^"']*["'][^>]*>/gi, '')
+    .replace(/\s*<script\s+type=["']application\/ld\+json["'][\s\S]*?<\/script>/gi, '');
+
+  if (/<\/head>/i.test(cleaned)) {
+    return cleaned.replace(/<\/head>/i, `    ${head}\n  </head>`);
   }
 
   // No </head> to anchor to (hand-edited shell) - prepend rather than
   // silently serving a page with no metadata at all.
-  return `${head}\n${withoutDescription}`;
+  return `${head}\n${cleaned}`;
 }

@@ -14,7 +14,7 @@ export function getLargeFooterHtml(currentLang = 'en') {
         <!-- Brand Column -->
         <div class="footer-col brand-col">
           <div class="footer-brand-title">
-            <img src="/logo-km.png" alt="Kigali Market Logo" class="footer-logo-img">
+            <img src="/logo-kigali-market.jpg" alt="Kigali Market Logo" class="footer-logo-img">
             <span>KIGALI MARKET</span>
           </div>
           <p class="footer-brand-desc">
@@ -97,7 +97,7 @@ export function initSlimStickyFooter() {
     <div class="slim-sticky-inner">
       <!-- Brand -->
       <div class="sticky-item sticky-brand" id="sticky-brand-action" title="Back to Kigali Market Home">
-        <img src="/logo-km.png" alt="Logo" class="sticky-brand-logo">
+        <img src="/logo-kigali-market.jpg" alt="Logo" class="sticky-brand-logo">
         <span class="sticky-brand-text">KIGALI MARKET</span>
       </div>
 

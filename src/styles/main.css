@@ -4538,3 +4538,40 @@ button[disabled]:hover,
     grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
+
+/* ---------------------------------------------------------------------------
+   PHONE: hero slider inside the navy, flash deals centred
+
+   Two things were wrong below 768px.
+
+   The slider column was pinned to the full height of the hero at the right
+   55%, but on a phone the navy arc does not start until 34% down - and it
+   opens out as it descends rather than being a straight edge. So the image,
+   centred vertically in a full-height column, sat where the navy was still a
+   narrow sliver and its top-left corner hung off onto the white. Measured at
+   375px: three corners over navy, one not.
+
+   The arc's shape is what dictates the numbers below. Its widest point is
+   below the hero, so the usable navy is a wedge that is thin at the top and
+   broad at the bottom; the column is therefore short, narrow and low. At
+   375x520 that puts all four corners inside the navy with room to spare.
+
+   The Flash Deals card is capped at 360px, which is narrower than the phone
+   it is on, and with nothing centring it the card sat hard against the left
+   edge with the gap all on the right.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .hero-section-wrapper .slider-container {
+    top: auto;
+    bottom: 4%;
+    height: 38%;
+    right: 2%;
+    width: 48%;
+    padding: 6px;
+  }
+
+  .flash-deals {
+    margin-inline: auto;
+  }
+}

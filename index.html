@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KIGALI MARKET PLATFORM | Kigali Marketplace & Gasabo Real Estate (kigalimarket.com)</title>
-  <meta name="description" content="Kigali Market (kigalimarket.com) - Rwanda's online marketplace to buy and sell products, vehicles, electronics, fashion and more, plus Gasabo Real Estate for houses and plots in Kigali. Post a free ad or find what you need.">
+  <!-- Kept under ~60 characters: Bing and Google both truncate the title in
+       results past roughly that, and Bing's URL Inspection flagged the old
+       83-character one as "Title too long". Brand first, then what the site
+       is and where. -->
+  <title>Kigali Market | Buy &amp; Sell Products &amp; Property in Rwanda</title>
+  <!-- ~150 characters. The old one was 223, which Bing flagged as too long -
+       it gets cut off in the result and the tail is wasted. -->
+  <meta name="description" content="Kigali Market is Rwanda's online marketplace - buy and sell products, vehicles and property, or post a free ad. Plus Gasabo Real Estate: houses &amp; plots.">
 
   <!-- Site-wide branding for search engines and social scrapers.
        Product and property pages override the title/description/og:* below
@@ -100,6 +106,14 @@
   <div id="header-mount"></div>
 
   <main class="main-wrapper" id="app">
+    <!-- The one real <h1> for a crawler reading the shell before JavaScript
+         runs. Bing's URL Inspection flagged "H1 tag missing" - the only
+         heading in the un-rendered page was the "Loading..." h2 and an h1
+         inside <noscript>, which crawlers do not count. Visually hidden (not
+         display:none, which crawlers discount) so it does not disturb the
+         splash; the app clears #app on boot and renders its own headings, so
+         this exists only for the pre-JS view Bing actually indexed. -->
+    <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">Kigali Market - Buy and Sell Products and Property in Rwanda</h1>
     <div id="app-loading">
       <div class="spinner"></div>
       <h2 style="font-weight: 700; letter-spacing: -0.02em;">Loading KIGALI MARKET PLATFORM...</h2>

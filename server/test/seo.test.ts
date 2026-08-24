@@ -300,4 +300,30 @@ describe.skipIf(!HAS_DIST)('the built homepage shell', () => {
     expect(noscript.toLowerCase()).toContain('buy');
     expect(noscript.toLowerCase()).toContain('sell');
   });
+
+  // Bing's URL Inspection flagged the homepage for a title too long, a
+  // description too long, and no H1. These guard the fixes - the lengths are
+  // measured on the rendered text (entities collapsed), since that is what a
+  // search engine truncates on.
+  const decode = (s: string) => s.replace(/&amp;/g, '&').replace(/&[a-z]+;/g, ' ');
+
+  it('keeps the title short enough not to be truncated', () => {
+    const title = decode(shell.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '');
+    expect(title.length, `title is ${title.length} chars: "${title}"`).toBeLessThanOrEqual(60);
+    expect(title.toLowerCase()).toContain('kigali market');
+  });
+
+  it('keeps the meta description in the 120-160 range', () => {
+    const desc = decode(shell.match(/<meta name="description" content="([^"]*)"/i)?.[1] ?? '');
+    expect(desc.length, `description is ${desc.length} chars`).toBeGreaterThanOrEqual(110);
+    expect(desc.length, `description is ${desc.length} chars`).toBeLessThanOrEqual(170);
+  });
+
+  it('has exactly one crawlable H1 (outside <noscript>)', () => {
+    // A crawler runs with scripting conceptually on, so it ignores <noscript>
+    // content - the H1 has to live in the real shell body.
+    const withoutNoscript = shell.replace(/<noscript>[\s\S]*?<\/noscript>/gi, '');
+    const h1s = withoutNoscript.match(/<h1[\s>]/gi) || [];
+    expect(h1s, 'the shell must carry exactly one H1 for a no-JS crawler').toHaveLength(1);
+  });
 });

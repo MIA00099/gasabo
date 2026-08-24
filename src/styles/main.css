@@ -4575,3 +4575,72 @@ button[disabled]:hover,
     margin-inline: auto;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   FLASH DEAL PRODUCT (inside the green flash card)
+
+   The card used to be a header + countdown only. It now shows the real
+   product an admin put on sale - image, title, price - between the two.
+   White-on-green to sit on the #063f2b card, and the whole block is a link
+   into the product (it carries view-item-btn).
+   --------------------------------------------------------------------------- */
+
+.flash-deals .flash-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.flash-deals .flash-product:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.flash-deals .flash-product-img {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flash-deals .flash-product-img img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.flash-deals .flash-product-info {
+  min-width: 0;
+}
+
+.flash-deals .flash-product-info h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flash-deals .flash-product-price {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffd21c;
+}
+
+.flash-deals .flash-empty {
+  margin-top: 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}

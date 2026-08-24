@@ -63,6 +63,7 @@ function initialData({ currentUser, currentLang, route }) {
     currentUser,
     districts: DISTRICTS,
     products: [],
+    flashDeals: [],
     myProducts: [],
     pendingProducts: [],
     categories: [],
@@ -635,6 +636,29 @@ class StateEngine {
     });
   }
 
+  // The homepage flash card and its "View all deals" modal. Active flash
+  // deals are ACTIVE products with a future end time; the server filters by
+  // that deadline, so an expired one simply stops coming back.
+  async loadFlashDeals() {
+    return this._run('flashDeals', async () => {
+      const { products } = await api.get('/products/flash-deals');
+      this.data.flashDeals = products;
+      this.notify();
+      return products;
+    });
+  }
+
+  // Admin: set a product's flash-deal end time (ISO string) or clear it
+  // with null. Refreshes both the admin product list and the public deals.
+  async setProductFlashDeal(productId, endsAt) {
+    return this._run('products', async () => {
+      const { product } = await api.patch(`/products/${productId}/flash-deal`, { endsAt });
+      this.data.products = this.data.products.map((p) => (p.id === productId ? product : p));
+      this.notify();
+      this.loadFlashDeals().catch(() => {});
+      return product;
+    });
+  }
   async toggleProductFlag(productId, flag) {
     return this._run('products', async () => {
       const current = this.data.products.find((p) => p.id === productId);

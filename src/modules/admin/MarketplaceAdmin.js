@@ -177,6 +177,14 @@ export function renderMarketplaceAdmin(container) {
                         <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isTrending" style="background:${prod.isTrending?'var(--primary-light)':'#F1F5F9'}; color:${prod.isTrending?'var(--primary)':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
                           🔥 Trending
                         </button>
+                        <!-- Flash Deal: sets the homepage countdown for this
+                             product. Highlighted while the deal is live. -->
+                        <button class="btn btn-sm flash-deal-btn" data-id="${prod.id}"
+                          data-active="${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ? '1' : ''}"
+                          data-ends="${prod.flashDealEndsAt || ''}"
+                          style="background:${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ?'#FEF3C7':'#F1F5F9'}; color:${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ?'#B45309':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
+                          ⚡ ${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ? 'Deal ✓' : 'Flash Deal'}
+                        </button>
                       </div>
                       <div style="display: flex; gap: 4px; align-items: center; margin-top: 4px;">
                         <!-- Five clickable stars. Clicking the one already set
@@ -337,6 +345,26 @@ export function renderMarketplaceAdmin(container) {
         try {
           await stateEngine.toggleProductFlag(btn.dataset.id, btn.dataset.flag);
         } catch (err) { /* state.error already set, re-render shows it */ }
+      });
+    });
+
+    // Flash Deal: an active deal toggles off in one click; an inactive one
+    // opens a small picker for the end time, because a deal needs a real
+    // deadline - that is the whole point of the countdown.
+    container.querySelectorAll('.flash-deal-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (btn.dataset.active) {
+          try {
+            await stateEngine.setProductFlashDeal(id, null);
+          } catch (err) { /* re-render shows state.error */ }
+          return;
+        }
+        promptFlashDealEnd(btn, async (isoEndsAt) => {
+          try {
+            await stateEngine.setProductFlashDeal(id, isoEndsAt);
+          } catch (err) { /* re-render shows state.error */ }
+        });
       });
     });
 
@@ -633,4 +661,62 @@ function openCategoryModal({ title, categoryName = '', confirmLabel, onSubmit, r
 
   overlay.querySelector(nameLocked ? '#cat-pick-btn' : '#cat-name-input')?.focus();
   return close;
+}
+
+/**
+ * Pick the end time for a Flash Deal.
+ *
+ * A datetime-local input pre-filled two hours out - a sensible default a click
+ * can accept. The value is local wall-clock; it is converted to an absolute
+ * ISO instant on submit so the server (and every viewer's countdown) agrees on
+ * the finish regardless of timezone. Rejects a past time here as well as on the
+ * server, so the admin sees why rather than a bare 400.
+ */
+function promptFlashDealEnd(returnFocusTo, onPick) {
+  const pad = (n) => String(n).padStart(2, '0');
+  const twoHoursOut = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  const localValue =
+    `${twoHoursOut.getFullYear()}-${pad(twoHoursOut.getMonth() + 1)}-${pad(twoHoursOut.getDate())}` +
+    `T${pad(twoHoursOut.getHours())}:${pad(twoHoursOut.getMinutes())}`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText =
+    'position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:12000; display:flex; align-items:center; justify-content:center; padding:1rem;';
+
+  let close = () => {};
+  let error = '';
+
+  function paint() {
+    overlay.innerHTML = `
+      <div class="glass-card" style="max-width:420px; width:100%; padding:1.5rem;" role="document">
+        <h3 style="color:#0F172A; margin-bottom:0.25rem;">⚡ Set Flash Deal</h3>
+        <p style="font-size:0.85rem; color:#64748B; margin-bottom:1rem;">
+          The homepage flash card will count down to this time and drop the deal when it passes.
+        </p>
+        <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.35rem;">Deal ends at</label>
+        <input type="datetime-local" id="flash-end-input" value="${localValue}"
+          style="width:100%; padding:0.6rem 0.75rem; border:1px solid #E2E8F0; border-radius:10px; font-size:0.9rem;">
+        ${error ? `<p style="color:#DC2626; font-size:0.8rem; margin-top:0.5rem;">${error}</p>` : ''}
+        <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.25rem;">
+          <button id="flash-cancel" class="btn btn-sm" style="background:#F1F5F9; color:#475569;">Cancel</button>
+          <button id="flash-set" class="btn btn-sm" style="background:var(--primary); color:#fff;">Set Deal</button>
+        </div>
+      </div>`;
+
+    overlay.querySelector('#flash-cancel').addEventListener('click', () => close());
+    overlay.querySelector('#flash-set').addEventListener('click', () => {
+      const raw = overlay.querySelector('#flash-end-input').value;
+      const when = raw ? new Date(raw) : null;
+      if (!when || Number.isNaN(when.getTime())) { error = 'Pick a valid date and time.'; paint(); return; }
+      if (when.getTime() <= Date.now()) { error = 'The end time must be in the future.'; paint(); return; }
+      close();
+      onPick(when.toISOString());
+    });
+  }
+
+  document.body.appendChild(overlay);
+  paint();
+  ({ close } = makeAccessibleModal(overlay, { label: 'Set flash deal end time', returnFocusTo }));
+  overlay.querySelector('#flash-end-input')?.focus();
 }

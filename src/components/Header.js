@@ -252,7 +252,7 @@ export function renderHeaderHtml(ctx) {
             <button type="button" id="nav-link-re" class="${navLink}">${escapeHtml(t('ui_real_estate'))}</button>
           </li>
           <li class="h-full flex items-center">
-            <button type="button" data-soon="Services" class="${navLink}">${escapeHtml(t('ui_services'))}</button>
+            <button type="button" id="nav-link-services" class="${navLink}">${escapeHtml(t('ui_services'))}</button>
           </li>
           <li class="h-full flex items-center">
             <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
@@ -320,7 +320,7 @@ export function bindHeaderEvents(root, handlers) {
   const {
     goHome, goRealEstate, goSignup, logout, setLanguage,
     toggleNotifications, markAllRead, markRead, goStores, goVehicles, openCategories, goRealEstateCategory, currentLangCode,
-    goJobs, openMore, goDashboard,
+    goServices, goJobs, openMore, goDashboard,
   } = handlers;
 
   const on = (sel, ev, fn) => root.querySelector(sel)?.addEventListener(ev, fn);
@@ -355,6 +355,7 @@ export function bindHeaderEvents(root, handlers) {
   // Same chevron, same promise. main.js supplies the handler because it is
   // the one with the store; this component stays free of it.
   on('#nav-all-categories-2', 'click', (e) => openCategories?.(e.currentTarget));
+  on('#nav-link-services', 'click', goServices);
   on('#nav-link-jobs', 'click', goJobs);
   // 'More' used to be a data-soon button - a chevron promising a list and
   // then saying 'coming soon'. It opens the categories that do not already

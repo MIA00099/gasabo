@@ -260,13 +260,33 @@ document.addEventListener('DOMContentLoaded', () => {
           stateEngine.loadProducts({ category: re ? re.id : undefined }).catch(() => {});
         },
         goSignup: goAccountOrSignup,
-        // Jobs is a nav item for a category an admin has to create, and no
-        // database has one yet. If it is missing, say so rather than opening
-        // the unfiltered catalog - a filter that silently shows everything is
-        // how the old category strip behaved, and it reads as broken.
+        goServices: () => {
+          const found = goCategoryByName(/service/i);
+          if (!found) {
+            pushHome();
+            stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+            const filters = stateEngine.getState().ui.marketplaceFilters || {};
+            stateEngine.setUI({
+              marketplaceTab: 'catalog',
+              marketplaceFilters: { ...filters, selectedCategory: 'all', searchQuery: 'Services' },
+            });
+            stateEngine.setPortal('marketplace');
+            stateEngine.loadProducts({ search: 'Services' }).catch(() => {});
+          }
+        },
         goJobs: () => {
           const found = goCategoryByName(/job|employ|career|vacanc/i);
-          if (!found) notReadyToast('Jobs');
+          if (!found) {
+            pushHome();
+            stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+            const filters = stateEngine.getState().ui.marketplaceFilters || {};
+            stateEngine.setUI({
+              marketplaceTab: 'catalog',
+              marketplaceFilters: { ...filters, selectedCategory: 'all', searchQuery: 'Jobs' },
+            });
+            stateEngine.setPortal('marketplace');
+            stateEngine.loadProducts({ search: 'Jobs' }).catch(() => {});
+          }
         },
         openMore: (anchor) => {
           // Everything that is not already its own item in the nav row.

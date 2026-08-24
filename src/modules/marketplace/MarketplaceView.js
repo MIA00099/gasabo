@@ -459,16 +459,6 @@ export function renderMarketplaceView(container) {
                           <span class="text-[11px] font-bold text-center text-gray-900 leading-tight line-clamp-2">${escapeHtml(c.name)}</span>
                       </div>
                     `).join('')}
-
-                    <!-- Real estate is its own portal rather than a Category row,
-                         so it stays hardcoded - unlike the tiles above it, this
-                         one goes somewhere real. -->
-                    <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn" data-cat="realestate">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110">
-                            <i class="fa-solid fa-house text-stone-600"></i>
-                        </div>
-                        <span class="text-[11px] font-bold text-center text-gray-900">${t('ui_real_estate')}</span>
-                    </div>
                 </div>
             </section>
 

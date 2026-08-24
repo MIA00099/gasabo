@@ -12,13 +12,36 @@ function slugify(name: string) {
 }
 
 categoriesRouter.get('/', async (_req, res) => {
+  const defaultSeeds = [
+    { name: 'Electronics & Tech', iconUrl: '💻' },
+    { name: 'Agri-Business & Produce', iconUrl: '☕' },
+    { name: 'Vehicles & Automotive', iconUrl: '🚗' },
+    { name: 'Fashion & Handcrafts', iconUrl: '👗' },
+    { name: 'Home & Furniture', iconUrl: '🛋️' },
+    { name: 'Services', iconUrl: '🛠️' },
+    { name: 'Jobs', iconUrl: '💼' },
+  ];
+
+  for (let i = 0; i < defaultSeeds.length; i++) {
+    const seed = defaultSeeds[i];
+    const slug = slugify(seed.name);
+    const existing = await prisma.category.findFirst({
+      where: {
+        OR: [
+          { name: { equals: seed.name, mode: 'insensitive' } },
+          { slug: { equals: slug, mode: 'insensitive' } },
+        ],
+      },
+    });
+    if (!existing) {
+      await prisma.category.create({
+        data: { name: seed.name, iconUrl: seed.iconUrl, slug, order: i },
+      }).catch(() => {});
+    }
+  }
+
   const categories = await prisma.category.findMany({
     orderBy: { order: 'asc' },
-    // Count only what the marketplace will actually show. GET /api/products
-    // lists status: 'ACTIVE' only, so counting every row here made the
-    // homepage advertise categories as having listings while the grid below
-    // rendered none - pending, rejected and suspended products all inflated
-    // the number.
     include: { _count: { select: { products: { where: { status: 'ACTIVE' } } } } },
   });
   res.json({

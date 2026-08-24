@@ -54,7 +54,8 @@ async function main() {
     { name: 'Vehicles & Automotive', iconUrl: '🚗' },
     { name: 'Fashion & Handcrafts', iconUrl: '👗' },
     { name: 'Home & Furniture', iconUrl: '🛋️' },
-    { name: 'Professional Services', iconUrl: '🛠️' },
+    { name: 'Services', iconUrl: '🛠️' },
+    { name: 'Jobs', iconUrl: '💼' },
   ];
 
   const categories: Record<string, Awaited<ReturnType<typeof prisma.category.upsert>>> = {};

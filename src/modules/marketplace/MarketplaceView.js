@@ -451,14 +451,26 @@ export function renderMarketplaceView(container) {
                         <span class="text-[11px] font-bold text-center leading-tight text-gray-900">All<br>Categories</span>
                     </div>
 
-                    ${state.categories.length === 0 && !categoriesAttempted ? SKELETON_TILES : state.categories.map((c) => `
-                      <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn ${filters.selectedCategory === c.id ? 'opacity-100' : 'opacity-80'}" data-cat="${escapeHtml(c.id)}" title="${escapeHtml(formatCategoryName(c.name))}">
-                          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110 ${filters.selectedCategory === c.id ? 'ring-2 ring-brand-green' : ''}">
-                              ${renderCategoryIcon(c.icon, { size: 26, alt: formatCategoryName(c.name) })}
-                          </div>
-                          <span class="text-[11px] font-bold text-center text-gray-900 leading-tight line-clamp-2">${escapeHtml(formatCategoryName(c.name))}</span>
-                      </div>
-                    `).join('')}
+                    ${state.categories.length === 0 && !categoriesAttempted ? SKELETON_TILES : (() => {
+                      const getCatPriority = (c) => {
+                        const n = String(c.name || '').toLowerCase().trim();
+                        if (/electronics/i.test(n)) return 1;
+                        if (/vehicle|car|auto/i.test(n)) return 2;
+                        if (/house/i.test(n)) return 3;
+                        if (/land|plot/i.test(n)) return 4;
+                        if (/motorcycle|moto|bike/i.test(n)) return 5;
+                        return 100 + (c.order || 0);
+                      };
+                      const sortedCats = [...state.categories].sort((a, b) => getCatPriority(a) - getCatPriority(b));
+                      return sortedCats.map((c) => `
+                        <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn ${filters.selectedCategory === c.id ? 'opacity-100' : 'opacity-80'}" data-cat="${escapeHtml(c.id)}" title="${escapeHtml(formatCategoryName(c.name))}">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110 ${filters.selectedCategory === c.id ? 'ring-2 ring-brand-green' : ''}">
+                                ${renderCategoryIcon(c.icon, { size: 26, alt: formatCategoryName(c.name) })}
+                            </div>
+                            <span class="text-[11px] font-bold text-center text-gray-900 leading-tight line-clamp-2">${escapeHtml(formatCategoryName(c.name))}</span>
+                        </div>
+                      `).join('');
+                    })()}
                 </div>
             </section>
 

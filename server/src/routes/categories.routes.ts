@@ -14,12 +14,12 @@ function slugify(name: string) {
 categoriesRouter.get('/', async (_req, res) => {
   const defaultSeeds = [
     { name: 'Electronics & Tech', iconUrl: '💻' },
-    { name: 'Agri-Business & Produce', iconUrl: '☕' },
     { name: 'Vehicles & Automotive', iconUrl: '🚗' },
-    { name: 'Motorcycles', iconUrl: '🏍️' },
+    { name: 'house', iconUrl: '🏠' },
+    { name: 'land', iconUrl: '🏞️' },
+    { name: 'motorcycle', iconUrl: '🏍️' },
+    { name: 'Agri-Business & Produce', iconUrl: '☕' },
     { name: 'Real Estate', iconUrl: '🏠' },
-    { name: 'House & Property', iconUrl: '🏠' },
-    { name: 'Land & Plots', iconUrl: '🏞️' },
     { name: 'Fashion & Handcrafts', iconUrl: '👗' },
     { name: 'Home & Furniture', iconUrl: '🛋️' },
     { name: 'Services', iconUrl: '🛠️' },

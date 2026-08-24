@@ -214,10 +214,23 @@ document.addEventListener('DOMContentLoaded', () => {
         unreadNotifCount,
         notifications: state.notifications,
         notifDropdownOpen,
+        categories: state.categories || [],
+        selectedCategory: state.ui.marketplaceFilters?.selectedCategory || 'all',
       });
 
       bindHeaderEvents(headerMount, {
         goHome: handleGoHome,
+        selectCategory: (id) => {
+          pushHome();
+          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          const filters = stateEngine.getState().ui.marketplaceFilters || {};
+          stateEngine.setUI({
+            marketplaceTab: 'catalog',
+            marketplaceFilters: { ...filters, selectedCategory: id },
+          });
+          stateEngine.setPortal('marketplace');
+          stateEngine.loadProducts({ category: id === 'all' ? undefined : id }).catch(() => {});
+        },
         goRealEstate: () => {
           pushHome();
           stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
@@ -434,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   stateEngine.subscribe(renderApp);
   renderApp();
+  stateEngine.loadCategories().catch(() => {});
 
   // Paint first, then check the stored session against the server.
   //

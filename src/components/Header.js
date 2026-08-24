@@ -224,11 +224,6 @@ export function renderHeaderHtml(ctx) {
     ${isRealEstate ? '' : `
     <!-- Navigation Bar -->
     <nav class="bg-brand-dark text-white flex-none">
-      <!-- overflow-x-auto: eight nav items plus the Post an Ad button cannot
-           fit a 320px phone, and with the page running edge-to-edge there is
-           no container margin left to absorb the difference - the row was
-           pushing the whole document 13px wider than the screen. It scrolls
-           inside itself now, the same way the category rail below does. -->
       <div class="compact-container flex items-center h-10 overflow-x-auto no-scrollbar gap-2 sm:gap-4 whitespace-nowrap">
 
         <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
@@ -257,6 +252,13 @@ export function renderHeaderHtml(ctx) {
           <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
           </li>
+          ${extraCategories.map((c) => `
+            <li class="h-full flex items-center shrink-0">
+              <button type="button" class="${selectedCategory === c.id ? navLinkActive : navLink} nav-category-item" data-cat-id="${escapeHtml(c.id)}">
+                ${escapeHtml(c.name)}
+              </button>
+            </li>
+          `).join('')}
           <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
               class="${navLink} gap-1">${escapeHtml(t('ui_all_categories'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
@@ -313,7 +315,7 @@ export function bindHeaderEvents(root, handlers) {
   const {
     goHome, goRealEstate, goSignup, logout, setLanguage,
     toggleNotifications, markAllRead, markRead, goStores, goVehicles, openCategories, goRealEstateCategory, currentLangCode,
-    goServices, goJobs, openMore, goDashboard,
+    goServices, goJobs, openMore, goDashboard, selectCategory,
   } = handlers;
 
   const on = (sel, ev, fn) => root.querySelector(sel)?.addEventListener(ev, fn);

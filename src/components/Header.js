@@ -62,6 +62,7 @@ export function renderHeaderHtml(ctx) {
   const {
     activePortal, currentUser, currentLang,
     showAccountChip, showNotifBell, unreadNotifCount, notifications, notifDropdownOpen,
+    categories = [], selectedCategory = 'all',
   } = ctx;
 
   const roleLabel = ROLE_LABELS[currentUser.role] || '';
@@ -70,9 +71,13 @@ export function renderHeaderHtml(ctx) {
   const navLink = 'h-full flex items-center px-1 hover:text-gray-300';
   const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange hover:text-orange-300 hover:border-orange-300';
 
-  // Categories are no longer rendered inline in the nav row - every one beyond
-  // the fixed items lives behind the "More" dropdown (bound to openMore in
-  // main.js), so ctx no longer needs `categories`/`selectedCategory` here.
+  // Categories fill the middle of the nav bar - as many as fit. The rest are
+  // moved into "More" by a measure pass after render (fitNavCategories in
+  // bindHeaderEvents). Excludes the ones that already have their own fixed
+  // item (Vehicles, Real Estate) or a search shortcut (Services, Jobs), so
+  // nothing appears twice.
+  const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|service|job|employ|career|vacanc/i;
+  const navCategories = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(c.name));
 
   return `
     <!-- Top strip: the three languages, and nothing else.
@@ -237,8 +242,10 @@ export function renderHeaderHtml(ctx) {
            left side very wide. -->
       <div class="compact-container flex items-center h-10 gap-2 sm:gap-4">
 
-        <!-- LEFT: scrolls when narrow -->
-        <div class="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 overflow-x-auto no-scrollbar h-full whitespace-nowrap">
+        <!-- FIXED LEFT: All Categories + the permanent links. Scrolls inside
+             itself on a phone where they cannot all fit; never grows past its
+             own content, so it leaves the middle free on a wide screen. -->
+        <div class="flex items-center gap-2 sm:gap-4 min-w-0 overflow-x-auto no-scrollbar h-full whitespace-nowrap">
           <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
             class="bg-brand-green h-full px-3 sm:px-4 flex items-center gap-2 cursor-pointer shrink-0 font-semibold text-xs sm:text-sm whitespace-nowrap">
             <i class="fa-solid fa-bars text-xs sm:text-sm"></i>
@@ -268,8 +275,21 @@ export function renderHeaderHtml(ctx) {
           </ul>
         </div>
 
-        <!-- RIGHT: pinned, always visible. Every other category lives behind
-             More as a dropdown, not spread across the bar. -->
+        <!-- CATEGORY FILL: takes the space the fixed items leave, and shows as
+             many category links as fit. overflow-hidden clips the rest; the
+             fitNavCategories pass then hides any partly-cut chip cleanly and
+             leaves the overflow to More. On a phone this collapses to nothing
+             and every category is in More. -->
+        <div class="nav-cat-fill flex items-center gap-3 sm:gap-5 flex-1 min-w-0 overflow-hidden h-full whitespace-nowrap font-medium text-xs">
+          ${navCategories.map((c) => `
+            <button type="button" class="${selectedCategory === c.id ? navLinkActive : navLink} nav-category-item shrink-0" data-cat-id="${escapeHtml(c.id)}">
+              ${escapeHtml(c.name)}
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- RIGHT: pinned, always visible. More opens the full category list
+             (the overflow included). -->
         <div class="flex items-center gap-2 sm:gap-4 shrink-0 h-full">
           <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
             class="${navLink} gap-1 shrink-0">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
@@ -361,9 +381,13 @@ export function bindHeaderEvents(root, handlers) {
   on('#nav-all-categories-2', 'click', (e) => openCategories?.(e.currentTarget));
   on('#nav-link-services', 'click', goServices);
   on('#nav-link-jobs', 'click', goJobs);
-  // 'More' used to be a data-soon button - a chevron promising a list and
-  // then saying 'coming soon'. It opens the categories that do not already
-  // have their own item in the nav row.
+  // The category links filling the middle of the bar.
+  root.querySelectorAll('.nav-category-item').forEach((btn) => {
+    btn.addEventListener('click', () => selectCategory?.(btn.dataset.catId));
+  });
+  // Show as many category links as fit; hide the rest (More still lists them).
+  fitNavCategories(root);
+  // 'More' opens the full category list - the overflow included.
   on('#nav-link-more', 'click', (e) => openMore?.(e.currentTarget));
   // The way back into a seller's or admin's own dashboard from the shop.
   on('#header-dashboard-btn', 'click', goDashboard);
@@ -388,6 +412,79 @@ export function bindHeaderEvents(root, handlers) {
     btn.addEventListener('click', () => markRead(btn.dataset.id));
   });
 
+  // Keep the category row fitted whenever the header's width changes. A
+  // ResizeObserver on the persistent header mount is used rather than a
+  // window 'resize' listener: it fires once right after layout settles (so
+  // the first fit measures final widths, not pre-font ones) and again on
+  // every resize, and it does not depend on a DOM resize event firing. One
+  // observer for the whole app - the header remounts on each render but the
+  // mount element itself persists.
+  ensureFitObserver();
+}
+
+let fitObserver = null;
+let fitResizeBound = false;
+function ensureFitObserver() {
+  const refit = () => {
+    const live = document.getElementById('header-mount');
+    if (live) fitNavCategories(live);
+  };
+
+  // ResizeObserver is the primary mechanism: it fires once after layout
+  // settles (so the first fit is measured against final widths) and on every
+  // size change of the header.
+  if (!fitObserver && typeof ResizeObserver !== 'undefined') {
+    const mount = document.getElementById('header-mount');
+    if (mount) {
+      fitObserver = new ResizeObserver(refit);
+      fitObserver.observe(mount);
+    }
+  }
+
+  // A window 'resize' listener as well - belt and suspenders. Both fire in a
+  // real browser; having both means a re-fit still happens if either path is
+  // ever unavailable. rAF-coalesced so a drag-resize does not thrash.
+  if (!fitResizeBound) {
+    fitResizeBound = true;
+    let raf = 0;
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(refit);
+    });
+  }
+}
+
+/**
+ * Show as many category links as fit the middle lane; hide the rest.
+ *
+ * The chips render into a flex-1 lane between the fixed links and the pinned
+ * More/Post-an-Ad group. This walks them left to right and hides the first one
+ * whose right edge passes the lane's right edge, and everything after it - so
+ * the row never shows a half-cut chip and never pushes anything off. The
+ * hidden categories are still reachable through More, which lists them all.
+ *
+ * Cheap and idempotent: it only toggles a `hidden` attribute, and re-runs on
+ * resize and on every header render.
+ */
+function fitNavCategories(root) {
+  const lane = root.querySelector('.nav-cat-fill');
+  if (!lane) return;
+  const chips = [...lane.querySelectorAll('.nav-category-item')];
+  if (chips.length === 0) return;
+
+  // Start from a clean slate so a widened window can bring chips back.
+  chips.forEach((c) => c.removeAttribute('hidden'));
+
+  const laneRight = lane.getBoundingClientRect().right;
+  let overflowing = false;
+  for (const chip of chips) {
+    if (overflowing) { chip.setAttribute('hidden', ''); continue; }
+    // A couple of px of slack so a chip flush to the edge is not judged cut.
+    if (chip.getBoundingClientRect().right > laneRight - 2) {
+      chip.setAttribute('hidden', '');
+      overflowing = true;
+    }
+  }
 }
 
 export function bindMobileTabBarEvents(root, handlers) {

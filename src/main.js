@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openMore: (anchor) => {
           // Everything that is not already its own item in the nav row.
           const s = stateEngine.getState();
-          const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|job|employ|career|vacanc/i;
+          const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|service|job|employ|career|vacanc/i;
           const rest = (s.categories || []).filter((c) => !alreadyInNav.test(c.name));
           openCategoryDropdown(anchor, {
             categories: rest,

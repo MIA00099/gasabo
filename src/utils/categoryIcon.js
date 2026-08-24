@@ -47,3 +47,13 @@ export function renderCategoryIcon(icon, { size = 24, alt = '', fallback = '<i c
 export function categoryIconText(icon) {
   return isImageIcon(icon) ? '' : (icon || '');
 }
+
+/**
+ * Normalizes category display names so "realestate" renders formatted as "Real Estate".
+ */
+export function formatCategoryName(name) {
+  if (!name) return '';
+  const s = String(name).trim();
+  if (/^real[\s_-]?estate$/i.test(s)) return 'Real Estate';
+  return s;
+}

@@ -22,6 +22,7 @@
  */
 
 import { LANGUAGES, getTranslation } from '../store/i18n.js';
+import { formatCategoryName } from '../utils/categoryIcon.js';
 
 const ROLE_LABELS = {
   admin: 'Administrator',
@@ -283,7 +284,7 @@ export function renderHeaderHtml(ctx) {
         <div class="nav-cat-fill flex items-center gap-3 sm:gap-5 flex-1 min-w-0 overflow-hidden h-full whitespace-nowrap font-medium text-xs">
           ${navCategories.map((c) => `
             <button type="button" class="${selectedCategory === c.id ? navLinkActive : navLink} nav-category-item shrink-0" data-cat-id="${escapeHtml(c.id)}">
-              ${escapeHtml(c.name)}
+              ${escapeHtml(formatCategoryName(c.name))}
             </button>
           `).join('')}
         </div>

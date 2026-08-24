@@ -16,6 +16,7 @@ categoriesRouter.get('/', async (_req, res) => {
     { name: 'Electronics & Tech', iconUrl: '💻' },
     { name: 'Agri-Business & Produce', iconUrl: '☕' },
     { name: 'Vehicles & Automotive', iconUrl: '🚗' },
+    { name: 'Real Estate', iconUrl: '🏠' },
     { name: 'Fashion & Handcrafts', iconUrl: '👗' },
     { name: 'Home & Furniture', iconUrl: '🛋️' },
     { name: 'Services', iconUrl: '🛠️' },
@@ -47,7 +48,7 @@ categoriesRouter.get('/', async (_req, res) => {
   res.json({
     categories: categories.map((c) => ({
       id: c.id,
-      name: c.name,
+      name: /^real[\s_-]?estate$/i.test(c.name) ? 'Real Estate' : c.name,
       icon: c.iconUrl,
       order: c.order,
       count: c._count.products,

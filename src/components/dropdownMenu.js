@@ -11,7 +11,7 @@
  * stateEngine notify re-renders the view the control lives in and would tear
  * an open panel out mid-use.
  */
-import { renderCategoryIcon } from '../utils/categoryIcon.js';
+import { renderCategoryIcon, formatCategoryName } from '../utils/categoryIcon.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -151,7 +151,7 @@ export function openCategoryDropdown(anchor, { categories = [], selectedId = 'al
       { id: 'all', label: 'All Categories', iconHtml: '<i class="fa-solid fa-border-all" style="color:#04562D"></i>' },
       ...categories.map((c) => ({
         id: c.id,
-        label: c.name,
+        label: formatCategoryName(c.name),
         iconHtml: renderCategoryIcon(c.icon, { size: 18, alt: '' }),
         meta: typeof c.count === 'number' ? String(c.count) : null,
       })),

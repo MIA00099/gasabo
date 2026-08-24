@@ -1,5 +1,5 @@
 import { starsHtml } from '../../utils/stars.js';
-import { renderCategoryIcon } from '../../utils/categoryIcon.js';
+import { renderCategoryIcon, formatCategoryName } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 
@@ -61,7 +61,7 @@ export function renderProductsPage(container) {
     if (!categoriesAttempted) stateEngine.loadCategories().catch(() => {});
 
     const activeCat = state.categories.find((c) => c.id === filters.selectedCategory);
-    const heading = activeCat ? activeCat.name : 'All Categories';
+    const heading = activeCat ? formatCategoryName(activeCat.name) : 'All Categories';
 
     const items = [...state.products].sort((a, b) => {
       if (sort === 'price_asc') return a.price - b.price;
@@ -97,7 +97,7 @@ export function renderProductsPage(container) {
                             ? 'bg-brand-green text-white rounded-r-lg mr-2 font-bold'
                             : 'hover:bg-gray-50'
                         }">
-                        <span class="w-5 text-center">${renderCategoryIcon(c.icon, { size: 18, alt: c.name })}</span> ${escapeHtml(c.name)}
+                        <span class="w-5 text-center">${renderCategoryIcon(c.icon, { size: 18, alt: formatCategoryName(c.name) })}</span> ${escapeHtml(formatCategoryName(c.name))}
                       </button>
                     </li>
                   `).join('')}

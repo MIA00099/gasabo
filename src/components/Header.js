@@ -137,6 +137,18 @@ export function renderHeaderHtml(ctx) {
 
 
 
+        <!-- Gasabo Real Estate, centred between the two brands -->
+        ${isRealEstate ? '' : `
+          <button type="button" id="nav-gasabo-brand"
+            class="flex items-center gap-1.5 md:gap-2 shrink-0 md:absolute md:left-1/2 md:-translate-x-1/2 group cursor-pointer"
+            aria-label="Gasabo Real Estate">
+            <img src="/real-estate-logo.png" alt=""
+              class="h-7 md:h-9 w-auto object-contain shrink-0">
+            <span class="text-sm md:text-lg font-black tracking-tight text-[#1D4ED8] group-hover:underline whitespace-nowrap">
+              <span class="sm:hidden">Gasabo</span><span class="hidden sm:inline">Gasabo Real Estate</span>
+            </span>
+          </button>
+        `}
         ${isRealEstate ? '' : `
         <!-- User Actions -->
         <div class="flex items-center gap-4 order-2 md:order-none shrink-0">

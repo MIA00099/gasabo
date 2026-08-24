@@ -45,13 +45,25 @@ describe('renderHeaderHtml does not throw', () => {
     expect(html.length).toBeGreaterThan(100);
   });
 
-  it('renders category links after Jobs, excluding those with their own item', () => {
+  it('does not spread categories across the nav row', () => {
+    // Categories used to render inline, which put the whole (duplicate-ridden)
+    // category list into the bar and pushed More and Post an Ad toward the
+    // edge. They live behind the More dropdown now - none inline.
     const html = renderHeaderHtml(ctx());
-    // Electronics and Fashion have no dedicated nav item, so they appear as
-    // category links; Vehicles does, so it must not be duplicated as one.
-    expect(html).toContain('data-cat-id="c1"');
-    expect(html).toContain('data-cat-id="c3"');
-    expect(html).not.toContain('data-cat-id="c2"');
+    expect(html).not.toContain('nav-category-item');
+    expect(html).not.toContain('data-cat-id=');
+  });
+
+  it('keeps More and Post an Ad in a shrink-0 group that cannot be pushed off', () => {
+    // The requirement: More and Post an Ad always visible on the far right.
+    // The left group scrolls; the right group is shrink-0 and outside that
+    // scroll, so no number of left-hand items can push these two off-screen.
+    const html = renderHeaderHtml(ctx());
+    const rightGroup = html.slice(html.indexOf('id="nav-link-more"') - 200, html.indexOf('id="header-post-ad-btn"') + 200);
+    expect(rightGroup).toContain('id="nav-link-more"');
+    expect(rightGroup).toContain('id="header-post-ad-btn"');
+    // the left scroll container carries overflow-x-auto; the right group does not
+    expect(html).toMatch(/flex-1 min-w-0 overflow-x-auto/);
   });
 
   it('survives an empty ctx the way a cold load hands it', () => {

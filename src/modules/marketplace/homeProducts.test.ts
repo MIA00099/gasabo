@@ -30,8 +30,12 @@ describe('the product tile is written once', () => {
   });
 
   it('has only one copy of the card markup', () => {
-    // The tile is identified by its data-id + .view-item-btn combination.
-    const copies = SRC.split('view-item-btn" data-id=').length - 1;
+    // The tile is identified by its full class string, not just
+    // .view-item-btn - the flash-deal card and the deals modal legitimately
+    // reuse .view-item-btn to link into a product, but they are different
+    // components, not copies of this tile. What must not be duplicated is the
+    // tile itself.
+    const copies = SRC.split('shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn').length - 1;
     expect(copies, 'the product card markup appears more than once').toBe(1);
   });
 

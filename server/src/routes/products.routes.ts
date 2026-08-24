@@ -38,6 +38,7 @@ function serializeProduct(p: any) {
     isFeatured: p.isFeatured,
     isTrending: p.isTrending,
     isRecommended: p.isRecommended,
+    flashDealEndsAt: p.flashDealEndsAt ?? null,
     postedDate: p.createdAt,
     expiryDate: p.expiresAt,
     // Null until an administrator gives one. The storefront then shows no
@@ -103,6 +104,26 @@ productsRouter.get('/pending', requireAuth, requireExclusivePermission('PRODUCT_
     where: { status: 'PENDING' },
     include: { seller: true, category: true, ...WITH_LIKES },
     orderBy: { createdAt: 'asc' },
+  });
+  res.json({ products: products.map(serializeProduct) });
+});
+
+// GET /api/products/flash-deals - the products an admin has put on the
+// homepage flash card, still counting down.
+//
+// A flash deal is any ACTIVE product with flashDealEndsAt in the future. The
+// deadline is checked here rather than trusted from the client, so a deal
+// disappears on its own the moment it expires - the card cannot show a timer
+// counting up from zero. Soonest-ending first: the card shows [0], "View all
+// deals" shows the rest.
+//
+// MUST stay above '/:id' - Express matches in order and '/:id' would treat
+// "flash-deals" as a product id.
+productsRouter.get('/flash-deals', async (_req, res) => {
+  const products = await prisma.product.findMany({
+    where: { status: 'ACTIVE', flashDealEndsAt: { gt: new Date() } },
+    include: { seller: true, category: true, ...WITH_LIKES },
+    orderBy: { flashDealEndsAt: 'asc' },
   });
   res.json({ products: products.map(serializeProduct) });
 });
@@ -494,6 +515,49 @@ productsRouter.delete('/:id', requireAuth, async (req, res) => {
   });
 
   res.json({ success: true });
+});
+
+// Set or clear a product's Flash Deal deadline. A future ISO date makes it an
+// active flash deal; null takes it off the card. The value is an absolute
+// instant, not a duration, so the countdown is real: every viewer sees the
+// same finish time and it ends when that time arrives, not per-visit.
+const flashDealSchema = z.object({
+  endsAt: z.union([z.string().datetime(), z.null()]),
+});
+
+productsRouter.patch('/:id/flash-deal', requireAuth, requirePermission('PRODUCTS'), async (req, res) => {
+  const parsed = flashDealSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Provide an end time (ISO date) or null to clear the deal.' });
+  }
+
+  const endsAt = parsed.data.endsAt ? new Date(parsed.data.endsAt) : null;
+  if (endsAt && endsAt.getTime() <= Date.now()) {
+    return res.status(400).json({ error: 'The flash deal end time must be in the future.' });
+  }
+
+  const product = await prisma.product.findUnique({ where: { id: req.params.id } });
+  if (!product) return res.status(404).json({ error: 'Product not found.' });
+
+  const updated = await prisma.product.update({
+    where: { id: product.id },
+    data: { flashDealEndsAt: endsAt },
+    include: { seller: true, category: true, ...WITH_LIKES },
+  });
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'PRODUCT_FLASH_DEAL_UPDATED',
+    module: 'Marketplace Admin',
+    targetId: product.id,
+    details: endsAt
+      ? `Set "${product.title}" as a flash deal ending ${endsAt.toISOString()}.`
+      : `Cleared the flash deal on "${product.title}".`,
+  });
+
+  res.json({ product: serializeProduct(updated) });
 });
 
 const flagSchema = z.object({

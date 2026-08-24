@@ -75,7 +75,6 @@ const SKELETON_TILES = Array.from({ length: 5 }, () => `
 `).join('');
 
 let flashClockTimer = null;
-let totalCountdownSeconds = (2 * 3600) + (45 * 60) + 30;
 
 export function cleanupFlashClock() {
   if (flashClockTimer) {
@@ -150,16 +149,29 @@ function startHeroSlider(container) {
 function startFlashClock(container) {
   cleanupFlashClock();
 
+  // Real deadline, not a made-up loop. The card carries the featured deal's
+  // end time as an epoch-ms attribute; every tick shows the true remaining
+  // time, so all viewers see the same finish and it stops at zero instead of
+  // resetting to 9999 the way the placeholder used to. No card attribute (no
+  // active deal) means the clock reads 00:00:00.
+  const card = container.querySelector('#flash-deals-card');
+  const endsAt = card ? Number(card.getAttribute('data-flash-ends-at')) : 0;
+
+  let endedReloadDone = false;
   const updateCountdown = () => {
-    if (totalCountdownSeconds <= 0) {
-      totalCountdownSeconds = 9999;
-    } else {
-      totalCountdownSeconds--;
+    const remainingMs = endsAt ? endsAt - Date.now() : 0;
+    const remaining = Math.max(0, Math.floor(remainingMs / 1000));
+
+    // The moment a live deal hits zero, refresh the list once so the expired
+    // one drops off and the next deal (if any) takes the card.
+    if (endsAt && remaining === 0 && !endedReloadDone) {
+      endedReloadDone = true;
+      stateEngine.loadFlashDeals().catch(() => {});
     }
 
-    const hrs = Math.floor(totalCountdownSeconds / 3600);
-    const mins = Math.floor((totalCountdownSeconds % 3600) / 60);
-    const secs = totalCountdownSeconds % 60;
+    const hrs = Math.floor(remaining / 3600);
+    const mins = Math.floor((remaining % 3600) / 60);
+    const secs = remaining % 60;
 
     const hStr = String(hrs).padStart(2, '0');
     const mStr = String(mins).padStart(2, '0');
@@ -181,9 +193,15 @@ function startFlashClock(container) {
     if (modalMins) modalMins.textContent = mStr;
     if (modalSecs) modalSecs.textContent = sStr;
 
-    // Individual item countdowns
+    // Each modal item counts to its own deal's end time, not the featured
+    // card's - the "View all deals" list holds several deals ending at
+    // different moments.
     container.querySelectorAll('.modal-item-countdown').forEach((el) => {
-      el.textContent = `${hStr}:${mStr}:${sStr}`;
+      const itemEndsAt = Number(el.getAttribute('data-flash-ends-at'));
+      const left = Math.max(0, Math.floor((itemEndsAt - Date.now()) / 1000));
+      el.textContent = [Math.floor(left / 3600), Math.floor((left % 3600) / 60), left % 60]
+        .map((n) => String(n).padStart(2, '0'))
+        .join(':');
     });
   };
 
@@ -204,6 +222,12 @@ export function renderMarketplaceView(container) {
 
     if (!productsAttempted) stateEngine.loadProducts(filters).catch(() => {});
     if (!categoriesAttempted) stateEngine.loadCategories().catch(() => {});
+    if (state.loading.flashDeals === undefined) stateEngine.loadFlashDeals().catch(() => {});
+
+    // The flash card shows the soonest-ending real deal an admin set up; the
+    // rest fill the "View all deals" modal. Empty until an admin creates one.
+    const flashDeals = state.flashDeals || [];
+    const featuredDeal = flashDeals[0] || null;
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
@@ -441,31 +465,48 @@ export function renderMarketplaceView(container) {
                          anchor has its click prevented, since href="#" would
                          otherwise push a hash the router strips straight back
                          off. -->
-                    <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card cursor-pointer hover:opacity-95 transition lg:shrink-0">
+                    <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : ''} transition lg:shrink-0"
+                      ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>
 
                       <div class="flash-head">
                         <h2>${t('ui_flash_deals')} <span>&#9889;</span></h2>
-                        <a href="#" class="view-deals" id="open-flash-deals-btn" role="button">${t('ui_view_all_deals')}</a>
+                        ${featuredDeal ? `<a href="#" class="view-deals" id="open-flash-deals-btn" role="button">${t('ui_view_all_deals')}</a>` : ''}
                       </div>
+
+                      ${featuredDeal ? `
+                        <!-- The real product the deal is on: an admin picks the
+                             listing and the end time, and the card shows both. -->
+                        <div class="flash-product view-item-btn" data-id="${escapeHtml(featuredDeal.id)}" role="button" tabindex="0">
+                          <div class="flash-product-img">
+                            <img src="${escapeHtml((featuredDeal.images && featuredDeal.images[0]) || '')}" alt="${escapeHtml(featuredDeal.title)}" loading="lazy">
+                          </div>
+                          <div class="flash-product-info">
+                            <h3>${escapeHtml(featuredDeal.title)}</h3>
+                            <span class="flash-product-price">RWF ${Number(featuredDeal.price).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ` : `
+                        <p class="flash-empty">${t('ui_flash_none')}</p>
+                      `}
 
                       <div class="countdown">
 
                         <div class="time-box">
-                          <div class="number" id="deal-hours">02</div>
+                          <div class="number" id="deal-hours">00</div>
                           <div class="label">${t('ui_hours')}</div>
                         </div>
 
                         <div class="separator">:</div>
 
                         <div class="time-box">
-                          <div class="number" id="deal-mins">44</div>
+                          <div class="number" id="deal-mins">00</div>
                           <div class="label">${t('ui_mins')}</div>
                         </div>
 
                         <div class="separator">:</div>
 
                         <div class="time-box">
-                          <div class="number" id="deal-secs">54</div>
+                          <div class="number" id="deal-secs">00</div>
                           <div class="label">${t('ui_secs')}</div>
                         </div>
 
@@ -664,93 +705,37 @@ export function renderMarketplaceView(container) {
           </div>
 
           <!-- Countdown Products Grid -->
+          ${flashDeals.length === 0 ? `
+            <p class="text-center text-gray-500 text-sm py-10">${t('ui_flash_none')}</p>
+          ` : `
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-
-            <!-- Item 1 -->
-            <div class="bg-white border-2 border-brand-orange/30 rounded-2xl p-4 relative flex flex-col justify-between hover:shadow-lg transition cursor-pointer group modal-claim-item">
-              <span class="absolute top-3 left-3 bg-brand-orange text-white text-xs font-black px-2 py-0.5 rounded-lg z-10">-20% OFF</span>
-              <span class="absolute top-3 right-3 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                <i class="fa-solid fa-clock"></i> <span class="modal-item-countdown">02:45:30</span>
-              </span>
-              <div class="h-32 flex items-center justify-center my-3 bg-gray-50 rounded-xl">
-                <i class="fa-solid fa-headphones text-5xl text-gray-800 group-hover:scale-110 transition transform"></i>
+            ${flashDeals.map((deal) => {
+              const was = Number(deal.originalPrice) || 0;
+              const pct = was > deal.price ? Math.round((1 - deal.price / was) * 100) : 0;
+              return `
+              <div class="bg-white border-2 border-brand-orange/30 rounded-2xl p-4 relative flex flex-col justify-between hover:shadow-lg transition cursor-pointer group view-item-btn" data-id="${escapeHtml(deal.id)}">
+                ${pct ? `<span class="absolute top-3 left-3 bg-brand-orange text-white text-xs font-black px-2 py-0.5 rounded-lg z-10">-${pct}% OFF</span>` : ''}
+                <span class="absolute top-3 right-3 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
+                  <i class="fa-solid fa-clock"></i> <span class="modal-item-countdown" data-flash-ends-at="${new Date(deal.flashDealEndsAt).getTime()}">00:00:00</span>
+                </span>
+                <div class="h-32 flex items-center justify-center my-3 bg-gray-50 rounded-xl overflow-hidden">
+                  <img src="${escapeHtml((deal.images && deal.images[0]) || '')}" alt="${escapeHtml(deal.title)}" loading="lazy" class="max-h-full w-auto object-contain group-hover:scale-110 transition transform">
+                </div>
+                <div>
+                  <h4 class="font-bold text-sm text-gray-900 mb-1 line-clamp-2">${escapeHtml(deal.title)}</h4>
+                  <div class="flex items-baseline gap-2 mb-3">
+                    <span class="text-lg font-black text-brand-green">RWF ${Number(deal.price).toLocaleString()}</span>
+                    ${was > deal.price ? `<span class="text-xs text-gray-400 line-through">RWF ${was.toLocaleString()}</span>` : ''}
+                  </div>
+                  <button class="w-full bg-brand-green text-white font-bold py-2 rounded-xl text-xs hover:bg-green-800 transition shadow">
+                    ${t('ui_view_deal')} <i class="fa-solid fa-arrow-right ml-1"></i>
+                  </button>
+                </div>
               </div>
-              <div>
-                <h4 class="font-bold text-sm text-gray-900 mb-1">Wireless Noise-Canceling Headphones</h4>
-                <div class="flex items-baseline gap-2 mb-2">
-                  <span class="text-lg font-black text-brand-green">RWF 18,000</span>
-                  <span class="text-xs text-gray-400 line-through">RWF 22,500</span>
-                </div>
-                <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-2">
-                  <div class="bg-brand-orange h-full rounded-full" style="width: 78%"></div>
-                </div>
-                <div class="flex items-center justify-between text-[10px] text-gray-500 mb-3">
-                  <span>Stock: <strong>14/50 left</strong></span>
-                  <span class="text-green-600 font-bold">Fast Selling</span>
-                </div>
-                <button class="w-full bg-brand-green text-white font-bold py-2 rounded-xl text-xs hover:bg-green-800 transition shadow">
-                  Claim Deal <i class="fa-solid fa-arrow-right ml-1"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Item 2 -->
-            <div class="bg-white border-2 border-brand-orange/30 rounded-2xl p-4 relative flex flex-col justify-between hover:shadow-lg transition cursor-pointer group modal-claim-item">
-              <span class="absolute top-3 left-3 bg-brand-orange text-white text-xs font-black px-2 py-0.5 rounded-lg z-10">-15% OFF</span>
-              <span class="absolute top-3 right-3 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                <i class="fa-solid fa-clock"></i> <span class="modal-item-countdown">02:45:30</span>
-              </span>
-              <div class="h-32 flex items-center justify-center my-3 bg-gray-50 rounded-xl">
-                <i class="fa-solid fa-blender text-5xl text-yellow-600 group-hover:scale-110 transition transform"></i>
-              </div>
-              <div>
-                <h4 class="font-bold text-sm text-gray-900 mb-1">High-Power 500W Blender</h4>
-                <div class="flex items-baseline gap-2 mb-2">
-                  <span class="text-lg font-black text-brand-green">RWF 25,000</span>
-                  <span class="text-xs text-gray-400 line-through">RWF 30,000</span>
-                </div>
-                <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-2">
-                  <div class="bg-brand-orange h-full rounded-full" style="width: 85%"></div>
-                </div>
-                <div class="flex items-center justify-between text-[10px] text-gray-500 mb-3">
-                  <span>Stock: <strong>6/40 left</strong></span>
-                  <span class="text-red-600 font-bold">Almost Sold Out</span>
-                </div>
-                <button class="w-full bg-brand-green text-white font-bold py-2 rounded-xl text-xs hover:bg-green-800 transition shadow">
-                  Claim Deal <i class="fa-solid fa-arrow-right ml-1"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Item 3 -->
-            <div class="bg-white border-2 border-brand-orange/30 rounded-2xl p-4 relative flex flex-col justify-between hover:shadow-lg transition cursor-pointer group modal-claim-item">
-              <span class="absolute top-3 left-3 bg-brand-orange text-white text-xs font-black px-2 py-0.5 rounded-lg z-10">-25% OFF</span>
-              <span class="absolute top-3 right-3 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                <i class="fa-solid fa-clock"></i> <span class="modal-item-countdown">02:45:30</span>
-              </span>
-              <div class="h-32 flex items-center justify-center my-3 bg-gray-50 rounded-xl">
-                <i class="fa-regular fa-clock text-5xl text-gray-800 group-hover:scale-110 transition transform"></i>
-              </div>
-              <div>
-                <h4 class="font-bold text-sm text-gray-900 mb-1">Smart Watch Series 8</h4>
-                <div class="flex items-baseline gap-2 mb-2">
-                  <span class="text-lg font-black text-brand-green">RWF 35,000</span>
-                  <span class="text-xs text-gray-400 line-through">RWF 46,000</span>
-                </div>
-                <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-2">
-                  <div class="bg-brand-orange h-full rounded-full" style="width: 62%"></div>
-                </div>
-                <div class="flex items-center justify-between text-[10px] text-gray-500 mb-3">
-                  <span>Stock: <strong>19/50 left</strong></span>
-                  <span class="text-green-600 font-bold">In Stock</span>
-                </div>
-                <button class="w-full bg-brand-green text-white font-bold py-2 rounded-xl text-xs hover:bg-green-800 transition shadow">
-                  Claim Deal <i class="fa-solid fa-arrow-right ml-1"></i>
-                </button>
-              </div>
-            </div>
-
+              `;
+            }).join('')}
           </div>
+          `}
 
           <div class="mt-6 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span class="text-xs text-gray-500 font-medium"><i class="fa-solid fa-circle-info text-brand-green"></i> Prices revert to regular price when countdown expires</span>

@@ -110,6 +110,11 @@ model Product {
   isFeatured           Boolean       @default(false)
   isTrending           Boolean       @default(false)
   isRecommended        Boolean       @default(false)
+  // When set and in the future, this product is an active Flash Deal: it
+  // shows on the homepage flash card counting down to this exact time, and
+  // drops off automatically once it passes. Null = not a flash deal. Set by
+  // an administrator (PATCH /:id/flash-deal).
+  flashDealEndsAt      DateTime?
   // Set by an administrator, 0-5 in half steps. Null until one is given, and
   // the storefront shows no stars at all in that case rather than inventing
   // a number - the cards used to hard-code 4.8 and "(128)".

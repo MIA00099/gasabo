@@ -455,6 +455,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // screen on every cold load. A 401 signs the person out through the API
   // client's expiry path; anything else leaves the session alone.
   stateEngine.verifySession();
+
+  // Keep the shop fresh without a manual browser refresh.
+  //
+  // The catalogue, flash deals and hero ads are fetched once on cold load and
+  // then cached, so someone who leaves the tab open - or comes back after an
+  // admin adds a product, sets a deal or changes a banner - keeps seeing the
+  // old page until they hit reload. When the tab becomes visible again we
+  // quietly re-fetch the homepage data. It is throttled so flicking between
+  // tabs does not hammer the API, only runs on the marketplace where this data
+  // lives, and leaves the on-screen products in place while the new ones load
+  // (the grid only shows skeletons when it has nothing at all), so the refresh
+  // is invisible until fresher content actually arrives.
+  let lastAutoRefresh = Date.now();
+  const AUTO_REFRESH_MIN_GAP = 30000;
+  function refreshMarketplaceData() {
+    const state = stateEngine.getState();
+    if (state.activePortal !== 'marketplace') return;
+    const f = state.ui.marketplaceFilters || {};
+    stateEngine
+      .loadProducts({ category: f.selectedCategory, district: f.selectedDistrict, search: f.searchQuery })
+      .catch(() => {});
+    stateEngine.loadFlashDeals().catch(() => {});
+    stateEngine.loadBanners().catch(() => {});
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    const now = Date.now();
+    if (now - lastAutoRefresh < AUTO_REFRESH_MIN_GAP) return;
+    lastAutoRefresh = now;
+    refreshMarketplaceData();
+  });
 });
 
 function escapeHtml(str) {

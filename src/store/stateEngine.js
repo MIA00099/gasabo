@@ -133,7 +133,27 @@ class StateEngine {
   }
 
   notify() {
-    this.listeners.forEach((l) => l(this.data));
+    // Coalesce renders to one per microtask instead of one per state mutation.
+    //
+    // main.js's subscriber rebuilds the whole header and view on every call,
+    // and a homepage boot fires notify ~19 times in the first few hundred ms:
+    // each loader flips its loading flag (one notify) and flips it back with
+    // its data (another), and setPortal/setRoute/setUI pile on top. Rendering
+    // every one of those separately is what makes the page flash and the nav
+    // flicker while it settles. Collapsing the notifies that land in the same
+    // task into a single render removes the flash without dropping any state -
+    // the flush always reads the latest this.data.
+    //
+    // A microtask (not requestAnimationFrame) so the flush fires even when the
+    // tab is backgrounded or not painting, where rAF callbacks are throttled.
+    if (this._notifyScheduled) return;
+    this._notifyScheduled = true;
+    const flush = () => {
+      this._notifyScheduled = false;
+      this.listeners.forEach((l) => l(this.data));
+    };
+    if (typeof queueMicrotask === 'function') queueMicrotask(flush);
+    else Promise.resolve().then(flush);
   }
 
   getState() {

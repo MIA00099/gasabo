@@ -62,6 +62,7 @@ export function renderHeaderHtml(ctx) {
   const {
     activePortal, currentUser, currentLang,
     showAccountChip, showNotifBell, unreadNotifCount, notifications, notifDropdownOpen,
+    categories = [], selectedCategory = 'all',
   } = ctx;
 
   const roleLabel = ROLE_LABELS[currentUser.role] || '';
@@ -69,6 +70,17 @@ export function renderHeaderHtml(ctx) {
   const t = (key) => getTranslation(currentLang, key);
   const navLink = 'h-full flex items-center px-1 hover:text-gray-300';
   const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange hover:text-orange-300 hover:border-orange-300';
+
+  // The categories shown as their own nav links after Jobs. Excludes the ones
+  // that already have a dedicated item (Vehicles, Real Estate) or a search
+  // shortcut (Jobs), so the row does not list the same thing twice.
+  //
+  // Defined here rather than assumed present: an earlier revision referenced
+  // `extraCategories` in the markup without ever declaring it, and ctx passes
+  // `categories`, not `extraCategories` - the ReferenceError threw during
+  // render and took the whole app down (it never mounted past the loader).
+  const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|job|employ|career|vacanc/i;
+  const extraCategories = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(c.name));
 
   return `
     <!-- Top strip: the three languages, and nothing else.
@@ -345,6 +357,12 @@ export function bindHeaderEvents(root, handlers) {
   on('#nav-gasabo-brand', 'click', goRealEstate);
   on('#nav-link-stores', 'click', goStores);
   on('#nav-link-vehicles', 'click', goVehicles);
+  // The category links rendered after Jobs. selectCategory was provided and
+  // destructured but never wired to these buttons, so they rendered inert -
+  // clicking a category name did nothing.
+  root.querySelectorAll('.nav-category-item').forEach((btn) => {
+    btn.addEventListener('click', () => selectCategory?.(btn.dataset.catId));
+  });
   // #nav-all-categories was the chip inside the header search form and went
   // with it; the nav bar's own #nav-all-categories-2 is the one left.
   // Same chevron, same promise. main.js supplies the handler because it is

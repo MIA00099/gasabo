@@ -229,10 +229,10 @@ export function renderHeaderHtml(ctx) {
            no container margin left to absorb the difference - the row was
            pushing the whole document 13px wider than the screen. It scrolls
            inside itself now, the same way the category rail below does. -->
-      <div class="compact-container flex items-center h-10 overflow-x-auto no-scrollbar gap-2 sm:gap-4">
+      <div class="compact-container flex items-center h-10 overflow-x-auto no-scrollbar gap-2 sm:gap-4 whitespace-nowrap">
 
         <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
-          class="bg-brand-green h-full px-3 sm:px-4 flex items-center gap-2 cursor-pointer shrink-0 font-semibold text-xs sm:text-sm">
+          class="bg-brand-green h-full px-3 sm:px-4 flex items-center gap-2 cursor-pointer shrink-0 font-semibold text-xs sm:text-sm whitespace-nowrap">
           <i class="fa-solid fa-bars text-xs sm:text-sm"></i>
           <span>${escapeHtml(t('ui_all_categories'))}</span>
           <i class="fa-solid fa-chevron-down text-[10px] ml-1"></i>

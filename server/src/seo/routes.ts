@@ -78,6 +78,15 @@ function urlEntry(loc: string, lastmod: Date | null, changefreq: string, priorit
     .join('\n');
 }
 
+// /sitemap (no extension) -> /sitemap.xml. Google Search Console reported
+// "Sitemap is HTML" because the submitted URL was /sitemap, which - having no
+// route of its own - fell through to the SPA catch-all and returned the
+// homepage HTML. Redirecting means a submission that omits the extension
+// still resolves to the real sitemap rather than silently becoming an error.
+seoRouter.get('/sitemap', (_req, res) => {
+  res.redirect(301, '/sitemap.xml');
+});
+
 // GET /sitemap.xml - generated per request from whatever is currently public.
 // Listings appear and expire continuously (see utils/productExpiry.ts), so a
 // file written at build time would start going stale immediately.

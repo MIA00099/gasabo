@@ -161,6 +161,16 @@ describe('GET /sitemap.xml', () => {
     expect(opens).toBeGreaterThan(1);
     expect(res.text).toMatch(/^<\?xml version="1\.0" encoding="UTF-8"\?>/);
   });
+
+  it('redirects /sitemap (no extension) to /sitemap.xml', async () => {
+    // Google Search Console reported "Sitemap is HTML" because /sitemap was
+    // submitted - it had no route and fell through to the SPA, returning the
+    // homepage. The redirect makes the extensionless form resolve to the real
+    // sitemap instead of silently becoming an HTML page.
+    const res = await request(app).get('/sitemap');
+    expect(res.status).toBe(301);
+    expect(res.headers.location).toBe('/sitemap.xml');
+  });
 });
 
 describe('GET /robots.txt', () => {
@@ -235,7 +245,7 @@ describe('Listing pages', () => {
     const blocks = res.text.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g) || [];
     expect(blocks, 'expected exactly one JSON-LD block on a product page').toHaveLength(1);
 
-    const raw = blocks[0].replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '').replace(/<\\\//g, '</');
+    const raw = blocks[0]!.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '').replace(/<\\\//g, '</');
     const data = JSON.parse(raw); // throws if the injection produced invalid JSON
     expect(data['@type']).toBe('Product');
     expect(data.offers['@type']).toBe('Offer');

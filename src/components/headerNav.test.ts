@@ -45,25 +45,35 @@ describe('renderHeaderHtml does not throw', () => {
     expect(html.length).toBeGreaterThan(100);
   });
 
-  it('does not spread categories across the nav row', () => {
-    // Categories used to render inline, which put the whole (duplicate-ridden)
-    // category list into the bar and pushed More and Post an Ad toward the
-    // edge. They live behind the More dropdown now - none inline.
+  it('renders the categories into the fill lane, excluding fixed-nav ones', () => {
+    // Categories fill the middle lane as chips; the fitNavCategories pass then
+    // hides whatever does not fit (runtime, needs layout - not testable here).
+    // Vehicles has its own fixed item, so it must not also appear as a chip.
     const html = renderHeaderHtml(ctx());
-    expect(html).not.toContain('nav-category-item');
-    expect(html).not.toContain('data-cat-id=');
+    const lane = html.slice(html.indexOf('nav-cat-fill'), html.indexOf('id="nav-link-more"'));
+    expect(lane).toContain('data-cat-id="c1"'); // Electronics - no fixed item
+    expect(lane).toContain('data-cat-id="c3"'); // Fashion - no fixed item
+    expect(lane).not.toContain('data-cat-id="c2"'); // Vehicles - has a fixed item
+  });
+
+  it('gives the fill lane overflow-hidden, not scroll', () => {
+    // The chips are clipped and the overflow moved to More - the lane must not
+    // scroll, or the "show the rest in More" behaviour becomes "scroll to see
+    // the rest" instead.
+    const html = renderHeaderHtml(ctx());
+    expect(html).toMatch(/nav-cat-fill[^"]*flex-1 min-w-0 overflow-hidden/);
   });
 
   it('keeps More and Post an Ad in a shrink-0 group that cannot be pushed off', () => {
     // The requirement: More and Post an Ad always visible on the far right.
-    // The left group scrolls; the right group is shrink-0 and outside that
-    // scroll, so no number of left-hand items can push these two off-screen.
+    // The fixed-left group scrolls; the right group is shrink-0 and outside
+    // both the scroll and the fill lane, so nothing can push these off-screen.
     const html = renderHeaderHtml(ctx());
     const rightGroup = html.slice(html.indexOf('id="nav-link-more"') - 200, html.indexOf('id="header-post-ad-btn"') + 200);
     expect(rightGroup).toContain('id="nav-link-more"');
     expect(rightGroup).toContain('id="header-post-ad-btn"');
-    // the left scroll container carries overflow-x-auto; the right group does not
-    expect(html).toMatch(/flex-1 min-w-0 overflow-x-auto/);
+    // the fixed-left group carries the horizontal scroll; the right group does not
+    expect(html).toMatch(/min-w-0 overflow-x-auto/);
   });
 
   it('survives an empty ctx the way a cold load hands it', () => {

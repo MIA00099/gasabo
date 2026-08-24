@@ -62,7 +62,6 @@ export function renderHeaderHtml(ctx) {
   const {
     activePortal, currentUser, currentLang,
     showAccountChip, showNotifBell, unreadNotifCount, notifications, notifDropdownOpen,
-    categories = [], selectedCategory = 'all',
   } = ctx;
 
   const roleLabel = ROLE_LABELS[currentUser.role] || '';
@@ -71,16 +70,9 @@ export function renderHeaderHtml(ctx) {
   const navLink = 'h-full flex items-center px-1 hover:text-gray-300';
   const navLinkActive = 'h-full flex items-center px-1 text-brand-orange border-b-2 border-brand-orange hover:text-orange-300 hover:border-orange-300';
 
-  // The categories shown as their own nav links after Jobs. Excludes the ones
-  // that already have a dedicated item (Vehicles, Real Estate) or a search
-  // shortcut (Jobs), so the row does not list the same thing twice.
-  //
-  // Defined here rather than assumed present: an earlier revision referenced
-  // `extraCategories` in the markup without ever declaring it, and ctx passes
-  // `categories`, not `extraCategories` - the ReferenceError threw during
-  // render and took the whole app down (it never mounted past the loader).
-  const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|job|employ|career|vacanc/i;
-  const extraCategories = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(c.name));
+  // Categories are no longer rendered inline in the nav row - every one beyond
+  // the fixed items lives behind the "More" dropdown (bound to openMore in
+  // main.js), so ctx no longer needs `categories`/`selectedCategory` here.
 
   return `
     <!-- Top strip: the three languages, and nothing else.
@@ -236,51 +228,56 @@ export function renderHeaderHtml(ctx) {
     ${isRealEstate ? '' : `
     <!-- Navigation Bar -->
     <nav class="bg-brand-dark text-white flex-none">
-      <div class="compact-container flex items-center h-10 overflow-x-auto no-scrollbar gap-2 sm:gap-4 whitespace-nowrap">
+      <!-- Two groups, not one scrolling row. The left group (All Categories +
+           the fixed links) scrolls inside itself when it does not fit; the
+           right group (More + Post an Ad) is shrink-0 and sits outside that
+           scroll, so it can never be pushed off-screen. The old single
+           overflow-x-auto row let a wide left side scroll Post an Ad out of
+           view - and the brief "all categories inline" regression made the
+           left side very wide. -->
+      <div class="compact-container flex items-center h-10 gap-2 sm:gap-4">
 
-        <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
-          class="bg-brand-green h-full px-3 sm:px-4 flex items-center gap-2 cursor-pointer shrink-0 font-semibold text-xs sm:text-sm whitespace-nowrap">
-          <i class="fa-solid fa-bars text-xs sm:text-sm"></i>
-          <span>${escapeHtml(t('ui_all_categories'))}</span>
-          <i class="fa-solid fa-chevron-down text-[10px] ml-1"></i>
-        </button>
+        <!-- LEFT: scrolls when narrow -->
+        <div class="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 overflow-x-auto no-scrollbar h-full whitespace-nowrap">
+          <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
+            class="bg-brand-green h-full px-3 sm:px-4 flex items-center gap-2 cursor-pointer shrink-0 font-semibold text-xs sm:text-sm whitespace-nowrap">
+            <i class="fa-solid fa-bars text-xs sm:text-sm"></i>
+            <span>${escapeHtml(t('ui_all_categories'))}</span>
+            <i class="fa-solid fa-chevron-down text-[10px] ml-1"></i>
+          </button>
 
-        <ul class="flex items-center gap-3 sm:gap-5 font-medium text-xs h-full whitespace-nowrap shrink-0">
-          <li class="h-full flex items-center shrink-0">
-            <button type="button" id="nav-link-mkt" class="${activePortal === 'marketplace' ? navLinkActive : navLink}">${escapeHtml(t('ui_home'))}</button>
-          </li>
-          <li class="h-full flex items-center shrink-0">
-            <button type="button" id="nav-link-stores" class="${navLink}">${escapeHtml(t('ui_stores'))}</button>
-          </li>
-          <li class="h-full flex items-center shrink-0">
-            <button type="button" id="nav-link-vehicles" class="${navLink}">${escapeHtml(t('ui_vehicles'))}</button>
-          </li>
-          <li class="h-full flex items-center shrink-0">
-            <button type="button" id="nav-link-re" class="${navLink}">${escapeHtml(t('ui_real_estate'))}</button>
-          </li>
-          <li class="h-full flex items-center shrink-0">
-            <button type="button" id="nav-link-services" class="${navLink}">${escapeHtml(t('ui_services'))}</button>
-          </li>
-          <li class="h-full flex items-center shrink-0">
-            <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
-          </li>
-          ${extraCategories.map((c) => `
+          <ul class="flex items-center gap-3 sm:gap-5 font-medium text-xs h-full whitespace-nowrap shrink-0">
             <li class="h-full flex items-center shrink-0">
-              <button type="button" class="${selectedCategory === c.id ? navLinkActive : navLink} nav-category-item" data-cat-id="${escapeHtml(c.id)}">
-                ${escapeHtml(c.name)}
-              </button>
+              <button type="button" id="nav-link-mkt" class="${activePortal === 'marketplace' ? navLinkActive : navLink}">${escapeHtml(t('ui_home'))}</button>
             </li>
-          `).join('')}
-          <li class="h-full flex items-center shrink-0">
-            <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
-              class="${navLink} gap-1">${escapeHtml(t('ui_all_categories'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
-          </li>
-        </ul>
+            <li class="h-full flex items-center shrink-0">
+              <button type="button" id="nav-link-stores" class="${navLink}">${escapeHtml(t('ui_stores'))}</button>
+            </li>
+            <li class="h-full flex items-center shrink-0">
+              <button type="button" id="nav-link-vehicles" class="${navLink}">${escapeHtml(t('ui_vehicles'))}</button>
+            </li>
+            <li class="h-full flex items-center shrink-0">
+              <button type="button" id="nav-link-re" class="${navLink}">${escapeHtml(t('ui_real_estate'))}</button>
+            </li>
+            <li class="h-full flex items-center shrink-0">
+              <button type="button" id="nav-link-services" class="${navLink}">${escapeHtml(t('ui_services'))}</button>
+            </li>
+            <li class="h-full flex items-center shrink-0">
+              <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
+            </li>
+          </ul>
+        </div>
 
-        <button type="button" id="header-post-ad-btn"
-          class="bg-orange-500 text-white font-bold py-1 px-3 sm:px-4 rounded-full flex items-center gap-1.5 hover:bg-brand-orange transition-colors shadow-md ml-auto text-xs sm:text-sm shrink-0 whitespace-nowrap">
-          <i class="fa-solid fa-plus-circle"></i> ${escapeHtml(t('ui_post_ad'))}
-        </button>
+        <!-- RIGHT: pinned, always visible. Every other category lives behind
+             More as a dropdown, not spread across the bar. -->
+        <div class="flex items-center gap-2 sm:gap-4 shrink-0 h-full">
+          <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
+            class="${navLink} gap-1 shrink-0">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
+          <button type="button" id="header-post-ad-btn"
+            class="bg-orange-500 text-white font-bold py-1 px-3 sm:px-4 rounded-full flex items-center gap-1.5 hover:bg-brand-orange transition-colors shadow-md text-xs sm:text-sm shrink-0 whitespace-nowrap">
+            <i class="fa-solid fa-plus-circle"></i> ${escapeHtml(t('ui_post_ad'))}
+          </button>
+        </div>
       </div>
     </nav>
     `}
@@ -357,12 +354,6 @@ export function bindHeaderEvents(root, handlers) {
   on('#nav-gasabo-brand', 'click', goRealEstate);
   on('#nav-link-stores', 'click', goStores);
   on('#nav-link-vehicles', 'click', goVehicles);
-  // The category links rendered after Jobs. selectCategory was provided and
-  // destructured but never wired to these buttons, so they rendered inert -
-  // clicking a category name did nothing.
-  root.querySelectorAll('.nav-category-item').forEach((btn) => {
-    btn.addEventListener('click', () => selectCategory?.(btn.dataset.catId));
-  });
   // #nav-all-categories was the chip inside the header search form and went
   // with it; the nav bar's own #nav-all-categories-2 is the one left.
   // Same chevron, same promise. main.js supplies the handler because it is

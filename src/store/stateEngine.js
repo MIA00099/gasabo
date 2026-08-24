@@ -199,9 +199,9 @@ class StateEngine {
 
     if (isProperty) {
       this.data.activePortal = 'realestate';
-    } else {
+    } else if (route.kind === ROUTE_PRODUCT) {
       this.data.activePortal = 'marketplace';
-      if (route.kind === ROUTE_PRODUCT) this.setUI({ marketplaceTab: 'products' });
+      this.setUI({ marketplaceTab: 'products' });
     }
 
     this.notify();

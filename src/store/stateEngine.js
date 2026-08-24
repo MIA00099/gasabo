@@ -168,6 +168,9 @@ class StateEngine {
 
   setPortal(portalName) {
     this.data.activePortal = portalName;
+    if (portalName !== 'marketplace' && this.data.route?.kind === ROUTE_PRODUCT) {
+      this.data.route = { kind: ROUTE_HOME, id: null };
+    }
     this.notify();
   }
 
@@ -371,6 +374,7 @@ class StateEngine {
   // should land on the admin panel, not appear "logged in" with no visible
   // way back to what they logged in to do.
   routeToDashboard() {
+    this.data.route = { kind: ROUTE_HOME, id: null };
     const role = this.data.currentUser.role;
     if (role === 'seller') {
       this.setUI({ marketplaceTab: 'seller_portal' });
@@ -703,6 +707,16 @@ class StateEngine {
     });
   }
 
+  // Generic image upload for the ad/banner section - same /uploads endpoint,
+  // returns the stored URL. Kept separate from uploadCategoryIcon only so the
+  // two carry their own loading flag.
+  async uploadImage(file) {
+    return this._run('imageUpload', async () => {
+      const { url } = await api.uploadFile('/uploads', file);
+      return url;
+    });
+  }
+
   async updateCategoryIcon(categoryId, icon) {
     return this._run('categories', async () => {
       const { category } = await api.patch(`/categories/${categoryId}/icon`, { icon });
@@ -865,9 +879,9 @@ class StateEngine {
     });
   }
 
-  async createBanner(title, imageUrl) {
+  async createBanner(title, imageUrl, { type = 'HOMEPAGE_BANNER', targetUrl = null } = {}) {
     return this._run('banners', async () => {
-      const { banner } = await api.post('/advertisements', { title, imageUrl });
+      const { banner } = await api.post('/advertisements', { title, imageUrl, type, targetUrl });
       // Re-fetch rather than hand-append: the list endpoint reshapes each
       // record (id/title/subtitle/image/status) differently from what POST
       // returns (the raw Advertisement row), so appending the raw response

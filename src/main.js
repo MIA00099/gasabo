@@ -130,6 +130,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const cats = stateEngine.getState().categories || [];
     const match = cats.find((c) => pattern.test(c.name));
     if (!match) return false;
+    pushHome();
+    stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
     const filters = stateEngine.getState().ui.marketplaceFilters || {};
     stateEngine.setUI({
       marketplaceTab: 'catalog',
@@ -149,12 +151,27 @@ document.addEventListener('DOMContentLoaded', () => {
    * signed into. Signed in, go to your own dashboard; signed out, sign up.
    */
   function goAccountOrSignup() {
+    pushHome();
+    stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
     const role = stateEngine.getState().currentUser.role;
     if (role === 'guest') {
       stateEngine.setPortal('signup');
       return;
     }
     stateEngine.routeToDashboard();
+  }
+
+  function handleGoHome() {
+    pushHome();
+    stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+    const filters = stateEngine.getState().ui.marketplaceFilters || {};
+    stateEngine.setUI({
+      marketplaceTab: 'products',
+      marketplaceFilters: { ...filters, searchQuery: '', selectedCategory: 'all', selectedDistrict: 'all' },
+    });
+    stateEngine.setPortal('marketplace');
+    stateEngine.loadProducts({}).catch(() => {});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function renderApp() {
@@ -200,16 +217,21 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       bindHeaderEvents(headerMount, {
-        goHome: () => {
-          stateEngine.setUI({ marketplaceTab: 'products' });
-          stateEngine.setPortal('marketplace');
+        goHome: handleGoHome,
+        goRealEstate: () => {
+          pushHome();
+          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          stateEngine.setPortal('realestate');
         },
-        goRealEstate: () => stateEngine.setPortal('realestate'),
         goStores: () => {
+          pushHome();
+          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
           stateEngine.setUI({ marketplaceTab: 'stores' });
           stateEngine.setPortal('marketplace');
         },
         goVehicles: () => {
+          pushHome();
+          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
           const cats = stateEngine.getState().categories || [];
           const vehicles = cats.find(c => /vehicle|car/i.test(c.name));
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
@@ -225,6 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // has been spelt "realestate" in production and "Real Estate" in the
         // mockups; "propert" catches "Property" and "Properties" too.
         goRealEstateCategory: () => {
+          pushHome();
+          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
           const cats = stateEngine.getState().categories || [];
           const re = cats.find((c) => /real[\s_-]?estate|propert/i.test(c.name));
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
@@ -253,6 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
             categories: rest,
             selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
             onSelect: (id) => {
+              pushHome();
+              stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
               const filters = stateEngine.getState().ui.marketplaceFilters || {};
               stateEngine.setUI({
                 marketplaceTab: 'catalog',
@@ -283,6 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
             categories: s.categories || [],
             selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
             onSelect: (id) => {
+              pushHome();
+              stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
               const filters = stateEngine.getState().ui.marketplaceFilters || {};
               stateEngine.setUI({
                 marketplaceTab: 'catalog',
@@ -315,11 +343,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Main Portal Rendering
     if (appElement) {
       appElement.innerHTML = '';
-      // A listing URL renders as its own page, the way product-detail.html
-      // does - not as an overlay over the grid. Waits for the listing to
-      // resolve; until then the marketplace stays on screen rather than
-      // flashing an empty page.
-      if (state.route.kind === ROUTE_PRODUCT && state.routeListing) {
+      if (activePortal === 'realestate') {
+        renderRealEstateView(appElement);
+      } else if (activePortal === 'admin') {
+        renderAdminDashboardView(appElement);
+      } else if (activePortal === 'login' || activePortal === 'signup') {
+        renderLoginView(appElement, activePortal);
+      } else if (state.route.kind === ROUTE_PRODUCT && state.routeListing) {
         renderProductDetailPage(appElement, state.routeListing, {
           onBack: () => {
             if (window.history.length > 1) { window.history.back(); return; }
@@ -347,12 +377,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       } else if (activePortal === 'marketplace') {
         renderMarketplaceView(appElement);
-      } else if (activePortal === 'realestate') {
-        renderRealEstateView(appElement);
-      } else if (activePortal === 'admin') {
-        renderAdminDashboardView(appElement);
-      } else if (activePortal === 'login' || activePortal === 'signup') {
-        renderLoginView(appElement, activePortal);
       }
     }
 
@@ -369,12 +393,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       tabMount.innerHTML = renderMobileTabBarHtml({ activePortal, currentUser, currentLang });
       bindMobileTabBarEvents(tabMount, {
-        goHome: () => {
-          stateEngine.setUI({ marketplaceTab: 'products' });
-          stateEngine.setPortal('marketplace');
-        },
+        goHome: handleGoHome,
         goSignup: goAccountOrSignup,
         goStores: () => {
+          pushHome();
+          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
           stateEngine.setUI({ marketplaceTab: 'stores' });
           stateEngine.setPortal('marketplace');
         },

@@ -38,8 +38,21 @@ describe('hero slider', () => {
     expect(slides).toEqual(slides.map((_, i) => i));
   });
 
-  it('gives every slide exactly one dot', () => {
-    expect(dots).toEqual(slides);
+  it('generates one dot per slide from dotCount', () => {
+    // The dots are no longer literal now that an admin's Hero Slider ads can
+    // replace the built-in slides: they render from `dotCount`, which is the
+    // ad count when there are any and the default slide count otherwise. So
+    // the literal-dot regex finds none - the parity guarantee is that the
+    // dots map over dotCount, and that its fallback equals the number of
+    // built-in slides (`slides` here, since only those carry literal
+    // data-slide numbers).
+    expect(dots, 'dots should be generated, not literal').toEqual([]);
+    expect(SLIDER, 'dots must map over dotCount').toMatch(/length:\s*dotCount\s*\}/);
+
+    const fallback = HOME.match(/const dotCount = heroAds\.length > 0 \? heroAds\.length : (\d+)/);
+    expect(fallback, 'dotCount fallback not found').toBeTruthy();
+    expect(Number(fallback![1]), 'the dot fallback must equal the number of built-in slides')
+      .toBe(slides.length);
   });
 
   it('points every slide at an image that is actually in public/', () => {

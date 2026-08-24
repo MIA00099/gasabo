@@ -5,6 +5,7 @@
  */
 import { stateEngine } from '../store/stateEngine.js';
 import { getTranslation } from '../store/i18n.js';
+import { pushHome, ROUTE_HOME } from '../store/router.js';
 
 export function getLargeFooterHtml(currentLang = 'en') {
   const t = (key) => getTranslation(currentLang, key);
@@ -13,7 +14,7 @@ export function getLargeFooterHtml(currentLang = 'en') {
       <div class="large-footer-container">
         <!-- Brand Column -->
         <div class="footer-col brand-col">
-          <div class="footer-brand-title">
+          <div class="footer-brand-title cursor-pointer" id="foot-brand-home" role="button" tabindex="0" title="Back to Kigali Market Home">
             <img src="/logo-kigali-market.jpg" alt="Kigali Market Logo" class="footer-logo-img">
             <span>KIGALI MARKET</span>
           </div>
@@ -58,18 +59,29 @@ export function getLargeFooterHtml(currentLang = 'en') {
   `;
 }
 
-export function bindLargeFooterEvents(container) {
-  if (!container) return;
-  container.querySelector('#foot-link-mkt')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    // Reset back to the actual browse tab too, in case the user is
-    // currently sitting on the seller dashboard (marketplaceTab would
-    // otherwise stay 'seller_portal' and this link would silently do
-    // nothing if activePortal is already 'marketplace').
-    stateEngine.setUI({ marketplaceTab: 'products' });
-    stateEngine.setPortal('marketplace');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+function defaultGoHome() {
+  pushHome();
+  stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+  const filters = stateEngine.getState().ui.marketplaceFilters || {};
+  stateEngine.setUI({
+    marketplaceTab: 'products',
+    marketplaceFilters: { ...filters, searchQuery: '', selectedCategory: 'all', selectedDistrict: 'all' },
   });
+  stateEngine.setPortal('marketplace');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+export function bindLargeFooterEvents(container, handlers = {}) {
+  if (!container) return;
+  const goHome = handlers.goHome || defaultGoHome;
+
+  const triggerGoHome = (e) => {
+    if (e) e.preventDefault();
+    goHome();
+  };
+
+  container.querySelector('#foot-brand-home')?.addEventListener('click', triggerGoHome);
+  container.querySelector('#foot-link-mkt')?.addEventListener('click', triggerGoHome);
   container.querySelector('#foot-link-re')?.addEventListener('click', (e) => {
     e.preventDefault();
     stateEngine.setPortal('realestate');
@@ -84,7 +96,7 @@ export function bindLargeFooterEvents(container) {
 
 let observerInstance = null;
 
-export function initSlimStickyFooter() {
+export function initSlimStickyFooter(handlers = {}) {
   let stickyBar = document.getElementById('sticky-footer-bar');
   if (!stickyBar) {
     stickyBar = document.createElement('div');
@@ -96,7 +108,7 @@ export function initSlimStickyFooter() {
   stickyBar.innerHTML = `
     <div class="slim-sticky-inner">
       <!-- Brand -->
-      <div class="sticky-item sticky-brand" id="sticky-brand-action" title="Back to Kigali Market Home">
+      <div class="sticky-item sticky-brand cursor-pointer" id="sticky-brand-action" title="Back to Kigali Market Home">
         <img src="/logo-kigali-market.jpg" alt="Logo" class="sticky-brand-logo">
         <span class="sticky-brand-text">KIGALI MARKET</span>
       </div>
@@ -121,11 +133,11 @@ export function initSlimStickyFooter() {
     </div>
   `;
 
+  const goHome = handlers.goHome || defaultGoHome;
+
   // Attach event handlers
   stickyBar.querySelector('#sticky-brand-action')?.addEventListener('click', () => {
-    stateEngine.setUI({ marketplaceTab: 'products' });
-    stateEngine.setPortal('marketplace');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    goHome();
   });
 
   stickyBar.querySelector('#sticky-re-action')?.addEventListener('click', (e) => {

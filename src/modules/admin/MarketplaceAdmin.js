@@ -408,16 +408,14 @@ export function renderMarketplaceAdmin(container) {
       });
     });
 
-    container.querySelector('#add-banner-btn')?.addEventListener('click', async () => {
-      const title = prompt('Enter Banner Title (e.g. "Season Sale - Up to 30% Off"):');
-      if (title) {
-        const imageUrl = prompt('Enter Banner Image URL:');
-        if (imageUrl) {
-          try {
-            await stateEngine.createBanner(title, imageUrl);
-          } catch (err) { /* handled via state.error */ }
-        }
-      }
+    container.querySelector('#add-banner-btn')?.addEventListener('click', (e) => {
+      // Was two prompt() boxes for a title and a pasted image URL - no upload,
+      // and no way to choose a Hero Slider ad, so the slider could never be
+      // fed from here. The modal uploads a real image and picks the type.
+      promptBannerCreate(e.currentTarget, async ({ title, type, targetUrl, file }) => {
+        const imageUrl = await stateEngine.uploadImage(file);
+        await stateEngine.createBanner(title, imageUrl, { type, targetUrl });
+      });
     });
 
     container.querySelectorAll('.del-banner-btn').forEach(btn => {
@@ -719,4 +717,106 @@ function promptFlashDealEnd(returnFocusTo, onPick) {
   paint();
   ({ close } = makeAccessibleModal(overlay, { label: 'Set flash deal end time', returnFocusTo }));
   overlay.querySelector('#flash-end-input')?.focus();
+}
+
+/**
+ * Create an ad/banner: title, type, image upload, optional link.
+ *
+ * Replaces two prompt() boxes that could only paste a URL and only make a
+ * HOMEPAGE_BANNER. Hero Slider is the type that feeds the homepage carousel,
+ * which is the whole point of this - an admin could not put an image on the
+ * slider before. The image goes through the real /uploads flow (Supabase in
+ * production) rather than being a pasted link that might rot.
+ */
+function promptBannerCreate(returnFocusTo, onSubmit) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText =
+    'position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:12000; display:flex; align-items:center; justify-content:center; padding:1rem;';
+
+  let close = () => {};
+  let error = '';
+  let busy = false;
+  let file = null;
+  let previewUrl = '';
+
+  function paint() {
+    overlay.innerHTML = `
+      <div class="glass-card" style="max-width:460px; width:100%; padding:1.5rem; max-height:90vh; overflow:auto;" role="document">
+        <h3 style="color:#0F172A; margin-bottom:0.25rem;">🖼️ Add Ad / Slider Image</h3>
+        <p style="font-size:0.85rem; color:#64748B; margin-bottom:1rem;">
+          Choose <strong>Hero Slider</strong> to put this image on the homepage carousel.
+        </p>
+
+        <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Title</label>
+        <input id="ban-title" type="text" placeholder="e.g. Back to School Sale" value=""
+          style="width:100%; padding:0.55rem 0.7rem; border:1px solid #E2E8F0; border-radius:10px; font-size:0.9rem; margin-bottom:0.9rem;">
+
+        <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Type</label>
+        <select id="ban-type" style="width:100%; padding:0.55rem 0.7rem; border:1px solid #E2E8F0; border-radius:10px; font-size:0.9rem; margin-bottom:0.9rem;">
+          <option value="HERO_SLIDER">Hero Slider (homepage carousel)</option>
+          <option value="HOMEPAGE_BANNER">Homepage Banner</option>
+          <option value="PROMOTIONAL_BANNER">Promotional Banner</option>
+        </select>
+
+        <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Link (optional)</label>
+        <input id="ban-target" type="url" placeholder="https://... where the slide should go" value=""
+          style="width:100%; padding:0.55rem 0.7rem; border:1px solid #E2E8F0; border-radius:10px; font-size:0.9rem; margin-bottom:0.9rem;">
+
+        <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Image</label>
+        <input id="ban-file" type="file" accept="image/*"
+          style="width:100%; font-size:0.85rem; margin-bottom:0.6rem;">
+        ${previewUrl ? `<img src="${previewUrl}" alt="" style="width:100%; max-height:160px; object-fit:contain; border-radius:10px; background:#0f172a; margin-bottom:0.6rem;">` : ''}
+
+        ${error ? `<p style="color:#DC2626; font-size:0.8rem; margin:0.25rem 0 0.5rem;">${error}</p>` : ''}
+
+        <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.75rem;">
+          <button id="ban-cancel" class="btn btn-sm" style="background:#F1F5F9; color:#475569;" ${busy ? 'disabled' : ''}>Cancel</button>
+          <button id="ban-save" class="btn btn-sm" style="background:var(--primary); color:#fff;" ${busy ? 'disabled' : ''}>
+            ${busy ? 'Uploading…' : 'Add'}
+          </button>
+        </div>
+      </div>`;
+
+    // Preserve typed values across repaints.
+    const t = overlay.querySelector('#ban-title'); if (t) t.value = current.title;
+    const ty = overlay.querySelector('#ban-type'); if (ty) ty.value = current.type;
+    const tg = overlay.querySelector('#ban-target'); if (tg) tg.value = current.target;
+
+    overlay.querySelector('#ban-title').addEventListener('input', (e) => { current.title = e.target.value; });
+    overlay.querySelector('#ban-type').addEventListener('change', (e) => { current.type = e.target.value; });
+    overlay.querySelector('#ban-target').addEventListener('input', (e) => { current.target = e.target.value; });
+    overlay.querySelector('#ban-file').addEventListener('change', (e) => {
+      file = e.target.files && e.target.files[0];
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = file ? URL.createObjectURL(file) : '';
+      paint();
+    });
+    overlay.querySelector('#ban-cancel').addEventListener('click', () => close());
+    overlay.querySelector('#ban-save').addEventListener('click', async () => {
+      if (!current.title.trim()) { error = 'Give it a title.'; paint(); return; }
+      if (!file) { error = 'Choose an image.'; paint(); return; }
+      busy = true; error = ''; paint();
+      try {
+        await onSubmit({ title: current.title.trim(), type: current.type, targetUrl: current.target.trim() || null, file });
+      } catch (err) {
+        busy = false;
+        error = err?.message || 'Upload failed. Please try again.';
+        paint();
+        return;
+      }
+      close();
+    });
+  }
+
+  const current = { title: '', type: 'HERO_SLIDER', target: '' };
+
+  document.body.appendChild(overlay);
+  paint();
+  ({ close } = makeAccessibleModal(overlay, {
+    label: 'Add ad or slider image',
+    returnFocusTo,
+    onClose: () => { if (previewUrl) URL.revokeObjectURL(previewUrl); },
+  }));
+  overlay.querySelector('#ban-title')?.focus();
 }

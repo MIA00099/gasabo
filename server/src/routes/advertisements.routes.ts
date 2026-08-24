@@ -11,8 +11,14 @@ advertisementsRouter.get('/', async (_req, res) => {
       id: a.id,
       title: a.title,
       subtitle: a.type.replace(/_/g, ' '),
+      // type and targetUrl are what let the homepage pick out the HERO_SLIDER
+      // ads and link each slide somewhere; the admin list uses them too.
+      type: a.type,
       image: a.imageUrl,
+      targetUrl: a.targetUrl || null,
       status: a.status,
+      startDate: a.startDate,
+      endDate: a.endDate,
     })),
   });
 });

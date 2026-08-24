@@ -35,13 +35,38 @@ let sellerId: string;
 let categoryId: string;
 
 async function createPendingProduct(title: string): Promise<string> {
+  let activeSellerId = sellerId;
+  const seller = sellerId ? await prisma.seller.findUnique({ where: { id: sellerId } }) : null;
+  if (!seller) {
+    const newSeller = await prisma.seller.create({
+      data: {
+        email: `rbac-seller-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.local`,
+        passwordHash: 'not-used',
+        businessName: 'Fixture Seller',
+        contactPhone: '+250780000000',
+      },
+    });
+    activeSellerId = newSeller.id;
+    sellerId = newSeller.id;
+  }
+
+  let activeCatId = categoryId;
+  const cat = categoryId ? await prisma.category.findUnique({ where: { id: categoryId } }) : null;
+  if (!cat) {
+    const newCat = await prisma.category.create({
+      data: { name: 'RBAC Fixtures', slug: `rbac-fixtures-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` },
+    });
+    activeCatId = newCat.id;
+    categoryId = newCat.id;
+  }
+
   const product = await prisma.product.create({
     data: {
       title,
       description: 'Fixture listing awaiting moderation.',
       price: 1000,
-      sellerId,
-      categoryId,
+      sellerId: activeSellerId,
+      categoryId: activeCatId,
       // Explicit rather than relying on the schema default, so this fixture
       // still means "awaiting moderation" if that default ever changes.
       status: 'PENDING',

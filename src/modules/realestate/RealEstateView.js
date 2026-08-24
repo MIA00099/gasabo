@@ -8,7 +8,7 @@
  */
 import { openDropdownMenu } from '../../components/dropdownMenu.js';
 import { stateEngine } from '../../store/stateEngine.js';
-import { pushPath, pathForListing, ROUTE_PROPERTY } from '../../store/router.js';
+import { pushPath, pushHome, pathForListing, ROUTE_PROPERTY, ROUTE_HOME } from '../../store/router.js';
 import { makeAccessibleModal } from '../../components/modalA11y.js';
 
 // Mockup's own brand palette (Gasabo Real Estate's tailwind.config), kept
@@ -372,8 +372,15 @@ export function renderRealEstateView(container) {
 
     container.querySelector('#re-back-to-market-nav')?.addEventListener('click', (e) => {
       e.preventDefault();
-      stateEngine.setUI({ marketplaceTab: 'products' });
+      pushHome();
+      stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+      const filters = stateEngine.getState().ui.marketplaceFilters || {};
+      stateEngine.setUI({
+        marketplaceTab: 'products',
+        marketplaceFilters: { ...filters, searchQuery: '', selectedCategory: 'all', selectedDistrict: 'all' },
+      });
       stateEngine.setPortal('marketplace');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     // Footer Browse column - same destinations, simpler markup.

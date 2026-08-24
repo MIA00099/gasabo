@@ -132,3 +132,30 @@ describe('the delivery promise', () => {
     expect(I18N).not.toContain('ui_free_delivery');
   });
 });
+
+describe('logo and home click navigation', () => {
+  it('implements handleGoHome in main.js to perform full home page reset', () => {
+    expect(MAIN).toContain('function handleGoHome()');
+    expect(MAIN).toContain('pushHome()');
+    expect(MAIN).toContain('stateEngine.setRoute({ kind: ROUTE_HOME, id: null })');
+    expect(MAIN).toContain("marketplaceTab: 'products'");
+    expect(MAIN).toContain("stateEngine.setPortal('marketplace')");
+  });
+
+  it('binds logo in Footer to return home', () => {
+    const FOOTER = readFileSync('src/components/Footer.js', 'utf8');
+    expect(FOOTER).toContain('id="foot-brand-home"');
+    expect(FOOTER).toContain('pushHome()');
+    expect(FOOTER).toContain("stateEngine.setPortal('marketplace')");
+  });
+
+  it('resets route on header and mobile navigation links', () => {
+    // Ensures navigating to Stores, Vehicles, Real Estate, or Categories
+    // when viewing a product detail page clears the active product route.
+    expect(MAIN).toContain('goStores: () =>');
+    expect(MAIN).toContain('goVehicles: () =>');
+    expect(MAIN).toContain('goRealEstateCategory: () =>');
+    const STATE_ENGINE = readFileSync('src/store/stateEngine.js', 'utf8');
+    expect(STATE_ENGINE).toContain("if (portalName !== 'marketplace' && this.data.route?.kind === ROUTE_PRODUCT)");
+  });
+});

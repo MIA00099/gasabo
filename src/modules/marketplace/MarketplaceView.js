@@ -223,11 +223,21 @@ export function renderMarketplaceView(container) {
     if (!productsAttempted) stateEngine.loadProducts(filters).catch(() => {});
     if (!categoriesAttempted) stateEngine.loadCategories().catch(() => {});
     if (state.loading.flashDeals === undefined) stateEngine.loadFlashDeals().catch(() => {});
+    if (state.loading.banners === undefined) stateEngine.loadBanners().catch(() => {});
 
     // The flash card shows the soonest-ending real deal an admin set up; the
     // rest fill the "View all deals" modal. Empty until an admin creates one.
     const flashDeals = state.flashDeals || [];
     const featuredDeal = flashDeals[0] || null;
+
+    // Hero slider images an admin uploaded in the ads section. When any exist
+    // they are the slider; with none, the built-in slides below stand in so
+    // the hero is never blank. Only ACTIVE ads still inside their date window.
+    const now = Date.now();
+    const heroAds = (state.banners || []).filter(
+      (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
+    );
+    const dotCount = heroAds.length > 0 ? heroAds.length : 6;
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
@@ -321,6 +331,16 @@ export function renderMarketplaceView(container) {
                     <!-- Hero Image Slider Container positioned over the dark blue right side -->
                     <div class="slider-container" id="heroSlider">
 
+                        ${heroAds.length > 0 ? heroAds.map((ad, i) => `
+                          <!-- Admin-uploaded slide (ads section). Wrapped in a
+                               link when the ad carries a target URL. -->
+                          <div class="slide ${i === 0 ? 'active' : ''}" data-slide="${i}">
+                            ${ad.targetUrl ? `<a href="${escapeHtml(ad.targetUrl)}" style="display:contents">` : ''}
+                            <img src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}">
+                            ${ad.targetUrl ? `</a>` : ''}
+                          </div>
+                        `).join('') : `
+
                         <!-- Slide 1: Original Image Focus -->
                         <div class="slide active" data-slide="0">
                             <img src="/hero-banner.png" alt="All in one place showcase"
@@ -389,17 +409,19 @@ export function renderMarketplaceView(container) {
                                 <h3>${t('ui_slide_clothing')}</h3>
                             </div>
                         </div>
+                        `}
 
                     </div>
 
-                    <!-- Slider Navigation Dots -->
+                    <!-- Slider Navigation Dots. One per slide, so the count
+                         follows the admin's ads when they exist and the six
+                         defaults otherwise - the driver reads .dot straight
+                         from the DOM, so parity here is what keeps every slide
+                         reachable. -->
                     <div class="slider-dots" id="sliderDots">
-                        <button type="button" class="dot active" data-dot="0" aria-label="Show slide 1"></button>
-                        <button type="button" class="dot" data-dot="1" aria-label="Show slide 2"></button>
-                        <button type="button" class="dot" data-dot="2" aria-label="Show slide 3"></button>
-                        <button type="button" class="dot" data-dot="3" aria-label="Show slide 4"></button>
-                        <button type="button" class="dot" data-dot="4" aria-label="Show slide 5"></button>
-                        <button type="button" class="dot" data-dot="5" aria-label="Show slide 6"></button>
+                        ${Array.from({ length: dotCount }, (_, i) => `
+                          <button type="button" class="dot ${i === 0 ? 'active' : ''}" data-dot="${i}" aria-label="Show slide ${i + 1}"></button>
+                        `).join('')}
                     </div>
 
                 </div>

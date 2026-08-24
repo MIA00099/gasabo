@@ -259,7 +259,7 @@ export function renderHeaderHtml(ctx) {
           </li>
           <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
-              class="${navLink} gap-1">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
+              class="${navLink} gap-1">${escapeHtml(t('ui_all_categories'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
           </li>
         </ul>
 

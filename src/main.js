@@ -288,13 +288,17 @@ document.addEventListener('DOMContentLoaded', () => {
             stateEngine.loadProducts({ search: 'Jobs' }).catch(() => {});
           }
         },
-        openMore: (anchor) => {
-          // Everything that is not already its own item in the nav row.
-          const s = stateEngine.getState();
+        openMore: async (anchor) => {
+          let s = stateEngine.getState();
+          if (!s.categories || s.categories.length === 0) {
+            await stateEngine.loadCategories().catch(() => {});
+            s = stateEngine.getState();
+          }
           const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|service|job|employ|career|vacanc/i;
           const rest = (s.categories || []).filter((c) => !alreadyInNav.test(c.name));
+          const listToShow = rest.length > 0 ? rest : (s.categories || []);
           openCategoryDropdown(anchor, {
-            categories: rest,
+            categories: listToShow,
             selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
             onSelect: (id) => {
               pushHome();

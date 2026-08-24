@@ -229,49 +229,42 @@ export function renderHeaderHtml(ctx) {
            no container margin left to absorb the difference - the row was
            pushing the whole document 13px wider than the screen. It scrolls
            inside itself now, the same way the category rail below does. -->
-      <div class="compact-container flex items-center h-10 overflow-x-auto no-scrollbar">
+      <div class="compact-container flex items-center h-10 overflow-x-auto no-scrollbar gap-2 sm:gap-4">
 
         <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
-          class="bg-brand-green h-full px-4 flex items-center gap-2 cursor-pointer w-48 mr-4 shrink-0">
-          <i class="fa-solid fa-bars text-sm"></i>
-          <span class="font-semibold text-sm">${escapeHtml(t('ui_all_categories'))}</span>
-          <i class="fa-solid fa-chevron-down ml-auto text-[10px]"></i>
+          class="bg-brand-green h-full px-3 sm:px-4 flex items-center gap-2 cursor-pointer shrink-0 font-semibold text-xs sm:text-sm">
+          <i class="fa-solid fa-bars text-xs sm:text-sm"></i>
+          <span>${escapeHtml(t('ui_all_categories'))}</span>
+          <i class="fa-solid fa-chevron-down text-[10px] ml-1"></i>
         </button>
 
-        <ul class="hidden lg:flex items-center gap-5 font-medium text-xs flex-1 h-full">
-          <li class="h-full flex items-center">
+        <ul class="flex items-center gap-3 sm:gap-5 font-medium text-xs h-full whitespace-nowrap shrink-0">
+          <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-mkt" class="${activePortal === 'marketplace' ? navLinkActive : navLink}">${escapeHtml(t('ui_home'))}</button>
           </li>
-          <li class="h-full flex items-center">
+          <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-stores" class="${navLink}">${escapeHtml(t('ui_stores'))}</button>
           </li>
-          <li class="h-full flex items-center">
+          <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-vehicles" class="${navLink}">${escapeHtml(t('ui_vehicles'))}</button>
           </li>
-          <li class="h-full flex items-center">
+          <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-re" class="${navLink}">${escapeHtml(t('ui_real_estate'))}</button>
           </li>
-          <li class="h-full flex items-center">
+          <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-services" class="${navLink}">${escapeHtml(t('ui_services'))}</button>
           </li>
-          <li class="h-full flex items-center">
+          <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
           </li>
-          <!-- More was data-soon: a chevron that promised a list and then
-               said "coming soon". It opens the categories that are not
-               already their own item in this row. -->
-          <li class="h-full flex items-center">
+          <li class="h-full flex items-center shrink-0">
             <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
               class="${navLink} gap-1">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
           </li>
         </ul>
 
-        <!-- The two oranges were the wrong way round: the deeper one only
-             appeared on hover, so the button sat in the paler shade until
-             you touched it - and on a phone, where there is no hover, it
-             never showed the intended colour at all. -->
         <button type="button" id="header-post-ad-btn"
-          class="bg-orange-500 text-white font-bold py-1.5 px-4 rounded-full flex items-center gap-1.5 hover:bg-brand-orange transition-colors shadow-md ml-auto lg:ml-0 text-sm shrink-0">
+          class="bg-orange-500 text-white font-bold py-1 px-3 sm:px-4 rounded-full flex items-center gap-1.5 hover:bg-brand-orange transition-colors shadow-md ml-auto text-xs sm:text-sm shrink-0 whitespace-nowrap">
           <i class="fa-solid fa-plus-circle"></i> ${escapeHtml(t('ui_post_ad'))}
         </button>
       </div>

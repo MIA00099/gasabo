@@ -27,17 +27,23 @@ function escapeAttr(str) {
  * icon column, and the null a failed upload would leave behind.
  */
 export function renderCategoryIcon(icon, { size = 24, alt = '', fallback = '<i class="fa-solid fa-tag"></i>' } = {}) {
-  if (!icon) return fallback;
+  let effectiveIcon = icon;
+  if (!effectiveIcon) {
+    const name = String(alt).toLowerCase();
+    if (/motorcycle|moto|bike/i.test(name)) effectiveIcon = '🏍️';
+    else if (/house|building/i.test(name)) effectiveIcon = '🏠';
+    else if (/land|plot/i.test(name)) effectiveIcon = '🏞️';
+    else if (/vehicle|car|auto/i.test(name)) effectiveIcon = '🚗';
+    else return fallback;
+  }
 
-  if (isImageIcon(icon)) {
-    // object-fit: contain, because an uploaded logo is any aspect ratio it
-    // likes and cropping one to a square cuts the wordmark off.
-    return `<img src="${escapeAttr(icon)}" alt="${escapeAttr(alt)}" ` +
+  if (isImageIcon(effectiveIcon)) {
+    return `<img src="${escapeAttr(effectiveIcon)}" alt="${escapeAttr(alt)}" ` +
       `style="width:${size}px;height:${size}px;object-fit:contain;display:inline-block;vertical-align:middle;" ` +
       `loading="lazy">`;
   }
 
-  return `<span style="font-size:${Math.round(size * 0.85)}px;line-height:1;">${escapeAttr(icon)}</span>`;
+  return `<span style="font-size:${Math.round(size * 0.85)}px;line-height:1;">${escapeAttr(effectiveIcon)}</span>`;
 }
 
 /**

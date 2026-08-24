@@ -246,24 +246,17 @@ document.addEventListener('DOMContentLoaded', () => {
           pushHome();
           stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
           const cats = stateEngine.getState().categories || [];
-          const vehicles = cats.find(c => /vehicle|car/i.test(c.name));
+          const vehicles = cats.find(c => /vehicle|car|auto|motorcycle|moto|bike/i.test(c.name));
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
           stateEngine.setUI({ marketplaceTab: 'catalog', marketplaceFilters: { ...filters, selectedCategory: vehicles ? vehicles.id : 'all' } });
           stateEngine.setPortal('marketplace');
           stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }).catch(() => {});
         },
-        // The nav item is a category filter now, like Vehicles beside it -
-        // Gasabo has its own brand in the middle of the header, so this no
-        // longer needs to be the way into that portal.
-        //
-        // The pattern is loose because the category is named by an admin and
-        // has been spelt "realestate" in production and "Real Estate" in the
-        // mockups; "propert" catches "Property" and "Properties" too.
         goRealEstateCategory: () => {
           pushHome();
           stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
           const cats = stateEngine.getState().categories || [];
-          const re = cats.find((c) => /real[\s_-]?estate|propert/i.test(c.name));
+          const re = cats.find((c) => /real[\s_-]?estate|propert|house|land|plot/i.test(c.name));
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
           stateEngine.setUI({
             marketplaceTab: 'catalog',

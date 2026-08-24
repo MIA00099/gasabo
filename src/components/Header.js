@@ -77,7 +77,7 @@ export function renderHeaderHtml(ctx) {
   // bindHeaderEvents). Excludes the ones that already have their own fixed
   // item (Vehicles, Real Estate) or a search shortcut (Services, Jobs), so
   // nothing appears twice.
-  const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|service|job|employ|career|vacanc/i;
+  const alreadyInNav = /vehicle|car|auto|motorcycle|moto|bike|real[\s_-]?estate|propert|house|land|plot|service|job|employ|career|vacanc/i;
   const navCategories = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(c.name));
 
   return `

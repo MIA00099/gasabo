@@ -138,6 +138,7 @@ export function cleanupFlashClock() {
 // point at slides that have been thrown away - and a new one would be started
 // on top of it on every render, so they would stack up.
 let heroSlideTimer = null;
+const reloadedFlashDealKeys = new Set();
 
 export function cleanupHeroSlider() {
   if (heroSlideTimer) {
@@ -205,16 +206,16 @@ function startFlashClock(container) {
   // active deal) means the clock reads 00:00:00.
   const card = container.querySelector('#flash-deals-card');
   const endsAt = card ? Number(card.getAttribute('data-flash-ends-at')) : 0;
+  const initialRemainingMs = endsAt ? endsAt - Date.now() : 0;
 
-  let endedReloadDone = false;
   const updateCountdown = () => {
     const remainingMs = endsAt ? endsAt - Date.now() : 0;
     const remaining = Math.max(0, Math.floor(remainingMs / 1000));
 
     // The moment a live deal hits zero, refresh the list once so the expired
     // one drops off and the next deal (if any) takes the card.
-    if (endsAt && remaining === 0 && !endedReloadDone) {
-      endedReloadDone = true;
+    if (endsAt && remaining === 0 && initialRemainingMs > 0 && !reloadedFlashDealKeys.has(endsAt)) {
+      reloadedFlashDealKeys.add(endsAt);
       stateEngine.loadFlashDeals().catch(() => {});
     }
 

@@ -685,12 +685,18 @@ class StateEngine {
   // deals are ACTIVE products with a future end time; the server filters by
   // that deadline, so an expired one simply stops coming back.
   async loadFlashDeals() {
-    return this._run('flashDeals', async () => {
-      const { products } = await api.get('/products/flash-deals');
-      this.data.flashDeals = products;
-      this.notify();
-      return products;
-    });
+    if (this._flashDealsInFlight) return this.data.flashDeals;
+    this._flashDealsInFlight = true;
+    try {
+      return await this._run('flashDeals', async () => {
+        const { products } = await api.get('/products/flash-deals');
+        this.data.flashDeals = products;
+        this.notify();
+        return products;
+      });
+    } finally {
+      this._flashDealsInFlight = false;
+    }
   }
 
   // Admin: set a product's flash-deal end time (ISO string) or clear it

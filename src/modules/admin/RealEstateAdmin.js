@@ -143,11 +143,30 @@ export function renderRealEstateAdmin(container) {
 function openAddPropertyModal() {
   const districts = stateEngine.getState().districts;
   let imageMode = 'upload'; // 'upload' | 'url'
-  let imagePreviewUrl = '';
+  let imageUrls = []; // a property is a gallery now, not a single photo
   let imageUploading = false;
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.65); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
+
+  function renderPreviews() {
+    if (!imageUrls.length) return '';
+    return `
+      <div style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        ${imageUrls.map((url, i) => `
+          <div style="position: relative; width: 80px; height: 80px;">
+            <img src="${escapeHtml(url)}" alt="Photo ${i + 1}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #E2E8F0;">
+            <button type="button" class="img-remove-btn" data-index="${i}" aria-label="Remove photo ${i + 1}"
+              style="position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: #EF4444; color: #fff; border: none; font-size: 0.8rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
+            ${i === 0 ? `<span style="position: absolute; bottom: 2px; left: 2px; background: rgba(4,86,45,0.9); color: #fff; font-size: 0.6rem; font-weight: 700; padding: 1px 5px; border-radius: 6px;">Cover</span>` : ''}
+          </div>
+        `).join('')}
+      </div>
+      <div style="font-size: 0.75rem; color: #64748B; margin-top: 0.35rem;">
+        ${imageUrls.length} photo${imageUrls.length > 1 ? 's' : ''} added${imageUrls.length > 1 ? ' — the first one is the cover.' : '.'}
+      </div>
+    `;
+  }
 
   function renderImageSection() {
     return `
@@ -160,49 +179,63 @@ function openAddPropertyModal() {
         </button>
       </div>
       ${imageMode === 'upload' ? `
-        <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" ${imageUploading ? 'disabled' : ''}>
-        <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.4rem;">JPEG, PNG, WEBP, or GIF - max 5MB.</div>
+        <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="form-control" ${imageUploading ? 'disabled' : ''}>
+        <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.4rem;">Select one or more photos — JPEG, PNG, WEBP, or GIF, max 5MB each.</div>
         ${imageUploading ? `
           <div style="margin-top: 0.75rem; color: #64748B; font-size: 0.85rem;">⏳ Uploading...</div>
-        ` : imagePreviewUrl ? `
-          <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.75rem;">
-            <img src="${imagePreviewUrl}" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #E2E8F0;">
-            <span style="color: #10B981; font-size: 0.85rem; font-weight: 600;">✔ Photo uploaded</span>
-          </div>
         ` : ''}
-        <input type="hidden" name="image" value="${escapeHtml(imagePreviewUrl)}">
       ` : `
-        <input type="url" name="image" class="form-control" value="${escapeHtml(imagePreviewUrl && imageMode === 'url' ? imagePreviewUrl : '')}" placeholder="https://...">
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="url" id="p-image-url" class="form-control" placeholder="https://..." style="flex: 1;">
+          <button type="button" id="p-image-url-add" class="btn btn-sm btn-secondary">➕ Add</button>
+        </div>
       `}
+      ${renderPreviews()}
     `;
   }
 
   function bindImageSectionEvents() {
     const section = overlay.querySelector('#add-property-image-section');
-    section.querySelector('#img-mode-upload-btn')?.addEventListener('click', () => {
-      imageMode = 'upload';
-      section.innerHTML = renderImageSection();
-      bindImageSectionEvents();
-    });
-    section.querySelector('#img-mode-url-btn')?.addEventListener('click', () => {
-      imageMode = 'url';
-      section.innerHTML = renderImageSection();
-      bindImageSectionEvents();
-    });
+    const repaint = () => { section.innerHTML = renderImageSection(); bindImageSectionEvents(); };
+
+    section.querySelector('#img-mode-upload-btn')?.addEventListener('click', () => { imageMode = 'upload'; repaint(); });
+    section.querySelector('#img-mode-url-btn')?.addEventListener('click', () => { imageMode = 'url'; repaint(); });
+
+    // Multiple files at once - the uploads run concurrently and each returns
+    // its own URL; whatever lands is appended to the gallery, and any that
+    // failed are reported without losing the ones that succeeded.
     section.querySelector('#p-image-file')?.addEventListener('change', async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const files = e.target.files;
+      if (!files || !files.length) return;
       imageUploading = true;
-      section.innerHTML = renderImageSection();
+      repaint();
       try {
-        imagePreviewUrl = await stateEngine.uploadProductImage(file);
+        const { urls, failed } = await stateEngine.uploadProductImages(files);
+        imageUrls.push(...urls);
+        if (failed.length) {
+          overlay.querySelector('#add-property-error').textContent = `⚠️ ${failed.length} photo${failed.length > 1 ? 's' : ''} failed to upload; the rest were added.`;
+        }
       } catch (err) {
         overlay.querySelector('#add-property-error').textContent = `⚠️ ${err.message || 'Image upload failed. Please try again.'}`;
       } finally {
         imageUploading = false;
-        section.innerHTML = renderImageSection();
-        bindImageSectionEvents();
+        repaint();
       }
+    });
+
+    section.querySelector('#p-image-url-add')?.addEventListener('click', () => {
+      const input = section.querySelector('#p-image-url');
+      const url = (input?.value || '').trim();
+      if (!url) return;
+      imageUrls.push(url);
+      repaint();
+    });
+
+    section.querySelectorAll('.img-remove-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        imageUrls.splice(Number(btn.dataset.index), 1);
+        repaint();
+      });
     });
   }
 
@@ -291,7 +324,8 @@ function openAddPropertyModal() {
       location: form.location.value,
       price: form.price.value.trim(),
       area: form.area.value.trim(),
-      image: form.image.value.trim() || undefined,
+      images: imageUrls,
+      image: imageUrls[0] || undefined,
       description: form.description.value.trim(),
     };
 

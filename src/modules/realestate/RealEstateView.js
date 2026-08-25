@@ -693,100 +693,15 @@ function renderServicesView(services) {
 function renderAboutView(reData) {
   return `
     <!-- ABOUT HERO -->
-    <section style="padding: 4rem 1.5rem; background: ${RE_BLUE}; color: #fff; text-align: center;">
-      <h1 style="font-size: 2.4rem; font-weight: 800; margin-bottom: 0.75rem;">${escapeHtml(reData.about.heading)}</h1>
-      <p style="font-size: 1.15rem; color: #cbd5e1; max-width: 700px; margin: 0 auto;">${escapeHtml(reData.about.text)}</p>
-    </section>
-
-    <section style="padding: 3.5rem 1.5rem; background: #ffffff;">
-      <div style="max-width: var(--page-max); margin: 0 auto;">
-
-        <!-- VIDEO TOURS CTA -->
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 2.5rem; background: #F8FAFC; padding: 2.5rem; border-radius: 24px; margin-bottom: 3.5rem;">
-          <div style="flex: 1 1 340px;">
-            <h2 style="font-size: 1.7rem; font-weight: 800; color: #0F172A; margin-bottom: 1rem;">See Properties in Full Detail</h2>
-            <p style="color: #64748B; font-size: 1.02rem; margin-bottom: 1.5rem; line-height: 1.6;">
-              We pride ourselves on our robust marketing services. Subscribe to our YouTube channel to get comprehensive video walk-throughs of houses, plots, and commercial spaces before you even visit.
-            </p>
-            <a href="https://www.youtube.com/@GasaboRealEstate" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 0.6rem; background: #FF0000; color: #fff; font-weight: 700; padding: 0.9rem 1.75rem; border-radius: 9999px; text-decoration: none; font-size: 1rem;">
-              ▶️ Watch Our Tours
-            </a>
-          </div>
-          <div style="flex: 1 1 340px;">
-            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1000&q=80" alt="Video Tours" style="width: 100%; border-radius: 18px; box-shadow: var(--shadow-soft-md);">
-          </div>
-        </div>
-
-        <!-- TESTIMONIALS -->
-        <div style="text-align: center; margin-bottom: 2rem;">
-          <h2 style="font-size: 1.9rem; font-weight: 800; color: #0F172A;">What Our Clients Say</h2>
-        </div>
-        <div class="grid-2" style="gap: 1.5rem; margin-bottom: 3.5rem;">
-          ${TESTIMONIALS.map(t => `
-            <div style="background: #F8FAFC; padding: 1.75rem; border-radius: 18px; border: 1px solid #E2E8F0;">
-              <div style="color: ${RE_GOLD}; margin-bottom: 0.75rem; font-size: 1.1rem;">★★★★★</div>
-              <p style="color: #475569; font-style: italic; margin-bottom: 1rem; line-height: 1.6;">"${escapeHtml(t.quote)}"</p>
-              <h4 style="font-weight: 700; color: #0F172A;">${escapeHtml(t.name)}</h4>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    </section>
-
-    <!-- CONTACT -->
-    <section style="padding: 3.5rem 1.5rem; background: #F8FAFC; border-top: 1px solid #E2E8F0;">
-      <div style="max-width: var(--page-max); margin: 0 auto; display: flex; flex-wrap: wrap; gap: 3rem;">
-        <div style="flex: 1 1 300px;">
-          <h3 style="font-size: 1.75rem; font-weight: 800; color: #0F172A; margin-bottom: 0.75rem;">Contact Us</h3>
-          <p style="color: #64748B; margin-bottom: 1.75rem;">Ready to find your dream property? Reach out to our expert agents today.</p>
-          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div style="width: 46px; height: 46px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-soft-sm); display: flex; align-items: center; justify-content: center; color: ${RE_BLUE}; font-size: 1.2rem;">📞</div>
-              <div>
-                <div style="font-weight: 700; color: #0F172A;">Call / WhatsApp</div>
-                <div style="color: #64748B;">${escapeHtml(reData.contact.phone)}</div>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div style="width: 46px; height: 46px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-soft-sm); display: flex; align-items: center; justify-content: center; color: ${RE_BLUE}; font-size: 1.2rem;">✉️</div>
-              <div>
-                <div style="font-weight: 700; color: #0F172A;">Email</div>
-                <div style="color: #64748B;">${escapeHtml(reData.contact.email)}</div>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div style="width: 46px; height: 46px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-soft-sm); display: flex; align-items: center; justify-content: center; color: ${RE_BLUE}; font-size: 1.2rem;">📍</div>
-              <div>
-                <div style="font-weight: 700; color: #0F172A;">Office</div>
-                <div style="color: #64748B;">${escapeHtml(reData.contact.address)}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <form id="re-inquiry-form" style="flex: 2 1 480px; background: #fff; padding: 2rem; border-radius: 24px; box-shadow: var(--shadow-soft-md); border: 1px solid #E2E8F0;">
-          <div class="grid-2" style="gap: 1.25rem; margin-bottom: 1.25rem;">
-            <div class="form-group">
-              <label>Name</label>
-              <input type="text" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" class="form-control" required>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom: 1.25rem;">
-            <label>Message</label>
-            <textarea rows="4" class="form-control" required></textarea>
-          </div>
-          <button type="submit" style="background: ${RE_GREEN}; color: #fff; font-weight: 700; padding: 0.85rem 2rem; border: none; border-radius: 10px; cursor: pointer; font-size: 0.98rem;">
-            Send Message →
-          </button>
-        </form>
+    <section style="padding: 5rem 1.5rem 6rem; background: ${RE_BLUE}; color: #fff; text-align: center;">
+      <div style="max-width: 800px; margin: 0 auto;">
+        <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">${escapeHtml(reData.about.heading)}</h1>
+        <p style="font-size: 1.2rem; color: #cbd5e1; line-height: 1.7;">${escapeHtml(reData.about.text)}</p>
       </div>
     </section>
   `;
 }
+
 
 function renderPropertyGrid(list) {
   if (list.length === 0) {

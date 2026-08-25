@@ -35,10 +35,10 @@ function productCardHtml(prod, { compact = false } = {}) {
 
   return `
     <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
-        <div class="relative w-full ${imgHeight} ${compact ? 'h-28' : 'h-36'} bg-gray-100 overflow-hidden flex items-center justify-center">
+        <div class="relative w-full ${imgHeight} ${compact ? 'h-28' : 'h-36'} bg-gray-50 overflow-hidden flex items-center justify-center p-1.5">
             <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-${pct}%</div>
             <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
-              class="w-full h-full object-cover group-hover:scale-105 transition transform">
+              class="max-w-full max-h-full object-contain group-hover:scale-105 transition transform">
         </div>
         <div class="p-2.5 flex-1 flex flex-col justify-between">
             <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">${escapeHtml(prod.title)}</h3>

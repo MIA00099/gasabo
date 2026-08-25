@@ -62,9 +62,9 @@ function relatedCard(p) {
   return `
     <div class="related-card bg-white rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl transition transform hover:scale-105 border border-gray-100"
       data-id="${p.id}" role="button" tabindex="0">
-      <div class="relative w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+      <div class="relative w-full h-48 bg-gray-50 flex items-center justify-center overflow-hidden p-2">
         ${p.images && p.images[0]
-          ? `<img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition transform">`
+          ? `<img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:scale-105 transition transform">`
           : '<i class="fa-solid fa-image text-4xl text-gray-300"></i>'}
         ${hasDiscount ? `<span class="absolute top-3 right-3 bg-brand-green text-white text-xs font-bold px-3 py-1 rounded-full z-10">-${pct}%</span>` : ''}
       </div>

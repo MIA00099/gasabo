@@ -18,12 +18,15 @@
     "db:test:stop": "tsx scripts/test-db.ts stop",
     "db:test:status": "tsx scripts/test-db.ts status",
     "dev:api": "tsx scripts/test-db.ts start && dotenv -e .env.local -- tsx server/src/index.ts",
-    "dev:seed": "tsx scripts/test-db.ts start && dotenv -e .env.local -- tsx prisma/seed.ts"
+    "dev:seed": "tsx scripts/test-db.ts start && dotenv -e .env.local -- tsx prisma/seed.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

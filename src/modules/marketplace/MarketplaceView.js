@@ -332,11 +332,19 @@ export function renderMarketplaceView(container) {
                     <div class="slider-container" id="heroSlider">
 
                         ${heroAds.length > 0 ? heroAds.map((ad, i) => `
-                          <!-- Admin-uploaded slide (ads section). Wrapped in a
-                               link when the ad carries a target URL. -->
-                          <div class="slide ${i === 0 ? 'active' : ''}" data-slide="${i}">
+                          <!-- Admin-uploaded slide (ads section). Unlike the
+                               built-in cut-out product art, these are full
+                               photos and banners of any shape, so the slide is
+                               a "cover-slide": the sharp image is shown whole
+                               (never cropped) over a blurred, zoomed copy of
+                               itself, which fills the panel edge to edge
+                               instead of leaving flat navy bars. Works for a
+                               wide banner and a tall phone panel alike.
+                               Wrapped in a link when the ad carries a target. -->
+                          <div class="slide cover-slide ${i === 0 ? 'active' : ''}" data-slide="${i}">
+                            <img class="slide-bg" src="${escapeHtml(ad.image)}" alt="" aria-hidden="true">
                             ${ad.targetUrl ? `<a href="${escapeHtml(ad.targetUrl)}" style="display:contents">` : ''}
-                            <img src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}">
+                            <img class="slide-fg" src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}">
                             ${ad.targetUrl ? `</a>` : ''}
                           </div>
                         `).join('') : `

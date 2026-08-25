@@ -63,6 +63,17 @@ describe('hero slider', () => {
     expect(missing, `not in public/: ${missing.join(', ')}`).toEqual([]);
   });
 
+  it('renders admin hero ads as cover-slides so any-shape banners fill without cropping', () => {
+    // The built-in slides float a small cut-out product on the navy panel.
+    // Admin-uploaded ads are full photos/banners of any aspect ratio, so they
+    // get the cover-slide treatment instead: a blurred, zoomed backdrop of the
+    // image (.slide-bg) behind the whole, uncropped image (.slide-fg). Without
+    // this an uploaded banner rendered tiny and boxed in flat navy.
+    expect(SLIDER, 'ad slides must be cover-slides').toMatch(/class="slide cover-slide/);
+    expect(SLIDER, 'blurred backdrop image').toContain('class="slide-bg"');
+    expect(SLIDER, 'sharp foreground image').toContain('class="slide-fg"');
+  });
+
   it('ships every file an onerror fallback points at', () => {
     // The photo slides are WebP with a PNG behind them for browsers too old
     // to decode it, and slide 1 falls back to a second banner. A fallback is

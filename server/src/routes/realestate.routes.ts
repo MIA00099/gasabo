@@ -124,8 +124,18 @@ realEstateRouter.put('/hero', requireAuth, requirePermission('REAL_ESTATE_CONTEN
 const PROPERTY_TYPES = ['house', 'plot', 'commercial'];
 
 realEstateRouter.post('/properties', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
-  const { title, type, location, price, beds, baths, area, image, description } = req.body || {};
+  const { title, type, location, price, beds, baths, area, image, images, description } = req.body || {};
   if (!title) return res.status(400).json({ error: 'Property title is required.' });
+
+  // A property is a gallery, not a single photo. `images` is the new array;
+  // `image` (the old single field) is still accepted so older clients keep
+  // working, and is always kept in sync as the primary/thumbnail so every card
+  // and link that reads `prop.image` still renders. Falsy/blank entries are
+  // dropped, and an empty gallery falls back to the house placeholder.
+  const gallery = (Array.isArray(images) ? images : image ? [image] : [])
+    .filter((u): u is string => typeof u === 'string' && u.trim().length > 0)
+    .map((u) => u.trim());
+  const primaryImage = gallery[0] || '/real-estate-logo.png';
 
   const properties = await getSection('PROPERTIES', DEFAULT_PROPERTIES);
   const newProperty = {
@@ -138,7 +148,8 @@ realEstateRouter.post('/properties', requireAuth, requirePermission('REAL_ESTATE
     beds: Number.isFinite(beds) ? beds : 0,
     baths: Number.isFinite(baths) ? baths : 0,
     area: area || 'N/A',
-    image: image || '/real-estate-logo.png',
+    image: primaryImage,
+    images: gallery.length ? gallery : [primaryImage],
     description: description || 'Newly listed property by Gasabo Real Estate.',
   };
   const updated = [newProperty, ...properties];

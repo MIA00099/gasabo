@@ -689,6 +689,7 @@ function renderPropertyGrid(list) {
     <div class="grid-3" style="gap: 1.75rem;">
       ${list.map(prop => {
         const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
+        const photoCount = Array.isArray(prop.images) ? prop.images.length : (prop.image ? 1 : 0);
         return `
           <!-- role/tabindex because this is a clickable div: without them a
                keyboard user cannot reach a property at all, and a screen
@@ -703,6 +704,9 @@ function renderPropertyGrid(list) {
               <span style="position: absolute; top: 14px; left: 14px; background: ${badge.bg}; color: ${badge.color}; font-size: 0.7rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">
                 ${badge.label}
               </span>
+              ${photoCount > 1 ? `
+                <span style="position: absolute; top: 14px; right: 14px; background: rgba(2,6,23,0.7); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px; display: flex; align-items: center; gap: 4px;">📷 ${photoCount}</span>
+              ` : ''}
             </div>
             <div style="padding: 1.5rem;">
               <h4 style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin-bottom: 0.4rem;">${escapeHtml(prop.title)}</h4>
@@ -729,12 +733,26 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
 
   const phoneDigits = (contact?.phone || '').replace(/[^\d+]/g, '');
 
+  // A property carries a gallery now; older listings only have the single
+  // `image`, so fall back to that. The first photo is the cover shown large.
+  const galleryImages = Array.isArray(prop.images) && prop.images.length ? prop.images : [prop.image];
+
   overlay.innerHTML = `
     <div style="background: #fff; border-radius: 20px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative;">
       <button id="re-modal-close" data-modal-close aria-label="Close property details" style="position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; font-size: 1.1rem; cursor: pointer; z-index: 1;">✕</button>
       <div style="display: flex; flex-wrap: wrap;">
-        <div style="flex: 1 1 380px;">
-          <img src="${prop.image}" alt="${escapeHtml(prop.title)}" style="width: 100%; height: 100%; min-height: 280px; object-fit: cover;">
+        <div style="flex: 1 1 380px; display: flex; flex-direction: column;">
+          <img id="re-gallery-main" src="${galleryImages[0]}" alt="${escapeHtml(prop.title)}" style="width: 100%; flex: 1; min-height: 280px; object-fit: cover;">
+          ${galleryImages.length > 1 ? `
+            <div style="display: flex; gap: 6px; padding: 8px; flex-wrap: wrap; background: #F8FAFC;">
+              ${galleryImages.map((u, i) => `
+                <button type="button" class="re-gallery-thumb" data-src="${escapeHtml(u)}" aria-label="View photo ${i + 1} of ${galleryImages.length}"
+                  style="width: 56px; height: 56px; border-radius: 8px; overflow: hidden; border: 2px solid ${i === 0 ? RE_GREEN : 'transparent'}; padding: 0; cursor: pointer; background: none;">
+                  <img src="${escapeHtml(u)}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                </button>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
         <div style="flex: 1 1 380px; padding: 2rem 2.25rem;">
           <span style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 1rem;">${badge.label}</span>
@@ -758,6 +776,16 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
 
   document.body.style.overflow = 'hidden';
   document.body.appendChild(overlay);
+
+  // Clicking a thumbnail swaps the large cover image to that photo.
+  const galleryMain = overlay.querySelector('#re-gallery-main');
+  overlay.querySelectorAll('.re-gallery-thumb').forEach((thumb) => {
+    thumb.addEventListener('click', () => {
+      if (galleryMain) galleryMain.src = thumb.dataset.src;
+      overlay.querySelectorAll('.re-gallery-thumb').forEach((t) => { t.style.borderColor = 'transparent'; });
+      thumb.style.borderColor = RE_GREEN;
+    });
+  });
 
   // Announces the dialog, traps Tab inside it, closes on Escape, and hands
   // focus back on the way out. See components/modalA11y.js.

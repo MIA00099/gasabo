@@ -729,46 +729,64 @@ function renderPropertyGrid(list) {
 export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
+  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.75); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;';
 
   const phoneDigits = (contact?.phone || '').replace(/[^\d+]/g, '');
 
   // A property carries a gallery now; older listings only have the single
   // `image`, so fall back to that. The first photo is the cover shown large.
   const galleryImages = Array.isArray(prop.images) && prop.images.length ? prop.images : [prop.image];
+  let activeIndex = 0;
 
   overlay.innerHTML = `
-    <div style="background: #fff; border-radius: 20px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative;">
-      <button id="re-modal-close" data-modal-close aria-label="Close property details" style="position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; font-size: 1.1rem; cursor: pointer; z-index: 1;">✕</button>
-      <div style="display: flex; flex-wrap: wrap;">
-        <div style="flex: 1 1 380px; display: flex; flex-direction: column;">
-          <img id="re-gallery-main" src="${galleryImages[0]}" alt="${escapeHtml(prop.title)}" style="width: 100%; flex: 1; min-height: 280px; object-fit: cover;">
-          ${galleryImages.length > 1 ? `
-            <div style="display: flex; gap: 6px; padding: 8px; flex-wrap: wrap; background: #F8FAFC;">
-              ${galleryImages.map((u, i) => `
-                <button type="button" class="re-gallery-thumb" data-src="${escapeHtml(u)}" aria-label="View photo ${i + 1} of ${galleryImages.length}"
-                  style="width: 56px; height: 56px; border-radius: 8px; overflow: hidden; border: 2px solid ${i === 0 ? RE_GREEN : 'transparent'}; padding: 0; cursor: pointer; background: none;">
-                  <img src="${escapeHtml(u)}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
-                </button>
-              `).join('')}
-            </div>
-          ` : ''}
+    <div style="background: #fff; border-radius: 20px; max-width: 820px; width: 100%; max-height: 92vh; overflow-y: auto; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
+      <button id="re-modal-close" data-modal-close aria-label="Close property details" style="position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; font-size: 1.1rem; cursor: pointer; z-index: 30; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">✕</button>
+
+      <!-- TOP: FULL UNCROPPED PROPERTY IMAGE SHOWCASE -->
+      <div id="re-gallery-frame" style="position: relative; width: 100%; max-height: 55vh; min-height: 280px; background: #0F172A; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 20px 20px 0 0; user-select: none;">
+        <img id="re-gallery-main" src="${escapeHtml(galleryImages[0])}" alt="${escapeHtml(prop.title)}" style="max-width: 100%; max-height: 55vh; object-fit: contain; width: auto; height: auto; display: block; margin: auto;">
+
+        ${galleryImages.length > 1 ? `
+          <!-- Left/Right Nav Arrows -->
+          <button type="button" id="re-prev-btn" aria-label="Previous photo"
+            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); z-index: 20; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.85); border: none; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.25);">❮</button>
+          <button type="button" id="re-next-btn" aria-label="Next photo"
+            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 20; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.85); border: none; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.25);">❯</button>
+
+          <!-- Photo Counter -->
+          <span id="re-photo-counter" style="position: absolute; bottom: 12px; left: 14px; z-index: 20; background: rgba(0,0,0,0.65); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px;">1 / ${galleryImages.length}</span>
+        ` : ''}
+      </div>
+
+      ${galleryImages.length > 1 ? `
+        <!-- Thumbnail Strip -->
+        <div style="display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; background: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
+          ${galleryImages.map((u, i) => `
+            <button type="button" class="re-gallery-thumb" data-index="${i}" aria-label="View photo ${i + 1} of ${galleryImages.length}"
+              style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 2px solid ${i === 0 ? RE_GREEN : 'transparent'}; padding: 0; cursor: pointer; background: #0F172A; flex-shrink: 0;">
+              <img src="${escapeHtml(u)}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+            </button>
+          `).join('')}
         </div>
-        <div style="flex: 1 1 380px; padding: 2rem 2.25rem;">
-          <span style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 1rem;">${badge.label}</span>
-          <h2 style="font-size: 1.7rem; font-weight: 800; color: #0F172A; margin-bottom: 0.4rem;">${escapeHtml(prop.title)}</h2>
-          <p style="color: #64748B; display: flex; align-items: center; gap: 4px; margin-bottom: 1rem;">📍 ${escapeHtml(prop.location)}</p>
-          <div style="font-size: 1.7rem; font-weight: 800; color: ${RE_GREEN}; margin-bottom: 1.25rem;">${escapeHtml(prop.price)}</div>
-          <p style="color: #334155; line-height: 1.6; border-left: 4px solid ${RE_GOLD}; padding-left: 1rem; margin-bottom: 1.5rem;">${escapeHtml(prop.description)}</p>
+      ` : ''}
 
-          <div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center; margin-bottom: 1.75rem;">
-            <span style="font-size: 1.1rem; margin-right: 6px;">📐</span><strong>${escapeHtml(prop.area)}</strong>
-          </div>
+      <!-- BOTTOM: DESCRIPTION & DETAILS UNDER IMAGE -->
+      <div style="padding: 1.75rem 2rem;">
+        <span style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 0.75rem;">${badge.label}</span>
+        <h2 style="font-size: 1.75rem; font-weight: 800; color: #0F172A; margin-bottom: 0.4rem; line-height: 1.2;">${escapeHtml(prop.title)}</h2>
+        <p style="color: #64748B; display: flex; align-items: center; gap: 4px; margin-bottom: 1rem; font-weight: 500;">📍 ${escapeHtml(prop.location)}</p>
+        <div style="font-size: 1.85rem; font-weight: 800; color: ${RE_GREEN}; margin-bottom: 1.25rem;">${escapeHtml(prop.price)}</div>
 
-          <div style="display: flex; gap: 0.85rem;">
-            <a href="tel:${phoneDigits}" style="flex: 1; text-align: center; background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.8rem; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">📞 Call</a>
-            <a href="https://wa.me/${phoneDigits.replace('+', '')}" target="_blank" rel="noopener" style="flex: 1; text-align: center; background: #25D366; color: #fff; font-weight: 700; padding: 0.8rem; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">💬 WhatsApp</a>
-          </div>
+        <!-- Description Under Image -->
+        <div style="color: #334155; line-height: 1.7; border-left: 4px solid ${RE_GOLD}; padding-left: 1rem; margin-bottom: 1.5rem; white-space: pre-line;">${escapeHtml(prop.description)}</div>
+
+        <div style="background: #F8FAFC; padding: 1rem; border-radius: 14px; text-align: center; margin-bottom: 1.75rem; border: 1px solid #E2E8F0;">
+          <span style="font-size: 1.1rem; margin-right: 6px;">📐</span><strong>${escapeHtml(prop.area)}</strong>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+          <a href="tel:${phoneDigits}" style="flex: 1; text-align: center; background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.9rem; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1rem;">📞 Call</a>
+          <a href="https://wa.me/${phoneDigits.replace('+', '')}" target="_blank" rel="noopener" style="flex: 1; text-align: center; background: #25D366; color: #fff; font-weight: 700; padding: 0.9rem; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1rem;">💬 WhatsApp</a>
         </div>
       </div>
     </div>
@@ -777,15 +795,69 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   document.body.style.overflow = 'hidden';
   document.body.appendChild(overlay);
 
-  // Clicking a thumbnail swaps the large cover image to that photo.
   const galleryMain = overlay.querySelector('#re-gallery-main');
-  overlay.querySelectorAll('.re-gallery-thumb').forEach((thumb) => {
+  const counterEl = overlay.querySelector('#re-photo-counter');
+  const thumbs = [...overlay.querySelectorAll('.re-gallery-thumb')];
+
+  function setPhoto(i) {
+    if (i < 0 || i >= galleryImages.length) return;
+    activeIndex = i;
+    if (galleryMain) galleryMain.src = galleryImages[i];
+    if (counterEl) counterEl.textContent = `${i + 1} / ${galleryImages.length}`;
+
+    thumbs.forEach((t, n) => {
+      t.style.borderColor = n === i ? RE_GREEN : 'transparent';
+    });
+  }
+
+  thumbs.forEach((thumb) => {
     thumb.addEventListener('click', () => {
-      if (galleryMain) galleryMain.src = thumb.dataset.src;
-      overlay.querySelectorAll('.re-gallery-thumb').forEach((t) => { t.style.borderColor = 'transparent'; });
-      thumb.style.borderColor = RE_GREEN;
+      setPhoto(Number(thumb.dataset.index));
     });
   });
+
+  if (galleryImages.length > 1) {
+    overlay.querySelector('#re-prev-btn')?.addEventListener('click', () => {
+      setPhoto((activeIndex - 1 + galleryImages.length) % galleryImages.length);
+    });
+    overlay.querySelector('#re-next-btn')?.addEventListener('click', () => {
+      setPhoto((activeIndex + 1) % galleryImages.length);
+    });
+
+    // Touch Swipe Left/Right on Property Image for Mobile & Tablets
+    const frame = overlay.querySelector('#re-gallery-frame');
+    if (frame) {
+      let startX = 0;
+      let startY = 0;
+      let tracking = false;
+
+      frame.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        tracking = true;
+      }, { passive: true });
+
+      frame.addEventListener('touchmove', (e) => {
+        if (!tracking || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+      }, { passive: false });
+
+      frame.addEventListener('touchend', (e) => {
+        if (!tracking) return;
+        tracking = false;
+        const dx = e.changedTouches[0].clientX - startX;
+        const dy = e.changedTouches[0].clientY - startY;
+        if (Math.abs(dx) < 25 || Math.abs(dx) < Math.abs(dy)) return;
+        const delta = dx < 0 ? 1 : -1;
+        setPhoto((activeIndex + delta + galleryImages.length) % galleryImages.length);
+      }, { passive: true });
+    }
+  }
 
   // Announces the dialog, traps Tab inside it, closes on Escape, and hands
   // focus back on the way out. See components/modalA11y.js.

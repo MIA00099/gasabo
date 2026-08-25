@@ -617,7 +617,28 @@ class StateEngine {
     });
   }
 
+  async updateProduct(productId, productData) {
+    return this._run('productForm', async () => {
+      const { product } = await api.put(`/products/${productId}`, {
+        title: productData.title,
+        categoryId: productData.category,
+        price: Number(productData.price),
+        district: productData.district,
+        condition: productData.condition,
+        description: productData.description,
+        images: (productData.images && productData.images.length
+          ? productData.images
+          : [productData.image]).filter(Boolean),
+      });
+      this.data.myProducts = this.data.myProducts.map((p) => (p.id === productId ? product : p));
+      this.data.products = this.data.products.map((p) => (p.id === productId ? product : p));
+      this.notify();
+      return product;
+    });
+  }
+
   async renewProduct(productId) {
+
     return this._run('productForm', async () => {
       const { product } = await api.post(`/products/${productId}/renew`);
       this.data.myProducts = this.data.myProducts.map((p) => (p.id === productId ? product : p));
@@ -835,7 +856,17 @@ class StateEngine {
     });
   }
 
+  async updateRealEstateProperty(propertyId, propertyData) {
+    return this._run('realEstate', async () => {
+      const { properties } = await api.put(`/realestate/properties/${propertyId}`, propertyData);
+      this.data.realEstate = { ...this.data.realEstate, properties };
+      this.notify();
+      return properties;
+    });
+  }
+
   async deleteRealEstateProperty(propertyId) {
+
     return this._run('realEstate', async () => {
       const { properties } = await api.delete(`/realestate/properties/${propertyId}`);
       this.data.realEstate = { ...this.data.realEstate, properties };

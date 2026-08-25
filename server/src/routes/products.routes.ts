@@ -491,7 +491,70 @@ productsRouter.post('/:id/renew', requireAuth, requireRole('SELLER'), async (req
   res.json({ product: serializeProduct(updated) });
 });
 
+const updateProductSchema = z.object({
+  title: z.string().min(3),
+  categoryId: z.string().min(1),
+  price: z.number().positive(),
+  district: z.string().min(2),
+  condition: z.string().min(1),
+  description: z.string().min(1),
+  images: z.array(z.string().min(1)).min(1).max(10),
+});
+
+productsRouter.put('/:id', requireAuth, async (req, res) => {
+  const product = await prisma.product.findUnique({ where: { id: req.params.id } });
+  if (!product) return res.status(404).json({ error: 'Product not found.' });
+
+  const isOwner = req.user!.role === 'SELLER' && product.sellerId === req.user!.id;
+  const isAdminWithAccess = (req.user!.role === 'ADMINISTRATOR' || req.user!.role === 'SUB_ADMINISTRATOR')
+    && (await hasModulePermission(req.user!, 'PRODUCTS'));
+  if (!isOwner && !isAdminWithAccess) {
+    return res.status(403).json({ error: 'You do not have permission to edit this product.' });
+  }
+
+  const parsed = updateProductSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Please complete all required product fields.', details: parsed.error.flatten() });
+  }
+
+  const { title, categoryId, price, district, condition, description, images } = parsed.data;
+
+  const category = await prisma.category.findUnique({ where: { id: categoryId } });
+  if (!category) return res.status(400).json({ error: 'Selected category does not exist.' });
+
+  const newStatus = product.status === 'REJECTED' ? 'PENDING' : product.status;
+
+  const updated = await prisma.product.update({
+    where: { id: product.id },
+    data: {
+      title,
+      description,
+      price,
+      district,
+      condition,
+      images: JSON.stringify(images),
+      categoryId,
+      status: newStatus,
+      rejectionReason: newStatus === 'PENDING' ? null : product.rejectionReason,
+    },
+    include: { seller: true, category: true, ...WITH_LIKES },
+  });
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'PRODUCT_UPDATED',
+    module: 'Marketplace',
+    targetId: product.id,
+    details: `Updated product "${title}".`,
+  });
+
+  res.json({ product: serializeProduct(updated) });
+});
+
 productsRouter.delete('/:id', requireAuth, async (req, res) => {
+
   const product = await prisma.product.findUnique({ where: { id: req.params.id } });
   if (!product) return res.status(404).json({ error: 'Product not found.' });
 

@@ -89,6 +89,9 @@ export function renderRealEstateAdmin(container) {
                   <td style="font-weight: 700; color: #0F172A;">${escapeHtml(p.price)}</td>
                   <td>📐 ${escapeHtml(p.area)}</td>
                   <td class="tbl-actions-col">
+                    <button class="btn btn-sm btn-secondary edit-property-btn" data-id="${p.id}" style="margin-right: 4px;">
+                      Edit
+                    </button>
                     <button class="btn btn-sm btn-danger del-property-btn" data-id="${p.id}">
                       Delete
                     </button>
@@ -117,6 +120,13 @@ export function renderRealEstateAdmin(container) {
       openAddPropertyModal();
     });
 
+    container.querySelectorAll('.edit-property-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prop = reData.properties.find(p => p.id === btn.dataset.id);
+        if (prop) openAddPropertyModal(prop);
+      });
+    });
+
     container.querySelectorAll('.del-property-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (confirm('Are you sure you want to delete this property listing?')) {
@@ -133,11 +143,6 @@ export function renderRealEstateAdmin(container) {
   render();
 }
 
-// One form for all property fields instead of a chain of 8 prompt() dialogs -
-// appended to document.body so it survives the next stateEngine re-render,
-// same pattern as the sub-admin creation modal in UserRBACAdmin.js. Image
-// upload/preview state is kept in local closure vars (not stateEngine.setUI())
-// since this overlay lives outside the normal render() cycle - only the
 // image section repaints itself on upload, the rest of the form is untouched
 // so typed values elsewhere in the form are never lost.
 function openAddPropertyModal() {
@@ -241,48 +246,39 @@ function openAddPropertyModal() {
 
   overlay.innerHTML = `
     <div style="background: #fff; border-radius: 20px; padding: 1.75rem 2rem; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto;">
-      <h3 style="color: #0F172A; font-size: 1.2rem; margin-bottom: 1.25rem;">➕ Add Property Listing</h3>
+      <h3 style="color: #0F172A; font-size: 1.2rem; margin-bottom: 1.25rem;">${isEditing ? '✏️ Edit Property Listing' : '➕ Add Property Listing'}</h3>
 
       <form id="add-property-form">
         <div class="form-group">
           <label>Title</label>
-          <input name="title" type="text" class="form-control" placeholder="e.g. Modern 4-Bedroom Villa" required>
+          <input name="title" type="text" class="form-control" placeholder="e.g. Modern 4-Bedroom Villa" value="${escapeHtml(propertyToEdit?.title || '')}" required>
         </div>
 
         <div class="grid-2">
           <div class="form-group">
             <label>Type</label>
             <select name="type" class="form-control">
-              <option value="house">🏠 House</option>
-              <option value="plot">🟩 Plot / Land</option>
-              <option value="commercial">🏢 Commercial</option>
+              <option value="house" ${propertyToEdit?.type === 'house' ? 'selected' : ''}>🏠 House</option>
+              <option value="plot" ${propertyToEdit?.type === 'plot' ? 'selected' : ''}>🟩 Plot / Land</option>
+              <option value="commercial" ${propertyToEdit?.type === 'commercial' ? 'selected' : ''}>🏢 Commercial</option>
             </select>
           </div>
           <div class="form-group">
             <label>Location / District</label>
             <select name="location" class="form-control">
-              ${districts.map(d => `<option value="${d}">${d} District</option>`).join('')}
+              ${districts.map(d => `<option value="${d}" ${d === propertyToEdit?.location ? 'selected' : ''}>${d} District</option>`).join('')}
             </select>
           </div>
         </div>
 
-        <!-- One price field, not two.
-
-             This used to ask for the price as text and again as a number
-             "for search filtering", with nothing keeping them in step. In the
-             live data they had drifted badly: a property priced 70,000,000
-             carried a filter number of 500,000, another priced 502,000
-             carried 780,000. Five of seven listings disagreed with
-             themselves, so the price search was sorting them by a figure the
-             page never showed. The number is derived from this text now. -->
         <div class="form-group">
           <label>Price</label>
-          <input name="price" type="text" class="form-control" placeholder="e.g. 150,000,000 Rwf or Rent: 800,000/mo" required>
+          <input name="price" type="text" class="form-control" placeholder="e.g. 150,000,000 Rwf or Rent: 800,000/mo" value="${escapeHtml(propertyToEdit?.price || '')}" required>
         </div>
 
         <div class="form-group">
           <label>Area</label>
-          <input name="area" type="text" class="form-control" placeholder="e.g. 600 sqm or 1 Hectare" required>
+          <input name="area" type="text" class="form-control" placeholder="e.g. 600 sqm or 1 Hectare" value="${escapeHtml(propertyToEdit?.area || '')}" required>
         </div>
 
         <div class="form-group">
@@ -292,14 +288,14 @@ function openAddPropertyModal() {
 
         <div class="form-group">
           <label>Description</label>
-          <textarea name="description" class="form-control" rows="3" placeholder="Short description shown on the listing" required></textarea>
+          <textarea name="description" class="form-control" rows="3" placeholder="Short description shown on the listing" required>${escapeHtml(propertyToEdit?.description || '')}</textarea>
         </div>
 
         <div id="add-property-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
 
         <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem;">
           <button type="button" id="add-property-cancel" class="btn btn-sm btn-secondary">Cancel</button>
-          <button type="submit" id="add-property-submit" class="btn btn-sm btn-primary">Add Listing</button>
+          <button type="submit" id="add-property-submit" class="btn btn-sm btn-primary">${isEditing ? 'Save Changes' : 'Add Listing'}</button>
         </div>
       </form>
     </div>
@@ -330,17 +326,22 @@ function openAddPropertyModal() {
     };
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Adding...';
+    submitBtn.textContent = isEditing ? 'Saving...' : 'Adding...';
     try {
-      await stateEngine.addRealEstateProperty(propertyData);
+      if (isEditing) {
+        await stateEngine.updateRealEstateProperty(propertyToEdit.id, propertyData);
+      } else {
+        await stateEngine.addRealEstateProperty(propertyData);
+      }
       close();
     } catch (err) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Add Listing';
+      submitBtn.textContent = isEditing ? 'Save Changes' : 'Add Listing';
       const message = err.message || 'Something went wrong. Please try again.';
       form.querySelector('#add-property-error').textContent = `⚠️ ${message}`;
     }
   });
+
 
   document.body.appendChild(overlay);
   overlay.querySelector('input[name="title"]').focus();

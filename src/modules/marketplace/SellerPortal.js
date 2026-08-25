@@ -107,13 +107,14 @@ function renderSellerDashboardView(container, sellerUser) {
           </div>
         ` : ''}
 
-        ${activeTab === 'new_product' ? `
-          <!-- POST YOUR AD FORM (ui,/post-ad.html template) -->
+        ${activeTab === 'new_product' || activeTab === 'edit_product' ? `
+          <!-- POST / EDIT YOUR AD FORM -->
           <div class="mb-6">
             <div class="mb-3">
-              <h1 class="text-xl md:text-2xl font-bold text-gray-900">Post Your Ad</h1>
-              <p class="text-xs text-gray-500">Fill in the details below to post your ad</p>
+              <h1 class="text-xl md:text-2xl font-bold text-gray-900">${activeTab === 'edit_product' ? 'Edit Your Ad' : 'Post Your Ad'}</h1>
+              <p class="text-xs text-gray-500">${activeTab === 'edit_product' ? 'Update the details of your ad below' : 'Fill in the details below to post your ad'}</p>
             </div>
+
 
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <form id="create-product-form" class="space-y-4">
@@ -245,7 +246,7 @@ function renderSellerDashboardView(container, sellerUser) {
                 <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
                   <button type="button" id="cancel-add-btn" class="text-xs font-semibold text-gray-500 hover:underline">Cancel</button>
                   <button type="submit" class="bg-brand-green text-white font-bold py-2.5 px-8 rounded-lg hover:bg-green-800 transition shadow-md text-xs" ${formSubmitting || imageUploading ? 'disabled' : ''}>
-                    ${formSubmitting ? 'Publishing...' : 'Continue'}
+                    ${formSubmitting ? (activeTab === 'edit_product' ? 'Saving...' : 'Publishing...') : (activeTab === 'edit_product' ? 'Save Changes' : 'Continue')}
                   </button>
                 </div>
               </form>
@@ -342,6 +343,9 @@ function renderSellerDashboardView(container, sellerUser) {
                     </td>
                     <td class="p-3.5">
                       <div class="flex gap-2">
+                        <button class="text-blue-600 hover:text-blue-800 font-bold text-[10px] px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition edit-prod-btn" data-id="${prod.id}">
+                          Edit
+                        </button>
                         ${prod.status === 'expiring_soon' || prod.status === 'expired' ? `
                           <button class="btn btn-sm bg-brand-green text-white text-[10px] font-bold px-2.5 py-1 rounded-md hover:bg-green-800 transition renew-prod-btn" data-id="${prod.id}">
                             Renew
@@ -352,6 +356,7 @@ function renderSellerDashboardView(container, sellerUser) {
                         </button>
                       </div>
                     </td>
+
                   </tr>
                 `).join('')}
               </tbody>
@@ -485,15 +490,48 @@ function renderSellerDashboardView(container, sellerUser) {
       }
 
       try {
-        await stateEngine.createProduct({ title, category, price, district, condition, description, images: chosenImages });
-        alert('Product submitted! It will appear on the marketplace once an admin reviews and approves it - you can track its status under "Awaiting Review".');
-        resetProductFormValues(sellerUser.district);
-        stateEngine.setUI({ sellerDashboardTab: 'pending', productImageMode: 'url', productImages: [] });
+        const editingId = stateEngine.getState().ui.editingProductId;
+        if (activeTab === 'edit_product' && editingId) {
+          await stateEngine.updateProduct(editingId, { title, category, price, district, condition, description, images: chosenImages });
+          alert('Product updated successfully!');
+          resetProductFormValues(sellerUser.district);
+          stateEngine.setUI({ sellerDashboardTab: 'active', editingProductId: null, productImageMode: 'url', productImages: [] });
+        } else {
+          await stateEngine.createProduct({ title, category, price, district, condition, description, images: chosenImages });
+          alert('Product submitted! It will appear on the marketplace once an admin reviews and approves it - you can track its status under "Awaiting Review".');
+          resetProductFormValues(sellerUser.district);
+          stateEngine.setUI({ sellerDashboardTab: 'pending', productImageMode: 'url', productImages: [] });
+        }
       } catch (err) {
         captureProductFormValues(container);
         render();
       }
     });
+
+    container.querySelectorAll('.edit-prod-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prodId = btn.dataset.id;
+        const prod = myProducts.find(p => p.id === prodId);
+        if (!prod) return;
+        productFormValues = {
+          title: prod.title || '',
+          category: prod.categoryId || prod.category || '',
+          price: String(prod.price || ''),
+          district: prod.district || sellerUser.district,
+          condition: prod.condition || '',
+          description: prod.description || '',
+        };
+        const imgs = Array.isArray(prod.images) && prod.images.length ? [...prod.images] : (prod.image ? [prod.image] : []);
+        stateEngine.setUI({
+          sellerDashboardTab: 'edit_product',
+          editingProductId: prod.id,
+          productImageMode: 'url',
+          productImages: imgs,
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+
 
     container.querySelectorAll('.renew-prod-btn').forEach(btn => {
       btn.addEventListener('click', async () => {

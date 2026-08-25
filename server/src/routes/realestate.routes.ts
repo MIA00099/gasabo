@@ -190,7 +190,51 @@ realEstateRouter.delete('/properties/:id', requireAuth, requirePermission('REAL_
   res.json({ properties: updated });
 });
 
+realEstateRouter.put('/properties/:id', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
+  const { title, type, location, price, beds, baths, area, image, images, description } = req.body || {};
+  if (!title) return res.status(400).json({ error: 'Property title is required.' });
+
+  const properties = await getSection<any[]>('PROPERTIES', DEFAULT_PROPERTIES);
+  const index = properties.findIndex((p) => p.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Property not found.' });
+
+  const gallery = (Array.isArray(images) ? images : image ? [image] : [])
+    .filter((u): u is string => typeof u === 'string' && u.trim().length > 0)
+    .map((u) => u.trim());
+  const primaryImage = gallery[0] || properties[index].image || '/real-estate-logo.png';
+
+  const updatedProperty = {
+    ...properties[index],
+    type: PROPERTY_TYPES.includes(type) ? type : properties[index].type,
+    title,
+    location: location || properties[index].location,
+    price: price || properties[index].price,
+    priceNum: priceToNumber(price),
+    beds: Number.isFinite(beds) ? beds : properties[index].beds || 0,
+    baths: Number.isFinite(baths) ? baths : properties[index].baths || 0,
+    area: area || properties[index].area,
+    image: primaryImage,
+    images: gallery.length ? gallery : [primaryImage],
+    description: description || properties[index].description,
+  };
+
+  properties[index] = updatedProperty;
+  await setSection('PROPERTIES', properties);
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'REALESTATE_PROPERTY_UPDATED',
+    module: 'Real Estate Admin',
+    details: `Updated property listing "${title}".`,
+  });
+
+  res.json({ properties });
+});
+
 // Generic section editor for ABOUT / SERVICES / CONTACT
+
 realEstateRouter.put('/:sectionKey', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
   const key = req.params.sectionKey.toUpperCase();
   if (!['ABOUT', 'SERVICES', 'CONTACT'].includes(key)) {

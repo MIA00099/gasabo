@@ -71,11 +71,17 @@ function gasaboFooterHtml(contact) {
         </div>
 
         <div style="min-width: 220px;">
-          <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.85rem;">Contact</h4>
+          <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.85rem;">Contact & Follow</h4>
           <div style="display: flex; flex-direction: column; gap: 0.6rem; color: #C7D7F5; font-size: 0.9rem;">
             ${c.address ? `<span>${escapeHtml(c.address)}</span>` : ''}
             ${c.phone ? `<a href="tel:${escapeHtml(String(c.phone).replace(/\s+/g, ''))}" style="color: #fff; font-weight: 700; text-decoration: none;">${escapeHtml(c.phone)}</a>` : ''}
             ${c.email ? `<a href="mailto:${escapeHtml(c.email)}" style="color: #C7D7F5; text-decoration: none;">${escapeHtml(c.email)}</a>` : ''}
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+              <a href="https://www.instagram.com/gasabo_real_estate/" target="_blank" rel="noopener noreferrer" style="width: 30px; height: 30px; border-radius: 6px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; text-decoration: none;" aria-label="Instagram" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+              <a href="https://www.youtube.com/@GasaboRealEstate" target="_blank" rel="noopener noreferrer" style="width: 30px; height: 30px; border-radius: 6px; background: #FF0000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; text-decoration: none;" aria-label="YouTube" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+              <a href="https://www.facebook.com/profile.php?id=100063657936349" target="_blank" rel="noopener noreferrer" style="width: 30px; height: 30px; border-radius: 6px; background: #1877F2; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; text-decoration: none;" aria-label="Facebook" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+              <a href="https://www.tiktok.com/@gasaborealestate" target="_blank" rel="noopener noreferrer" style="width: 30px; height: 30px; border-radius: 6px; background: #000000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; text-decoration: none;" aria-label="TikTok" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+            </div>
           </div>
         </div>
       </div>
@@ -265,11 +271,35 @@ export function renderRealEstateView(container) {
 
           </div>
 
-          <!-- KIGALI MARKET -->
-          <a href="#" class="market-link" id="re-back-to-market-nav">
-            <span class="back-arrow">&#8592;</span>
-            <span>Kigali Market</span>
-          </a>
+          <!-- RIGHT SIDE: SOCIAL ICONS & KIGALI MARKET -->
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.45rem;">
+              <a href="https://www.instagram.com/gasabo_real_estate/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"
+                style="width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                <i class="fa-brands fa-instagram"></i>
+              </a>
+              <a href="https://www.youtube.com/@GasaboRealEstate" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube"
+                style="width: 30px; height: 30px; border-radius: 8px; background: #FF0000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                <i class="fa-brands fa-youtube"></i>
+              </a>
+              <a href="https://www.facebook.com/profile.php?id=100063657936349" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook"
+                style="width: 30px; height: 30px; border-radius: 8px; background: #1877F2; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                <i class="fa-brands fa-facebook-f"></i>
+              </a>
+              <a href="https://www.tiktok.com/@gasaborealestate" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok"
+                style="width: 30px; height: 30px; border-radius: 8px; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                <i class="fa-brands fa-tiktok"></i>
+              </a>
+            </div>
+
+            <div style="width: 1px; height: 22px; background: #E2E8F0; margin: 0 0.15rem;"></div>
+
+            <!-- KIGALI MARKET -->
+            <a href="#" class="market-link" id="re-back-to-market-nav">
+              <span class="back-arrow">&#8592;</span>
+              <span>Kigali Market</span>
+            </a>
+          </div>
 
         </nav>
 

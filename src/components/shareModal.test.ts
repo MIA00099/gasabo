@@ -56,13 +56,17 @@ describe('Share functionality integration across modules', () => {
     expect(PRODUCT_DETAIL_MODAL).toContain('openShareModal({');
   });
 
-  it('RealEstateView.js integrates card and detail openShareModal', () => {
+  it('RealEstateView.js integrates card and detail openShareModal and official social links', () => {
     expect(REAL_ESTATE_VIEW).toContain("import { openShareModal, showShareToast } from '../../components/ShareModal.js'");
     expect(REAL_ESTATE_VIEW).toContain('re-share-head-btn');
     expect(REAL_ESTATE_VIEW).toContain('re-share-card-btn');
     expect(REAL_ESTATE_VIEW).toContain('re-card-share-btn');
     expect(REAL_ESTATE_VIEW).toContain('fa-share-nodes');
     expect(REAL_ESTATE_VIEW).toContain('openShareModal({');
+    expect(REAL_ESTATE_VIEW).toContain('instagram.com/gasabo_real_estate');
+    expect(REAL_ESTATE_VIEW).toContain('youtube.com/@GasaboRealEstate');
+    expect(REAL_ESTATE_VIEW).toContain('facebook.com/profile.php?id=100063657936349');
+    expect(REAL_ESTATE_VIEW).toContain('tiktok.com/@gasaborealestate');
   });
 
   it('ProductsPage.js integrates quick share on product cards', () => {

@@ -270,10 +270,9 @@ export function renderMarketplaceView(container) {
     const categoriesAttempted = state.loading.categories !== undefined;
     const productsLoading = !!state.loading.products || !productsAttempted;
 
-    if (!productsAttempted) stateEngine.loadProducts(filters).catch(() => {});
-    if (!categoriesAttempted) stateEngine.loadCategories().catch(() => {});
-    if (state.loading.flashDeals === undefined) stateEngine.loadFlashDeals().catch(() => {});
-    if (state.loading.banners === undefined) stateEngine.loadBanners().catch(() => {});
+    if (!productsAttempted || !categoriesAttempted || state.loading.flashDeals === undefined || state.loading.banners === undefined) {
+      stateEngine.loadMarketplaceHomeData(filters).catch(() => {});
+    }
 
     // The flash card shows the soonest-ending real deal an admin set up; the
     // rest fill the "View all deals" modal. Empty until an admin creates one.

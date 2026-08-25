@@ -440,7 +440,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   stateEngine.subscribe(renderApp);
   renderApp();
-  stateEngine.loadCategories().catch(() => {});
 
   // Paint first, then check the stored session against the server.
   //

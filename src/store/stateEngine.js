@@ -544,6 +544,72 @@ class StateEngine {
 
   // --- Products (Marketplace) ---
 
+  /**
+   * Batches initial homepage fetches (products, categories, flashDeals, banners)
+   * into parallel requests and updates state with a single notification to
+   * prevent multiple rapid re-renders / re-paints on cold load.
+   */
+  async loadMarketplaceHomeData(filters = {}) {
+    if (this._marketplaceHomeDataLoading) return;
+    const needProducts = this.data.loading.products === undefined;
+    const needCategories = this.data.loading.categories === undefined;
+    const needFlashDeals = this.data.loading.flashDeals === undefined;
+    const needBanners = this.data.loading.banners === undefined;
+
+    if (!needProducts && !needCategories && !needFlashDeals && !needBanners) return;
+
+    this._marketplaceHomeDataLoading = true;
+
+    const nextLoading = { ...this.data.loading };
+    if (needProducts) nextLoading.products = true;
+    if (needCategories) nextLoading.categories = true;
+    if (needFlashDeals) nextLoading.flashDeals = true;
+    if (needBanners) nextLoading.banners = true;
+    this.data.loading = nextLoading;
+    this.notify();
+
+    try {
+      const params = new URLSearchParams();
+      if (filters.category && filters.category !== 'all') params.set('category', filters.category);
+      if (filters.district && filters.district !== 'all') params.set('district', filters.district);
+      if (filters.search) params.set('search', filters.search);
+      const qs = params.toString();
+
+      const promises = [
+        needProducts ? api.get(`/products${qs ? `?${qs}` : ''}`) : Promise.resolve(null),
+        needCategories ? api.get('/categories') : Promise.resolve(null),
+        needFlashDeals ? api.get('/products/flash-deals') : Promise.resolve(null),
+        needBanners ? api.get('/advertisements') : Promise.resolve(null),
+      ];
+
+      const [prodsRes, catsRes, flashRes, banRes] = await Promise.allSettled(promises);
+
+      if (needProducts && prodsRes.status === 'fulfilled' && prodsRes.value?.products) {
+        this.data.products = prodsRes.value.products;
+      }
+      if (needCategories && catsRes.status === 'fulfilled' && catsRes.value?.categories) {
+        this.data.categories = catsRes.value.categories;
+      }
+      if (needFlashDeals && flashRes.status === 'fulfilled' && flashRes.value?.products) {
+        this.data.flashDeals = flashRes.value.products;
+      }
+      if (needBanners && banRes.status === 'fulfilled' && banRes.value?.banners) {
+        this.data.banners = banRes.value.banners;
+      }
+
+      const doneLoading = { ...this.data.loading };
+      if (needProducts) doneLoading.products = false;
+      if (needCategories) doneLoading.categories = false;
+      if (needFlashDeals) doneLoading.flashDeals = false;
+      if (needBanners) doneLoading.banners = false;
+      this.data.loading = doneLoading;
+
+      this.notify();
+    } finally {
+      this._marketplaceHomeDataLoading = false;
+    }
+  }
+
   async loadProducts(filters = {}) {
     return this._run('products', async () => {
       const params = new URLSearchParams();

@@ -120,9 +120,9 @@ export function renderProductDetailPage(container, product, handlers = {}) {
 
             <!-- LEFT: PRODUCT IMAGE GALLERY -->
             <div>
-              <div class="bg-gray-100 rounded-2xl h-64 md:h-80 flex items-center justify-center relative overflow-hidden mb-3 group shadow-lg">
+              <div class="bg-gray-100 rounded-2xl h-80 sm:h-96 md:h-[440px] flex items-center justify-center relative overflow-hidden mb-3 group shadow-md border border-gray-100">
                 <img id="detail-main-img" src="${images[0]}" alt="${escapeHtml(product.title)}"
-                  class="h-3/4 object-contain relative z-10 drop-shadow-2xl">
+                  class="w-full h-full object-cover relative z-10 transition duration-300 group-hover:scale-105">
 
                 ${hasDiscount ? `
                   <div class="absolute top-4 right-4 bg-brand-orange text-white px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">-${pct}%</div>

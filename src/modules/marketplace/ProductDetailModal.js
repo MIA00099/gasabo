@@ -154,14 +154,58 @@ export function renderProductDetailModal(product, onClose, returnFocusTo) {
   });
 
   const mainImg = modalContainer.querySelector('#main-prod-img');
-  const thumbs = modalContainer.querySelectorAll('.thumb-img-btn');
-  thumbs.forEach((t) => {
-    t.addEventListener('click', () => {
-      mainImg.src = t.dataset.src;
-      thumbs.forEach((x) => x.classList.replace('border-brand-green', 'border-gray-300'));
-      t.classList.replace('border-gray-300', 'border-brand-green');
+  const thumbs = [...modalContainer.querySelectorAll('.thumb-img-btn')];
+  let activeModalIdx = 0;
+
+  function setModalImg(i) {
+    if (i < 0 || i >= images.length) return;
+    activeModalIdx = i;
+    mainImg.src = images[i];
+    thumbs.forEach((t, n) => {
+      if (n === i) {
+        t.classList.replace('border-gray-300', 'border-brand-green');
+      } else {
+        t.classList.replace('border-brand-green', 'border-gray-300');
+      }
     });
+  }
+
+  thumbs.forEach((t, idx) => {
+    t.addEventListener('click', () => setModalImg(idx));
   });
+
+  const modalFrame = mainImg?.parentElement;
+  if (modalFrame && images.length > 1) {
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    modalFrame.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = true;
+    }, { passive: true });
+
+    modalFrame.addEventListener('touchmove', (e) => {
+      if (!tracking || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+        if (e.cancelable) e.preventDefault();
+      }
+    }, { passive: false });
+
+    modalFrame.addEventListener('touchend', (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) < 25 || Math.abs(dx) < Math.abs(dy)) return;
+      const delta = dx < 0 ? 1 : -1;
+      setModalImg((activeModalIdx + delta + images.length) % images.length);
+    }, { passive: true });
+  }
 
   const wishlistBtn = modalContainer.querySelector('#wishlist-btn');
   if (wishlistBtn) {

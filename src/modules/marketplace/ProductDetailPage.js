@@ -353,6 +353,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   // Swipe. Most of this marketplace is read on a phone, where reaching for a
   // 36px arrow is worse than the gesture people already use on every other
   // photo they look at.
+  // Swipe & Touch Drag for Smartphones & Tablets.
   const frame = mainImg?.parentElement;
   if (frame && images.length > 1) {
     let startX = 0;
@@ -366,14 +367,23 @@ export function renderProductDetailPage(container, product, handlers = {}) {
       tracking = true;
     }, { passive: true });
 
+    frame.addEventListener('touchmove', (e) => {
+      if (!tracking || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      // Lock vertical scroll when swiping horizontally on image
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+        if (e.cancelable) e.preventDefault();
+      }
+    }, { passive: false });
+
     frame.addEventListener('touchend', (e) => {
       if (!tracking) return;
       tracking = false;
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
-      // Horizontal intent only, or every attempt to scroll the page past the
-      // image would flick the gallery instead.
-      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      // Horizontal intent only (25px threshold for fluid touch response)
+      if (Math.abs(dx) < 25 || Math.abs(dx) < Math.abs(dy)) return;
       step(dx < 0 ? 1 : -1);
     }, { passive: true });
   }

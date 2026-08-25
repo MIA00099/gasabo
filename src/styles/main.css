@@ -3916,9 +3916,10 @@ table {
 /* Slider Indicators (Dots) */
 .slider-dots {
     position: absolute;
-    bottom: 10px;
+    bottom: 20px;
     right: 40px; /* Align with the slider content */
     display: flex;
+    align-items: center;
     gap: 8px;
     z-index: 20;
 }
@@ -3927,7 +3928,7 @@ table {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
     transition: background-color 0.3s, width 0.3s;
     /* The dots are <button> here rather than <div>, so that a keyboard can
@@ -3935,12 +3936,13 @@ table {
        source file's appearance. */
     padding: 0;
     border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .dot.active {
     background-color: #F5A623; /* Brand orange to stand out on dark blue */
-    width: 16px;
-    border-radius: 4px;
+    width: 18px;
+    border-radius: 6px;
 }
 
 /* ---------------------------------------------------------------------------

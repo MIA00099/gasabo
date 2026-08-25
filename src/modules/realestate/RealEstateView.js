@@ -55,16 +55,17 @@ function gasaboFooterHtml(contact) {
     <footer class="large-footer" style="background: linear-gradient(to right, #00568e 0%, #004b7c 35%, #08344e 70%, #0c2b3e 100%); color: #ffffff; padding: 3.5rem 2rem 1.75rem;">
       <div style="max-width: var(--page-max); margin: 0 auto 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2.5rem;">
         
-        <!-- Column 1: Our Platforms -->
+        <!-- Column 1: Gasabo Real Estate Brand Block -->
         <div>
-          <h4 style="color: #ffffff; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem;">Our Platforms</h4>
-          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.94rem; color: #D0E1ED;">
-            <li><button class="re-foot-link" data-tab="properties" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Gasabo Real Estate</button></li>
-            <li><button class="re-foot-link" data-tab="home" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Kigali Market</button></li>
-            <li><span style="color: #D0E1ED;">Kigali Job</span></li>
-            <li><span style="color: #D0E1ED;">Clickrwanda TV</span></li>
-          </ul>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+            <img src="/real-estate-logo.png" alt="Gasabo Real Estate" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; background: #fff;">
+            <span style="font-weight: 800; font-size: 1.25rem; color: #ffffff;">Gasabo Real Estate</span>
+          </div>
+          <p style="color: #D0E1ED; font-size: 0.92rem; line-height: 1.6; max-width: 32ch;">
+            Plots, houses and property services across Gasabo District and greater Kigali.
+          </p>
         </div>
+
 
         <!-- Column 2: Contact Us -->
         <div>
@@ -116,16 +117,17 @@ function gasaboFooterHtml(contact) {
           </ul>
         </div>
 
-        <!-- Column 4: Support Links -->
+        <!-- Column 4: Browse -->
         <div>
-          <h4 style="color: #ffffff; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem;">Support Links</h4>
+          <h4 style="color: #ffffff; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem;">Browse</h4>
           <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.94rem; color: #D0E1ED;">
-            <li><button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Help Center</button></li>
-            <li><button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Contact Us</button></li>
-            <li><button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">FAQs</button></li>
-            <li><button class="re-foot-link" data-tab="services" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Become an Agent</button></li>
+            <li><button class="re-foot-link" data-tab="properties" data-type="plot" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Plots</button></li>
+            <li><button class="re-foot-link" data-tab="properties" data-type="house" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Houses</button></li>
+            <li><button class="re-foot-link" data-tab="services" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Services</button></li>
+            <li><button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">About</button></li>
           </ul>
         </div>
+
 
       </div>
 

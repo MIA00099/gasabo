@@ -12,15 +12,15 @@ export function getLargeFooterHtml(currentLang = 'en') {
     <footer class="large-footer" id="large-footer">
       <div class="large-footer-container">
         
-        <!-- Column 1: Our Platforms -->
-        <div class="footer-col">
-          <h4 class="footer-col-title">Our Platforms</h4>
-          <ul class="footer-links-list">
-            <li><a href="#" id="foot-brand-home" class="foot-nav-link">Kigali Market</a></li>
-            <li><a href="#" id="foot-link-re" class="foot-nav-link">Gasabo Real Estate</a></li>
-            <li><a href="#" class="foot-nav-link">Kigali Job</a></li>
-            <li><a href="#" class="foot-nav-link">Clickrwanda TV</a></li>
-          </ul>
+        <!-- Column 1: Gasabo Real Estate Brand Block -->
+        <div class="footer-col brand-col">
+          <div class="footer-brand-title cursor-pointer" id="foot-brand-home" role="button" tabindex="0" title="Gasabo Real Estate" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+            <img src="/real-estate-logo.png" alt="Gasabo Real Estate" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; background: #fff;">
+            <span style="font-weight: 800; font-size: 1.25rem; color: #ffffff;">Gasabo Real Estate</span>
+          </div>
+          <p class="footer-brand-desc" style="color: #D0E1ED; font-size: 0.92rem; line-height: 1.6; max-width: 32ch;">
+            Plots, houses and property services across Gasabo District and greater Kigali.
+          </p>
         </div>
 
         <!-- Column 2: Contact Us -->
@@ -63,7 +63,6 @@ export function getLargeFooterHtml(currentLang = 'en') {
           </ul>
         </div>
 
-
         <!-- Column 3: Advertise -->
         <div class="footer-col">
           <h4 class="footer-col-title">Advertise</h4>
@@ -73,16 +72,17 @@ export function getLargeFooterHtml(currentLang = 'en') {
           </ul>
         </div>
 
-        <!-- Column 4: Support Links -->
+        <!-- Column 4: Browse -->
         <div class="footer-col">
-          <h4 class="footer-col-title">Support Links</h4>
+          <h4 class="footer-col-title">Browse</h4>
           <ul class="footer-links-list">
-            <li><a href="#" class="foot-nav-link">Help Center</a></li>
-            <li><a href="#" class="foot-nav-link">Contact Us</a></li>
-            <li><a href="#" class="foot-nav-link">FAQs</a></li>
-            <li><a href="#" class="foot-nav-link">Become an Agent</a></li>
+            <li><a href="#" id="foot-link-re" class="foot-nav-link">Plots</a></li>
+            <li><a href="#" class="foot-nav-link">Houses</a></li>
+            <li><a href="#" class="foot-nav-link">Services</a></li>
+            <li><a href="#" class="foot-nav-link">About</a></li>
           </ul>
         </div>
+
 
       </div>
 

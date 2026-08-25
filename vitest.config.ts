@@ -1,9 +1,14 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // The Playwright browser E2E lives in e2e/*.spec.ts and uses @playwright/test,
+    // not Vitest. Vitest has no explicit include, so without this it would try to
+    // run those specs and fail on the unfamiliar test API. Keep the default
+    // exclusions (node_modules, dist, ...) and add the E2E folder.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
     // Runs before any test module is imported. Refuses to let the
     // destructive suites run against a non-isolated (i.e. production)
     // database, and points Prisma at the scratch DB from .env.test.

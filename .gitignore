@@ -27,3 +27,9 @@ Thumbs.db
 .vscode/
 .idea/
 .claude/
+
+# playwright e2e
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

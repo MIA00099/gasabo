@@ -5,6 +5,8 @@ const SHARE_MODAL_CODE = readFileSync('src/components/ShareModal.js', 'utf8');
 const PRODUCT_DETAIL_PAGE = readFileSync('src/modules/marketplace/ProductDetailPage.js', 'utf8');
 const PRODUCT_DETAIL_MODAL = readFileSync('src/modules/marketplace/ProductDetailModal.js', 'utf8');
 const REAL_ESTATE_VIEW = readFileSync('src/modules/realestate/RealEstateView.js', 'utf8');
+const PRODUCTS_PAGE = readFileSync('src/modules/marketplace/ProductsPage.js', 'utf8');
+const MARKETPLACE_VIEW = readFileSync('src/modules/marketplace/MarketplaceView.js', 'utf8');
 
 describe('ShareModal component file', () => {
   it('is present on disk at src/components/ShareModal.js', () => {
@@ -43,19 +45,37 @@ describe('Share functionality integration across modules', () => {
   it('ProductDetailPage.js integrates openShareModal', () => {
     expect(PRODUCT_DETAIL_PAGE).toContain("import { openShareModal } from '../../components/ShareModal.js'");
     expect(PRODUCT_DETAIL_PAGE).toContain('id="detail-share-btn"');
+    expect(PRODUCT_DETAIL_PAGE).toContain('fa-share-nodes');
     expect(PRODUCT_DETAIL_PAGE).toContain('openShareModal({');
   });
 
   it('ProductDetailModal.js integrates openShareModal', () => {
     expect(PRODUCT_DETAIL_MODAL).toContain("import { openShareModal } from '../../components/ShareModal.js'");
     expect(PRODUCT_DETAIL_MODAL).toContain('id="modal-share-btn"');
+    expect(PRODUCT_DETAIL_MODAL).toContain('fa-share-nodes');
     expect(PRODUCT_DETAIL_MODAL).toContain('openShareModal({');
   });
 
-  it('RealEstateView.js integrates openShareModal', () => {
+  it('RealEstateView.js integrates card and detail openShareModal', () => {
     expect(REAL_ESTATE_VIEW).toContain("import { openShareModal, showShareToast } from '../../components/ShareModal.js'");
     expect(REAL_ESTATE_VIEW).toContain('re-share-head-btn');
     expect(REAL_ESTATE_VIEW).toContain('re-share-card-btn');
+    expect(REAL_ESTATE_VIEW).toContain('re-card-share-btn');
+    expect(REAL_ESTATE_VIEW).toContain('fa-share-nodes');
     expect(REAL_ESTATE_VIEW).toContain('openShareModal({');
+  });
+
+  it('ProductsPage.js integrates quick share on product cards', () => {
+    expect(PRODUCTS_PAGE).toContain("import { openShareModal } from '../../components/ShareModal.js'");
+    expect(PRODUCTS_PAGE).toContain('prod-card-share-btn');
+    expect(PRODUCTS_PAGE).toContain('fa-share-nodes');
+    expect(PRODUCTS_PAGE).toContain('openShareModal({');
+  });
+
+  it('MarketplaceView.js integrates quick share on product tiles', () => {
+    expect(MARKETPLACE_VIEW).toContain("import { openShareModal } from '../../components/ShareModal.js'");
+    expect(MARKETPLACE_VIEW).toContain('home-card-share-btn');
+    expect(MARKETPLACE_VIEW).toContain('fa-share-nodes');
+    expect(MARKETPLACE_VIEW).toContain('openShareModal({');
   });
 });

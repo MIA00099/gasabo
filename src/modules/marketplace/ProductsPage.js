@@ -2,6 +2,7 @@ import { starsHtml } from '../../utils/stars.js';
 import { renderCategoryIcon, formatCategoryName } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
+import { openShareModal } from '../../components/ShareModal.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -28,10 +29,18 @@ function productCard(prod) {
       </div>
       
       <div class="p-3 flex-1 flex flex-col justify-between">
-        <h3 class="text-xs font-semibold text-gray-800 mb-1 line-clamp-2">${escapeHtml(prod.title)}</h3>
-        <div class="font-bold text-base text-brand-dark mb-1">
-          RWF ${prod.price.toLocaleString()}
-          ${hasDiscount ? `<span class="text-xs text-gray-400 line-through font-normal ml-1">RWF ${was.toLocaleString()}</span>` : ''}
+        <div>
+          <div class="flex items-start justify-between gap-1.5 mb-1">
+            <h3 class="text-xs font-semibold text-gray-800 line-clamp-2 flex-1">${escapeHtml(prod.title)}</h3>
+            <button type="button" class="prod-card-share-btn w-7 h-7 rounded-full bg-gray-100 text-gray-600 hover:bg-brand-green hover:text-white transition flex items-center justify-center shrink-0"
+              data-id="${prod.id}" aria-label="Share ${escapeHtml(prod.title)}" title="Share listing">
+              <i class="fa-solid fa-share-nodes text-[11px]"></i>
+            </button>
+          </div>
+          <div class="font-bold text-base text-brand-dark mb-1">
+            RWF ${prod.price.toLocaleString()}
+            ${hasDiscount ? `<span class="text-xs text-gray-400 line-through font-normal ml-1">RWF ${was.toLocaleString()}</span>` : ''}
+          </div>
         </div>
         ${stars ? `
           <div class="flex items-center text-[10px] text-yellow-400">
@@ -170,6 +179,25 @@ export function renderProductsPage(container) {
       card.addEventListener('click', open);
       card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
+    });
+
+    container.querySelectorAll('.prod-card-share-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = btn.dataset.id;
+        const prod = (stateEngine.getState().products || []).find((p) => p.id === id);
+        if (!prod) return;
+        openShareModal({
+          title: prod.title,
+          text: `Check out "${prod.title}" (${prod.currency || 'RWF'} ${prod.price.toLocaleString()}) on Kigali Market!`,
+          url: pathForListing(ROUTE_PRODUCT, prod.id),
+          image: prod.images && prod.images[0] ? prod.images[0] : null,
+          price: prod.price,
+          currency: prod.currency || 'RWF',
+          location: prod.district,
+        });
       });
     });
   }

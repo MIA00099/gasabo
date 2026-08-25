@@ -7,6 +7,7 @@ import { renderProductsPage } from './ProductsPage.js';
 import { renderCategoryIcon, formatCategoryName } from '../../utils/categoryIcon.js';
 import { starsHtml } from '../../utils/stars.js';
 import { openCategoryDropdown } from '../../components/dropdownMenu.js';
+import { openShareModal } from '../../components/ShareModal.js';
 
 // How many products sit in the top row, beside the Flash Deals card. The
 // rest continue in the grid underneath it.
@@ -83,7 +84,13 @@ function productCardHtml(prod, { compact = false } = {}) {
               class="w-full h-full object-cover group-hover:scale-105 transition transform">
         </div>
         <div class="p-2.5 flex-1 flex flex-col justify-between">
-            <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">${escapeHtml(prod.title)}</h3>
+            <div class="flex items-start justify-between gap-1 mb-0.5">
+              <h3 class="text-[11px] font-medium text-gray-800 truncate flex-1">${escapeHtml(prod.title)}</h3>
+              <button type="button" class="home-card-share-btn p-1 text-gray-400 hover:text-brand-green rounded-full transition shrink-0"
+                data-id="${prod.id}" aria-label="Share ${escapeHtml(prod.title)}" title="Share listing">
+                <i class="fa-solid fa-share-nodes text-[10px]"></i>
+              </button>
+            </div>
             <div class="flex items-end gap-1.5 mb-1">
                 <span class="font-bold text-sm text-brand-dark leading-none">RWF ${prod.price.toLocaleString()}</span>
                 ${was ? `<span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF ${was.toLocaleString()}</span>` : ''}
@@ -956,6 +963,25 @@ export function renderMarketplaceView(container) {
         const id = btn.dataset.id;
         pushPath(pathForListing(ROUTE_PRODUCT, id));
         stateEngine.setRoute({ kind: ROUTE_PRODUCT, id });
+      });
+    });
+
+    container.querySelectorAll('.home-card-share-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = btn.dataset.id;
+        const prod = (stateEngine.getState().products || []).find((p) => p.id === id);
+        if (!prod) return;
+        openShareModal({
+          title: prod.title,
+          text: `Check out "${prod.title}" (${prod.currency || 'RWF'} ${prod.price.toLocaleString()}) on Kigali Market!`,
+          url: pathForListing(ROUTE_PRODUCT, prod.id),
+          image: prod.images && prod.images[0] ? prod.images[0] : null,
+          price: prod.price,
+          currency: prod.currency || 'RWF',
+          location: prod.district,
+        });
       });
     });
 

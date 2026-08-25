@@ -427,6 +427,25 @@ export function renderRealEstateView(container) {
       });
     });
 
+    container.querySelectorAll('.re-card-share-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = btn.dataset.id;
+        const prop = properties.find(p => p.id === id);
+        if (!prop) return;
+        openShareModal({
+          title: prop.title,
+          text: `Check out "${prop.title}" (${formatPropPrice(prop.price)}) in ${prop.location} on Gasabo Real Estate!`,
+          url: pathForListing(ROUTE_PROPERTY, prop.id),
+          image: Array.isArray(prop.images) && prop.images[0] ? prop.images[0] : prop.image,
+          price: prop.priceNum || prop.price,
+          currency: 'Rwf',
+          location: prop.location,
+        });
+      });
+    });
+
     container.querySelector('#re-explore-btn')?.addEventListener('click', () => {
       stateEngine.setUI({ realEstateTab: 'properties', realEstateFilters: { type: 'all', location: 'all', price: 'all' } });
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -710,7 +729,14 @@ function renderPropertyGrid(list) {
               ` : ''}
             </div>
             <div style="padding: 1.5rem;">
-              <h4 style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin-bottom: 0.4rem;">${escapeHtml(prop.title)}</h4>
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 0.4rem;">
+                <h4 style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin: 0; line-height: 1.3;">${escapeHtml(prop.title)}</h4>
+                <button type="button" class="re-card-share-btn" data-id="${prop.id}" aria-label="Share ${escapeHtml(prop.title)}"
+                  style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #0F172A; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s ease;"
+                  title="Share property link">
+                  <i class="fa-solid fa-share-nodes" style="font-size: 0.9rem;"></i>
+                </button>
+              </div>
               <p style="color: #64748B; font-size: 0.88rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 4px;">📍 ${escapeHtml(prop.location)}</p>
               <p style="font-size: 1.4rem; font-weight: 800; color: ${RE_GREEN}; margin-bottom: 1rem;">${escapeHtml(prop.price)}</p>
               <div style="display: flex; gap: 1rem; border-top: 1px solid #F1F5F9; padding-top: 1rem; color: #475569; font-size: 0.85rem; font-weight: 600;">
@@ -801,7 +827,7 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
       <div style="display: flex; align-items: center; gap: 10px;">
         <button type="button" id="re-share-head-btn" aria-label="Share property link"
           style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #0F172A; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 9999px; cursor: pointer; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
-          🔗 Share Link
+          <i class="fa-solid fa-share-nodes"></i> Share Link
         </button>
         <a href="tel:${phoneDigits}" style="background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 9999px; text-decoration: none; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15,23,42,0.15);">
           📞 Call Agent
@@ -942,7 +968,7 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
                   💬 Chat on WhatsApp
                 </a>
                 <button type="button" id="re-share-card-btn" style="text-align: center; background: #F1F5F9; border: 1px solid #CBD5E1; color: #0F172A; font-weight: 800; padding: 0.9rem; border-radius: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; transition: transform 0.15s ease;">
-                  🔗 Share Property Link
+                  <i class="fa-solid fa-share-nodes"></i> Share Property Link
                 </button>
               </div>
 

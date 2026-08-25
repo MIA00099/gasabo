@@ -3760,6 +3760,17 @@ table {
         left: calc(45% + 18px);
         top: calc(-72% + 18px);
     }
+
+    /* Clip the slider (and the ad image filling it) to the navy inner ellipse,
+       so a cover-slide backdrop never paints over the gold arc. The ellipse is
+       the ::after navy shape expressed in the slider's own box (it sits at
+       right:0 width:55%, i.e. left edge at 45% of the hero): a %-radius is of
+       the slider box, so rx = (132/2)/55 = 120%, cx = (45 + 66 - 45)/55 = 120%,
+       cy = -72 + 125 = 53%, ry = 125%; the -/+9px is half the 18px gold band.
+       Verified against the live arc with hit-testing. */
+    .hero-section-wrapper .slider-container {
+        clip-path: ellipse(calc(120% - 9px) calc(125% - 9px) at calc(120% + 9px) calc(53% + 9px));
+    }
 }
 
 /* Tablet */
@@ -3780,6 +3791,12 @@ table {
         height: calc(245% - 16px);
         left: calc(40% + 16px);
         top: calc(-72% + 16px);
+    }
+
+    /* Same navy-ellipse clip as desktop, recomputed for the tablet arc
+       (left 40%, 145%x245%, 16px band -> 8px half). See the desktop note. */
+    .hero-section-wrapper .slider-container {
+        clip-path: ellipse(calc(131.82% - 8px) calc(122.5% - 8px) at calc(122.73% + 8px) calc(50.5% + 8px));
     }
 }
 
@@ -3804,6 +3821,13 @@ table {
         height: calc(170% - 14px);
         left: calc(12% + 14px);
         top: calc(34% + 14px);
+    }
+
+    /* Same navy-ellipse clip, recomputed for the mobile arc (left 12%, top 34%,
+       185%x170%, 14px band -> 7px half). The navy reaches far left here, so this
+       mostly just trims the corners. See the desktop note. */
+    .hero-section-wrapper .slider-container {
+        clip-path: ellipse(calc(168.18% - 7px) calc(85% - 7px) at calc(108.18% + 7px) calc(119% + 7px));
     }
 }
 

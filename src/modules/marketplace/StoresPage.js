@@ -187,9 +187,9 @@ export function renderStoresPage(container) {
                     ` : store.products.map((p) => `
                       <div class="bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-brand-green shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group product-item-btn" data-id="${p.id}">
                         <div>
-                          <div class="relative w-full h-32 bg-gray-50 overflow-hidden flex items-center justify-center p-2">
+                          <div class="relative w-full h-40 bg-gray-100 overflow-hidden flex items-center justify-center">
                             ${p.image
-                              ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition transform">`
+                              ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" class="w-full h-full object-cover group-hover:scale-105 transition transform">`
                               : '<i class="fa-solid fa-image text-2xl text-gray-300"></i>'}
                           </div>
                           <div class="p-2.5">

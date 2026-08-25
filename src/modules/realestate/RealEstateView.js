@@ -756,6 +756,13 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   const galleryImages = Array.isArray(prop.images) && prop.images.length ? prop.images : [prop.image];
   let activeIndex = 0;
 
+  const allProps = stateEngine.data.realEstate?.properties || [];
+  let sameTypeProps = allProps.filter((p) => p.id !== prop.id && (p.type === prop.type || (!p.type && prop.type === 'house')));
+  if (sameTypeProps.length < 3) {
+    const others = allProps.filter((p) => p.id !== prop.id && !sameTypeProps.some((s) => s.id === p.id));
+    sameTypeProps = [...sameTypeProps, ...others];
+  }
+
   const formattedPrice = formatPropPrice(prop.price);
   const formattedArea = formatPropArea(prop.area);
 
@@ -826,7 +833,7 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
             </p>
           </div>
 
-          <div style="text-align: left; md:text-right; flex-shrink: 0;">
+          <div style="text-align: left; flex-shrink: 0;">
             <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #64748B; letter-spacing: 0.05em; margin-bottom: 4px;">Listed Price</div>
             <div style="font-size: 2.5rem; font-weight: 900; color: ${RE_GREEN};">${escapeHtml(formattedPrice)}</div>
           </div>
@@ -913,6 +920,54 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
 
         </div>
 
+        ${sameTypeProps.length > 0 ? `
+          <!-- SIMILAR PROPERTIES IN SAME TYPE -->
+          <div style="margin-top: 4rem; border-top: 1px solid #E2E8F0; padding-top: 3rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h2 style="font-size: 1.6rem; font-weight: 900; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                  <span style="width: 4px; height: 24px; background: ${RE_GREEN}; border-radius: 9999px;"></span>
+                  Similar ${escapeHtml(badge.label)} Properties
+                </h2>
+                <p style="color: #64748B; font-size: 0.98rem; font-weight: 500;">
+                  Discover other verified ${escapeHtml(badge.label.toLowerCase())} listings in Gasabo & Kigali
+                </p>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.75rem;">
+              ${sameTypeProps.slice(0, 4).map((rel) => {
+                const relBadge = TYPE_BADGE[rel.type] || TYPE_BADGE.house;
+                const relPrice = formatPropPrice(rel.price);
+                const photoCount = Array.isArray(rel.images) ? rel.images.length : (rel.image ? 1 : 0);
+                return `
+                  <div class="re-related-card" data-id="${rel.id}" role="button" tabindex="0"
+                    aria-label="View details for ${escapeHtml(rel.title)}, ${escapeHtml(rel.location)}, ${escapeHtml(rel.price)}"
+                    style="background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 14px rgba(15,23,42,0.04);">
+                    <div style="position: relative; height: 190px; overflow: hidden; background: #0F172A;">
+                      <img src="${escapeHtml(rel.image)}" alt="${escapeHtml(rel.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                      <span style="position: absolute; top: 12px; left: 12px; background: ${relBadge.bg}; color: ${relBadge.color}; font-size: 0.68rem; font-weight: 800; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase;">
+                        ${relBadge.label}
+                      </span>
+                      ${photoCount > 1 ? `
+                        <span style="position: absolute; top: 12px; right: 12px; background: rgba(2,6,23,0.7); color: #fff; font-size: 0.68rem; font-weight: 700; padding: 4px 8px; border-radius: 9999px;">📷 ${photoCount}</span>
+                      ` : ''}
+                    </div>
+                    <div style="padding: 1.25rem;">
+                      <h4 style="font-size: 1.1rem; font-weight: 800; color: #0F172A; margin-bottom: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(rel.title)}</h4>
+                      <p style="color: #64748B; font-size: 0.88rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 4px; font-weight: 500;">📍 ${escapeHtml(rel.location)}</p>
+                      <div style="font-size: 1.35rem; font-weight: 900; color: ${RE_GREEN};">${escapeHtml(relPrice)}</div>
+                      <div style="display: flex; gap: 1rem; border-top: 1px solid #F1F5F9; padding-top: 0.75rem; margin-top: 0.75rem; color: #475569; font-size: 0.82rem; font-weight: 600;">
+                        📐 ${escapeHtml(rel.area)}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+
       </div>
 
     </main>
@@ -984,6 +1039,21 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
       }, { passive: true });
     }
   }
+
+  overlay.querySelectorAll('.re-related-card').forEach((card) => {
+    const activate = () => {
+      const targetId = card.dataset.id;
+      close();
+      pushPath(pathForListing(ROUTE_PROPERTY, targetId));
+    };
+    card.addEventListener('click', activate);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        activate();
+      }
+    });
+  });
 
   // Announces the dialog, traps Tab inside it, closes on Escape, and hands
   // focus back on the way out. See components/modalA11y.js.

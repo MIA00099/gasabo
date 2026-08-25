@@ -3854,6 +3854,41 @@ table {
     z-index: 10;
 }
 
+/* Admin-uploaded hero ads (cover-slide): a full photo or banner of any aspect
+   ratio, shown whole over a blurred fill of itself. The built-in .slide img
+   rule floats a small cut-out product; that left uploaded banners tiny and
+   boxed in flat navy. Here the foreground image is contained (never cropped -
+   the "EMERGENCY DEAL" text stays intact) and the blurred, zoomed backdrop
+   fills whatever the foreground does not, so every image reads as a full,
+   deliberate hero at any panel shape (wide desktop, tall mobile). */
+.slide.cover-slide {
+    overflow: hidden;
+}
+
+.slide.cover-slide .slide-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+    filter: blur(22px) brightness(0.82);
+    transform: scale(1.12); /* hide the soft blurred edges */
+    z-index: 0;
+}
+
+.slide.cover-slide .slide-fg {
+    position: relative;
+    z-index: 1;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+}
+
 /* Slider Indicators (Dots) */
 .slider-dots {
     position: absolute;

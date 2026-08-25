@@ -47,7 +47,8 @@ export function openDropdownMenu(anchor, { items = [], selectedId = null, label 
   menu.style.cssText =
     'position: fixed; z-index: 1200; background: #fff; border: 1px solid #E5E7EB; ' +
     'border-radius: 12px; box-shadow: 0 14px 40px rgba(15,23,42,0.16); padding: 6px; ' +
-    'min-width: 224px; max-height: min(60vh, 420px); overflow-y: auto;';
+    'min-width: 240px; max-height: min(70vh, 480px); overflow-y: auto; overscroll-behavior: contain; ' +
+    '-webkit-overflow-scrolling: touch; scrollbar-width: thin;';
 
   menu.innerHTML = items.map((it, i) => `
     <button type="button" role="menuitem" class="dd-item" data-id="${escapeHtml(it.id)}" data-index="${i}"
@@ -70,18 +71,26 @@ export function openDropdownMenu(anchor, { items = [], selectedId = null, label 
   function position() {
     const r = anchor.getBoundingClientRect();
     const w = menu.offsetWidth;
-    // Prefer left-aligned under the control; pull it back inside the viewport
-    // when the control sits near the right edge.
     const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+    const spaceBelow = window.innerHeight - r.bottom - 12;
+    const spaceAbove = r.top - 12;
+    if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+      menu.style.bottom = `${window.innerHeight - r.top + 6}px`;
+      menu.style.top = 'auto';
+      menu.style.maxHeight = `${Math.min(spaceAbove, 480)}px`;
+    } else {
+      menu.style.top = `${r.bottom + 6}px`;
+      menu.style.bottom = 'auto';
+      menu.style.maxHeight = `${Math.min(Math.max(spaceBelow, 200), 480)}px`;
+    }
     menu.style.left = `${left}px`;
-    menu.style.top = `${r.bottom + 6}px`;
   }
 
   function close() {
     document.removeEventListener('keydown', onKey, true);
     document.removeEventListener('mousedown', onOutside, true);
     window.removeEventListener('resize', close);
-    window.removeEventListener('scroll', close, true);
+    window.removeEventListener('scroll', onScroll, true);
     menu.remove();
     anchor.setAttribute('aria-expanded', 'false');
     closeOpenMenu = null;
@@ -113,6 +122,12 @@ export function openDropdownMenu(anchor, { items = [], selectedId = null, label 
     close();
   }
 
+  function onScroll(e) {
+    // Do not close the menu if scrolling occurs inside the dropdown menu itself
+    if (menu.contains(e.target) || e.target === menu) return;
+    close();
+  }
+
   itemEls.forEach((el) => {
     el.addEventListener('mouseenter', () => { el.style.background = '#F1F5F9'; });
     el.addEventListener('mouseleave', () => {
@@ -128,8 +143,7 @@ export function openDropdownMenu(anchor, { items = [], selectedId = null, label 
   document.addEventListener('keydown', onKey, true);
   document.addEventListener('mousedown', onOutside, true);
   window.addEventListener('resize', close);
-  // Capture phase: the page may scroll in a container, not only on window.
-  window.addEventListener('scroll', close, true);
+  window.addEventListener('scroll', onScroll, true);
 
   anchor.setAttribute('aria-expanded', 'true');
   itemEls[0]?.focus();

@@ -278,7 +278,7 @@ export function renderMarketplaceView(container) {
       <div id="view-home" class="view-section active h-full flex flex-col justify-between py-2">
             
             <!-- Hero Section -->
-            <section class="compact-container mt-1 shrink-0">
+            <section class="compact-container px-3 sm:px-4 lg:px-6 mt-1 shrink-0">
                 <!-- Markup from preview(2).html. Two changes it needs to work
                      inside the app rather than as a standalone page:
                        - the dots are <button data-dot> instead of
@@ -449,7 +449,7 @@ export function renderMarketplaceView(container) {
               filtered on the literal id 'cat_vehicles', which does not exist -
               real ids are uuids - so "Cars" reliably showed nothing at all.
             -->
-            <section class="compact-container mt-[-15px] relative z-20 shrink-0">
+            <section class="compact-container px-3 sm:px-4 lg:px-6 mt-[-15px] relative z-20 shrink-0">
                 <div class="flex justify-between items-center bg-white rounded-2xl shadow-md p-2 overflow-x-auto no-scrollbar gap-1 border border-gray-100">
 
                     <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn ${filters.selectedCategory === 'all' || !filters.selectedCategory ? 'opacity-100' : 'opacity-80'}" data-cat="all">
@@ -483,7 +483,7 @@ export function renderMarketplaceView(container) {
             </section>
 
             <!-- Flash Deals & Products Section -->
-            <section class="compact-container mt-2 flex-1 flex flex-col justify-center min-h-0">
+            <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 flex-1 flex flex-col justify-center min-h-0">
                 <!-- No fixed height here: the card asks for min-height 230px,
                      and a 180px row would simply clip it - which is the whole
                      complaint. The row takes its height from the card and the
@@ -674,7 +674,7 @@ export function renderMarketplaceView(container) {
                  wrapping row under row, in a grid that goes two-across on a
                  phone and five on a desktop. -->
             ${state.products.length > TOP_ROW ? `
-              <section class="compact-container mt-4 shrink-0">
+              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-4 shrink-0">
                   <div class="flex items-baseline justify-between mb-2">
                       <h2 class="text-base font-black text-gray-900">${t('ui_more_products')}</h2>
                       <button type="button" id="home-view-all-btn"

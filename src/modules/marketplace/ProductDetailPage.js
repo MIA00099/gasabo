@@ -264,8 +264,8 @@ export function renderProductDetailPage(container, product, handlers = {}) {
                     <i class="fa-solid fa-phone"></i> Call Now
                   </a>
                   <a href="${whatsappHref(product)}" target="_blank" rel="noopener"
-                    class="bg-brand-green text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-green-800 transition shadow-md">
-                    <i class="fa-regular fa-comment-dots"></i> Chat
+                    class="bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 transition shadow-md">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> WhatsApp
                   </a>
                 </div>
                 <!-- This was "Add to Wishlist" with a data-soon stub behind it,

@@ -126,8 +126,8 @@ export function renderProductDetailModal(product, onClose, returnFocusTo) {
               <a href="tel:${cleanPhone}" class="bg-brand-green text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-green-800 transition shadow-md">
                 <i class="fa-solid fa-phone"></i> Call Now
               </a>
-              <a href="https://wa.me/${cleanPhone.replace('+', '')}?text=${whatsappMessage}" target="_blank" rel="noopener noreferrer" class="bg-emerald-600 text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-emerald-700 transition shadow-md">
-                <i class="fa-regular fa-comment-dots"></i> Chat WhatsApp
+              <a href="https://wa.me/${cleanPhone.replace('+', '')}?text=${whatsappMessage}" target="_blank" rel="noopener noreferrer" class="bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 transition shadow-md">
+                <i class="fa-brands fa-whatsapp text-lg"></i> WhatsApp
               </a>
             </div>
             <button id="wishlist-btn" class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-2.5 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm">

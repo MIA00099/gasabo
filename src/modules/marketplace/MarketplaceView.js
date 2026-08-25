@@ -16,6 +16,48 @@ const TOP_ROW = 5;
 // "View all" button below the grid is for.
 const HOME_MAX_MORE = 15;
 
+function groupProductsBySection(products, categories) {
+  if (!Array.isArray(products) || products.length === 0) return [];
+
+  const catMap = new Map();
+  (categories || []).forEach((c) => {
+    if (c && c.id) catMap.set(c.id, formatCategoryName(c.name));
+  });
+
+  const sectionsMap = new Map();
+  products.forEach((p) => {
+    let catName = 'Featured Market Listings';
+    if (p.category && typeof p.category === 'object' && p.category.name) {
+      catName = formatCategoryName(p.category.name);
+    } else if (p.categoryId && catMap.has(p.categoryId)) {
+      catName = catMap.get(p.categoryId);
+    } else if (typeof p.category === 'string') {
+      catName = formatCategoryName(p.category);
+    }
+    if (!sectionsMap.has(catName)) {
+      sectionsMap.set(catName, []);
+    }
+    sectionsMap.get(catName).push(p);
+  });
+
+  const getPriority = (name) => {
+    const n = String(name || '').toLowerCase().trim();
+    if (/electronics/i.test(n)) return 1;
+    if (/vehicle|car|auto/i.test(n)) return 2;
+    if (/house|estate|property/i.test(n)) return 3;
+    if (/land|plot/i.test(n)) return 4;
+    if (/motorcycle|moto|bike/i.test(n)) return 5;
+    return 10;
+  };
+
+  const result = [];
+  sectionsMap.forEach((prods, name) => {
+    result.push({ name, products: prods });
+  });
+  result.sort((a, b) => getPriority(a.name) - getPriority(b.name));
+  return result;
+}
+
 /**
  * One product tile.
  *
@@ -673,33 +715,53 @@ export function renderMarketplaceView(container) {
                  that layout was delivered as a unit. The rest continue here,
                  wrapping row under row, in a grid that goes two-across on a
                  phone and five on a desktop. -->
-            ${state.products.length > TOP_ROW ? `
-              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-4 shrink-0">
-                  <div class="flex items-baseline justify-between mb-2">
-                      <h2 class="text-base font-black text-gray-900">${t('ui_more_products')}</h2>
-                      <button type="button" id="home-view-all-btn"
-                        class="text-xs font-bold text-brand-green hover:underline">
-                          ${t('ui_view_all')} (${state.products.length})
-                      </button>
-                  </div>
+             ${state.products.length > TOP_ROW ? (() => {
+               const moreProducts = state.products.slice(TOP_ROW, TOP_ROW + HOME_MAX_MORE);
+               const catSections = groupProductsBySection(moreProducts, state.categories);
 
-                  <div class="home-more-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                      ${state.products
-                        .slice(TOP_ROW, TOP_ROW + HOME_MAX_MORE)
-                        .map((prod) => productCardHtml(prod))
-                        .join('')}
-                  </div>
+               const catSectionsHtml = catSections.map((sec) => `
+                 <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
+                     <div class="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
+                         <div class="flex items-center gap-2">
+                             <span class="w-2.5 h-5 bg-brand-green rounded-full inline-block"></span>
+                             <h3 class="text-sm sm:text-base font-black text-gray-900 tracking-tight">${escapeHtml(sec.name)}</h3>
+                             <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${sec.products.length}</span>
+                         </div>
+                     </div>
 
-                  ${state.products.length > TOP_ROW + HOME_MAX_MORE ? `
-                    <div class="flex justify-center mt-3">
-                        <button type="button" id="home-view-all-btn-2"
-                          class="bg-brand-dark text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-gray-800 transition">
-                            ${t('ui_view_all')} (${state.products.length})
-                        </button>
-                    </div>
-                  ` : ''}
-              </section>
-            ` : ''}
+                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                         ${sec.products.map((prod) => productCardHtml(prod)).join('')}
+                     </div>
+                 </section>
+               `).join('');
+
+               return `
+                 ${catSectionsHtml}
+
+                 <section class="compact-container px-3 sm:px-4 lg:px-6 mt-6 shrink-0">
+                     <div class="flex items-baseline justify-between mb-2">
+                         <h2 class="text-base font-black text-gray-900">${t('ui_more_products')}</h2>
+                         <button type="button" id="home-view-all-btn"
+                           class="text-xs font-bold text-brand-green hover:underline">
+                             ${t('ui_view_all')} (${state.products.length})
+                         </button>
+                     </div>
+
+                     <div class="home-more-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                         ${moreProducts.map((prod) => productCardHtml(prod)).join('')}
+                     </div>
+
+                     ${state.products.length > TOP_ROW + HOME_MAX_MORE ? `
+                       <div class="flex justify-center mt-3">
+                           <button type="button" id="home-view-all-btn-2"
+                             class="bg-brand-dark text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-gray-800 transition">
+                               ${t('ui_view_all')} (${state.products.length})
+                           </button>
+                       </div>
+                     ` : ''}
+                 </section>
+               `;
+             })() : ''}
       </div>
 
       <!-- FLASH DEALS COUNTDOWN MODAL -->

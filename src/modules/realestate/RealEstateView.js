@@ -723,44 +723,65 @@ function renderPropertyGrid(list) {
   `;
 }
 
+function formatPropPrice(val) {
+  if (!val) return 'Negotiable';
+  const str = String(val).trim();
+  const digitsOnly = str.replace(/[^\d]/g, '');
+  if (digitsOnly.length > 0 && !str.toLowerCase().includes('rwf')) {
+    const num = Number(digitsOnly);
+    return `${num.toLocaleString()} RWF`;
+  }
+  return str;
+}
+
+function formatPropArea(val) {
+  if (!val) return 'N/A';
+  const str = String(val).trim();
+  if (/^\d+$/.test(str)) {
+    return `${Number(str).toLocaleString()} Sqm`;
+  }
+  return str;
+}
+
 // Exported so main.js can open it in response to a /property/:id URL, not
 // only from a card click - a visitor landing on that link directly must get
 // the same detail view.
 export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position: fixed; inset: 0; width: 100vw; height: 100vh; background: #F8FAFC; z-index: 9999; overflow-y: auto; display: flex; flex-direction: column;';
+  overlay.style.cssText = 'position: fixed; inset: 0; width: 100vw; height: 100vh; background: #FFFFFF; z-index: 9999; overflow-y: auto; display: flex; flex-direction: column;';
 
   const phoneDigits = (contact?.phone || '').replace(/[^\d+]/g, '');
 
-  // A property carries a gallery now; older listings only have the single
-  // `image`, so fall back to that. The first photo is the cover shown large.
   const galleryImages = Array.isArray(prop.images) && prop.images.length ? prop.images : [prop.image];
   let activeIndex = 0;
+
+  const formattedPrice = formatPropPrice(prop.price);
+  const formattedArea = formatPropArea(prop.area);
 
   overlay.innerHTML = `
     <!-- FULL PAGE STICKY HEADER -->
     <header style="position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #E2E8F0; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
       <button id="re-modal-close" data-modal-close aria-label="Back to properties"
-        style="display: flex; align-items: center; gap: 8px; background: #F1F5F9; border: 1px solid #CBD5E1; padding: 0.5rem 1.1rem; border-radius: 9999px; font-weight: 700; color: #0F172A; cursor: pointer; font-size: 0.9rem; transition: all 0.2s ease;">
+        style="display: flex; align-items: center; gap: 8px; background: #F1F5F9; border: 1px solid #CBD5E1; padding: 0.55rem 1.2rem; border-radius: 9999px; font-weight: 700; color: #0F172A; cursor: pointer; font-size: 0.9rem; transition: all 0.2s ease;">
         ← Back to Properties
       </button>
 
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <a href="tel:${phoneDigits}" style="background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.45rem 1rem; border-radius: 9999px; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 4px;">
-          📞 Call
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <a href="tel:${phoneDigits}" style="background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 9999px; text-decoration: none; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15,23,42,0.15);">
+          📞 Call Agent
         </a>
-        <a href="https://wa.me/${phoneDigits.replace('+', '')}" target="_blank" rel="noopener" style="background: #25D366; color: #fff; font-weight: 700; padding: 0.45rem 1rem; border-radius: 9999px; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 4px;">
+        <a href="https://wa.me/${phoneDigits.replace('+', '')}" target="_blank" rel="noopener" style="background: #25D366; color: #fff; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 9999px; text-decoration: none; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,211,102,0.2);">
           💬 WhatsApp
         </a>
       </div>
     </header>
 
     <!-- FULL PAGE MAIN CONTENT -->
-    <main style="flex: 1; width: 100%;">
+    <main style="flex: 1; width: 100%; background: #FFFFFF;">
 
-      <!-- FULL WIDTH HERO IMAGE SHOWCASE (UNCROPPED) -->
-      <div id="re-gallery-frame" style="position: relative; width: 100%; max-height: 65vh; min-height: 320px; background: #0F172A; display: flex; align-items: center; justify-content: center; overflow: hidden; user-select: none;">
+      <!-- HERO IMAGE SHOWCASE (UNCROPPED DARK SHOWCASE) -->
+      <div id="re-gallery-frame" style="position: relative; width: 100%; max-height: 65vh; min-height: 340px; background: #0B132B; display: flex; align-items: center; justify-content: center; overflow: hidden; user-select: none;">
         <img id="re-gallery-main" src="${escapeHtml(galleryImages[0])}" alt="${escapeHtml(prop.title)}" style="max-width: 100%; max-height: 65vh; object-fit: contain; width: auto; height: auto; display: block; margin: auto;">
 
         ${galleryImages.length > 1 ? `
@@ -771,17 +792,17 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
             style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 20; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">❯</button>
 
           <!-- Photo Counter -->
-          <span id="re-photo-counter" style="position: absolute; bottom: 16px; left: 20px; z-index: 20; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.85rem; font-weight: 700; padding: 6px 14px; border-radius: 9999px; backdrop-filter: blur(4px);">1 / ${galleryImages.length}</span>
+          <span id="re-photo-counter" style="position: absolute; bottom: 16px; left: 20px; z-index: 20; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.85rem; font-weight: 700; padding: 6px 14px; border-radius: 9999px; backdrop-filter: blur(4px);">📷 1 / ${galleryImages.length} Photos</span>
         ` : ''}
       </div>
 
       ${galleryImages.length > 1 ? `
         <!-- Thumbnail Strip -->
-        <div style="background: #1E293B; padding: 12px 1.5rem; border-bottom: 1px solid #334155;">
-          <div style="max-width: 1000px; margin: 0 auto; display: flex; gap: 10px; overflow-x: auto;">
+        <div style="background: #0F172A; padding: 12px 1.5rem; border-bottom: 1px solid #1E293B;">
+          <div style="max-width: 1200px; margin: 0 auto; display: flex; gap: 10px; overflow-x: auto;">
             ${galleryImages.map((u, i) => `
               <button type="button" class="re-gallery-thumb" data-index="${i}" aria-label="View photo ${i + 1} of ${galleryImages.length}"
-                style="width: 70px; height: 70px; border-radius: 12px; overflow: hidden; border: 3px solid ${i === 0 ? RE_GREEN : 'transparent'}; padding: 0; cursor: pointer; background: #0F172A; flex-shrink: 0; transition: transform 0.15s ease;">
+                style="width: 72px; height: 72px; border-radius: 12px; overflow: hidden; border: 3px solid ${i === 0 ? RE_GREEN : 'transparent'}; padding: 0; cursor: pointer; background: #0B132B; flex-shrink: 0; transition: all 0.2s ease;">
                 <img src="${escapeHtml(u)}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
               </button>
             `).join('')}
@@ -789,44 +810,109 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
         </div>
       ` : ''}
 
-      <!-- PROPERTY DETAILS CONTAINER UNDER IMAGE -->
-      <div style="max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 4rem;">
-        <div style="background: #fff; border-radius: 24px; padding: 2rem; border: 1px solid #E2E8F0; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+      <!-- MAIN PAGE CONTENT (PREMIUM 2-COLUMN SPLIT ON DESKTOP) -->
+      <div style="max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem;">
 
-          <span style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; font-size: 0.75rem; font-weight: 800; padding: 5px 14px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 1rem;">${badge.label}</span>
-
-          <h1 style="font-size: 2.2rem; font-weight: 800; color: #0F172A; margin-bottom: 0.5rem; line-height: 1.2;">${escapeHtml(prop.title)}</h1>
-
-          <p style="color: #64748B; font-size: 1.05rem; display: flex; align-items: center; gap: 6px; margin-bottom: 1.25rem; font-weight: 500;">
-            📍 ${escapeHtml(prop.location)}
-          </p>
-
-          <div style="font-size: 2.2rem; font-weight: 900; color: ${RE_GREEN}; margin-bottom: 1.75rem;">${escapeHtml(prop.price)}</div>
-
-          <!-- Description Box -->
-          <div style="background: #F8FAFC; border-radius: 18px; padding: 1.5rem; border-left: 5px solid ${RE_GOLD}; margin-bottom: 2rem; border-top: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9;">
-            <h3 style="font-size: 1.1rem; font-weight: 700; color: #0F172A; margin-bottom: 0.75rem;">Property Description</h3>
-            <div style="color: #334155; line-height: 1.75; font-size: 1rem; white-space: pre-line;">${escapeHtml(prop.description)}</div>
+        <!-- HEADER TITLE & PRICE SECTION -->
+        <div style="margin-bottom: 2rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1.5rem;">
+          <div style="flex: 1 1 320px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; flex-wrap: wrap;">
+              <span style="background: ${badge.bg}; color: ${badge.color}; font-size: 0.75rem; font-weight: 800; padding: 5px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em;">${badge.label}</span>
+              <span style="background: #ECFDF5; color: ${RE_GREEN}; font-size: 0.75rem; font-weight: 800; padding: 5px 12px; border-radius: 9999px; display: flex; align-items: center; gap: 4px;">✓ Verified Listing</span>
+            </div>
+            <h1 style="font-size: 2.4rem; font-weight: 900; color: #0F172A; margin-bottom: 0.5rem; line-height: 1.2;">${escapeHtml(prop.title)}</h1>
+            <p style="color: #64748B; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+              📍 Location: ${escapeHtml(prop.location)}
+            </p>
           </div>
 
-          <!-- Features / Specs -->
-          <div style="background: #F8FAFC; padding: 1.25rem; border-radius: 18px; text-align: center; margin-bottom: 2rem; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.1rem;">
-            <span style="font-size: 1.3rem;">📐</span>
-            <span style="color: #0F172A; font-weight: 700;">Property Size / Area:</span>
-            <strong style="color: ${RE_BLUE};">${escapeHtml(prop.area)}</strong>
+          <div style="text-align: left; md:text-right; flex-shrink: 0;">
+            <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #64748B; letter-spacing: 0.05em; margin-bottom: 4px;">Listed Price</div>
+            <div style="font-size: 2.5rem; font-weight: 900; color: ${RE_GREEN};">${escapeHtml(formattedPrice)}</div>
+          </div>
+        </div>
+
+        <!-- 2-COLUMN GRID SECTION -->
+        <div style="display: flex; flex-wrap: wrap; gap: 2.5rem;">
+
+          <!-- LEFT COLUMN: OVERVIEW, HIGHLIGHTS & DESCRIPTION (62%) -->
+          <div style="flex: 2 1 500px;">
+
+            <!-- KEY HIGHLIGHTS BAR -->
+            <div style="background: #F8FAFC; border-radius: 20px; padding: 1.5rem; border: 1px solid #E2E8F0; margin-bottom: 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: #EEF2FF; color: ${RE_BLUE}; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">📐</div>
+                <div>
+                  <div style="font-size: 0.75rem; color: #64748B; font-weight: 700; text-transform: uppercase;">Total Area</div>
+                  <div style="font-weight: 800; color: #0F172A; font-size: 1.1rem;">${escapeHtml(formattedArea)}</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: #ECFDF5; color: ${RE_GREEN}; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">🏷️</div>
+                <div>
+                  <div style="font-size: 0.75rem; color: #64748B; font-weight: 700; text-transform: uppercase;">Category</div>
+                  <div style="font-weight: 800; color: #0F172A; font-size: 1.1rem;">${escapeHtml(badge.label)}</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: #FEF3C7; color: ${RE_GOLD}; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">📍</div>
+                <div>
+                  <div style="font-size: 0.75rem; color: #64748B; font-weight: 700; text-transform: uppercase;">District</div>
+                  <div style="font-weight: 800; color: #0F172A; font-size: 1.1rem;">${escapeHtml(prop.location)}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DESCRIPTION SECTION -->
+            <div style="margin-bottom: 2.5rem;">
+              <h2 style="font-size: 1.4rem; font-weight: 800; color: #0F172A; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                <span style="width: 4px; height: 22px; background: ${RE_GOLD}; border-radius: 9999px;"></span>
+                Property Overview & Details
+              </h2>
+              <div style="background: #F8FAFC; border-radius: 20px; padding: 1.75rem; border: 1px solid #E2E8F0; color: #334155; line-height: 1.8; font-size: 1.05rem; white-space: pre-line;">${escapeHtml(prop.description)}</div>
+            </div>
+
           </div>
 
-          <!-- Contact Buttons -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-            <a href="tel:${phoneDigits}" style="text-align: center; background: ${RE_BLUE}; color: #fff; font-weight: 800; padding: 1rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.05rem; box-shadow: 0 4px 12px rgba(15,23,42,0.15);">
-              📞 Call Agent Now
-            </a>
-            <a href="https://wa.me/${phoneDigits.replace('+', '')}" target="_blank" rel="noopener" style="text-align: center; background: #25D366; color: #fff; font-weight: 800; padding: 1rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.05rem; box-shadow: 0 4px 12px rgba(37,211,102,0.2);">
-              💬 Chat on WhatsApp
-            </a>
+          <!-- RIGHT COLUMN: STICKY AGENT CONTACT CARD (35%) -->
+          <div style="flex: 1 1 320px;">
+            <div style="position: sticky; top: 90px; background: #fff; border-radius: 24px; border: 1px solid #E2E8F0; padding: 1.75rem; box-shadow: 0 10px 30px rgba(15,23,42,0.06);">
+
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1.25rem; border-bottom: 1px solid #F1F5F9; padding-bottom: 1.25rem;">
+                <div style="width: 52px; height: 52px; border-radius: 16px; background: #ECFDF5; border: 2px solid ${RE_GREEN}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: ${RE_GREEN}; shrink-0;">
+                  🏠
+                </div>
+                <div>
+                  <div style="font-weight: 800; color: #0F172A; font-size: 1.1rem;">Gasabo Real Estate</div>
+                  <div style="font-size: 0.8rem; color: ${RE_GREEN}; font-weight: 700;">✓ Verified Official Agent</div>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 1.5rem; space-y: 8px; font-size: 0.9rem; color: #475569;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <span style="font-weight: 600;">Agent Contact:</span>
+                  <strong style="color: #0F172A;">${escapeHtml(contact?.phone || '0788350555')}</strong>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-weight: 600;">Location:</span>
+                  <strong style="color: #0F172A;">Kigali, Rwanda</strong>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <a href="tel:${phoneDigits}" style="text-align: center; background: ${RE_BLUE}; color: #fff; font-weight: 800; padding: 1rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.05rem; box-shadow: 0 4px 14px rgba(15,23,42,0.15); transition: transform 0.15s ease;">
+                  📞 Call Agent Now
+                </a>
+                <a href="https://wa.me/${phoneDigits.replace('+', '')}" target="_blank" rel="noopener" style="text-align: center; background: #25D366; color: #fff; font-weight: 800; padding: 1rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.05rem; box-shadow: 0 4px 14px rgba(37,211,102,0.2); transition: transform 0.15s ease;">
+                  💬 Chat on WhatsApp
+                </a>
+              </div>
+
+            </div>
           </div>
 
         </div>
+
       </div>
 
     </main>
@@ -843,7 +929,7 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
     if (i < 0 || i >= galleryImages.length) return;
     activeIndex = i;
     if (galleryMain) galleryMain.src = galleryImages[i];
-    if (counterEl) counterEl.textContent = `${i + 1} / ${galleryImages.length}`;
+    if (counterEl) counterEl.textContent = `📷 ${i + 1} / ${galleryImages.length} Photos`;
 
     thumbs.forEach((t, n) => {
       t.style.borderColor = n === i ? RE_GREEN : 'transparent';

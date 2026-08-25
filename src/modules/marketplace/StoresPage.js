@@ -185,17 +185,19 @@ export function renderStoresPage(container) {
                     ${store.products.length === 0 ? `
                       <p class="col-span-full text-xs text-gray-500 text-center py-4">This seller has no active listings right now.</p>
                     ` : store.products.map((p) => `
-                      <div class="bg-gray-50 rounded-xl p-3 border border-gray-100 hover:border-brand-green transition cursor-pointer flex flex-col justify-between group product-item-btn" data-id="${p.id}">
+                      <div class="bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-brand-green shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group product-item-btn" data-id="${p.id}">
                         <div>
-                          <div class="h-32 rounded-lg bg-white overflow-hidden flex items-center justify-center p-2 mb-2 relative border border-gray-100">
+                          <div class="relative w-full h-32 bg-gray-100 overflow-hidden flex items-center justify-center">
                             ${p.image
-                              ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" class="max-h-full object-contain group-hover:scale-105 transition transform">`
+                              ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" class="w-full h-full object-cover group-hover:scale-105 transition transform">`
                               : '<i class="fa-solid fa-image text-2xl text-gray-300"></i>'}
                           </div>
-                          <h4 class="text-xs font-bold text-gray-800 line-clamp-2 mb-1 group-hover:text-brand-green">${escapeHtml(p.title)}</h4>
+                          <div class="p-2.5">
+                            <h4 class="text-xs font-bold text-gray-800 line-clamp-2 mb-1 group-hover:text-brand-green">${escapeHtml(p.title)}</h4>
+                          </div>
                         </div>
-                        <div>
-                          <div class="flex items-baseline gap-1.5 mt-2">
+                        <div class="p-2.5 pt-0">
+                          <div class="flex items-baseline gap-1.5 mt-1">
                             <span class="font-black text-sm text-brand-dark">${escapeHtml(p.currency || 'RWF')} ${Number(p.price).toLocaleString()}</span>
                           </div>
                           <!-- The mockup showed a star rating here. Product has no

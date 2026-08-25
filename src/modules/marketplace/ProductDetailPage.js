@@ -60,16 +60,16 @@ function relatedCard(p) {
   const stars = starsHtml(p.rating);
 
   return `
-    <div class="related-card bg-gray-50 rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl transition transform hover:scale-105 border border-gray-100"
+    <div class="related-card bg-white rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl transition transform hover:scale-105 border border-gray-100"
       data-id="${p.id}" role="button" tabindex="0">
-      <div class="relative bg-gray-100 h-48 flex items-center justify-center overflow-hidden">
+      <div class="relative w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
         ${p.images && p.images[0]
-          ? `<img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy" class="h-3/4 object-contain drop-shadow-lg">`
+          ? `<img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition transform">`
           : '<i class="fa-solid fa-image text-4xl text-gray-300"></i>'}
-        ${hasDiscount ? `<span class="absolute top-3 right-3 bg-brand-green text-white text-xs font-bold px-3 py-1 rounded-full">-${pct}%</span>` : ''}
+        ${hasDiscount ? `<span class="absolute top-3 right-3 bg-brand-green text-white text-xs font-bold px-3 py-1 rounded-full z-10">-${pct}%</span>` : ''}
       </div>
       <div class="p-4">
-        <h3 class="font-bold text-gray-900 mb-3 line-clamp-2 text-sm">${escapeHtml(p.title)}</h3>
+        <h3 class="font-bold text-gray-900 mb-2 line-clamp-2 text-sm">${escapeHtml(p.title)}</h3>
         <p class="text-brand-green font-black text-lg mb-2">${p.currency} ${p.price.toLocaleString()}</p>
         ${stars ? `
           <div class="flex items-center gap-1 text-yellow-400 text-sm">

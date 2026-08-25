@@ -18,16 +18,16 @@ function productCard(prod) {
   const stars = starsHtml(prod.rating);
 
   return `
-    <div class="products-card bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col justify-between"
+    <div class="products-card bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col justify-between"
       data-id="${prod.id}" role="button" tabindex="0">
-      ${hasDiscount ? `<div class="absolute top-3 left-3 bg-brand-orange text-white text-[10px] font-bold px-2 py-0.5 rounded z-10">-${pct}%</div>` : ''}
       
-      <div class="h-44 flex items-center justify-center mb-3 bg-gray-50 rounded-xl overflow-hidden p-2">
+      <div class="relative w-full h-44 bg-gray-100 overflow-hidden flex items-center justify-center">
+        ${hasDiscount ? `<div class="absolute top-3 left-3 bg-brand-orange text-white text-[10px] font-bold px-2 py-0.5 rounded z-10">-${pct}%</div>` : ''}
         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
-          class="max-h-full object-contain group-hover:scale-105 transition transform">
+          class="w-full h-full object-cover group-hover:scale-105 transition transform">
       </div>
       
-      <div>
+      <div class="p-3 flex-1 flex flex-col justify-between">
         <h3 class="text-xs font-semibold text-gray-800 mb-1 line-clamp-2">${escapeHtml(prod.title)}</h3>
         <div class="font-bold text-base text-brand-dark mb-1">
           RWF ${prod.price.toLocaleString()}

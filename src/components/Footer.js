@@ -29,7 +29,7 @@ export function getLargeFooterHtml(currentLang = 'en') {
           <ul class="footer-links-list">
             <li class="footer-contact-item">
               <i class="fa-solid fa-location-dot contact-icon location-icon"></i>
-              <span class="foot-nav-link">Location: Kacyiru, Kigali</span>
+              <span class="foot-nav-link">Gasabo District, Kacyiru, Kigali</span>
             </li>
             <li class="footer-contact-item">
               <i class="fa-solid fa-phone contact-icon phone-icon"></i>
@@ -39,8 +39,30 @@ export function getLargeFooterHtml(currentLang = 'en') {
               <i class="fa-solid fa-envelope contact-icon email-icon"></i>
               <a href="mailto:info@gasaborealestate.com" class="foot-nav-link">Email: info@gasaborealestate.com</a>
             </li>
+            <li style="margin-top: 0.6rem;">
+              <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.4rem;">Follow Us:</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <a href="https://www.instagram.com/gasabo_real_estate/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"
+                  style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                  <i class="fa-brands fa-instagram"></i>
+                </a>
+                <a href="https://www.youtube.com/@GasaboRealEstate" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube"
+                  style="width: 32px; height: 32px; border-radius: 8px; background: #FF0000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                  <i class="fa-brands fa-youtube"></i>
+                </a>
+                <a href="https://www.facebook.com/profile.php?id=100063657936349" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook"
+                  style="width: 32px; height: 32px; border-radius: 8px; background: #1877F2; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                  <i class="fa-brands fa-facebook-f"></i>
+                </a>
+                <a href="https://www.tiktok.com/@gasaborealestate" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok"
+                  style="width: 32px; height: 32px; border-radius: 8px; background: #000000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                  <i class="fa-brands fa-tiktok"></i>
+                </a>
+              </div>
+            </li>
           </ul>
         </div>
+
 
         <!-- Column 3: Advertise -->
         <div class="footer-col">

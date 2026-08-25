@@ -82,8 +82,30 @@ function gasaboFooterHtml(contact) {
               <i class="fa-solid fa-envelope" style="color: #94A3B8; font-size: 0.95rem; width: 16px;"></i>
               <a href="mailto:${escapeHtml(email)}" style="color: #D0E1ED; text-decoration: none;">${escapeHtml(email)}</a>
             </li>
+            <li style="margin-top: 0.6rem;">
+              <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.4rem;">Follow Us:</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <a href="https://www.instagram.com/gasabo_real_estate/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"
+                  style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                  <i class="fa-brands fa-instagram"></i>
+                </a>
+                <a href="https://www.youtube.com/@GasaboRealEstate" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube"
+                  style="width: 32px; height: 32px; border-radius: 8px; background: #FF0000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                  <i class="fa-brands fa-youtube"></i>
+                </a>
+                <a href="https://www.facebook.com/profile.php?id=100063657936349" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook"
+                  style="width: 32px; height: 32px; border-radius: 8px; background: #1877F2; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                  <i class="fa-brands fa-facebook-f"></i>
+                </a>
+                <a href="https://www.tiktok.com/@gasaborealestate" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok"
+                  style="width: 32px; height: 32px; border-radius: 8px; background: #000000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
+                  <i class="fa-brands fa-tiktok"></i>
+                </a>
+              </div>
+            </li>
           </ul>
         </div>
+
 
         <!-- Column 3: Advertise -->
         <div>

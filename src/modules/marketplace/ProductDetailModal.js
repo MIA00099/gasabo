@@ -1,4 +1,5 @@
 import { makeAccessibleModal } from '../../components/modalA11y.js';
+import { openShareModal } from '../../components/ShareModal.js';
 
 /**
  * Product Detail Modal Component - Ported from delivered mockup product-detail.html.
@@ -130,9 +131,14 @@ export function renderProductDetailModal(product, onClose, returnFocusTo) {
                 <i class="fa-brands fa-whatsapp text-lg"></i> WhatsApp
               </a>
             </div>
-            <button id="wishlist-btn" class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-2.5 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm">
-              <i class="fa-regular fa-heart"></i> Add to Wishlist
-            </button>
+            <div class="grid grid-cols-2 gap-3">
+              <button id="modal-share-btn" type="button" class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-2.5 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm">
+                <i class="fa-solid fa-share-nodes"></i> Share Link
+              </button>
+              <button id="wishlist-btn" type="button" class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-2.5 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm">
+                <i class="fa-regular fa-heart"></i> Add to Wishlist
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -205,6 +211,21 @@ export function renderProductDetailModal(product, onClose, returnFocusTo) {
       const delta = dx < 0 ? 1 : -1;
       setModalImg((activeModalIdx + delta + images.length) % images.length);
     }, { passive: true });
+  }
+
+  const shareBtn = modalContainer.querySelector('#modal-share-btn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', () => {
+      openShareModal({
+        title: product.title,
+        text: `Check out "${product.title}" (${product.price ? product.price.toLocaleString() + ' RWF' : ''}) on Kigali Market!`,
+        url: `/product/${encodeURIComponent(product.id)}`,
+        image: images[0],
+        price: product.price,
+        currency: 'RWF',
+        location: product.district,
+      }, null, '#modal-share-btn');
+    });
   }
 
   const wishlistBtn = modalContainer.querySelector('#wishlist-btn');

@@ -20,6 +20,7 @@ import { starsHtml } from '../../utils/stars.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 import { openImageLightbox } from '../../components/imageLightbox.js';
+import { openShareModal } from '../../components/ShareModal.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -268,16 +269,19 @@ export function renderProductDetailPage(container, product, handlers = {}) {
                     <i class="fa-brands fa-whatsapp text-lg"></i> WhatsApp
                   </a>
                 </div>
-                <!-- This was "Add to Wishlist" with a data-soon stub behind it,
-                     so it did nothing at all. It is the like button now: the
-                     count is what the seller sees on their dashboard. -->
-                <button type="button" id="detail-like-btn"
-                  class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm"
-                  aria-pressed="false">
-                  <i id="detail-like-icon" class="fa-regular fa-heart"></i>
-                  <span id="detail-like-label">Like</span>
-                  <span id="detail-like-count" class="text-gray-500 font-semibold"></span>
-                </button>
+                <div class="grid grid-cols-2 gap-3">
+                  <button type="button" id="detail-share-btn"
+                    class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm">
+                    <i class="fa-solid fa-share-nodes"></i> Share
+                  </button>
+                  <button type="button" id="detail-like-btn"
+                    class="w-full bg-white border-2 border-brand-green text-brand-green font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-green-50 transition shadow-sm"
+                    aria-pressed="false">
+                    <i id="detail-like-icon" class="fa-regular fa-heart"></i>
+                    <span id="detail-like-label">Like</span>
+                    <span id="detail-like-count" class="text-gray-500 font-semibold"></span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -443,6 +447,19 @@ export function renderProductDetailPage(container, product, handlers = {}) {
       startIndex: activeIndex,
       returnFocusTo: '#detail-zoom-btn',
     });
+  });
+
+  // ---- Share --------------------------------------------------------------
+  container.querySelector('#detail-share-btn')?.addEventListener('click', () => {
+    openShareModal({
+      title: product.title,
+      text: `Check out "${product.title}" (${product.currency} ${product.price.toLocaleString()}) on Kigali Market!`,
+      url: pathForListing(ROUTE_PRODUCT, product.id),
+      image: images[0],
+      price: product.price,
+      currency: product.currency,
+      location: product.district,
+    }, null, '#detail-share-btn');
   });
 
   // ---- Like ---------------------------------------------------------------

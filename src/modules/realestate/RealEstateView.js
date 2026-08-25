@@ -10,6 +10,7 @@ import { openDropdownMenu } from '../../components/dropdownMenu.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pushHome, pathForListing, ROUTE_PROPERTY, ROUTE_HOME } from '../../store/router.js';
 import { makeAccessibleModal } from '../../components/modalA11y.js';
+import { openShareModal, showShareToast } from '../../components/ShareModal.js';
 
 // Mockup's own brand palette (Gasabo Real Estate's tailwind.config), kept
 // as its own identity separate from the marketplace's green/gold/flag-blue
@@ -743,6 +744,29 @@ function formatPropArea(val) {
   return str;
 }
 
+export function shareUrlLink({ title, text, url }) {
+  openShareModal({ title, text, url });
+}
+
+export function showToastNotification(msg) {
+  let toast = document.getElementById('km-global-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'km-global-toast';
+    toast.style.cssText = 'position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #0F172A; color: #FFFFFF; font-weight: 700; font-size: 0.92rem; padding: 12px 24px; border-radius: 9999px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 99999; transition: all 0.3s ease; opacity: 0; pointer-events: none; border: 1px solid rgba(255,255,255,0.15);';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translate(-50%, -8px)';
+
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translate(-50%, 0px)';
+  }, 2600);
+}
+
 // Exported so main.js can open it in response to a /property/:id URL, not
 // only from a card click - a visitor landing on that link directly must get
 // the same detail view.
@@ -775,6 +799,10 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
       </button>
 
       <div style="display: flex; align-items: center; gap: 10px;">
+        <button type="button" id="re-share-head-btn" aria-label="Share property link"
+          style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #0F172A; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 9999px; cursor: pointer; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+          🔗 Share Link
+        </button>
         <a href="tel:${phoneDigits}" style="background: ${RE_BLUE}; color: #fff; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 9999px; text-decoration: none; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15,23,42,0.15);">
           📞 Call Agent
         </a>
@@ -913,6 +941,9 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
                 <a href="https://wa.me/${phoneDigits.replace('+', '')}" target="_blank" rel="noopener" style="text-align: center; background: #25D366; color: #fff; font-weight: 800; padding: 1rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.05rem; box-shadow: 0 4px 14px rgba(37,211,102,0.2); transition: transform 0.15s ease;">
                   💬 Chat on WhatsApp
                 </a>
+                <button type="button" id="re-share-card-btn" style="text-align: center; background: #F1F5F9; border: 1px solid #CBD5E1; color: #0F172A; font-weight: 800; padding: 0.9rem; border-radius: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; transition: transform 0.15s ease;">
+                  🔗 Share Property Link
+                </button>
               </div>
 
             </div>
@@ -1062,6 +1093,21 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
     onClose,
     returnFocusTo,
   });
+
+  const doShareProperty = (returnFocusSelector) => {
+    openShareModal({
+      title: prop.title,
+      text: `Check out "${prop.title}" (${formattedPrice}) in ${prop.location} on Gasabo Real Estate!`,
+      url: pathForListing(ROUTE_PROPERTY, prop.id),
+      image: galleryImages[0],
+      price: prop.priceNum || prop.price,
+      currency: 'Rwf',
+      location: prop.location,
+    }, null, returnFocusSelector);
+  };
+
+  overlay.querySelector('#re-share-head-btn')?.addEventListener('click', () => doShareProperty('#re-share-head-btn'));
+  overlay.querySelector('#re-share-card-btn')?.addEventListener('click', () => doShareProperty('#re-share-card-btn'));
 
   overlay.querySelector('#re-modal-close').addEventListener('click', close);
 

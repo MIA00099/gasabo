@@ -8,51 +8,74 @@ import { getTranslation } from '../store/i18n.js';
 import { pushHome, ROUTE_HOME } from '../store/router.js';
 
 export function getLargeFooterHtml(currentLang = 'en') {
-  const t = (key) => getTranslation(currentLang, key);
   return `
     <footer class="large-footer" id="large-footer">
       <div class="large-footer-container">
-        <!-- Brand Column -->
-        <div class="footer-col brand-col">
-          <div class="footer-brand-title cursor-pointer" id="foot-brand-home" role="button" tabindex="0" title="Back to Kigali Market Home">
-            <img src="/logo-kigali-market.jpg" alt="Kigali Market Logo" class="footer-logo-img">
-            <span>KIGALI MARKET</span>
-          </div>
-          <p class="footer-brand-desc">
-            ${t('footer_desc') || "Rwanda's Premier Official Direct Marketplace & Gasabo Real Estate Corporate Portal. Enabling direct peer-to-peer trade across all 30 districts."}
-          </p>
-        </div>
-
-        <!-- Quick Links Column -->
+        
+        <!-- Column 1: Our Platforms -->
         <div class="footer-col">
-          <h4 class="footer-col-title">${t('quick_links') || 'Quick Links'}</h4>
+          <h4 class="footer-col-title">Our Platforms</h4>
           <ul class="footer-links-list">
-            <li><a href="#" id="foot-link-mkt" class="foot-nav-link">${t('link_catalog') || 'Marketplace Catalog'}</a></li>
-            <li><a href="#" id="foot-link-re" class="foot-nav-link">${t('link_re') || 'Gasabo Real Estate'}</a></li>
-            <li><a href="#" id="foot-link-sell" class="foot-nav-link">${t('link_sell') || 'Start Selling'}</a></li>
+            <li><a href="#" id="foot-brand-home" class="foot-nav-link">Kigali Market</a></li>
+            <li><a href="#" id="foot-link-re" class="foot-nav-link">Gasabo Real Estate</a></li>
+            <li><a href="#" class="foot-nav-link">Kigali Job</a></li>
+            <li><a href="#" class="foot-nav-link">Clickrwanda TV</a></li>
           </ul>
         </div>
 
-        <!-- Districts Column -->
+        <!-- Column 2: Contact Us -->
         <div class="footer-col">
-          <h4 class="footer-col-title">${t('districts') || 'Districts'}</h4>
+          <h4 class="footer-col-title">Contact Us</h4>
           <ul class="footer-links-list">
-            <li>Gasabo District</li>
-            <li>Nyarugenge District</li>
-            <li>Kicukiro District</li>
-            <li>Musanze & Rubavu</li>
+            <li class="footer-contact-item">
+              <i class="fa-solid fa-location-dot contact-icon location-icon"></i>
+              <span class="foot-nav-link">Location: Kacyiru, Kigali</span>
+            </li>
+            <li class="footer-contact-item">
+              <i class="fa-solid fa-phone contact-icon phone-icon"></i>
+              <a href="tel:+250788350555" class="footer-phone-link foot-nav-link">Call/Whatsapp: +250 788 350 555</a>
+            </li>
+            <li class="footer-contact-item">
+              <i class="fa-solid fa-envelope contact-icon email-icon"></i>
+              <a href="mailto:info@gasaborealestate.com" class="foot-nav-link">Email: info@gasaborealestate.com</a>
+            </li>
           </ul>
         </div>
 
-        <!-- Headquarters Column -->
+        <!-- Column 3: Advertise -->
         <div class="footer-col">
-          <h4 class="footer-col-title">${t('headquarters') || 'Headquarters'}</h4>
-          <p class="footer-address">
-            Gasabo Tower, 4th Floor<br>
-            KG 7 Ave, Kacyiru<br>
-            Kigali, Rwanda<br>
-            <a href="tel:+250788350555" class="footer-phone-link">📞 0788350555</a>
-          </p>
+          <h4 class="footer-col-title">Advertise</h4>
+          <ul class="footer-links-list">
+            <li><a href="#" id="foot-link-sell" class="foot-nav-link">Get Started</a></li>
+            <li><a href="#" class="foot-nav-link">Our Plans</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 4: Support Links -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">Support Links</h4>
+          <ul class="footer-links-list">
+            <li><a href="#" class="foot-nav-link">Help Center</a></li>
+            <li><a href="#" class="foot-nav-link">Contact Us</a></li>
+            <li><a href="#" class="foot-nav-link">FAQs</a></li>
+            <li><a href="#" class="foot-nav-link">Become an Agent</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Divider line -->
+      <div class="footer-divider-line"></div>
+
+      <!-- Bottom Bar -->
+      <div class="footer-bottom-bar">
+        <div class="footer-copyright">
+          All rights reserved &copy; 2026
+        </div>
+        <div class="footer-bottom-links">
+          <a href="#" class="foot-bottom-link">About Us</a>
+          <a href="#" class="foot-bottom-link">Terms &amp; Conditions</a>
+          <a href="#" class="foot-bottom-link">Privacy Policy</a>
         </div>
       </div>
     </footer>

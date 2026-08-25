@@ -46,52 +46,85 @@ const TESTIMONIALS = [
  */
 function gasaboFooterHtml(contact) {
   const c = contact || {};
+  const phone = c.phone || '0788350555';
+  const phoneDigits = String(phone).replace(/\s+/g, '');
+  const email = c.email || 'info@gasaborealestate.com';
+  const address = c.address || 'Kacyiru, Gasabo, Kigali';
+
   return `
-    <footer style="background: ${RE_BLUE}; color: #fff; padding: 2.5rem 1.5rem 1.75rem;">
-      <div style="max-width: var(--page-max); margin: 0 auto; display: flex; flex-wrap: wrap; gap: 2.5rem; justify-content: space-between;">
-
-        <div style="min-width: 240px; flex: 1;">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
-            <img src="/real-estate-logo.png" alt="" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; background: #fff;">
-            <span style="font-weight: 800; font-size: 1.15rem;">Gasabo Real Estate</span>
-          </div>
-          <p style="color: #C7D7F5; font-size: 0.9rem; line-height: 1.6; max-width: 34ch;">
-            Plots, houses and property services across Gasabo District and greater Kigali.
-          </p>
+    <footer class="large-footer" style="background: linear-gradient(to right, #00568e 0%, #004b7c 35%, #08344e 70%, #0c2b3e 100%); color: #ffffff; padding: 3.5rem 2rem 1.75rem;">
+      <div style="max-width: var(--page-max); margin: 0 auto 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2.5rem;">
+        
+        <!-- Column 1: Our Platforms -->
+        <div>
+          <h4 style="color: #ffffff; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem;">Our Platforms</h4>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.94rem; color: #D0E1ED;">
+            <li><button class="re-foot-link" data-tab="properties" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Gasabo Real Estate</button></li>
+            <li><button class="re-foot-link" data-tab="home" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Kigali Market</button></li>
+            <li><span style="color: #D0E1ED;">Kigali Job</span></li>
+            <li><span style="color: #D0E1ED;">Clickrwanda TV</span></li>
+          </ul>
         </div>
 
-        <div style="min-width: 170px;">
-          <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.85rem;">Browse</h4>
-          <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-            <button class="re-foot-link" data-tab="properties" data-type="plot" style="background: none; border: none; padding: 0; text-align: left; color: #C7D7F5; font-size: 0.9rem; cursor: pointer;">Plots</button>
-            <button class="re-foot-link" data-tab="properties" data-type="house" style="background: none; border: none; padding: 0; text-align: left; color: #C7D7F5; font-size: 0.9rem; cursor: pointer;">Houses</button>
-            <button class="re-foot-link" data-tab="services" style="background: none; border: none; padding: 0; text-align: left; color: #C7D7F5; font-size: 0.9rem; cursor: pointer;">Services</button>
-            <button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: #C7D7F5; font-size: 0.9rem; cursor: pointer;">About</button>
-          </div>
+        <!-- Column 2: Contact Us -->
+        <div>
+          <h4 style="color: #ffffff; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem;">Contact Us</h4>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.94rem; color: #D0E1ED;">
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-location-dot" style="color: #94A3B8; font-size: 0.95rem; width: 16px;"></i>
+              <span>${escapeHtml(address)}</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-phone" style="color: #22C55E; font-size: 0.95rem; width: 16px;"></i>
+              <a href="tel:${escapeHtml(phoneDigits)}" style="color: #ffffff; font-weight: 700; text-decoration: none;">${escapeHtml(phone)}</a>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-envelope" style="color: #94A3B8; font-size: 0.95rem; width: 16px;"></i>
+              <a href="mailto:${escapeHtml(email)}" style="color: #D0E1ED; text-decoration: none;">${escapeHtml(email)}</a>
+            </li>
+          </ul>
         </div>
 
-        <div style="min-width: 220px;">
-          <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.85rem;">Contact & Follow</h4>
-          <div style="display: flex; flex-direction: column; gap: 0.6rem; color: #C7D7F5; font-size: 0.9rem;">
-            ${c.address ? `<span>${escapeHtml(c.address)}</span>` : ''}
-            ${c.phone ? `<a href="tel:${escapeHtml(String(c.phone).replace(/\s+/g, ''))}" style="color: #fff; font-weight: 700; text-decoration: none;">${escapeHtml(c.phone)}</a>` : ''}
-            ${c.email ? `<a href="mailto:${escapeHtml(c.email)}" style="color: #C7D7F5; text-decoration: none;">${escapeHtml(c.email)}</a>` : ''}
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-              <a href="https://www.instagram.com/gasabo_real_estate/" target="_blank" rel="noopener noreferrer" style="width: 30px; height: 30px; border-radius: 6px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; text-decoration: none;" aria-label="Instagram" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-              <a href="https://www.youtube.com/@GasaboRealEstate" target="_blank" rel="noopener noreferrer" style="width: 30px; height: 30px; border-radius: 6px; background: #FF0000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; text-decoration: none;" aria-label="YouTube" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
-              <a href="https://www.facebook.com/profile.php?id=100063657936349" target="_blank" rel="noopener noreferrer" style="width: 30px; height: 30px; border-radius: 6px; background: #1877F2; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; text-decoration: none;" aria-label="Facebook" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-              <a href="https://www.tiktok.com/@gasaborealestate" target="_blank" rel="noopener noreferrer" style="width: 30px; height: 30px; border-radius: 6px; background: #000000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; text-decoration: none;" aria-label="TikTok" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
-            </div>
-          </div>
+        <!-- Column 3: Advertise -->
+        <div>
+          <h4 style="color: #ffffff; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem;">Advertise</h4>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.94rem; color: #D0E1ED;">
+            <li><button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Get Started</button></li>
+            <li><button class="re-foot-link" data-tab="services" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Our Plans</button></li>
+          </ul>
         </div>
+
+        <!-- Column 4: Support Links -->
+        <div>
+          <h4 style="color: #ffffff; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem;">Support Links</h4>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.94rem; color: #D0E1ED;">
+            <li><button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Help Center</button></li>
+            <li><button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Contact Us</button></li>
+            <li><button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">FAQs</button></li>
+            <li><button class="re-foot-link" data-tab="services" style="background: none; border: none; padding: 0; text-align: left; color: inherit; font-size: inherit; cursor: pointer;">Become an Agent</button></li>
+          </ul>
+        </div>
+
       </div>
 
-      <div style="max-width: var(--page-max); margin: 1.75rem auto 0; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.18); color: #A9BFE8; font-size: 0.8rem;">
-        &copy; ${new Date().getFullYear()} Gasabo Real Estate. All rights reserved.
+      <!-- Divider line -->
+      <div style="max-width: var(--page-max); margin: 0 auto 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.18);"></div>
+
+      <!-- Bottom Bar -->
+      <div style="max-width: var(--page-max); margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; color: #CBD5E1; font-size: 0.9rem;">
+        <div>
+          All rights reserved &copy; 2026
+        </div>
+        <div style="display: flex; align-items: center; gap: 1.75rem;">
+          <button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; color: #CBD5E1; font-size: inherit; cursor: pointer;">About Us</button>
+          <button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; color: #CBD5E1; font-size: inherit; cursor: pointer;">Terms &amp; Conditions</button>
+          <button class="re-foot-link" data-tab="about" style="background: none; border: none; padding: 0; color: #CBD5E1; font-size: inherit; cursor: pointer;">Privacy Policy</button>
+        </div>
       </div>
     </footer>
   `;
 }
+
 
 
 /**

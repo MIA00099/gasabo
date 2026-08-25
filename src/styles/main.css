@@ -2465,18 +2465,9 @@ footer a:hover {
    ========================================================================== */
 
 .large-footer {
-  /* Site-wide blue accent (#003DA5) background - one consistent blue across
-     every blue element on the site (footer, .search-pill-cta,
-     .product-card-trending-badge, admin dashboard --primary below). The top
-     border is still blue/yellow/Rwanda-flag-green in hard-stop thirds
-     (border-image, since a plain border can't do multiple colors) - was
-     solid gold, now the one explicit "three colors together" element on
-     the site. */
-  background-color: #003DA5;
+  background: linear-gradient(to right, #00568e 0%, #004b7c 35%, #08344e 70%, #0c2b3e 100%);
   color: #FFFFFF;
-  border-top: 5px solid transparent;
-  border-image: linear-gradient(to right, #003DA5 0 33.33%, #FAD201 33.33% 66.66%, #004B00 66.66% 100%) 1;
-  padding: 4.5rem 2rem 3rem 2rem;
+  padding: 3.5rem 2rem 1.75rem 2rem;
   margin-top: auto;
   width: 100%;
   position: relative;
@@ -2485,10 +2476,94 @@ footer a:hover {
 
 .large-footer-container {
   max-width: var(--page-max);
-  margin: 0 auto;
+  margin: 0 auto 2.5rem auto;
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.2fr;
-  gap: 3rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2.5rem;
+}
+
+.footer-col-title {
+  color: #FFFFFF;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.01em;
+}
+
+.footer-links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: 0.94rem;
+  color: #D0E1ED;
+  font-weight: 400;
+}
+
+.footer-links-list a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-links-list a:hover {
+  color: #FFFFFF;
+}
+
+.footer-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contact-icon {
+  font-size: 0.95rem;
+  width: 16px;
+  text-align: center;
+}
+
+.location-icon, .email-icon {
+  color: #94A3B8;
+}
+
+.phone-icon {
+  color: #22C55E;
+}
+
+.footer-divider-line {
+  max-width: var(--page-max);
+  margin: 0 auto 1.5rem auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.footer-bottom-bar {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: #CBD5E1;
+  font-size: 0.9rem;
+}
+
+.footer-bottom-links {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.foot-bottom-link {
+  color: #CBD5E1;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.foot-bottom-link:hover {
+  color: #FFFFFF;
 }
 
 .footer-brand-title {
@@ -2504,8 +2579,6 @@ footer a:hover {
 
 .footer-logo-img {
   height: 38px;
-  /* auto, not 38px: the KM mark is about 1.74:1, and a square box letterboxed
-     it down to 22px tall inside 38px of empty space. */
   width: auto;
   object-fit: contain;
 }
@@ -2516,36 +2589,6 @@ footer a:hover {
   line-height: 1.65;
   max-width: 400px;
   font-weight: 500;
-}
-
-.footer-col-title {
-  color: #FFFFFF;
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 1.25rem;
-  letter-spacing: 0.01em;
-}
-
-.footer-links-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  font-size: 0.94rem;
-  color: #CBD5E1;
-  font-weight: 500;
-}
-
-.footer-links-list a {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.footer-links-list a:hover {
-  color: #FAD201;
 }
 
 .footer-address {
@@ -2562,12 +2605,12 @@ footer a:hover {
   text-decoration: none;
   transition: color 0.2s ease;
   display: inline-block;
-  margin-top: 4px;
 }
 
 .footer-phone-link:hover {
-  color: #FAD201;
+  color: #FFFFFF;
 }
+
 
 /* SLIM STICKY FOOTER BAR */
 .slim-sticky-bar {

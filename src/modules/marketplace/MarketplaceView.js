@@ -31,10 +31,11 @@ function productCardHtml(prod, { compact = false } = {}) {
   const was = Number(prod.originalPrice) || 0;
   const hasDiscount = was > prod.price;
   const pct = hasDiscount ? Math.round((1 - prod.price / was) * 100) : 20;
+  const imgHeight = compact ? 'max-h-[100px]' : 'max-h-[128px]';
 
   return `
     <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
-        <div class="relative w-full ${compact ? 'h-28' : 'h-36'} bg-gray-100 overflow-hidden flex items-center justify-center">
+        <div class="relative w-full ${imgHeight} ${compact ? 'h-28' : 'h-36'} bg-gray-100 overflow-hidden flex items-center justify-center">
             <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-${pct}%</div>
             <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
               class="w-full h-full object-cover group-hover:scale-105 transition transform">

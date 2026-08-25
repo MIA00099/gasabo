@@ -299,30 +299,31 @@ export function renderRealEstateView(container) {
 
               <!-- PLOTS -->
               <a href="#" class="nav-item re-nav-item" data-nav="plot" aria-haspopup="menu" aria-expanded="false">
-                <span class="icon">&#9831;</span>
+                <span class="icon"><i class="fa-solid fa-map-location-dot" style="font-size: 0.95rem;"></i></span>
                 <span>Plots</span>
                 <span class="arrow">&#8964;</span>
               </a>
 
               <!-- HOUSES -->
               <a href="#" class="nav-item re-nav-item" data-nav="house" aria-haspopup="menu" aria-expanded="false">
-                <span class="icon">&#8962;</span>
+                <span class="icon"><i class="fa-solid fa-house" style="font-size: 0.95rem;"></i></span>
                 <span>Houses</span>
                 <span class="arrow">&#8964;</span>
               </a>
 
               <!-- SERVICES -->
               <a href="#" class="nav-item re-nav-item" data-nav="services" aria-haspopup="menu" aria-expanded="false">
-                <span class="icon">&#9635;</span>
+                <span class="icon"><i class="fa-solid fa-briefcase" style="font-size: 0.95rem;"></i></span>
                 <span>Services</span>
                 <span class="arrow">&#8964;</span>
               </a>
 
               <!-- ABOUT -->
               <a href="#" class="nav-item re-nav-item" data-nav="about">
-                <span class="info-icon">i</span>
+                <span class="info-icon" style="font-size: 0.85rem; font-weight: 700; border: 1.5px solid currentColor; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;">i</span>
                 <span>About</span>
               </a>
+
 
             </div>
 

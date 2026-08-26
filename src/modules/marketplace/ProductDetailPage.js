@@ -497,10 +497,19 @@ export function renderProductDetailPage(container, product, handlers = {}) {
     };
 
     const known = stateEngine.getState().likes?.[product.id];
-    if (known) paintLike(known);
-    // Ask the server whether THIS visitor already liked it, so a heart the
-    // reader filled last week is still filled when they come back.
-    stateEngine.loadLikeState(product.id).then(paintLike).catch(() => {});
+    if (known) {
+      // Already have it - just paint. Fetching again here was an endless loop:
+      // loadLikeState() calls notify(), which re-renders this whole page, which
+      // ran this line again, which fetched and notified again... The page was
+      // re-fetching /like and rebuilding itself roughly every second for as long
+      // as it was open (it was also what kept resetting the photo gallery).
+      paintLike(known);
+    } else {
+      // First time for this listing: ask the server whether THIS visitor already
+      // liked it, so a heart they filled last week is still filled on return.
+      // Once it lands it populates state.likes, so the branch above takes over.
+      stateEngine.loadLikeState(product.id).then(paintLike).catch(() => {});
+    }
 
     likeBtn.addEventListener('click', () => {
       // Paint first, reconcile after - see toggleLike. A heart that waits on

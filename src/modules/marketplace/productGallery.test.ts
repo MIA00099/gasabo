@@ -30,15 +30,23 @@ const makeProduct = (id: string) => ({
 });
 
 let renderProductDetailPage: any;
+let stateEngine: any;
+let apiGet: any;
 let container: HTMLElement;
 
 beforeEach(async () => {
   vi.resetModules(); // fresh module state (the remembered gallery index) per test
   ({ renderProductDetailPage } = await import('./ProductDetailPage.js'));
+  ({ stateEngine } = await import('../../store/stateEngine.js'));
+  ({ api: { get: apiGet } } = await import('../../api/client.js') as any);
+  apiGet.mockClear();
   document.body.innerHTML = '';
   container = document.createElement('div');
   document.body.appendChild(container);
 });
+
+const likeFetchCount = () =>
+  apiGet.mock.calls.filter((c: any[]) => /\/like\b/.test(String(c[0]))).length;
 
 const mainSrc = () => container.querySelector('#detail-main-img')!.getAttribute('src');
 
@@ -73,6 +81,23 @@ describe('product gallery selection survives re-renders', () => {
 
     renderProductDetailPage(container, makeProduct('p1'));
     expect(mainSrc()).toBe('/photo-b.jpg');
+  });
+
+  it('does not re-fetch like state once it is known (no render loop)', () => {
+    // loadLikeState() calls notify(), which re-renders the whole page. When the
+    // fetch ran on every render it re-triggered itself endlessly - the page
+    // re-fetched /like and rebuilt roughly once a second for as long as it was
+    // open. It must fetch at most once per listing.
+    renderProductDetailPage(container, makeProduct('p1'));
+    expect(likeFetchCount()).toBe(1);
+
+    // Simulate the fetch having resolved (state.likes now populated), then a
+    // re-render (the notify that fetch itself would fire).
+    stateEngine.data.likes = { p1: { liked: false, likeCount: 0 } };
+    renderProductDetailPage(container, makeProduct('p1'));
+
+    // Still one - the known branch paints without fetching again.
+    expect(likeFetchCount()).toBe(1);
   });
 
   it('resets to the first photo when a different listing is opened', () => {

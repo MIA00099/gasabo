@@ -549,24 +549,36 @@ class StateEngine {
    * into parallel requests and updates state with a single notification to
    * prevent multiple rapid re-renders / re-paints on cold load.
    */
-  async loadMarketplaceHomeData(filters = {}) {
+  async loadMarketplaceHomeData(filters = {}, { force = false } = {}) {
     if (this._marketplaceHomeDataLoading) return;
-    const needProducts = this.data.loading.products === undefined;
-    const needCategories = this.data.loading.categories === undefined;
-    const needFlashDeals = this.data.loading.flashDeals === undefined;
-    const needBanners = this.data.loading.banners === undefined;
+    // Cold load: fetch whatever has not been attempted. Forced refresh (the
+    // tab-return auto-refresh): re-fetch products, flash deals and banners, but
+    // not categories - they are stable and the slowest query, and re-pulling
+    // them on every tab focus is wasted work.
+    const needProducts = force || this.data.loading.products === undefined;
+    const needCategories = !force && this.data.loading.categories === undefined;
+    const needFlashDeals = force || this.data.loading.flashDeals === undefined;
+    const needBanners = force || this.data.loading.banners === undefined;
 
     if (!needProducts && !needCategories && !needFlashDeals && !needBanners) return;
 
     this._marketplaceHomeDataLoading = true;
 
-    const nextLoading = { ...this.data.loading };
-    if (needProducts) nextLoading.products = true;
-    if (needCategories) nextLoading.categories = true;
-    if (needFlashDeals) nextLoading.flashDeals = true;
-    if (needBanners) nextLoading.banners = true;
-    this.data.loading = nextLoading;
-    this.notify();
+    // A forced refresh keeps the current page on screen and swaps the new data
+    // in with the SINGLE notify at the end - no loading flags flipped, so it
+    // neither flashes a skeleton nor triggers a second re-render. This is what
+    // fixes the "shaking": the old refresh fired three separate loaders whose
+    // loading/data/done notifies re-rendered the whole page ~7 times. A cold
+    // load still shows the loading state first.
+    if (!force) {
+      const nextLoading = { ...this.data.loading };
+      if (needProducts) nextLoading.products = true;
+      if (needCategories) nextLoading.categories = true;
+      if (needFlashDeals) nextLoading.flashDeals = true;
+      if (needBanners) nextLoading.banners = true;
+      this.data.loading = nextLoading;
+      this.notify();
+    }
 
     try {
       const params = new URLSearchParams();

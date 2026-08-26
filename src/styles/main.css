@@ -4715,15 +4715,12 @@ button[disabled]:hover,
    --------------------------------------------------------------------------- */
 
 @media (max-width: 767px) {
-  .hero-section-wrapper .slider-container {
-    top: auto;
-    bottom: 4%;
-    height: 38%;
-    right: 2%;
-    width: 48%;
-    padding: 6px;
-  }
-
+  /* The phone slider used to be pinned into the bottom-right of the navy arc
+     (an arc-wedge column). The hero is now a stacked column - text, search, then
+     a full-width ad banner - handled in the mobile block far above; the old
+     arc-wedge slider-container override was left here and, being later in the
+     source, was silently overriding the full-width rule (pinning the banner to
+     48% again). Removed. Only the flash-deals centring stays. */
   .flash-deals {
     margin-inline: auto;
   }

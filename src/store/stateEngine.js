@@ -852,12 +852,39 @@ class StateEngine {
   }
 
 
+  async renameCategory(categoryId, name) {
+    return this._run('categories', async () => {
+      const { category } = await api.patch(`/categories/${categoryId}`, { name });
+      this.data.categories = this.data.categories.map((c) => (c.id === category.id ? category : c));
+      this.notify();
+      return category;
+    });
+  }
+
   async requestDeleteCategory(categoryId) {
     return this._run('approvalRequests', async () => {
       const { request } = await api.post(`/categories/${categoryId}/request-delete`, {});
       this.data.approvalRequests = [request, ...this.data.approvalRequests];
       this.notify();
       return request;
+    });
+  }
+
+  // Self-service account edits (any signed-in user for the password; sellers
+  // for the profile). Server verifies the current password / seller role.
+  async changePassword(currentPassword, newPassword) {
+    return this._run('accountForm', async () => {
+      await api.post('/auth/change-password', { currentPassword, newPassword });
+      return true;
+    });
+  }
+
+  async updateSellerProfile({ name, phone }) {
+    return this._run('accountForm', async () => {
+      const { user } = await api.patch('/auth/profile', { name, phone });
+      this.data.currentUser = { ...this.data.currentUser, name: user.name, phone: user.phone };
+      this.notify();
+      return user;
     });
   }
 

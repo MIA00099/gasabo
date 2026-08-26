@@ -171,3 +171,109 @@ authRouter.get('/me', requireAuth, async (req, res) => {
   if (!user || user.status === 'SUSPENDED') return gone();
   return res.json({ user: { id: user.id, email: user.email, name: user.name, role: 'USER' } });
 });
+
+// The account tables, keyed by the role stored in the JWT. Every account type
+// authenticates the same way (a bcrypt passwordHash column), so change-password
+// works uniformly across administrators, sub-administrators, sellers and users.
+const accountModelFor = (role: string): any =>
+  ({
+    ADMINISTRATOR: prisma.administrator,
+    SUB_ADMINISTRATOR: prisma.subAdministrator,
+    SELLER: prisma.seller,
+    USER: prisma.platformUser,
+  } as Record<string, any>)[role];
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(6),
+});
+
+// Change your own password: prove the current one, then set a new one. This is
+// the self-service path - distinct from an administrator RESETTING a seller's
+// password (that issues a temporary one), which stays in sellers.routes.ts.
+authRouter.post('/change-password', requireAuth, async (req, res) => {
+  const parsed = changePasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Enter your current password and a new password of at least 6 characters.' });
+  }
+  const { currentPassword, newPassword } = parsed.data;
+  const claim = req.user!;
+
+  const model = accountModelFor(claim.role);
+  if (!model) return res.status(400).json({ error: 'This account type cannot change its password here.' });
+
+  const account = await model.findUnique({ where: { id: claim.id } });
+  if (!account) return res.status(401).json({ error: 'This session is no longer valid. Please sign in again.' });
+
+  if (!(await bcrypt.compare(currentPassword, account.passwordHash))) {
+    return res.status(400).json({ error: 'Your current password is incorrect.' });
+  }
+  if (await bcrypt.compare(newPassword, account.passwordHash)) {
+    return res.status(400).json({ error: 'The new password must be different from your current one.' });
+  }
+
+  await model.update({ where: { id: account.id }, data: { passwordHash: await bcrypt.hash(newPassword, 10) } });
+
+  await logAudit({
+    actorId: claim.id,
+    actorType: claim.role,
+    actorName: claim.name,
+    action: 'PASSWORD_CHANGED',
+    module: 'Account',
+    details: 'Changed their own password.',
+  });
+
+  res.json({ success: true });
+});
+
+const updateSellerProfileSchema = z.object({
+  name: z.string().min(2).optional(),
+  phone: z.string().min(6).optional(),
+});
+
+// A seller editing their own storefront name and contact phone. Email is not
+// self-editable (it is the login identity and is changed through the admin
+// path, which audits it); status/district are not touched here.
+authRouter.patch('/profile', requireAuth, async (req, res) => {
+  const claim = req.user!;
+  if (claim.role !== 'SELLER') {
+    return res.status(403).json({ error: 'Only sellers can edit a storefront profile.' });
+  }
+  const parsed = updateSellerProfileSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Enter a valid business name and/or phone number.' });
+  const { name, phone } = parsed.data;
+  if (name === undefined && phone === undefined) return res.status(400).json({ error: 'Nothing to update.' });
+
+  const seller = await prisma.seller.findUnique({ where: { id: claim.id } });
+  if (!seller || seller.status === 'SUSPENDED') {
+    return res.status(401).json({ error: 'This session is no longer valid. Please sign in again.' });
+  }
+
+  const updated = await prisma.seller.update({
+    where: { id: seller.id },
+    data: {
+      ...(name !== undefined ? { businessName: name.trim() } : {}),
+      ...(phone !== undefined ? { contactPhone: phone.trim() } : {}),
+    },
+  });
+
+  await logAudit({
+    actorId: claim.id,
+    actorType: 'SELLER',
+    actorName: updated.businessName,
+    action: 'SELLER_PROFILE_UPDATED',
+    module: 'Account',
+    details: `Updated their own profile${name !== undefined ? ' name' : ''}${name !== undefined && phone !== undefined ? ' and' : ''}${phone !== undefined ? ' phone' : ''}.`,
+  });
+
+  res.json({
+    user: {
+      id: updated.id,
+      email: updated.email,
+      name: updated.businessName,
+      role: 'SELLER',
+      phone: updated.contactPhone,
+      district: updated.district,
+    },
+  });
+});

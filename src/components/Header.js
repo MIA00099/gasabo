@@ -94,7 +94,7 @@ export function renderHeaderHtml(ctx) {
          all. With the left half gone the row fits at 320px, so the class that
          hid it is gone too. -->
     <div class="bg-brand-green text-white text-[10px] py-1 flex-none">
-      <div class="compact-container flex justify-center md:justify-end items-center">
+      <div class="compact-container px-3 sm:px-4 lg:px-6 flex justify-center md:justify-end items-center">
         <div class="flex items-center gap-0.5 sm:gap-1" role="group" aria-label="Choose a language">
           ${LANGUAGES.map((l, i) => `
             ${i ? '<span aria-hidden="true" class="text-white/40">|</span>' : ''}
@@ -113,7 +113,7 @@ export function renderHeaderHtml(ctx) {
 
     <!-- Header -->
     <header class="bg-white py-2 shadow-sm z-50 flex-none">
-      <div class="compact-container relative flex flex-wrap md:flex-nowrap items-center justify-between gap-3">
+      <div class="compact-container px-3 sm:px-4 lg:px-6 relative flex flex-wrap md:flex-nowrap items-center justify-between gap-3">
 
         <!-- The marketplace mark is the supplied artwork, used unaltered.
              rounded-lg only softens the corners of the square it already is.
@@ -234,7 +234,7 @@ export function renderHeaderHtml(ctx) {
            overflow-x-auto row let a wide left side scroll Post an Ad out of
            view - and the brief "all categories inline" regression made the
            left side very wide. -->
-      <div class="compact-container flex items-center h-10 gap-2 sm:gap-4">
+      <div class="compact-container px-3 sm:px-4 lg:px-6 flex items-center h-10 gap-2 sm:gap-4">
 
         <!-- FIXED LEFT: All Categories + the permanent links. Scrolls inside
              itself on a phone where they cannot all fit; never grows past its

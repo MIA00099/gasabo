@@ -3819,8 +3819,10 @@ table {
 /* Tablet */
 @media (max-width: 1023px) and (min-width: 768px) {
     .hero-section-wrapper {
+        min-height: 360px;
         height: 380px;
         border-radius: 0 0 0 40px;
+        overflow: hidden;
     }
 
     .hero-section-wrapper::before {
@@ -3838,13 +3840,19 @@ table {
     }
 
     .hero-section-wrapper .slider-container {
-        clip-path: none;
+        /* Clip the ad to the navy arc so the blurred backdrop never paints over
+           the gold line (tablet: slider 50% wide, arc left 42%, 145%x245%, 16px
+           band -> 8px half). Same derivation as the desktop note above. */
+        clip-path: ellipse(calc(145% - 8px) calc(122.5% - 8px) at calc(129% + 8px) calc(50.5% + 8px));
         width: 50%;
+        min-height: 260px;
+        height: 100%;
         padding: 12px 16px;
+        overflow: hidden;
     }
 }
 
-/* Mobile: clean stacked flow so text, search bar, and ad banner all get full visibility */
+/* Mobile (Base - 0px to 767px): Mobile-first stacked layout with fluid minimum height & zero overflow */
 @media (max-width: 767px) {
     .hero-section-wrapper {
         height: auto;
@@ -3854,6 +3862,7 @@ table {
         align-items: stretch;
         justify-content: flex-start;
         padding-bottom: 24px;
+        overflow: hidden;
     }
 
     .hero-section-wrapper::before {
@@ -3877,11 +3886,15 @@ table {
         top: auto;
         right: auto;
         width: 100%;
-        height: 210px;
+        min-height: 220px;
+        height: auto;
+        aspect-ratio: 16 / 9;
         margin-top: 14px;
         clip-path: none;
         padding: 8px 16px 28px 16px;
         justify-content: center;
+        overflow: hidden;
+        z-index: 10;
     }
 
     .hero-section-wrapper .slider-dots {
@@ -3890,9 +3903,11 @@ table {
         right: auto;
         left: 50%;
         transform: translateX(-50%);
+        z-index: 20;
     }
 
-    .hero-section-wrapper .slide img {
+    .hero-section-wrapper .slide img,
+    .hero-section-wrapper .slide.has-caption img {
         width: 100%;
         height: 100%;
         max-height: 100%;
@@ -3901,14 +3916,17 @@ table {
         border-radius: 14px;
     }
 
+    /* Ad shown whole (never cropped) over its blurred fill: the sharp image is
+       contained in the full-width banner and the backdrop fills the frame. This
+       overrides the .slide img cover rule above (which is for the built-in
+       cut-out product slides). */
     .hero-section-wrapper .slide.cover-slide .slide-fg {
-        width: 100%;
-        height: 100%;
+        width: auto;
+        height: auto;
         max-height: 100%;
         max-width: 100%;
-        object-fit: cover;
-        object-position: center;
-        border-radius: 14px;
+        object-fit: contain;
+        border-radius: 0;
     }
 }
 
@@ -3934,38 +3952,31 @@ table {
     width: 100%;
     height: 100%;
     opacity: 0;
-    transition: opacity 0.8s ease-in-out;
+    transform: translateX(100%);
+    transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Not in the source file. Without it the three hidden slides keep their
-       contents in the tab order, so a keyboard reader tabs through pictures
-       nobody can see. */
     visibility: hidden;
+    overflow: hidden;
 }
 
 .slide img {
-     max-height: 88%;
-     max-width: 94%;
-     width: auto;
-     height: auto;
-     object-fit: contain;
+     max-height: 100%;
+     max-width: 100%;
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
      filter: drop-shadow(0 12px 20px rgba(0,0,0,0.30));
 }
 
 .slide.active {
     opacity: 1;
+    transform: translateX(0);
     visibility: visible;
     z-index: 10;
 }
 
-/* Admin-uploaded hero ads (cover-slide): a full photo or banner of any aspect
-   ratio, shown whole over a blurred fill of itself. The built-in .slide img
-   rule floats a small cut-out product; that left uploaded banners tiny and
-   boxed in flat navy. Here the foreground image is contained (never cropped -
-   the "EMERGENCY DEAL" text stays intact) and the blurred, zoomed backdrop
-   fills whatever the foreground does not, so every image reads as a full,
-   deliberate hero at any panel shape (wide desktop, tall mobile). */
 .slide.cover-slide {
     overflow: hidden;
 }
@@ -3979,20 +3990,18 @@ table {
     max-height: none;
     object-fit: cover;
     filter: blur(22px) brightness(0.82);
-    transform: scale(1.12); /* hide the soft blurred edges */
+    transform: scale(1.12);
     z-index: 0;
 }
 
 .slide.cover-slide .slide-fg {
     position: relative;
     z-index: 1;
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
     max-width: 100%;
     max-height: 100%;
-    object-fit: cover;
-    object-position: center;
-    border-radius: 16px;
+    object-fit: contain;
     filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
 }
 

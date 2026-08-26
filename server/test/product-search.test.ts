@@ -107,6 +107,30 @@ describe('GET /api/products?search', () => {
     expect(titles).not.toContain('Unapproved MacBook Air');
   });
 
+  it('finds a plural by also trying the singular (macbooks -> macbook)', async () => {
+    const res = await search('macbooks');
+    expect(res.body.products.map((p: any) => p.title)).toContain('Apple MacBook Pro M3 Max');
+  });
+
+  it('matches every word in any order (AND across words)', async () => {
+    const res = await search('apple macbook');
+    expect(res.body.products).toHaveLength(1);
+    expect(res.body.products[0].title).toBe('Apple MacBook Pro M3 Max');
+  });
+
+  it('narrows to nothing when the words never co-occur in one listing', async () => {
+    // "macbook" is one listing, "toyota" another - no single listing has both.
+    const res = await search('macbook toyota');
+    expect(res.body.products).toEqual([]);
+  });
+
+  it('finds listings by their category name, not just title/description', async () => {
+    // The category is "Search Fixtures"; "fixtures" is in no title or
+    // description, so this only works if the category name is searched.
+    const titles = (await search('fixtures')).body.products.map((p: any) => p.title).sort();
+    expect(titles).toEqual(['Apple MacBook Pro M3 Max', 'Toyota RAV4 Hybrid']);
+  });
+
   it('returns an empty list when nothing matches', async () => {
     const res = await search('zzzzzznothing');
     expect(res.status).toBe(200);

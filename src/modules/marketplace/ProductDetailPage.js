@@ -86,6 +86,16 @@ function relatedCard(p) {
   `;
 }
 
+// The selected gallery photo, remembered across this view's re-renders. Every
+// stateEngine notify rebuilds the whole product page from scratch (the related-
+// products loader finishing is one such notify, a second or two after the page
+// opens), and the gallery's index used to be a local that reset to 0 each time -
+// so changing the photo "snapped back to the first one". Keeping it at module
+// scope, keyed by listing, makes the selection survive those re-renders and
+// reset only when a genuinely different listing is opened.
+let galleryIndex = 0;
+let galleryProductId = null;
+
 export function renderProductDetailPage(container, product, handlers = {}) {
   const state = stateEngine.getState();
   const was = Number(product.originalPrice) || 0;
@@ -93,6 +103,15 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   const pct = hasDiscount ? Math.round((1 - product.price / was) * 100) : 0;
   const stars = starsHtml(product.rating);
   const images = Array.isArray(product.images) && product.images.length ? product.images : [''];
+
+  // Restore the remembered photo for this listing (reset when the listing
+  // changes, or if the remembered index no longer fits a shorter gallery).
+  if (galleryProductId !== product.id) {
+    galleryProductId = product.id;
+    galleryIndex = 0;
+  }
+  if (galleryIndex >= images.length) galleryIndex = 0;
+  const activeImageIndex = galleryIndex;
 
   // "More <category> Products" - fetched for this listing, not filtered out
   // of whatever the last grid returned. state.products is empty on a shared
@@ -122,7 +141,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
             <!-- LEFT: PRODUCT IMAGE GALLERY -->
             <div>
               <div class="bg-gray-100 rounded-2xl h-80 sm:h-96 md:h-[440px] flex items-center justify-center relative overflow-hidden mb-3 group shadow-md border border-gray-100">
-                <img id="detail-main-img" src="${images[0]}" alt="${escapeHtml(product.title)}"
+                <img id="detail-main-img" src="${images[activeImageIndex]}" alt="${escapeHtml(product.title)}"
                   class="w-full h-full object-cover relative z-10 transition duration-300 group-hover:scale-105">
 
                 ${hasDiscount ? `
@@ -150,7 +169,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
 
                   <span id="main-counter"
                     class="absolute bottom-3 left-3 z-20 bg-black/55 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                    aria-live="polite">1 / ${images.length}</span>
+                    aria-live="polite">${activeImageIndex + 1} / ${images.length}</span>
                 ` : ''}
                 <!-- Opens the shared lightbox. A listing photo is the only
                      thing a buyer has to judge condition by, and the inline
@@ -176,9 +195,9 @@ export function renderProductDetailPage(container, product, handlers = {}) {
 
                   <div id="detail-thumb-strip" class="flex gap-3 items-center overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0 py-1">
                     ${images.map((img, i) => `
-                      <button type="button" class="detail-thumb shrink-0 relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition ${i === 0 ? 'border-2 border-brand-green' : 'border-2 border-gray-300 opacity-60 hover:opacity-100'}"
+                      <button type="button" class="detail-thumb shrink-0 relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition ${i === activeImageIndex ? 'border-2 border-brand-green' : 'border-2 border-gray-300 opacity-60 hover:opacity-100'}"
                         data-src="${img}" data-index="${i}"
-                        aria-label="Show photo ${i + 1} of ${images.length}" aria-pressed="${i === 0}">
+                        aria-label="Show photo ${i + 1} of ${images.length}" aria-pressed="${i === activeImageIndex}">
                         <img src="${img}" alt="" class="w-full h-full object-cover">
                       </button>
                     `).join('')}
@@ -319,11 +338,12 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   const strip = container.querySelector('#detail-thumb-strip');
   const counter = container.querySelector('#main-counter');
   const thumbs = [...container.querySelectorAll('.detail-thumb')];
-  let activeIndex = 0;
+  let activeIndex = activeImageIndex;
 
   function selectImage(i) {
     if (i < 0 || i >= images.length) return;
     activeIndex = i;
+    galleryIndex = i; // remember it, so a re-render keeps this photo
     if (mainImg) mainImg.src = images[i];
 
     thumbs.forEach((t, n) => {

@@ -472,11 +472,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = stateEngine.getState();
     if (state.activePortal !== 'marketplace') return;
     const f = state.ui.marketplaceFilters || {};
+    // One batched refresh that updates everything in a single re-render, instead
+    // of three separate loaders that re-rendered the whole page ~7 times (the
+    // "shaking" on tab return). force:true re-fetches even though the data was
+    // loaded already; the current page stays on screen until the new data lands.
     stateEngine
-      .loadProducts({ category: f.selectedCategory, district: f.selectedDistrict, search: f.searchQuery })
+      .loadMarketplaceHomeData(
+        { category: f.selectedCategory, district: f.selectedDistrict, search: f.searchQuery },
+        { force: true },
+      )
       .catch(() => {});
-    stateEngine.loadFlashDeals().catch(() => {});
-    stateEngine.loadBanners().catch(() => {});
   }
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;

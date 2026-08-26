@@ -80,6 +80,11 @@ function productCardHtml(prod, { compact = false } = {}) {
     <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
         <div class="relative w-full ${compact ? 'h-36' : 'h-48 sm:h-52'} ${imgHeight} bg-gray-100 overflow-hidden flex items-center justify-center">
             <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-2 py-0.5 rounded-md z-10 shadow-sm">-${pct}%</div>
+            ${prod.isFeatured || prod.isTrending ? `
+              <div class="absolute top-2 right-2 z-10 ${prod.isFeatured ? 'bg-amber-400 text-amber-900' : 'bg-brand-green text-white'} text-[9px] font-bold px-2 py-0.5 rounded-md shadow-sm">
+                ${prod.isFeatured ? '⭐ Featured' : '🔥 Trending'}
+              </div>
+            ` : ''}
             <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
               class="w-full h-full object-cover group-hover:scale-105 transition transform">
         </div>

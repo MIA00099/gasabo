@@ -94,7 +94,11 @@ productsRouter.get('/', async (req, res) => {
         : {}),
     },
     include: { seller: true, category: true, ...WITH_LIKES },
-    orderBy: { createdAt: 'desc' },
+    // Featured first, then trending, then newest. This is what makes the admin's
+    // ⭐ Featured / 🔥 Trending flags actually do something on the storefront -
+    // before, they were saved but the catalog ignored them, so marking a listing
+    // featured had no visible effect.
+    orderBy: [{ isFeatured: 'desc' }, { isTrending: 'desc' }, { createdAt: 'desc' }],
   });
 
   res.json({ products: products.map(serializeProduct) });

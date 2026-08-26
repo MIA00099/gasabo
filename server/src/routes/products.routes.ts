@@ -65,15 +65,31 @@ productsRouter.get('/', async (req, res) => {
       ...(district ? { district } : {}),
       ...(search
         ? {
-            // mode: 'insensitive' because Prisma's `contains` is
-            // case-sensitive on PostgreSQL - searching "macbook" returned
-            // nothing while a listing titled "Apple MacBook Pro" sat right
-            // there. Now that the hero search is the main way into the
-            // catalog, that is not a small miss.
-            OR: [
-              { title: { contains: search, mode: 'insensitive' } },
-              { description: { contains: search, mode: 'insensitive' } },
-            ],
+            // Word/token based search, not a single contiguous substring.
+            //
+            // The old version matched the whole query as one `contains`, so
+            // "phone" found "iPhone" but "phones" (plural), "samsung phone"
+            // (two words), and "electronics" (a category, not in any title)
+            // all returned nothing. Now every word must appear in the title,
+            // description OR category name (AND across words, so more words =
+            // narrower), each matched case-insensitively; a trailing "s" is
+            // also tried singular so plurals hit. Capped at 6 words.
+            AND: search
+              .trim()
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 6)
+              .map((tok) => {
+                const variants =
+                  tok.length > 3 && /s$/i.test(tok) ? [tok, tok.slice(0, -1)] : [tok];
+                return {
+                  OR: variants.flatMap((v) => [
+                    { title: { contains: v, mode: 'insensitive' as const } },
+                    { description: { contains: v, mode: 'insensitive' as const } },
+                    { category: { name: { contains: v, mode: 'insensitive' as const } } },
+                  ]),
+                };
+              }),
           }
         : {}),
     },

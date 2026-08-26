@@ -24,6 +24,7 @@ function productCard(prod) {
       
       <div class="relative w-full h-48 sm:h-52 bg-gray-100 overflow-hidden flex items-center justify-center">
         ${hasDiscount ? `<div class="absolute top-3 left-3 bg-brand-orange text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-10 shadow-sm">-${pct}%</div>` : ''}
+        ${prod.isFeatured || prod.isTrending ? `<div class="absolute top-3 right-3 z-10 ${prod.isFeatured ? 'bg-amber-400 text-amber-900' : 'bg-brand-green text-white'} text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">${prod.isFeatured ? '⭐ Featured' : '🔥 Trending'}</div>` : ''}
         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
           class="w-full h-full object-cover group-hover:scale-105 transition transform">
       </div>

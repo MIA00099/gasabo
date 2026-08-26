@@ -165,6 +165,36 @@ describe('GET /api/categories', () => {
   });
 });
 
+describe('GET /api/categories default seeding', () => {
+  // The handler used to re-seed 11 default categories on EVERY request - eleven
+  // sequential DB round trips that made the endpoint take ~10s and, worse,
+  // re-created any default an admin had deleted on the next page load. Seeding
+  // now only runs when the table is empty.
+  it('does not seed the defaults when the table already has categories', async () => {
+    await prisma.product.deleteMany();
+    await prisma.category.deleteMany();
+    await prisma.category.create({ data: { name: 'Only One', slug: 'only-one', iconUrl: '📦' } });
+
+    await request(app).get('/api/categories');
+
+    const cats = await prisma.category.findMany();
+    // A single count()-guarded path: the 11 defaults must NOT be injected.
+    expect(cats).toHaveLength(1);
+    expect(cats[0].name).toBe('Only One');
+  });
+
+  it('still seeds the defaults on a genuinely empty table (fresh DB)', async () => {
+    await prisma.product.deleteMany();
+    await prisma.category.deleteMany();
+
+    const res = await request(app).get('/api/categories');
+
+    const names = res.body.categories.map((c: any) => c.name);
+    expect(names).toContain('Electronics & Tech');
+    expect(names.length).toBeGreaterThanOrEqual(11);
+  });
+});
+
 describe('POST /api/categories duplicate handling', () => {
   // This is the bug an admin actually hit in production: the category "Books"
   // existed, they typed "books", and got a 500 reading "Something went wrong

@@ -12,34 +12,36 @@ function slugify(name: string) {
 }
 
 categoriesRouter.get('/', async (_req, res) => {
-  const defaultSeeds = [
-    { name: 'Electronics & Tech', iconUrl: '💻' },
-    { name: 'Vehicles & Automotive', iconUrl: '🚗' },
-    { name: 'house', iconUrl: '🏠' },
-    { name: 'land', iconUrl: '🏞️' },
-    { name: 'motorcycle', iconUrl: '🏍️' },
-    { name: 'Agri-Business & Produce', iconUrl: '☕' },
-    { name: 'Real Estate', iconUrl: '🏠' },
-    { name: 'Fashion & Handcrafts', iconUrl: '👗' },
-    { name: 'Home & Furniture', iconUrl: '🛋️' },
-    { name: 'Services', iconUrl: '🛠️' },
-    { name: 'Jobs', iconUrl: '💼' },
-  ];
-
-  for (let i = 0; i < defaultSeeds.length; i++) {
-    const seed = defaultSeeds[i];
-    const slug = slugify(seed.name);
-    const existing = await prisma.category.findFirst({
-      where: {
-        OR: [
-          { name: { equals: seed.name, mode: 'insensitive' } },
-          { slug: { equals: slug, mode: 'insensitive' } },
-        ],
-      },
-    });
-    if (!existing) {
+  // Seed the default categories only when the table is empty (a fresh database),
+  // not on every request.
+  //
+  // This block used to run 11 case-insensitive findFirst queries on EVERY GET
+  // before returning the list - eleven sequential round trips to the database,
+  // which is what made /categories take ~10s and, in turn, made the homepage
+  // show its default hero slides and an empty nav for that whole time before the
+  // real content arrived. It also re-created any default category an admin had
+  // deleted, on the very next page load, so a default could never be removed.
+  // Guarding on an empty table keeps the fresh-DB safety net and makes the
+  // normal path a single count().
+  const existingCount = await prisma.category.count();
+  if (existingCount === 0) {
+    const defaultSeeds = [
+      { name: 'Electronics & Tech', iconUrl: '💻' },
+      { name: 'Vehicles & Automotive', iconUrl: '🚗' },
+      { name: 'house', iconUrl: '🏠' },
+      { name: 'land', iconUrl: '🏞️' },
+      { name: 'motorcycle', iconUrl: '🏍️' },
+      { name: 'Agri-Business & Produce', iconUrl: '☕' },
+      { name: 'Real Estate', iconUrl: '🏠' },
+      { name: 'Fashion & Handcrafts', iconUrl: '👗' },
+      { name: 'Home & Furniture', iconUrl: '🛋️' },
+      { name: 'Services', iconUrl: '🛠️' },
+      { name: 'Jobs', iconUrl: '💼' },
+    ];
+    for (let i = 0; i < defaultSeeds.length; i++) {
+      const seed = defaultSeeds[i];
       await prisma.category.create({
-        data: { name: seed.name, iconUrl: seed.iconUrl, slug, order: i },
+        data: { name: seed.name, iconUrl: seed.iconUrl, slug: slugify(seed.name), order: i },
       }).catch(() => {});
     }
   }

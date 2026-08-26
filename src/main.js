@@ -16,6 +16,7 @@ import {
 } from './components/Header.js';
 // Listings render as a full page now (product-detail.html), not an overlay.
 import { renderProductDetailPage } from './modules/marketplace/ProductDetailPage.js';
+import { getMarketplaceFooterHtml, bindMarketplaceFooterEvents } from './components/Footer.js';
 import { openCategoryDropdown } from './components/dropdownMenu.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
@@ -407,6 +408,25 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       } else if (activePortal === 'marketplace') {
         renderMarketplaceView(appElement);
+        // Site footer at the bottom of every marketplace page (home, catalog,
+        // stores, seller portal). Rendered here, not inside the view, so it
+        // survives the view's per-tab early returns.
+        appElement.insertAdjacentHTML('beforeend', getMarketplaceFooterHtml());
+        bindMarketplaceFooterEvents(appElement, {
+          goHome: handleGoHome,
+          postAd: goAccountOrSignup,
+          goSeller: () => stateEngine.routeToDashboard(),
+          goVehicles: () => {
+            const filters = stateEngine.getState().ui.marketplaceFilters || {};
+            stateEngine.setUI({
+              marketplaceTab: 'catalog',
+              marketplaceFilters: { ...filters, searchQuery: 'vehicles', selectedCategory: 'all' },
+            });
+            stateEngine.loadProducts({ search: 'vehicles' }).catch(() => {});
+            stateEngine.setPortal('marketplace');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          },
+        });
       }
     }
 

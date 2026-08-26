@@ -247,6 +247,9 @@ export function renderMarketplaceAdmin(container) {
                       <span class="badge badge-active">ENABLED</span>
                     </td>
                     <td class="tbl-actions-col">
+                      <button class="btn btn-sm btn-secondary rename-cat-btn" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" title="Rename this category">
+                        Rename
+                      </button>
                       <button class="btn btn-sm btn-secondary change-cat-icon-btn" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" title="Upload a logo for this category">
                         Change Icon
                       </button>
@@ -405,6 +408,19 @@ export function renderMarketplaceAdmin(container) {
           returnFocusTo: `.change-cat-icon-btn[data-id="${btn.dataset.id}"]`,
           onSubmit: ({ icon }) => stateEngine.updateCategoryIcon(btn.dataset.id, icon),
         });
+      });
+    });
+
+    container.querySelectorAll('.rename-cat-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const current = btn.dataset.name;
+        const name = (window.prompt('Rename category:', current) || '').trim();
+        if (!name || name === current) return;
+        try {
+          await stateEngine.renameCategory(btn.dataset.id, name);
+        } catch (err) {
+          alert(err?.message || 'Could not rename the category.');
+        }
       });
     });
 

@@ -127,6 +127,58 @@ const updateIconSchema = z.object({
   icon: z.string().min(1),
 });
 
+const renameCategorySchema = z.object({
+  name: z.string().min(2),
+});
+
+// Rename a category. Like the icon change this takes effect directly (a wrong
+// name is fixed by fixing the name), but it revalidates against the same
+// duplicate rules as creation and regenerates the slug so the URL and the
+// display name stay in step. The clash checks exclude THIS category, so fixing
+// only the capitalisation ("books" -> "Books") is allowed.
+categoriesRouter.patch('/:id', requireAuth, requirePermission('CATEGORIES'), async (req, res) => {
+  const parsed = renameCategorySchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'A category name of at least 2 characters is required.' });
+  const name = parsed.data.name.trim();
+
+  const category = await prisma.category.findUnique({ where: { id: req.params.id } });
+  if (!category) return res.status(404).json({ error: 'Category not found.' });
+
+  const nameClash = await prisma.category.findFirst({
+    where: { id: { not: category.id }, name: { equals: name, mode: 'insensitive' } },
+  });
+  if (nameClash) return res.status(409).json({ error: `"${nameClash.name}" already exists as a category.` });
+
+  const slug = slugify(name);
+  const slugClash = await prisma.category.findFirst({ where: { id: { not: category.id }, slug } });
+  if (slugClash) {
+    return res.status(409).json({
+      error: `This name is too close to the existing category "${slugClash.name}". Please choose a different one.`,
+    });
+  }
+
+  let updated;
+  try {
+    updated = await prisma.category.update({ where: { id: category.id }, data: { name, slug } });
+  } catch (err: any) {
+    if (err?.code === 'P2002') return res.status(409).json({ error: 'A category with this name already exists.' });
+    throw err;
+  }
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'CATEGORY_RENAMED',
+    module: 'Marketplace Admin',
+    targetId: category.id,
+    details: `Renamed category "${category.name}" to "${name}".`,
+  });
+
+  const count = await prisma.product.count({ where: { categoryId: category.id, status: 'ACTIVE' } });
+  res.json({ category: { id: updated.id, name: updated.name, icon: updated.iconUrl, order: updated.order, count } });
+});
+
 // Changing a category's icon is cosmetic and reversible - a wrong logo is
 // fixed by uploading the right one - so it takes effect directly, unlike
 // deletion below, which cascades into listed products and needs a second

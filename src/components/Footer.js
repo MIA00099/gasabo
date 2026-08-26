@@ -104,6 +104,99 @@ export function getLargeFooterHtml(currentLang = 'en') {
   `;
 }
 
+// The marketplace footer. The large footer above is Gasabo Real Estate's; the
+// shop needs its own Kigali Market branding, links and contact. Reuses the same
+// .large-footer styles so it inherits the layout and responsive behaviour.
+export function getMarketplaceFooterHtml() {
+  return `
+    <footer class="large-footer" id="market-footer">
+      <div class="large-footer-container">
+
+        <div class="footer-col brand-col">
+          <div class="footer-brand-title cursor-pointer" id="mfoot-brand-home" role="button" tabindex="0" title="Kigali Market home" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+            <img src="/logo-kigali-market.jpg" alt="Kigali Market" style="height: 40px; width: 40px; border-radius: 10px; object-fit: cover;">
+            <span style="font-weight: 800; font-size: 1.25rem; color: #ffffff;">KIGALI MARKET</span>
+          </div>
+          <p class="footer-brand-desc" style="color: #D0E1ED; font-size: 0.92rem; line-height: 1.6; max-width: 34ch;">
+            Buy and sell products, vehicles and property across Rwanda &mdash; all in one place.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Browse</h4>
+          <ul class="footer-links-list">
+            <li><a href="#" id="mfoot-all" class="foot-nav-link">All Listings</a></li>
+            <li><a href="#" id="mfoot-vehicles" class="foot-nav-link">Vehicles</a></li>
+            <li><a href="#" id="mfoot-realestate" class="foot-nav-link">Real Estate</a></li>
+            <li><a href="#" id="mfoot-stores" class="foot-nav-link">Stores</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Sell</h4>
+          <ul class="footer-links-list">
+            <li><a href="#" id="mfoot-postad" class="foot-nav-link">Post an Ad</a></li>
+            <li><a href="#" id="mfoot-seller" class="foot-nav-link">Seller Dashboard</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Contact</h4>
+          <ul class="footer-links-list">
+            <li class="footer-contact-item">
+              <i class="fa-solid fa-location-dot contact-icon location-icon"></i>
+              <span class="foot-nav-link">Kigali, Rwanda</span>
+            </li>
+            <li class="footer-contact-item">
+              <i class="fa-solid fa-envelope contact-icon email-icon"></i>
+              <a href="mailto:info@kigalimarket.com" class="foot-nav-link">info@kigalimarket.com</a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="footer-divider-line"></div>
+
+      <div class="footer-bottom-bar">
+        <div class="footer-copyright">All rights reserved &copy; 2026 Kigali Market</div>
+        <div class="footer-bottom-links">
+          <a href="#" class="foot-bottom-link">About Us</a>
+          <a href="#" class="foot-bottom-link">Terms &amp; Conditions</a>
+          <a href="#" class="foot-bottom-link">Privacy Policy</a>
+        </div>
+      </div>
+    </footer>
+  `;
+}
+
+// Wires the marketplace footer's links. Falls back to going home for anything a
+// specific handler was not supplied for.
+export function bindMarketplaceFooterEvents(container, handlers = {}) {
+  if (!container) return;
+  const goHome = handlers.goHome || defaultGoHome;
+  const on = (sel, fn) =>
+    container.querySelector(sel)?.addEventListener('click', (e) => {
+      e.preventDefault();
+      fn();
+    });
+
+  on('#mfoot-brand-home', goHome);
+  on('#mfoot-all', goHome);
+  on('#mfoot-vehicles', () => (handlers.goVehicles ? handlers.goVehicles() : goHome()));
+  on('#mfoot-realestate', () => {
+    stateEngine.setPortal('realestate');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  on('#mfoot-stores', () => {
+    stateEngine.setUI({ marketplaceTab: 'stores' });
+    stateEngine.setPortal('marketplace');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  on('#mfoot-postad', () => (handlers.postAd ? handlers.postAd() : goHome()));
+  on('#mfoot-seller', () => (handlers.goSeller ? handlers.goSeller() : goHome()));
+}
+
 function defaultGoHome() {
   pushHome();
   stateEngine.setRoute({ kind: ROUTE_HOME, id: null });

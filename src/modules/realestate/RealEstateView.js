@@ -331,7 +331,7 @@ export function renderRealEstateView(container) {
 
           <!-- RIGHT SIDE: SOCIAL ICONS & KIGALI MARKET -->
           <div style="display: flex; align-items: center; gap: 0.85rem;">
-            <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <div class="re-header-social" style="display: flex; align-items: center; gap: 0.45rem;">
               <a href="https://www.instagram.com/gasabo_real_estate/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"
                 style="width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
                 <i class="fa-brands fa-instagram"></i>
@@ -858,6 +858,15 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
           <!-- Photo Counter -->
           <span id="re-photo-counter" style="position: absolute; bottom: 16px; left: 20px; z-index: 20; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.85rem; font-weight: 700; padding: 6px 14px; border-radius: 9999px; backdrop-filter: blur(4px);">📷 1 / ${galleryImages.length} Photos</span>
         ` : ''}
+
+        ${prop.videoId ? `
+          <!-- Play badge for the admin's YouTube tour. Centred so it doesn't
+               cover the left/right photo arrows. Opens the embedded video. -->
+          <button type="button" id="re-play-video-btn" aria-label="Play video tour"
+            style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:22; width:74px; height:74px; border-radius:50%; background:#FF0000; color:#fff; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,0.45);">
+            <i class="fa-solid fa-play" style="font-size:1.7rem; margin-left:4px;"></i>
+          </button>
+        ` : ''}
       </div>
 
       ${galleryImages.length > 1 ? `
@@ -1039,6 +1048,25 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   const galleryMain = overlay.querySelector('#re-gallery-main');
   const counterEl = overlay.querySelector('#re-photo-counter');
   const thumbs = [...overlay.querySelectorAll('.re-gallery-thumb')];
+
+  // Play the YouTube tour in a lightbox. videoId is the 11-char id validated on
+  // the server, so the embed src is built safely from it.
+  overlay.querySelector('#re-play-video-btn')?.addEventListener('click', () => {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.92); display:flex; align-items:center; justify-content:center; padding:1rem;';
+    box.innerHTML = `
+      <button type="button" aria-label="Close video" style="position:absolute; top:18px; right:22px; width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.15); color:#fff; border:none; font-size:1.4rem; cursor:pointer; z-index:1;">✕</button>
+      <div style="width:100%; max-width:960px; aspect-ratio:16/9;">
+        <iframe src="https://www.youtube.com/embed/${encodeURIComponent(prop.videoId)}?autoplay=1&rel=0"
+          title="${escapeHtml(prop.title)} - video tour" frameborder="0"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen
+          style="width:100%; height:100%; border:0; border-radius:12px;"></iframe>
+      </div>`;
+    const closeVid = () => box.remove();
+    box.addEventListener('click', (e) => { if (e.target === box) closeVid(); });
+    box.querySelector('button').addEventListener('click', closeVid);
+    document.body.appendChild(box);
+  });
 
   function setPhoto(i) {
     if (i < 0 || i >= galleryImages.length) return;

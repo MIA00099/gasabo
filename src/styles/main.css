@@ -127,6 +127,15 @@ body {
   #header-mount {
     position: static;
   }
+
+  /* The Gasabo page header crams the four social icons in next to the nav and
+     the "Kigali Market" link; on a phone that is too much for the bar, so the
+     social icons (and the divider that follows them) drop out there. They stay
+     in the footer. */
+  .re-header-social,
+  .re-header-social + div {
+    display: none !important;
+  }
 }
 
 #app-container {

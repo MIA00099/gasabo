@@ -123,8 +123,22 @@ realEstateRouter.put('/hero', requireAuth, requirePermission('REAL_ESTATE_CONTEN
 
 const PROPERTY_TYPES = ['house', 'plot', 'commercial'];
 
+// Pull the 11-char video id out of any common YouTube URL (watch, youtu.be,
+// embed, shorts) or a bare id. Storing only the id - never the raw string - is
+// what keeps the storefront's <iframe src> safe: the embed URL is rebuilt from
+// this id, so a pasted value can't smuggle in an arbitrary frame source.
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(
+    /(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/,
+  );
+  if (m) return m[1];
+  const bare = url.trim();
+  return /^[A-Za-z0-9_-]{11}$/.test(bare) ? bare : null;
+}
+
 realEstateRouter.post('/properties', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
-  const { title, type, location, price, beds, baths, area, image, images, description } = req.body || {};
+  const { title, type, location, price, beds, baths, area, image, images, description, videoUrl } = req.body || {};
   if (!title) return res.status(400).json({ error: 'Property title is required.' });
 
   // A property is a gallery, not a single photo. `images` is the new array;
@@ -150,6 +164,9 @@ realEstateRouter.post('/properties', requireAuth, requirePermission('REAL_ESTATE
     area: area || 'N/A',
     image: primaryImage,
     images: gallery.length ? gallery : [primaryImage],
+    // Optional YouTube tour: the storefront shows a play badge when set and
+    // embeds youtube.com/embed/<videoId>. Null when no valid link was given.
+    videoId: extractYouTubeId(typeof videoUrl === 'string' ? videoUrl : '') || null,
     description: description || 'Newly listed property by Gasabo Real Estate.',
   };
   const updated = [newProperty, ...properties];

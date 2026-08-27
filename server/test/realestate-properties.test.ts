@@ -73,4 +73,19 @@ describe('POST /api/realestate/properties (multi-image)', () => {
     const res = await request(app).post('/api/realestate/properties').send({ title: 'No auth', images: ['/x.jpg'] });
     expect(res.status).toBe(401);
   });
+
+  it('stores the YouTube video id from a watch link', async () => {
+    const res = await addProperty({ title: 'With tour', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+    expect(res.body.properties[0].videoId).toBe('dQw4w9WgXcQ');
+  });
+
+  it('accepts a youtu.be short link', async () => {
+    const res = await addProperty({ title: 'Short link', videoUrl: 'https://youtu.be/abc123DEF45' });
+    expect(res.body.properties[0].videoId).toBe('abc123DEF45');
+  });
+
+  it('stores null videoId when the link is not a YouTube URL', async () => {
+    const res = await addProperty({ title: 'No video', videoUrl: 'https://vimeo.com/12345' });
+    expect(res.body.properties[0].videoId).toBeNull();
+  });
 });

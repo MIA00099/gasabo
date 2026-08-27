@@ -2,7 +2,6 @@
  * UNIFIED ADMIN PANEL - Master Dashboard Container (Stripe/Linear/Vercel Enterprise Grade)
  */
 import { stateEngine } from '../../store/stateEngine.js';
-import { getLargeFooterHtml, bindLargeFooterEvents, initSlimStickyFooter } from '../../components/Footer.js';
 import { renderMarketplaceAdmin } from './MarketplaceAdmin.js';
 import { renderSellerAdmin } from './SellerAdmin.js';
 import { renderRealEstateAdmin } from './RealEstateAdmin.js';
@@ -201,11 +200,12 @@ export function renderAdminDashboardView(container) {
         </div>
         </div>
       </div>
-      ${getLargeFooterHtml(state.currentLang || 'en')}
     `;
 
-    bindLargeFooterEvents(container);
-    initSlimStickyFooter();
+    // The admin dashboard is a working area, not a public page - no site footer
+    // or sticky brand bar here. (Also clears the sticky bar if a previous view
+    // left one on the page.)
+    document.getElementById('sticky-footer-bar')?.remove();
 
     // Tab switcher handlers
     container.querySelectorAll('.adm-side-btn').forEach(btn => {

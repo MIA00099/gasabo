@@ -114,6 +114,21 @@ document.addEventListener('DOMContentLoaded', () => {
     stateEngine.setRoute(initialRoute);
   }
 
+  // Keep the visitor on the same portal across a reload. setPortal() never
+  // touches the URL, so the Gasabo (real estate) landing page used to fall back
+  // to the marketplace on refresh. Restore the last portal only when the URL
+  // itself doesn't already point somewhere specific (a product/property link or
+  // the admin hash win).
+  try {
+    if (
+      window.location.hash !== ADMIN_URL_HASH &&
+      initialRoute.kind === ROUTE_HOME &&
+      sessionStorage.getItem('km_portal') === 'realestate'
+    ) {
+      stateEngine.setPortal('realestate');
+    }
+  } catch { /* sessionStorage can throw in private mode; portal just won't persist */ }
+
 
   /**
    * Send the catalog to a category matched by name.
@@ -178,6 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderApp() {
     const state = stateEngine.getState();
     const activePortal = state.activePortal;
+    // Remember the portal so a reload can return here (see the boot restore).
+    try { sessionStorage.setItem('km_portal', activePortal); } catch { /* ignore */ }
     const currentUser = state.currentUser;
     const currentLang = state.currentLang || 'en';
     const isLoggedIn = currentUser.role !== 'guest';

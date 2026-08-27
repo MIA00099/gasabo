@@ -87,6 +87,36 @@ body {
   overflow: visible;
 }
 
+/* Springy hover lift on the listing / property cards. The cubic-bezier
+   overshoots past 1 so the card "bounces" up on hover instead of gliding.
+   Kept to pointer devices so a tap on mobile doesn't leave a card stuck raised. */
+@media (hover: hover) {
+  .view-item-btn,
+  .products-card,
+  .re-property-card,
+  .re-related-card {
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease;
+    will-change: transform;
+  }
+  .view-item-btn:hover,
+  .products-card:hover,
+  .re-property-card:hover,
+  .re-related-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+  }
+}
+
+/* The header (announcement strip + logo row + category nav) stays pinned to the
+   top as the page scrolls, so the search, categories and Post an Ad are always
+   one tap away instead of scrolling off. The document is the scroll container,
+   so sticky on this top-level child pins it to the viewport top. */
+#header-mount {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
 #app-container {
   width: 100%;
 }

@@ -1103,13 +1103,13 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   overlay.querySelectorAll('.re-related-card').forEach((card) => {
     const activate = () => {
       const targetId = card.dataset.id;
-      close();
+      // Do NOT call this modal's close() here. close() runs its onClose, which
+      // is returnHome -> history.back() - that navigated away (looking like it
+      // went home) and raced the route change. Just point the route at the new
+      // property: main.js's syncListingModal then swaps this modal for the new
+      // one (it closes the current overlay itself, without the history.back).
+      // Same two lines the main property cards use.
       pushPath(pathForListing(ROUTE_PROPERTY, targetId));
-      // Was only pushing the URL, which changes the address bar but renders
-      // nothing - so tapping a similar property just closed the modal and
-      // looked like it went home. setRoute is what actually opens the target
-      // (main.js reacts to a ROUTE_PROPERTY route), exactly as the main
-      // property cards do.
       stateEngine.setRoute({ kind: ROUTE_PROPERTY, id: targetId });
     };
     card.addEventListener('click', activate);

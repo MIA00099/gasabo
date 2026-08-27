@@ -117,6 +117,18 @@ body {
   z-index: 1000;
 }
 
+/* On a phone the full header is ~160px tall (the logo row wraps, and the
+   wordmark is kept deliberately - see Header.js), so pinning it would eat a
+   fifth of the screen. Mobile already has the fixed bottom tab bar for primary
+   navigation, so the top header scrolls with the page there and gives the
+   listings their space back. It stays pinned from the tablet breakpoint up,
+   where it is compact. */
+@media (max-width: 767px) {
+  #header-mount {
+    position: static;
+  }
+}
+
 #app-container {
   width: 100%;
 }

@@ -129,7 +129,7 @@ export function renderHeaderHtml(ctx) {
           aria-label="${isRealEstate ? 'Gasabo Real Estate - home' : 'Kigali Market - home'}">
           <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo-kigali-market.jpg'}" alt=""
             class="h-9 md:h-11 w-auto object-contain shrink-0 ${isRealEstate ? '' : 'rounded-lg'}">
-          <div class="leading-none flex items-center">
+          <div class="leading-none hidden sm:flex items-center">
             <h1 class="text-lg md:text-xl font-black tracking-tight whitespace-nowrap flex items-center">
               <span class="text-brand-dark">${isRealEstate ? 'GASABO' : 'KIGALI'}</span>
               <span class="text-brand-green ml-1.5">${isRealEstate ? 'REAL ESTATE' : 'MARKET'}</span><span class="text-brand-orange">.COM</span>

@@ -731,7 +731,7 @@ export function renderMarketplaceView(container) {
                const moreProducts = state.products.slice(TOP_ROW, TOP_ROW + HOME_MAX_MORE);
                const catSections = groupProductsBySection(moreProducts, state.categories);
 
-               const catSectionsHtml = catSections.map((sec) => `
+               const catSectionsHtml = catSections.map((sec, i) => `
                  <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
                      <div class="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
                          <div class="flex items-center gap-2">
@@ -739,10 +739,20 @@ export function renderMarketplaceView(container) {
                              <h3 class="text-sm sm:text-base font-black text-gray-900 tracking-tight">${escapeHtml(sec.name)}</h3>
                              <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${sec.products.length}</span>
                          </div>
+                         <div class="flex items-center gap-1.5">
+                             <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="home-sec-${i}" data-dir="-1" aria-label="Scroll ${escapeHtml(sec.name)} left">
+                                 <i class="fa-solid fa-chevron-left text-xs"></i>
+                             </button>
+                             <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="home-sec-${i}" data-dir="1" aria-label="Scroll ${escapeHtml(sec.name)} right">
+                                 <i class="fa-solid fa-chevron-right text-xs"></i>
+                             </button>
+                         </div>
                      </div>
 
-                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                         ${sec.products.map((prod) => productCardHtml(prod)).join('')}
+                     <!-- One row that scrolls horizontally (swipe on touch, arrows on
+                          desktop) instead of wrapping into a multi-row grid. -->
+                     <div id="home-sec-${i}" class="section-row flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-1">
+                         ${sec.products.map((prod) => `<div class="shrink-0 w-40 sm:w-44 md:w-48">${productCardHtml(prod)}</div>`).join('')}
                      </div>
                  </section>
                `).join('');
@@ -968,6 +978,16 @@ export function renderMarketplaceView(container) {
         const id = btn.dataset.id;
         pushPath(pathForListing(ROUTE_PRODUCT, id));
         stateEngine.setRoute({ kind: ROUTE_PRODUCT, id });
+      });
+    });
+
+    // Left/right arrows scroll a category row by roughly a screen-width of
+    // cards. The row itself also scrolls by touch/swipe.
+    container.querySelectorAll('.section-scroll-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const row = container.querySelector('#' + btn.dataset.target);
+        if (!row) return;
+        row.scrollBy({ left: Number(btn.dataset.dir) * Math.max(260, row.clientWidth * 0.85), behavior: 'smooth' });
       });
     });
 

@@ -291,6 +291,12 @@ function openAddPropertyModal() {
           <textarea name="description" class="form-control" rows="3" placeholder="Short description shown on the listing" required>${escapeHtml(propertyToEdit?.description || '')}</textarea>
         </div>
 
+        <div class="form-group">
+          <label>YouTube video tour <span style="color:#94A3B8;font-weight:400;">(optional)</span></label>
+          <input name="videoUrl" type="url" class="form-control" placeholder="https://www.youtube.com/watch?v=..." value="${escapeHtml(propertyToEdit?.videoId ? `https://www.youtube.com/watch?v=${propertyToEdit.videoId}` : '')}">
+          <div style="font-size:0.78rem;color:#64748B;margin-top:0.3rem;">Paste a YouTube link and a ▶ play badge appears on the listing.</div>
+        </div>
+
         <div id="add-property-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
 
         <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem;">
@@ -322,6 +328,7 @@ function openAddPropertyModal() {
       area: form.area.value.trim(),
       images: imageUrls,
       image: imageUrls[0] || undefined,
+      videoUrl: form.videoUrl.value.trim() || undefined,
       description: form.description.value.trim(),
     };
 

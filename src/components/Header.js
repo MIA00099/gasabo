@@ -187,9 +187,9 @@ export function renderHeaderHtml(ctx) {
                    account button both went to the sign-up page, which is a
                    strange thing to offer somebody who is already signed in. -->
               <button type="button" id="header-dashboard-btn"
-                class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-brand-green bg-gray-50 hover:bg-brand-green hover:text-white transition"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-white bg-brand-orange hover:bg-orange-500 transition shadow-sm"
                 title="${escapeHtml(t('ui_dashboard'))}" aria-label="${escapeHtml(t('ui_dashboard'))}">
-                <i class="fa-solid fa-table-cells-large text-sm"></i>
+                <i class="fa-solid fa-user text-sm"></i>
               </button>
               <div class="hidden lg:block leading-tight text-xs text-right">
                 <p class="text-gray-500 font-medium">${escapeHtml(currentUser.name.split(' ')[0])}</p>

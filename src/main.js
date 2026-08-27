@@ -425,9 +425,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       } else if (activePortal === 'marketplace') {
         renderMarketplaceView(appElement);
-        // Site footer at the bottom of every marketplace page (home, catalog,
-        // stores, seller portal). Rendered here, not inside the view, so it
-        // survives the view's per-tab early returns.
+        // Site footer at the bottom of the public marketplace pages (home,
+        // catalog, stores). Rendered here, not inside the view, so it survives
+        // the view's per-tab early returns. NOT on the seller dashboard - that
+        // is a working area, not a storefront page, so it gets no footer.
+        if (state.ui.marketplaceTab !== 'seller_portal') {
         appElement.insertAdjacentHTML('beforeend', getMarketplaceFooterHtml());
         bindMarketplaceFooterEvents(appElement, {
           goHome: handleGoHome,
@@ -444,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           },
         });
+        }
       }
     }
 

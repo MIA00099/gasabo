@@ -1105,6 +1105,12 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
       const targetId = card.dataset.id;
       close();
       pushPath(pathForListing(ROUTE_PROPERTY, targetId));
+      // Was only pushing the URL, which changes the address bar but renders
+      // nothing - so tapping a similar property just closed the modal and
+      // looked like it went home. setRoute is what actually opens the target
+      // (main.js reacts to a ROUTE_PROPERTY route), exactly as the main
+      // property cards do.
+      stateEngine.setRoute({ kind: ROUTE_PROPERTY, id: targetId });
     };
     card.addEventListener('click', activate);
     card.addEventListener('keydown', (e) => {

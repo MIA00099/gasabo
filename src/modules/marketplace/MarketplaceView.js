@@ -284,14 +284,15 @@ export function renderMarketplaceView(container) {
     const flashDeals = state.flashDeals || [];
     const featuredDeal = flashDeals[0] || null;
 
-    // Hero slider images an admin uploaded in the ads section. When any exist
-    // they are the slider; with none, the built-in slides below stand in so
-    // the hero is never blank. Only ACTIVE ads still inside their date window.
+    // Hero slider images an admin uploaded in the ads section - these are the
+    // whole slider. Delete them all and the panel is empty, which is the point:
+    // an admin who removes every ad should see every ad gone. Only ACTIVE ads
+    // still inside their date window.
     const now = Date.now();
     const heroAds = (state.banners || []).filter(
       (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
     );
-    const dotCount = heroAds.length > 0 ? heroAds.length : 6;
+    const dotCount = heroAds.length;
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
@@ -382,12 +383,20 @@ export function renderMarketplaceView(container) {
                         </div>
                     </div>
 
-                    <!-- Hero Image Slider Container positioned over the dark blue right side -->
+                    <!-- Hero Image Slider Container, over the dark blue right
+                         side. Everything in here is an ad an admin uploaded
+                         (Admin -> Marketplace -> Ad Banners, type "Hero
+                         Slider"). Six built-in slides - the all-in-one banner,
+                         a Real Estate text panel and four product photos - used
+                         to stand in whenever there were none, so deleting every
+                         ad brought back a set of promotions that no longer
+                         appeared anywhere in the admin and so could not be
+                         removed. With no ads the panel is now just the empty
+                         navy arc. -->
                     <div class="slider-container" id="heroSlider">
 
-                        ${heroAds.length > 0 ? heroAds.map((ad, i) => `
-                          <!-- Admin-uploaded slide (ads section). Unlike the
-                               built-in cut-out product art, these are full
+                        ${heroAds.map((ad, i) => `
+                          <!-- Admin-uploaded slide (ads section). These are full
                                photos and banners of any shape, so the slide is
                                a "cover-slide": the sharp image is shown whole
                                (never cropped) over a blurred, zoomed copy of
@@ -401,90 +410,22 @@ export function renderMarketplaceView(container) {
                             <img class="slide-fg" src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}">
                             ${ad.targetUrl ? `</a>` : ''}
                           </div>
-                        `).join('') : `
-
-                        <!-- Slide 1: Original Image Focus -->
-                        <div class="slide active" data-slide="0">
-                            <img src="/hero-banner.png" alt="All in one place showcase"
-                              onerror="this.onerror=null;this.src='/hero-section.png'">
-                        </div>
-
-                        <!-- Slide 2: Real Estate. Still a text panel - the
-                             houses photo is the one piece of artwork not
-                             supplied yet. -->
-                        <div class="slide" data-slide="1">
-                            <div class="text-center text-white">
-                                <h2 class="text-4xl font-bold mb-2 tracking-wide text-white">${t('ui_real_estate')}</h2>
-                                <h3 class="text-3xl font-medium text-white">${t('ui_slide_houses')}</h3>
-                            </div>
-                        </div>
-
-                        <!-- Slides 3-6: the supplied product photos. These
-                             replace the text-only panels that stood in while
-                             there was no artwork.
-
-                             All four are cut out, so all four need an
-                             alpha channel - the mobile arc puts white behind
-                             the top of the slider column, and a rectangle
-                             would show there. That means WebP or PNG, and on
-                             photographs PNG is ten times the bytes: 115KB for
-                             the set against 1.2MB. The PNGs ship too, as the
-                             onerror fallback for anything too old to decode
-                             WebP.
-
-                             The car and the laptop arrived with studio
-                             backgrounds baked in and were keyed out here;
-                             the headphones and the sweatshirt came already
-                             cut out. -->
-                        <div class="slide has-caption" data-slide="2">
-                            <img src="/slide-vehicles.webp" alt="Cars and motorbikes for sale on Kigali Market"
-                              onerror="this.onerror=null;this.src='/slide-vehicles.png'">
-                            <div class="slide-caption text-center text-white">
-                                <h2>${t('ui_vehicles')}</h2>
-                                <h3>${t('ui_slide_cars_bikes')}</h3>
-                            </div>
-                        </div>
-
-                        <div class="slide has-caption" data-slide="3">
-                            <img src="/slide-laptops.webp" alt="Laptops and phones for sale on Kigali Market"
-                              onerror="this.onerror=null;this.src='/slide-laptops.png'">
-                            <div class="slide-caption text-center text-white">
-                                <h2>${t('ui_slide_electronics')}</h2>
-                                <h3>${t('ui_slide_laptops')}</h3>
-                            </div>
-                        </div>
-
-                        <div class="slide has-caption" data-slide="4">
-                            <img src="/slide-headphones.webp" alt="Headphones and audio gear for sale on Kigali Market"
-                              onerror="this.onerror=null;this.src='/slide-headphones.png'">
-                            <div class="slide-caption text-center text-white">
-                                <h2>${t('ui_slide_electronics')}</h2>
-                                <h3>${t('ui_slide_audio')}</h3>
-                            </div>
-                        </div>
-
-                        <div class="slide has-caption" data-slide="5">
-                            <img src="/slide-fashion.webp" alt="Fashion and clothing for sale on Kigali Market"
-                              onerror="this.onerror=null;this.src='/slide-fashion.png'">
-                            <div class="slide-caption text-center text-white">
-                                <h2>${t('ui_slide_fashion')}</h2>
-                                <h3>${t('ui_slide_clothing')}</h3>
-                            </div>
-                        </div>
-                        `}
+                        `).join('')}
 
                     </div>
 
-                    <!-- Slider Navigation Dots. One per slide, so the count
-                         follows the admin's ads when they exist and the six
-                         defaults otherwise - the driver reads .dot straight
-                         from the DOM, so parity here is what keeps every slide
-                         reachable. -->
+                    <!-- Slider Navigation Dots. One per ad - the driver reads
+                         .dot straight from the DOM, so parity here is what keeps
+                         every slide reachable. One ad has nothing to switch
+                         between and none has nothing to point at, so the dots
+                         only appear from two ads up. -->
+                    ${dotCount > 1 ? `
                     <div class="slider-dots" id="sliderDots">
                         ${Array.from({ length: dotCount }, (_, i) => `
                           <button type="button" class="dot ${i === 0 ? 'active' : ''}" data-dot="${i}" aria-label="Show slide ${i + 1}"></button>
                         `).join('')}
                     </div>
+                    ` : ''}
 
                 </div>
             </section>

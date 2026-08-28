@@ -153,7 +153,7 @@ model ProductLike {
 model Advertisement {
   id        String   @id @default(uuid())
   title     String
-  type      String // "HOMEPAGE_BANNER" | "HERO_SLIDER" | "PROMOTIONAL_BANNER"
+  type      String // "HERO_SLIDER" - the only type; see advertisements.routes.ts
   imageUrl  String
   targetUrl String?
   startDate DateTime

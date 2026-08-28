@@ -1,18 +1,20 @@
 /**
  * The hero slider and the Flash Deals card, checked as markup.
  *
- * Both are hand-written template strings, and both have a failure mode that
- * looks fine in every other test: a slide whose image filename is wrong
- * renders an empty panel (the browser 404s and moves on), and a slide added
- * without its matching dot is simply unreachable from the dots - the timer
- * still cycles onto it, so nothing looks broken until someone tries to click
- * back to it.
+ * Both are hand-written template strings. The slider's failure mode is that a
+ * slide added without its matching dot is simply unreachable from the dots -
+ * the timer still cycles onto it, so nothing looks broken until someone tries
+ * to click back to it. startHeroSlider() reads `.slide` and `.dot` straight
+ * from the DOM, so the two counts have to be kept in step by hand.
  *
- * startHeroSlider() reads `.slide` and `.dot` straight from the DOM, so the
- * two counts have to be kept in step by hand. That is what this guards.
+ * The other thing guarded here is that the slider has no built-in content.
+ * It used to carry six hardcoded slides that rendered whenever there were no
+ * admin ads, so an admin who deleted every ad got those six back and had no
+ * way to remove them - they appeared nowhere in the ads section. Every slide
+ * must now come from state.banners.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 const HOME = readFileSync('src/modules/marketplace/MarketplaceView.js', 'utf8');
 
@@ -26,99 +28,46 @@ const SLIDER = (() => {
 })();
 
 describe('hero slider', () => {
-  const slides = [...SLIDER.matchAll(/class="slide[^"]*" data-slide="(\d+)"/g)].map((m) => Number(m[1]));
-  const dots = [...SLIDER.matchAll(/class="dot[^"]*" data-dot="(\d+)"/g)].map((m) => Number(m[1]));
+  it('has no built-in slides - every slide comes from an admin ad', () => {
+    // A literal <div class="slide ..."> with a hardcoded data-slide number is
+    // exactly the fallback content that came back when the ads were deleted.
+    const literalSlides = [...SLIDER.matchAll(/class="slide[^"$]*" data-slide="(\d+)"/g)];
+    expect(literalSlides.map((m) => m[0]), 'hardcoded slides are back').toEqual([]);
 
-  it('has at least the two slides the driver needs to animate', () => {
-    // startHeroSlider bails out below two, leaving a static panel.
-    expect(slides.length).toBeGreaterThanOrEqual(2);
+    // Nor any bundled slide art or onerror fallback pointing at it.
+    const literalImgs = [...SLIDER.matchAll(/<img[^>]+src="\/[^"$]+"/g)].map((m) => m[0]);
+    expect(literalImgs, 'slide images must come from the ad, not public/').toEqual([]);
+    expect(SLIDER, 'no bundled-art fallbacks').not.toMatch(/this\.src='\//);
   });
 
-  it('numbers its slides from zero with no gaps', () => {
-    expect(slides).toEqual(slides.map((_, i) => i));
+  it('renders one slide per hero ad', () => {
+    expect(SLIDER, 'slides must map over heroAds').toMatch(/\$\{heroAds\.map\(\(ad, i\) =>/);
+    expect(SLIDER, 'ad image comes from the ad record').toContain('escapeHtml(ad.image)');
   });
 
-  it('generates one dot per slide from dotCount', () => {
-    // The dots are no longer literal now that an admin's Hero Slider ads can
-    // replace the built-in slides: they render from `dotCount`, which is the
-    // ad count when there are any and the default slide count otherwise. So
-    // the literal-dot regex finds none - the parity guarantee is that the
-    // dots map over dotCount, and that its fallback equals the number of
-    // built-in slides (`slides` here, since only those carry literal
-    // data-slide numbers).
-    expect(dots, 'dots should be generated, not literal').toEqual([]);
+  it('generates one dot per ad, so every slide stays reachable', () => {
+    // The dots render from `dotCount`, which must be the ad count - the driver
+    // pairs .slide and .dot by index straight from the DOM.
+    const literalDots = [...SLIDER.matchAll(/class="dot[^"$]*" data-dot="(\d+)"/g)];
+    expect(literalDots.map((m) => m[0]), 'dots should be generated, not literal').toEqual([]);
     expect(SLIDER, 'dots must map over dotCount').toMatch(/length:\s*dotCount\s*\}/);
-
-    const fallback = HOME.match(/const dotCount = heroAds\.length > 0 \? heroAds\.length : (\d+)/);
-    expect(fallback, 'dotCount fallback not found').toBeTruthy();
-    expect(Number(fallback![1]), 'the dot fallback must equal the number of built-in slides')
-      .toBe(slides.length);
+    expect(HOME, 'dotCount must be the ad count').toMatch(/const dotCount = heroAds\.length;/);
   });
 
-  it('points every slide at an image that is actually in public/', () => {
-    const srcs = [...SLIDER.matchAll(/<img src="(\/[^"]+)"/g)].map((m) => m[1]);
-    expect(srcs.length, 'no slide images found - has the markup changed?').toBeGreaterThan(0);
-
-    const missing = srcs.filter((src) => !existsSync(`public${src}`));
-    expect(missing, `not in public/: ${missing.join(', ')}`).toEqual([]);
+  it('hides the dots when there is nothing to switch between', () => {
+    // Zero ads leaves an empty panel and one ad never rotates; a row of dots
+    // over either is a control that does nothing.
+    expect(SLIDER, 'dots must be gated on more than one ad').toMatch(/\$\{dotCount > 1 \?/);
   });
 
   it('renders admin hero ads as cover-slides so any-shape banners fill without cropping', () => {
-    // The built-in slides float a small cut-out product on the navy panel.
     // Admin-uploaded ads are full photos/banners of any aspect ratio, so they
-    // get the cover-slide treatment instead: a blurred, zoomed backdrop of the
-    // image (.slide-bg) behind the whole, uncropped image (.slide-fg). Without
-    // this an uploaded banner rendered tiny and boxed in flat navy.
+    // get the cover-slide treatment: a blurred, zoomed backdrop of the image
+    // (.slide-bg) behind the whole, uncropped image (.slide-fg). Without this
+    // an uploaded banner rendered tiny and boxed in flat navy.
     expect(SLIDER, 'ad slides must be cover-slides').toMatch(/class="slide cover-slide/);
     expect(SLIDER, 'blurred backdrop image').toContain('class="slide-bg"');
     expect(SLIDER, 'sharp foreground image').toContain('class="slide-fg"');
-  });
-
-  it('ships every file an onerror fallback points at', () => {
-    // The photo slides are WebP with a PNG behind them for browsers too old
-    // to decode it, and slide 1 falls back to a second banner. A fallback is
-    // by definition only exercised on the machines least likely to be
-    // testing, so a missing one is invisible until it is someone's blank
-    // slide.
-    const fallbacks = [...HOME.matchAll(/this\.src='(\/[^']+)'/g)].map((m) => m[1]);
-    expect(fallbacks.length, 'no onerror fallbacks found').toBeGreaterThanOrEqual(5);
-
-    const missing = fallbacks.filter((src) => !existsSync(`public${src}`));
-    expect(missing, `fallbacks not in public/: ${missing.join(', ')}`).toEqual([]);
-  });
-
-  it('gives every WebP slide a PNG fallback', () => {
-    const webps = [...SLIDER.matchAll(/<img src="(\/[^"]+\.webp)"/g)].map((m) => m[1]);
-    expect(webps.length, 'no WebP slides found').toBeGreaterThan(0);
-
-    for (const webp of webps) {
-      const png = webp.replace(/\.webp$/, '.png');
-      expect(SLIDER, `${webp} has no onerror fallback`).toContain(`this.src='${png}'`);
-      expect(existsSync(`public${png}`), `${png} is missing`).toBe(true);
-    }
-  });
-
-  it('gives every photo slide a caption, and every caption a photo', () => {
-    // Anchored on data-slide rather than the class, because "slide-caption"
-    // starts with "slide" too and splitting on the bare class cuts each
-    // photo slide in half.
-    const marks = [...SLIDER.matchAll(/<div class="slide([^"]*)" data-slide="\d+">/g)];
-    expect(marks.length, 'no slides matched').toBe(slides.length);
-
-    for (let i = 0; i < marks.length; i++) {
-      const from = marks[i].index!;
-      const to = i + 1 < marks.length ? marks[i + 1].index! : SLIDER.indexOf('<div class="slider-dots"');
-      const block = SLIDER.slice(from, to);
-
-      const hasCaptionClass = marks[i][1].includes('has-caption');
-      const hasImg = block.includes('<img');
-      const hasCaption = block.includes('slide-caption');
-      // .has-caption is what switches the slide to the column layout that
-      // leaves room under the picture; a caption without it lands on top of
-      // the image.
-      expect(hasCaptionClass, `slide with caption=${hasCaption} img=${hasImg} is mislabelled`)
-        .toBe(hasImg && hasCaption);
-    }
   });
 });
 

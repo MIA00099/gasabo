@@ -124,7 +124,7 @@ describe('Module 1: Foundations & Data Models Test Suite', () => {
     const ad = await prisma.advertisement.create({
       data: {
         title: 'Summer Sale Promo',
-        type: 'HOMEPAGE_BANNER',
+        type: 'HERO_SLIDER',
         imageUrl: '/images/promo.jpg',
         targetUrl: 'https://kigalimarket.com/promo',
         startDate: new Date(),
@@ -133,7 +133,7 @@ describe('Module 1: Foundations & Data Models Test Suite', () => {
       },
     });
     expect(ad.id).toBeDefined();
-    expect(ad.type).toBe('HOMEPAGE_BANNER');
+    expect(ad.type).toBe('HERO_SLIDER');
   });
 
   it('Data Model 8: Can create AuditLog linked to Administrator', async () => {

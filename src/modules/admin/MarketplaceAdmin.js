@@ -426,11 +426,11 @@ export function renderMarketplaceAdmin(container) {
 
     container.querySelector('#add-banner-btn')?.addEventListener('click', (e) => {
       // Was two prompt() boxes for a title and a pasted image URL - no upload,
-      // and no way to choose a Hero Slider ad, so the slider could never be
-      // fed from here. The modal uploads a real image and picks the type.
-      promptBannerCreate(e.currentTarget, async ({ title, type, targetUrl, file }) => {
+      // and no way to make a Hero Slider ad, so the slider could never be fed
+      // from here. The modal uploads a real image.
+      promptBannerCreate(e.currentTarget, async ({ title, targetUrl, file }) => {
         const imageUrl = await stateEngine.uploadImage(file);
-        await stateEngine.createBanner(title, imageUrl, { type, targetUrl });
+        await stateEngine.createBanner(title, imageUrl, { targetUrl });
       });
     });
 
@@ -736,13 +736,16 @@ function promptFlashDealEnd(returnFocusTo, onPick) {
 }
 
 /**
- * Create an ad/banner: title, type, image upload, optional link.
+ * Create an ad: title, image upload, optional link.
  *
- * Replaces two prompt() boxes that could only paste a URL and only make a
- * HOMEPAGE_BANNER. Hero Slider is the type that feeds the homepage carousel,
- * which is the whole point of this - an admin could not put an image on the
- * slider before. The image goes through the real /uploads flow (Supabase in
- * production) rather than being a pasted link that might rot.
+ * Replaces two prompt() boxes that could only paste a URL. The image goes
+ * through the real /uploads flow (Supabase in production) rather than being a
+ * pasted link that might rot.
+ *
+ * There is no type picker. It used to offer Homepage Banner and Promotional
+ * Banner alongside Hero Slider, but only Hero Slider is rendered anywhere -
+ * picking either of the others produced an ad that saved fine and then never
+ * appeared, with nothing to say why. Every ad is a hero-slider ad now.
  */
 function promptBannerCreate(returnFocusTo, onSubmit) {
   const overlay = document.createElement('div');
@@ -761,19 +764,12 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
       <div class="glass-card" style="max-width:460px; width:100%; padding:1.5rem; max-height:90vh; overflow:auto;" role="document">
         <h3 style="color:#0F172A; margin-bottom:0.25rem;">🖼️ Add Ad / Slider Image</h3>
         <p style="font-size:0.85rem; color:#64748B; margin-bottom:1rem;">
-          Choose <strong>Hero Slider</strong> to put this image on the homepage carousel.
+          This image goes on the <strong>homepage hero carousel</strong>.
         </p>
 
         <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Title</label>
         <input id="ban-title" type="text" placeholder="e.g. Back to School Sale" value=""
           style="width:100%; padding:0.55rem 0.7rem; border:1px solid #E2E8F0; border-radius:10px; font-size:0.9rem; margin-bottom:0.9rem;">
-
-        <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Type</label>
-        <select id="ban-type" style="width:100%; padding:0.55rem 0.7rem; border:1px solid #E2E8F0; border-radius:10px; font-size:0.9rem; margin-bottom:0.9rem;">
-          <option value="HERO_SLIDER">Hero Slider (homepage carousel)</option>
-          <option value="HOMEPAGE_BANNER">Homepage Banner</option>
-          <option value="PROMOTIONAL_BANNER">Promotional Banner</option>
-        </select>
 
         <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Link (optional)</label>
         <input id="ban-target" type="url" placeholder="https://... where the slide should go" value=""
@@ -796,11 +792,9 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
 
     // Preserve typed values across repaints.
     const t = overlay.querySelector('#ban-title'); if (t) t.value = current.title;
-    const ty = overlay.querySelector('#ban-type'); if (ty) ty.value = current.type;
     const tg = overlay.querySelector('#ban-target'); if (tg) tg.value = current.target;
 
     overlay.querySelector('#ban-title').addEventListener('input', (e) => { current.title = e.target.value; });
-    overlay.querySelector('#ban-type').addEventListener('change', (e) => { current.type = e.target.value; });
     overlay.querySelector('#ban-target').addEventListener('input', (e) => { current.target = e.target.value; });
     overlay.querySelector('#ban-file').addEventListener('change', (e) => {
       file = e.target.files && e.target.files[0];
@@ -814,7 +808,7 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
       if (!file) { error = 'Choose an image.'; paint(); return; }
       busy = true; error = ''; paint();
       try {
-        await onSubmit({ title: current.title.trim(), type: current.type, targetUrl: current.target.trim() || null, file });
+        await onSubmit({ title: current.title.trim(), targetUrl: current.target.trim() || null, file });
       } catch (err) {
         busy = false;
         error = err?.message || 'Upload failed. Please try again.';
@@ -825,7 +819,7 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
     });
   }
 
-  const current = { title: '', type: 'HERO_SLIDER', target: '' };
+  const current = { title: '', target: '' };
 
   document.body.appendChild(overlay);
   paint();

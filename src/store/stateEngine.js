@@ -1041,9 +1041,11 @@ class StateEngine {
     });
   }
 
-  async createBanner(title, imageUrl, { type = 'HOMEPAGE_BANNER', targetUrl = null } = {}) {
+  // No `type`: HERO_SLIDER is the only one, and the server fills it in. The
+  // other two types the admin form used to offer rendered nowhere.
+  async createBanner(title, imageUrl, { targetUrl = null } = {}) {
     return this._run('banners', async () => {
-      const { banner } = await api.post('/advertisements', { title, imageUrl, type, targetUrl });
+      const { banner } = await api.post('/advertisements', { title, imageUrl, targetUrl });
       // Re-fetch rather than hand-append: the list endpoint reshapes each
       // record (id/title/subtitle/image/status) differently from what POST
       // returns (the raw Advertisement row), so appending the raw response

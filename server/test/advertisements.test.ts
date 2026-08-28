@@ -47,6 +47,26 @@ describe('POST /api/advertisements', () => {
     expect(res.status).toBe(400);
   });
 
+  it('defaults to HERO_SLIDER when no type is sent', async () => {
+    // The admin form no longer asks - there is one type, so it sends none.
+    const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
+      title: 'No type given', imageUrl: '/z.png',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.banner.type).toBe('HERO_SLIDER');
+  });
+
+  it('refuses the retired banner types instead of storing an invisible ad', async () => {
+    // HOMEPAGE_BANNER and PROMOTIONAL_BANNER used to be accepted here and
+    // rendered nowhere, so an admin got a saved ad that never appeared.
+    for (const type of ['HOMEPAGE_BANNER', 'PROMOTIONAL_BANNER']) {
+      const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
+        title: 'Retired type', type, imageUrl: '/z.png',
+      });
+      expect(res.status, `${type} should be rejected`).toBe(400);
+    }
+  });
+
   it('refuses a seller (no ADVERTISEMENTS permission)', async () => {
     const res = await request(app).post('/api/advertisements').set(auth(sellerToken)).send({
       title: 'x', type: 'HERO_SLIDER', imageUrl: '/x.png',

@@ -26,12 +26,20 @@ g.localStorage = {
   removeItem(k: string) { delete this._v[k]; },
 };
 
-const apiGet = vi.fn((url: string) => {
+// A named function, not just vi.fn's own default: a couple of tests below
+// need to swap in a different response via apiGet.mockImplementation(), and
+// mockClear() (in beforeEach) clears call history but NOT an implementation
+// override - only mockImplementation() itself does that. Naming this lets
+// beforeEach re-apply it before every test, so an override in one test
+// cannot leak into the next.
+function defaultApiGetImpl(url: string) {
   if (url.includes('/categories')) return Promise.resolve({ categories: [{ id: 'c1', name: 'C' }] });
   if (url.includes('/flash-deals')) return Promise.resolve({ products: [] });
   if (url.includes('/advertisements')) return Promise.resolve({ banners: [] });
   return Promise.resolve({ products: [{ id: 'fresh' }] });
-});
+}
+
+const apiGet = vi.fn(defaultApiGetImpl);
 
 vi.mock('../api/client.js', () => ({
   api: { get: (...a: any[]) => apiGet(...a), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn(), uploadFile: vi.fn() },
@@ -46,6 +54,7 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
 beforeEach(async () => {
   vi.resetModules();
   apiGet.mockClear();
+  apiGet.mockImplementation(defaultApiGetImpl); // undo any override a previous test made
   ({ stateEngine } = await import('./stateEngine.js'));
   // Simulate a page that has already cold-loaded: every flag is `false`
   // (attempted, not loading), and there is content on screen.
@@ -84,5 +93,98 @@ describe('forced marketplace refresh', () => {
 
     const categoryFetches = apiGet.mock.calls.filter((c) => String(c[0]).includes('/categories')).length;
     expect(categoryFetches).toBe(0);
+  });
+});
+
+/**
+ * The tab-return refresh must not render at all when the server sends back
+ * exactly what is already on screen.
+ *
+ * Every notify() makes main.js's renderApp() rebuild the whole header and
+ * view - every product <img> is torn down and reinserted, and the hero
+ * slider (started fresh on every render) snaps back to its first slide and
+ * restarts its clock, mid-rotation, for whoever was looking at it. Coming
+ * back from another tab after 30+ seconds is the ordinary case, and on an
+ * ordinary browsing session nothing has usually changed on the server in
+ * that window - so unconditionally rendering the refresh's result was a
+ * visible, no-reason snap on every single tab return. This is the "shaking"
+ * bug report.
+ */
+describe('forced refresh with unchanged data', () => {
+  it('does not render when the fetch returns byte-for-byte the same products', async () => {
+    apiGet.mockImplementation((url: string) => {
+      if (url.includes('/categories')) return Promise.resolve({ categories: [{ id: 'c1', name: 'C' }] });
+      if (url.includes('/flash-deals')) return Promise.resolve({ products: [] });
+      if (url.includes('/advertisements')) return Promise.resolve({ banners: [] });
+      // Same shape and values as the seeded state.products below.
+      return Promise.resolve({ products: [{ id: 'old' }] });
+    });
+
+    let renders = 0;
+    stateEngine.subscribe(() => { renders += 1; });
+
+    await stateEngine.loadMarketplaceHomeData({}, { force: true });
+    await flush();
+
+    expect(renders, 'an unchanged refresh must not trigger a render').toBe(0);
+    // The state itself is still fine to overwrite (same content) - what
+    // matters is that nothing was told to re-render over it.
+    expect(stateEngine.data.products).toEqual([{ id: 'old' }]);
+  });
+
+  it('still renders once real data shows up', async () => {
+    // Default mock (from the outer beforeEach) returns [{ id: 'fresh' }],
+    // which differs from the seeded [{ id: 'old' }] - this must still work.
+    let renders = 0;
+    stateEngine.subscribe(() => { renders += 1; });
+
+    await stateEngine.loadMarketplaceHomeData({}, { force: true });
+    await flush();
+
+    expect(renders, 'a genuinely changed refresh must still render').toBe(1);
+    expect(stateEngine.data.products).toEqual([{ id: 'fresh' }]);
+  });
+
+  it('renders when only the flash deal changed and the product list did not', async () => {
+    apiGet.mockImplementation((url: string) => {
+      if (url.includes('/categories')) return Promise.resolve({ categories: [{ id: 'c1', name: 'C' }] });
+      if (url.includes('/flash-deals')) return Promise.resolve({ products: [{ id: 'new-deal' }] });
+      if (url.includes('/advertisements')) return Promise.resolve({ banners: [] });
+      return Promise.resolve({ products: [{ id: 'old' }] }); // unchanged
+    });
+
+    let renders = 0;
+    stateEngine.subscribe(() => { renders += 1; });
+
+    await stateEngine.loadMarketplaceHomeData({}, { force: true });
+    await flush();
+
+    // One field changing is enough - this is not an all-or-nothing check.
+    expect(renders).toBe(1);
+    expect(stateEngine.data.flashDeals).toEqual([{ id: 'new-deal' }]);
+  });
+
+  it('a cold load still renders even if the fetched data happens to equal the initial empty state', async () => {
+    // Nothing seeded this time - a genuinely first load, zero products.
+    stateEngine.data.loading = {};
+    stateEngine.data.products = [];
+    apiGet.mockImplementation((url: string) => {
+      if (url.includes('/categories')) return Promise.resolve({ categories: [] });
+      if (url.includes('/flash-deals')) return Promise.resolve({ products: [] });
+      if (url.includes('/advertisements')) return Promise.resolve({ banners: [] });
+      return Promise.resolve({ products: [] }); // same as the [] already in state
+    });
+
+    let renders = 0;
+    stateEngine.subscribe(() => { renders += 1; });
+
+    await stateEngine.loadMarketplaceHomeData({}, { force: false });
+    await flush();
+
+    // Two renders: the skeleton (loading flags flip true) and the loaded
+    // state (loading flags flip false) - the "same data" skip only applies
+    // to force:true. A cold load with nothing to show must still leave the
+    // skeleton.
+    expect(renders).toBe(2);
   });
 });

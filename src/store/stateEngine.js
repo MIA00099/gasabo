@@ -8,6 +8,17 @@
 import { api, getSession, setSession, setSessionExpiredHandler } from '../api/client.js';
 import { parseLocation, ROUTE_HOME, ROUTE_PRODUCT } from './router.js';
 
+// Cheap content-equality check for a background refresh's result against
+// what is already on screen. Used only to decide whether a forced marketplace
+// refresh is worth rendering at all - see loadMarketplaceHomeData. False
+// positives (reporting "different" over something harmless like key order)
+// just cost one needless render; a false negative is what this exists to
+// rule out, and JSON.stringify never produces one for the plain JSON arrays
+// the API returns here.
+function sameJson(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 const LANG_KEY = 'KIGALIMARKET_LANG';
 
 const ROLE_MAP = {
@@ -596,27 +607,55 @@ class StateEngine {
 
       const [prodsRes, catsRes, flashRes, banRes] = await Promise.allSettled(promises);
 
+      // Whether this refresh is actually worth rendering. A cold load always
+      // is - the loading flags below have to flip off to clear the skeleton,
+      // and there is no "before" to compare against. A forced (tab-return)
+      // refresh only is if the server actually returned something different:
+      // skipping notify() when it did not is what stops the "shaking" - main.js's
+      // renderApp() rebuilds the ENTIRE header and view on every notify, which
+      // tears down and reloads every product image, and unconditionally resets
+      // the hero slider to slide one and restarts its clock (see
+      // startHeroSlider). Without this, coming back to the tab after 30+
+      // seconds visibly snapped the whole page - hero included - back to its
+      // starting state even when not one row on the server had changed, which
+      // for an ordinary browsing session is the common case, not the rare one.
+      let changed = !force;
+
       if (needProducts && prodsRes.status === 'fulfilled' && prodsRes.value?.products) {
-        this.data.products = prodsRes.value.products;
+        const next = prodsRes.value.products;
+        if (!force || !sameJson(this.data.products, next)) {
+          this.data.products = next;
+          if (force) changed = true;
+        }
       }
       if (needCategories && catsRes.status === 'fulfilled' && catsRes.value?.categories) {
         this.data.categories = catsRes.value.categories;
       }
       if (needFlashDeals && flashRes.status === 'fulfilled' && flashRes.value?.products) {
-        this.data.flashDeals = flashRes.value.products;
+        const next = flashRes.value.products;
+        if (!force || !sameJson(this.data.flashDeals, next)) {
+          this.data.flashDeals = next;
+          if (force) changed = true;
+        }
       }
       if (needBanners && banRes.status === 'fulfilled' && banRes.value?.banners) {
-        this.data.banners = banRes.value.banners;
+        const next = banRes.value.banners;
+        if (!force || !sameJson(this.data.banners, next)) {
+          this.data.banners = next;
+          if (force) changed = true;
+        }
       }
 
-      const doneLoading = { ...this.data.loading };
-      if (needProducts) doneLoading.products = false;
-      if (needCategories) doneLoading.categories = false;
-      if (needFlashDeals) doneLoading.flashDeals = false;
-      if (needBanners) doneLoading.banners = false;
-      this.data.loading = doneLoading;
+      if (!force) {
+        const doneLoading = { ...this.data.loading };
+        if (needProducts) doneLoading.products = false;
+        if (needCategories) doneLoading.categories = false;
+        if (needFlashDeals) doneLoading.flashDeals = false;
+        if (needBanners) doneLoading.banners = false;
+        this.data.loading = doneLoading;
+      }
 
-      this.notify();
+      if (changed) this.notify();
     } finally {
       this._marketplaceHomeDataLoading = false;
     }

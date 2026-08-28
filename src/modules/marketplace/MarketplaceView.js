@@ -9,10 +9,6 @@ import { starsHtml } from '../../utils/stars.js';
 import { openCategoryDropdown } from '../../components/dropdownMenu.js';
 import { openShareModal } from '../../components/ShareModal.js';
 
-// How many products sit in the top row, beside the Flash Deals card. The
-// rest continue in the grid underneath it.
-const TOP_ROW = 5;
-
 // Beyond this the homepage stops being a homepage. The catalog is what the
 // "View all" button below the grid is for.
 const HOME_MAX_MORE = 15;
@@ -62,23 +58,20 @@ function groupProductsBySection(products, categories) {
 /**
  * One product tile.
  *
- * Used by the top row and by the grid of everything else underneath, which is
+ * Used by every product row on the homepage - the Featured & Trending
+ * section, each category section, and the "more products" grid - which is
  * the point of it existing: the tile carries the discount badge, the price,
  * the strikethrough, the stars and the like count, and a second pasted copy
  * would drift from this one the first time any of those changed.
- *
- * `compact` is the five-across row beside the Flash Deals card, where the
- * image has to stay short enough that the row does not outgrow the card.
  */
-function productCardHtml(prod, { compact = false } = {}) {
+function productCardHtml(prod) {
   const was = Number(prod.originalPrice) || 0;
   const hasDiscount = was > prod.price;
   const pct = hasDiscount ? Math.round((1 - prod.price / was) * 100) : 20;
-  const imgHeight = compact ? 'max-h-[140px]' : 'max-h-[240px]';
 
   return `
     <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
-        <div class="relative w-full ${compact ? 'h-36' : 'h-48 sm:h-52'} ${imgHeight} bg-gray-100 overflow-hidden flex items-center justify-center">
+        <div class="relative w-full h-48 sm:h-52 max-h-[240px] bg-gray-100 overflow-hidden flex items-center justify-center">
             <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-2 py-0.5 rounded-md z-10 shadow-sm">-${pct}%</div>
             ${prod.isFeatured || prod.isTrending ? `
               <div class="absolute top-2 right-2 z-10 ${prod.isFeatured ? 'bg-amber-400 text-amber-900' : 'bg-brand-green text-white'} text-[9px] font-bold px-2 py-0.5 rounded-md shadow-sm">
@@ -294,20 +287,20 @@ export function renderMarketplaceView(container) {
     );
     const dotCount = heroAds.length;
 
-    // The top row beside the Flash Deals card is the spotlight: only listings
-    // an administrator has flagged Featured or Trending go in it. It used to be
-    // state.products.slice(0, TOP_ROW) - simply whatever was newest - so the
-    // two flags put a badge on the tile and changed nothing about where the
-    // listing actually appeared.
-    const spotlightProducts = state.products
-      .filter((p) => p.isFeatured || p.isTrending)
-      .slice(0, TOP_ROW);
+    // The Featured & Trending section: every listing an administrator has
+    // flagged Featured or Trending, in one full section - not a fixed-size
+    // row. It used to be state.products.slice(0, TOP_ROW) beside the Flash
+    // Deals card - simply whatever was newest - so the two flags put a badge
+    // on the tile and changed nothing about where the listing actually
+    // appeared. Uncapped, the same as a category section: it scrolls
+    // horizontally rather than wrapping, so there is no count it outgrows.
+    const spotlightProducts = state.products.filter((p) => p.isFeatured || p.isTrending);
     const spotlightIds = new Set(spotlightProducts.map((p) => p.id));
 
-    // Everything under the top row, minus whatever the spotlight already took.
-    // Excluded by id rather than by index: the spotlight draws from anywhere in
-    // the list, so slicing from TOP_ROW onwards would print a featured listing
-    // twice - once up top and again below.
+    // Everything not in the spotlight section, by id rather than by index -
+    // the spotlight draws from anywhere in the list, so slicing the first N
+    // out of state.products would print a featured listing twice: once in
+    // its spotlight section and again under its category below.
     const moreProducts = state.products
       .filter((p) => !spotlightIds.has(p.id))
       .slice(0, HOME_MAX_MORE);
@@ -495,208 +488,120 @@ export function renderMarketplaceView(container) {
                 </div>
             </section>
 
-            <!-- Flash Deals & Products Section -->
-            <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 flex-1 flex flex-col justify-center min-h-0">
-                <!-- No fixed height here: the card asks for min-height 230px,
-                     and a 180px row would simply clip it - which is the whole
-                     complaint. The row takes its height from the card and the
-                     product grid stretches to match. -->
-                <div class="flex flex-col lg:flex-row gap-3 lg:items-stretch">
-                    
-                    <!-- Flash Deals - the delivered markup, class for class.
-                         Two adjustments so it works inside the app: the
-                         countdown keeps the ids the existing clock drives
-                         (it also feeds the modal), and the "View all deals"
-                         anchor has its click prevented, since href="#" would
-                         otherwise push a hash the router strips straight back
-                         off. -->
-                    <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : ''} transition lg:shrink-0"
-                      ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>
+            <!-- Flash Deals - the delivered markup, class for class. Two
+                 adjustments so it works inside the app: the countdown keeps
+                 the ids the existing clock drives (it also feeds the modal),
+                 and the "View all deals" anchor has its click prevented,
+                 since href="#" would otherwise push a hash the router strips
+                 straight back off.
 
-                      <div class="flash-head">
-                        <h2>${t('ui_flash_deals')} <span>&#9889;</span></h2>
-                        ${featuredDeal ? `<a href="#" class="view-deals" id="open-flash-deals-btn" role="button">${t('ui_view_all_deals')}</a>` : ''}
+                 Used to share a row with the Featured/Trending products,
+                 squeezed beside it as five compact cards with no heading of
+                 their own - a reader had no way to tell why those particular
+                 listings were first. Flash Deals now stands alone; Featured
+                 and Trending gets its own section below, in the same style as
+                 the category sections further down the page. -->
+            <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 shrink-0">
+                <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : ''} transition"
+                  ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>
+
+                  <div class="flash-head">
+                    <h2>${t('ui_flash_deals')} <span>&#9889;</span></h2>
+                    ${featuredDeal ? `<a href="#" class="view-deals" id="open-flash-deals-btn" role="button">${t('ui_view_all_deals')}</a>` : ''}
+                  </div>
+
+                  ${featuredDeal ? `
+                    <!-- The real product the deal is on: an admin picks the
+                         listing and the end time, and the card shows both. -->
+                    <div class="flash-product view-item-btn" data-id="${escapeHtml(featuredDeal.id)}" role="button" tabindex="0">
+                      <div class="flash-product-img">
+                        <img src="${escapeHtml((featuredDeal.images && featuredDeal.images[0]) || '')}" alt="${escapeHtml(featuredDeal.title)}" loading="lazy">
                       </div>
-
-                      ${featuredDeal ? `
-                        <!-- The real product the deal is on: an admin picks the
-                             listing and the end time, and the card shows both. -->
-                        <div class="flash-product view-item-btn" data-id="${escapeHtml(featuredDeal.id)}" role="button" tabindex="0">
-                          <div class="flash-product-img">
-                            <img src="${escapeHtml((featuredDeal.images && featuredDeal.images[0]) || '')}" alt="${escapeHtml(featuredDeal.title)}" loading="lazy">
-                          </div>
-                          <div class="flash-product-info">
-                            <h3>${escapeHtml(featuredDeal.title)}</h3>
-                            <span class="flash-product-price">RWF ${Number(featuredDeal.price).toLocaleString()}</span>
-                          </div>
-                        </div>
-                      ` : `
-                        <p class="flash-empty">${t('ui_flash_none')}</p>
-                      `}
-
-                      <div class="countdown">
-
-                        <div class="time-box">
-                          <div class="number" id="deal-hours">00</div>
-                          <div class="label">${t('ui_hours')}</div>
-                        </div>
-
-                        <div class="separator">:</div>
-
-                        <div class="time-box">
-                          <div class="number" id="deal-mins">00</div>
-                          <div class="label">${t('ui_mins')}</div>
-                        </div>
-
-                        <div class="separator">:</div>
-
-                        <div class="time-box">
-                          <div class="number" id="deal-secs">00</div>
-                          <div class="label">${t('ui_secs')}</div>
-                        </div>
-
+                      <div class="flash-product-info">
+                        <h3>${escapeHtml(featuredDeal.title)}</h3>
+                        <span class="flash-product-price">RWF ${Number(featuredDeal.price).toLocaleString()}</span>
                       </div>
-
-                    </section>
-
-
-
-                    <!-- Products Grid -->
-                    <div class="lg:flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-3 relative">
-                        ${productsLoading && state.products.length === 0 ? `
-                            <div class="col-span-5 bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100 flex items-center justify-center">
-                                ${t('ui_loading_items')}
-                            </div>
-                        ` : spotlightProducts.length > 0 ? spotlightProducts
-                            .map((prod) => productCardHtml(prod, { compact: true }))
-                            .join('') : state.products.length > 0 ? `
-                            <!-- There are listings, but none is flagged. This
-                                 row is Featured/Trending only, so it says so
-                                 rather than backfilling with ordinary listings -
-                                 which is what made the flags meaningless here
-                                 in the first place. The rest of the homepage
-                                 below still shows everything. -->
-                            <div class="col-span-2 md:col-span-5 bg-white rounded-xl px-6 py-8 text-center border border-dashed border-gray-200 flex flex-col items-center justify-center">
-                                <i class="fa-regular fa-star text-2xl text-gray-300 mb-2"></i>
-                                <p class="text-sm font-bold text-gray-700">${t('ui_no_spotlight_title')}</p>
-                                <p class="text-xs text-gray-500 mt-1 max-w-sm">${t('ui_no_spotlight_sub')}</p>
-                            </div>
-                        ` : `
-                            <!-- Sample Mockup Product Cards from index.html -->
-                            <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col sample-item-btn">
-                                <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-20%</div>
-                                <div class="flex-1 flex items-center justify-center mb-2">
-                                    <i class="fa-solid fa-headphones text-4xl text-gray-800"></i>
-                                </div>
-                                <div class="mt-auto">
-                                    <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">Wireless Headphones</h3>
-                                    <div class="flex items-end gap-1.5 mb-1">
-                                        <span class="font-bold text-sm text-brand-dark leading-none">RWF 18,000</span>
-                                        <span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF 22,500</span>
-                                    </div>
-                                    <div class="flex items-center text-[9px] text-yellow-400">
-                                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-gray-300"></i>
-                                        <span class="text-gray-400 ml-1">(128)</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col sample-item-btn">
-                                <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-15%</div>
-                                <div class="flex-1 flex items-center justify-center mb-2">
-                                    <i class="fa-solid fa-blender text-4xl text-yellow-600"></i>
-                                </div>
-                                <div class="mt-auto">
-                                    <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">Blender 500W</h3>
-                                    <div class="flex items-end gap-1.5 mb-1">
-                                        <span class="font-bold text-sm text-brand-dark leading-none">RWF 25,000</span>
-                                        <span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF 30,000</span>
-                                    </div>
-                                    <div class="flex items-center text-[9px] text-yellow-400">
-                                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
-                                        <span class="text-gray-400 ml-1">(96)</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col sample-item-btn">
-                                <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-25%</div>
-                                <div class="flex-1 flex items-center justify-center mb-2">
-                                    <i class="fa-regular fa-clock text-4xl text-gray-800"></i>
-                                </div>
-                                <div class="mt-auto">
-                                    <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">Smart Watch Series 8</h3>
-                                    <div class="flex items-end gap-1.5 mb-1">
-                                        <span class="font-bold text-sm text-brand-dark leading-none">RWF 35,000</span>
-                                        <span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF 46,000</span>
-                                    </div>
-                                    <div class="flex items-center text-[9px] text-yellow-400">
-                                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-gray-300"></i>
-                                        <span class="text-gray-400 ml-1">(74)</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group hidden md:flex flex-col sample-item-btn">
-                                <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-10%</div>
-                                <div class="flex-1 flex items-center justify-center mb-2">
-                                    <i class="fa-solid fa-suitcase-rolling text-4xl text-gray-900"></i>
-                                </div>
-                                <div class="mt-auto">
-                                    <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">Travel Backpack</h3>
-                                    <div class="flex items-end gap-1.5 mb-1">
-                                        <span class="font-bold text-sm text-brand-dark leading-none">RWF 15,000</span>
-                                        <span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF 16,500</span>
-                                    </div>
-                                    <div class="flex items-center text-[9px] text-yellow-400">
-                                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                                        <span class="text-gray-400 ml-1">(74)</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group hidden md:flex flex-col sample-item-btn">
-                                <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-30%</div>
-                                <div class="flex-1 flex items-center justify-center mb-2">
-                                    <i class="fa-solid fa-shoe-prints text-4xl text-gray-300"></i>
-                                </div>
-                                <div class="mt-auto">
-                                    <h3 class="text-[11px] font-medium text-gray-800 mb-0.5 truncate">Men's Sneakers</h3>
-                                    <div class="flex items-end gap-1.5 mb-1">
-                                        <span class="font-bold text-sm text-brand-dark leading-none">RWF 22,000</span>
-                                        <span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF 31,500</span>
-                                    </div>
-                                    <div class="flex items-center text-[9px] text-yellow-400">
-                                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-gray-300"></i>
-                                        <span class="text-gray-400 ml-1">(113)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `}
-                        
-                        <!-- Scroll Arrow -->
-                        <!-- Sits flush with the container edge rather than
-                             overhanging it by -mr-3. The page is edge-to-edge
-                             now, so that overhang had nothing to hang into and
-                             poked 4px off the right of the screen. -->
-                        <div class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-brand-dark text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-gray-800 z-20 hidden lg:flex">
-                            <i class="fa-solid fa-chevron-right text-xs"></i>
-                        </div>
                     </div>
-                </div>
+                  ` : `
+                    <p class="flash-empty">${t('ui_flash_none')}</p>
+                  `}
+
+                  <div class="countdown">
+
+                    <div class="time-box">
+                      <div class="number" id="deal-hours">00</div>
+                      <div class="label">${t('ui_hours')}</div>
+                    </div>
+
+                    <div class="separator">:</div>
+
+                    <div class="time-box">
+                      <div class="number" id="deal-mins">00</div>
+                      <div class="label">${t('ui_mins')}</div>
+                    </div>
+
+                    <div class="separator">:</div>
+
+                    <div class="time-box">
+                      <div class="number" id="deal-secs">00</div>
+                      <div class="label">${t('ui_secs')}</div>
+                    </div>
+
+                  </div>
+
+                </section>
             </section>
 
-            <!-- Everything past the top row.
+            <!-- Featured & Trending - a real section now, styled exactly like
+                 the category sections below (colored bar, bold title, count
+                 badge, scroll arrows, one horizontally-scrolling row). Every
+                 flagged listing shows here, not just the first five, and (see
+                 moreProducts above, which excludes these ids) it does not
+                 also show again under its own category further down - each
+                 listing appears in exactly one section. Absent entirely when
+                 there is nothing flagged, the same as any category section
+                 with nothing in it. -->
+            ${productsLoading && state.products.length === 0 ? `
+              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
+                  <div class="bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100">
+                      ${t('ui_loading_items')}
+                  </div>
+              </section>
+            ` : spotlightProducts.length > 0 ? `
+              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
+                  <div class="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
+                      <div class="flex items-center gap-2">
+                          <span class="w-2.5 h-5 bg-brand-orange rounded-full inline-block"></span>
+                          <h3 class="text-sm sm:text-base font-black text-gray-900 tracking-tight">${t('ui_spotlight_section_title')}</h3>
+                          <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${spotlightProducts.length}</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="-1" aria-label="Scroll ${t('ui_spotlight_section_title')} left">
+                              <i class="fa-solid fa-chevron-left text-xs"></i>
+                          </button>
+                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="1" aria-label="Scroll ${t('ui_spotlight_section_title')} right">
+                              <i class="fa-solid fa-chevron-right text-xs"></i>
+                          </button>
+                      </div>
+                  </div>
+
+                  <!-- One row that scrolls horizontally (swipe on touch, arrows
+                       on desktop), same as the category sections below. -->
+                  <div id="spotlight-row" class="section-row flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-1">
+                      ${spotlightProducts.map((prod) => `<div class="shrink-0 w-40 sm:w-44 md:w-48">${productCardHtml(prod)}</div>`).join('')}
+                  </div>
+              </section>
+            ` : ''}
+
+            <!-- Everything not in the Featured & Trending section above:
+                 grouped by category (Electronics, Vehicles, ...), each its
+                 own horizontally-scrolling section, with whatever is left
+                 over after that in a plain wrapping grid underneath.
 
                  The homepage used to render products.slice(0, 5) and stop.
                  With eight products in the database that left three with
                  nowhere to appear, and anything a seller posted after the
-                 fifth was invisible from the front page.
-
-                 The row above keeps its five beside the Flash Deals card -
-                 that layout was delivered as a unit. The rest continue here,
-                 wrapping row under row, in a grid that goes two-across on a
-                 phone and five on a desktop. -->
+                 fifth was invisible from the front page. -->
              ${moreProducts.length > 0 ? (() => {
                const catSections = groupProductsBySection(moreProducts, state.categories);
 
@@ -979,18 +884,6 @@ export function renderMarketplaceView(container) {
       });
     });
 
-    container.querySelectorAll('.sample-item-btn, .modal-claim-item').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        closeModal();
-        const firstProd = state.products[0];
-        if (firstProd) {
-          pushPath(pathForListing(ROUTE_PRODUCT, firstProd.id));
-          stateEngine.setRoute({ kind: ROUTE_PRODUCT, id: firstProd.id });
-        } else {
-          stateEngine.setUI({ marketplaceTab: 'catalog' });
-        }
-      });
-    });
   }
 
   render();

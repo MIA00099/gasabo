@@ -107,8 +107,7 @@ export const translations = {
     ui_loading_items: "Loading featured items...",
     ui_more_products: "More products",
     ui_view_all: "View all",
-    ui_no_spotlight_title: "No featured or trending listings yet",
-    ui_no_spotlight_sub: "This row shows only listings an administrator has marked Featured or Trending.",
+    ui_spotlight_section_title: "Featured & Trending",
   },
   rw: {
     // Nav & General
@@ -213,8 +212,7 @@ export const translations = {
     ui_loading_items: "Turimo gushakisha ibicuruzwa...",
     ui_more_products: "Ibindi bicuruzwa",
     ui_view_all: "Reba byose",
-    ui_no_spotlight_title: "Nta bicuruzwa byatoranyijwe cyangwa bikunzwe biriho",
-    ui_no_spotlight_sub: "Uyu murongo werekana gusa ibicuruzwa umuyobozi yashyizeho nka Byatoranyijwe cyangwa Bikunzwe.",
+    ui_spotlight_section_title: "Byatoranyijwe & Bikunzwe",
   },
   fr: {
     // Nav & General
@@ -319,8 +317,7 @@ export const translations = {
     ui_loading_items: "Chargement des articles...",
     ui_more_products: "Plus de produits",
     ui_view_all: "Voir tout",
-    ui_no_spotlight_title: "Aucune annonce en vedette ou tendance",
-    ui_no_spotlight_sub: "Cette rangee affiche uniquement les annonces marquees En vedette ou Tendance par un administrateur.",
+    ui_spotlight_section_title: "En vedette et tendance",
   }
 };
 

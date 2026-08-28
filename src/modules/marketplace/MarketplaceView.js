@@ -294,6 +294,24 @@ export function renderMarketplaceView(container) {
     );
     const dotCount = heroAds.length;
 
+    // The top row beside the Flash Deals card is the spotlight: only listings
+    // an administrator has flagged Featured or Trending go in it. It used to be
+    // state.products.slice(0, TOP_ROW) - simply whatever was newest - so the
+    // two flags put a badge on the tile and changed nothing about where the
+    // listing actually appeared.
+    const spotlightProducts = state.products
+      .filter((p) => p.isFeatured || p.isTrending)
+      .slice(0, TOP_ROW);
+    const spotlightIds = new Set(spotlightProducts.map((p) => p.id));
+
+    // Everything under the top row, minus whatever the spotlight already took.
+    // Excluded by id rather than by index: the spotlight draws from anywhere in
+    // the list, so slicing from TOP_ROW onwards would print a featured listing
+    // twice - once up top and again below.
+    const moreProducts = state.products
+      .filter((p) => !spotlightIds.has(p.id))
+      .slice(0, HOME_MAX_MORE);
+
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
       cleanupFlashClock();
@@ -549,10 +567,21 @@ export function renderMarketplaceView(container) {
                             <div class="col-span-5 bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100 flex items-center justify-center">
                                 ${t('ui_loading_items')}
                             </div>
-                        ` : state.products.length > 0 ? state.products
-                            .slice(0, TOP_ROW)
+                        ` : spotlightProducts.length > 0 ? spotlightProducts
                             .map((prod) => productCardHtml(prod, { compact: true }))
-                            .join('') : `
+                            .join('') : state.products.length > 0 ? `
+                            <!-- There are listings, but none is flagged. This
+                                 row is Featured/Trending only, so it says so
+                                 rather than backfilling with ordinary listings -
+                                 which is what made the flags meaningless here
+                                 in the first place. The rest of the homepage
+                                 below still shows everything. -->
+                            <div class="col-span-2 md:col-span-5 bg-white rounded-xl px-6 py-8 text-center border border-dashed border-gray-200 flex flex-col items-center justify-center">
+                                <i class="fa-regular fa-star text-2xl text-gray-300 mb-2"></i>
+                                <p class="text-sm font-bold text-gray-700">${t('ui_no_spotlight_title')}</p>
+                                <p class="text-xs text-gray-500 mt-1 max-w-sm">${t('ui_no_spotlight_sub')}</p>
+                            </div>
+                        ` : `
                             <!-- Sample Mockup Product Cards from index.html -->
                             <div class="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col sample-item-btn">
                                 <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-20%</div>
@@ -668,8 +697,7 @@ export function renderMarketplaceView(container) {
                  that layout was delivered as a unit. The rest continue here,
                  wrapping row under row, in a grid that goes two-across on a
                  phone and five on a desktop. -->
-             ${state.products.length > TOP_ROW ? (() => {
-               const moreProducts = state.products.slice(TOP_ROW, TOP_ROW + HOME_MAX_MORE);
+             ${moreProducts.length > 0 ? (() => {
                const catSections = groupProductsBySection(moreProducts, state.categories);
 
                const catSectionsHtml = catSections.map((sec, i) => `
@@ -714,7 +742,7 @@ export function renderMarketplaceView(container) {
                          ${moreProducts.map((prod) => productCardHtml(prod)).join('')}
                      </div>
 
-                     ${state.products.length > TOP_ROW + HOME_MAX_MORE ? `
+                     ${state.products.length > spotlightProducts.length + moreProducts.length ? `
                        <div class="flex justify-center mt-3">
                            <button type="button" id="home-view-all-btn-2"
                              class="bg-brand-dark text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-gray-800 transition">

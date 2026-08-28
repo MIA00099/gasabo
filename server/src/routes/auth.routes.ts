@@ -5,6 +5,7 @@ import { prisma } from '../config/db.js';
 import { signToken, requireAuth } from '../middleware/auth.js';
 import { fullPermissions, permissionsFromModuleList } from '../utils/permissions.js';
 import { logAudit } from '../utils/audit.js';
+import { notifyAdminsWithModulePermission } from '../utils/notify.js';
 
 export const authRouter = Router();
 
@@ -104,6 +105,74 @@ authRouter.post('/login', async (req, res) => {
   }
 
   return res.status(401).json({ error: 'Incorrect email or password.' });
+});
+
+const forgotPasswordSchema = z.object({ email: z.string().email() });
+
+// The same answer whichever way it goes. Saying "no account with that email"
+// would turn this into a way to find out who has one.
+const FORGOT_PASSWORD_REPLY =
+  "If that email belongs to a seller account, we've passed the request to our team. " +
+  'They will send you a temporary password shortly - check back, or call 0788350555 if it is urgent.';
+
+/**
+ * "Forgot password?" on the sign-in screen.
+ *
+ * That link was an <a href="#"> with no handler bound to it at all: it moved
+ * the page a few pixels and did nothing else, so a seller locked out of their
+ * account had no route back in short of phoning someone.
+ *
+ * It cannot email a reset link, because nothing in this app sends email -
+ * utils/notify.ts writes Notification rows, and utils/accountEmail.ts only
+ * checks address uniqueness. So this closes the loop that does exist: it
+ * raises the request with the administrators who hold the SELLERS module, who
+ * reset the password from Seller Management (POST /sellers/:id/reset-password)
+ * and pass the temporary one to the seller.
+ *
+ * Public by design - the caller is locked out, so requiring auth would defeat
+ * the point. Sellers only: administrators and sub-administrators are reset by
+ * another administrator through the RBAC screen, and platform users have no
+ * password-reset path yet.
+ */
+authRouter.post('/forgot-password', async (req, res) => {
+  const parsed = forgotPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Enter the email address on your account.' });
+  }
+  // Not lower-cased or otherwise normalised: login matches the stored address
+  // exactly (see /login above), so normalising here would find accounts that
+  // then could not sign in with the address they typed.
+  const { email } = parsed.data;
+
+  const seller = await prisma.seller.findUnique({ where: { email } });
+
+  if (seller && seller.status !== 'SUSPENDED') {
+    // This endpoint is public, so without a guard anyone could pile up
+    // notification rows by submitting the same address repeatedly. One open
+    // request per seller is all an administrator needs to act on.
+    const alreadyPending = await prisma.notification.findFirst({
+      where: { type: 'PASSWORD_RESET_REQUEST', isRead: false, message: { contains: seller.email } },
+    });
+
+    if (!alreadyPending) {
+      await notifyAdminsWithModulePermission('SELLERS', {
+        type: 'PASSWORD_RESET_REQUEST',
+        message: `${seller.businessName} (${seller.email}) forgot their password and asked for a reset. Use Reset Password in Seller Management, then pass the temporary password on.`,
+      });
+
+      await logAudit({
+        actorId: seller.id,
+        actorType: 'SELLER',
+        actorName: seller.businessName,
+        action: 'PASSWORD_RESET_REQUESTED',
+        module: 'Security & Auth',
+        targetId: seller.id,
+        details: `${seller.businessName} requested a password reset from the sign-in screen.`,
+      });
+    }
+  }
+
+  res.json({ success: true, message: FORGOT_PASSWORD_REPLY });
 });
 
 /**

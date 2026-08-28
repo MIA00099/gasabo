@@ -21,6 +21,15 @@ export function renderLoginView(container, initialMode = 'login') {
 
   let submitting = false;
 
+  // "Forgot password?" - a panel that opens under the sign-in form rather than
+  // a separate screen, so the person keeps the form they were already filling
+  // in. `forgotNotice` holds the reply once sent; it is deliberately the same
+  // sentence whether or not the address has an account.
+  let forgotOpen = false;
+  let forgotSubmitting = false;
+  let forgotNotice = '';
+  let forgotError = '';
+
   let formData = {
     username: '',
     password: '',
@@ -29,6 +38,7 @@ export function renderLoginView(container, initialMode = 'login') {
     phone: '',
     district: 'Gasabo',
     confirmPassword: '',
+    forgotEmail: '',
   };
 
   function captureInputs() {
@@ -52,6 +62,9 @@ export function renderLoginView(container, initialMode = 'login') {
 
     const confirmPassInput = container.querySelector('#auth-confirm-password');
     if (confirmPassInput) formData.confirmPassword = confirmPassInput.value;
+
+    const forgotInput = container.querySelector('#auth-forgot-email');
+    if (forgotInput) formData.forgotEmail = forgotInput.value;
   }
 
   function update() {
@@ -116,8 +129,46 @@ export function renderLoginView(container, initialMode = 'login') {
                     <input type="checkbox" class="accent-brand-green rounded" checked>
                     <span>Remember me</span>
                   </label>
-                  <a href="#" id="forgot-pass-link" class="text-brand-green font-semibold hover:underline">Forgot password?</a>
+                  <!-- Was an <a href="#"> with nothing bound to it: clicking it
+                       pushed a bare hash and did nothing. A button, because it
+                       is an action; type="button" because this sits inside the
+                       sign-in form and must not submit it. -->
+                  <button type="button" id="forgot-pass-link" class="text-brand-green font-semibold hover:underline">Forgot password?</button>
                 </div>
+
+                ${forgotOpen ? `
+                  <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                      <div>
+                        <p class="text-xs font-bold text-gray-800">Reset your password</p>
+                        <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                          Enter the email on your seller account. Our team will set a temporary
+                          password and send it to you.
+                        </p>
+                      </div>
+                      <button type="button" id="forgot-close-btn" class="text-gray-400 hover:text-gray-600 shrink-0" aria-label="Close password reset">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                      </button>
+                    </div>
+
+                    ${forgotNotice ? `
+                      <p class="text-[11px] text-brand-green bg-green-50 border border-green-100 rounded-lg p-2 leading-relaxed">
+                        ${escapeHtml(forgotNotice)}
+                      </p>
+                    ` : `
+                      ${forgotError ? `<p class="text-[11px] text-red-600">${escapeHtml(forgotError)}</p>` : ''}
+                      <div class="flex gap-2">
+                        <input type="email" id="auth-forgot-email" placeholder="you@example.com"
+                          value="${escapeHtml(formData.forgotEmail)}"
+                          class="flex-1 min-w-0 bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
+                        <button type="button" id="forgot-submit-btn" ${forgotSubmitting ? 'disabled' : ''}
+                          class="bg-brand-dark text-white font-bold text-xs px-4 rounded-lg hover:bg-gray-800 transition shrink-0 disabled:opacity-60">
+                          ${forgotSubmitting ? 'Sending...' : 'Send request'}
+                        </button>
+                      </div>
+                    `}
+                  </div>
+                ` : ''}
 
                 <button type="submit" class="w-full bg-brand-green text-white font-bold py-3 rounded-xl hover:bg-green-800 transition shadow-md text-xs mt-2" ${submitting ? 'disabled' : ''}>
                   ${submitting ? 'Signing In...' : 'Sign In'}
@@ -267,6 +318,70 @@ export function renderLoginView(container, initialMode = 'login') {
         stateEngine.clearAuthNotice();
         mode = 'login';
         update();
+      });
+    }
+
+    const forgotLink = container.querySelector('#forgot-pass-link');
+    if (forgotLink) {
+      forgotLink.addEventListener('click', () => {
+        captureInputs();
+        forgotOpen = !forgotOpen;
+        forgotNotice = '';
+        forgotError = '';
+        // Whatever they already typed into the username field is almost always
+        // the address they want reset - carry it over rather than asking twice.
+        if (forgotOpen && !formData.forgotEmail && formData.username.includes('@')) {
+          formData.forgotEmail = formData.username;
+        }
+        update();
+        container.querySelector('#auth-forgot-email')?.focus();
+      });
+    }
+
+    const forgotClose = container.querySelector('#forgot-close-btn');
+    if (forgotClose) {
+      forgotClose.addEventListener('click', () => {
+        captureInputs();
+        forgotOpen = false;
+        forgotNotice = '';
+        forgotError = '';
+        update();
+      });
+    }
+
+    const forgotSubmit = container.querySelector('#forgot-submit-btn');
+    if (forgotSubmit) {
+      forgotSubmit.addEventListener('click', async () => {
+        captureInputs();
+        const email = formData.forgotEmail.trim();
+        if (!email || !email.includes('@')) {
+          forgotError = 'Enter the email address on your account.';
+          update();
+          return;
+        }
+        forgotError = '';
+        forgotSubmitting = true;
+        update();
+        try {
+          forgotNotice = await stateEngine.requestPasswordReset(email);
+        } catch (err) {
+          forgotError = err?.message || 'Could not send the request. Please try again.';
+        } finally {
+          forgotSubmitting = false;
+          update();
+        }
+      });
+    }
+
+    // Enter inside this field would otherwise submit the sign-in form around
+    // it - with the password they have not filled in, since they are here
+    // because they do not have it.
+    const forgotInput = container.querySelector('#auth-forgot-email');
+    if (forgotInput) {
+      forgotInput.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        container.querySelector('#forgot-submit-btn')?.click();
       });
     }
 

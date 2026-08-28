@@ -872,6 +872,15 @@ class StateEngine {
 
   // Self-service account edits (any signed-in user for the password; sellers
   // for the profile). Server verifies the current password / seller role.
+  // "Forgot password?" on the sign-in screen. Deliberately not wrapped in
+  // _run(): the caller is signed out, there is no loading key for it, and the
+  // reply carries the message the form shows. Always resolves the same way
+  // whether or not the address has an account (see auth.routes.ts).
+  async requestPasswordReset(email) {
+    const res = await api.post('/auth/forgot-password', { email });
+    return res?.message || '';
+  }
+
   async changePassword(currentPassword, newPassword) {
     return this._run('accountForm', async () => {
       await api.post('/auth/change-password', { currentPassword, newPassword });

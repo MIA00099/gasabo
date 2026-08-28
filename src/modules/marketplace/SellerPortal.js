@@ -6,6 +6,7 @@ import { starsHtml } from '../../utils/stars.js';
 import { categoryIconText } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
 import { renderLoginView } from '../../components/LoginView.js';
+import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 
 // Matches the "Max 10 photos" the form has always advertised, and the cap
 // enforced in createProductSchema (server/src/routes/products.routes.ts).
@@ -412,6 +413,17 @@ function renderSellerDashboardView(container, sellerUser) {
                     </td>
                     <td class="p-3.5">
                       <div class="flex gap-2">
+                        <!-- Opens the seller's own listing exactly as a buyer
+                             sees it (/product/:id). Only on live listings:
+                             GET /products/:id serves ACTIVE rows only, so on a
+                             pending, rejected or expired one this would land on
+                             "Listing not available" - a button that reliably
+                             fails is worse than no button. -->
+                        ${prod.status === 'active' ? `
+                          <button class="text-brand-green hover:text-green-800 font-bold text-[10px] px-2 py-1 rounded border border-green-200 hover:bg-green-50 transition view-prod-btn" data-id="${prod.id}" title="View this listing as a buyer sees it">
+                            View
+                          </button>
+                        ` : ''}
                         <button class="text-blue-600 hover:text-blue-800 font-bold text-[10px] px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition edit-prod-btn" data-id="${prod.id}">
                           Edit
                         </button>
@@ -576,6 +588,18 @@ function renderSellerDashboardView(container, sellerUser) {
         captureProductFormValues(container);
         render();
       }
+    });
+
+    // Same navigation the storefront's product tiles use (.view-item-btn in
+    // MarketplaceView): push the real /product/:id URL, then tell the state
+    // engine, so Back returns to the dashboard and the link is shareable.
+    container.querySelectorAll('.view-prod-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        pushPath(pathForListing(ROUTE_PRODUCT, id));
+        stateEngine.setRoute({ kind: ROUTE_PRODUCT, id });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
     });
 
     container.querySelectorAll('.edit-prod-btn').forEach(btn => {

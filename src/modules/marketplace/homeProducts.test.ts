@@ -23,6 +23,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 const SRC = readFileSync('src/modules/marketplace/MarketplaceView.js', 'utf8');
+// Newlines and indentation collapsed to single spaces, for the assertions
+// about declarations that wrap across several lines.
+const FLAT = SRC.replace(/\s+/g, ' ');
 
 describe('the product tile is written once', () => {
   it('exists as a function', () => {
@@ -58,11 +61,20 @@ describe('products past the top row', () => {
     // The bug was slice(0, 5) with nothing after it.
     expect(SRC, 'the top row still hardcodes 5').not.toContain('state.products.slice(0, 5)');
     expect(SRC).toContain('.slice(0, TOP_ROW)');
-    expect(SRC).toContain('.slice(TOP_ROW, TOP_ROW + HOME_MAX_MORE)');
+    expect(SRC).toContain('.slice(0, HOME_MAX_MORE)');
   });
 
   it('only get a section when there are any', () => {
-    expect(SRC).toContain('state.products.length > TOP_ROW ?');
+    expect(SRC).toContain('moreProducts.length > 0 ?');
+  });
+
+  it('exclude whatever the spotlight row already showed', () => {
+    // By id, not by index. The spotlight picks featured/trending listings from
+    // anywhere in the list, so slicing from TOP_ROW onwards would print one of
+    // them twice - once up top and again in the grid below.
+    expect(FLAT, 'the lower grid must drop the spotlight ids').toContain(
+      'const moreProducts = state.products .filter((p) => !spotlightIds.has(p.id))',
+    );
   });
 
   it('keeps the two counts sane', () => {
@@ -94,12 +106,51 @@ describe('products past the top row', () => {
   it('offers a way through to the full catalog', () => {
     expect(SRC).toContain('id="home-view-all-btn"');
     expect(SRC).toContain("'#home-view-all-btn, #home-view-all-btn-2'");
-    // The second button only appears when the homepage is holding some back.
-    expect(SRC).toContain('state.products.length > TOP_ROW + HOME_MAX_MORE ?');
+    // The second button only appears when the homepage is holding some back -
+    // counted from what the two rows actually rendered, since the spotlight
+    // may show fewer than TOP_ROW (or none at all).
+    expect(SRC).toContain('state.products.length > spotlightProducts.length + moreProducts.length ?');
   });
 
   it('lazy-loads the images, since they start below the fold', () => {
     const fn = SRC.slice(SRC.indexOf('function productCardHtml'), SRC.indexOf('// Grey circles'));
     expect(fn).toContain('loading="lazy"');
+  });
+});
+
+describe('the top row is featured and trending only', () => {
+  /**
+   * The row beside the Flash Deals card used to be state.products.slice(0,
+   * TOP_ROW) - whatever happened to be newest. isFeatured and isTrending put a
+   * badge on the tile and did nothing else, so an administrator flagging a
+   * listing changed no part of where it appeared.
+   */
+  it('filters the row on the two flags', () => {
+    expect(FLAT).toContain(
+      'const spotlightProducts = state.products .filter((p) => p.isFeatured || p.isTrending)',
+    );
+  });
+
+  it('renders that row from the filtered list, not from state.products', () => {
+    expect(SRC, 'the top row must render spotlightProducts').toContain(
+      'spotlightProducts.length > 0 ? spotlightProducts',
+    );
+  });
+
+  it('still caps the row at TOP_ROW', () => {
+    // Five columns wide beside the Flash Deals card - flagging fifty listings
+    // must not turn the row into a wall.
+    const decl = SRC.slice(SRC.indexOf('const spotlightProducts'));
+    expect(decl.slice(0, decl.indexOf(';'))).toContain('.slice(0, TOP_ROW)');
+  });
+
+  it('says so rather than backfilling when nothing is flagged', () => {
+    // Falling back to ordinary listings would make the flags meaningless
+    // again, which is the bug this row exists to fix.
+    expect(SRC, 'no empty state for the spotlight row').toContain('ui_no_spotlight_title');
+    const row = SRC.slice(SRC.indexOf('spotlightProducts.length > 0 ?'));
+    const upToFallback = row.slice(0, row.indexOf('Sample Mockup Product Cards'));
+    expect(upToFallback, 'the row must not fall back to unflagged listings')
+      .not.toContain('state.products.slice(0, TOP_ROW)');
   });
 });

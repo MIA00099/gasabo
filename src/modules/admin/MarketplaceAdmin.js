@@ -365,10 +365,7 @@ export function renderMarketplaceAdmin(container) {
           return;
         }
         promptFlashDealEnd(btn, async (isoEndsAt) => {
-          try {
-            await stateEngine.setProductFlashDeal(id, isoEndsAt);
-            alert('Flash Deal saved. It will show on the homepage while the countdown is active.');
-          } catch (err) { alert(err.message || 'Could not save the Flash Deal.'); }
+          await stateEngine.setProductFlashDeal(id, isoEndsAt);
         });
       });
     });
@@ -702,6 +699,9 @@ function promptFlashDealEnd(returnFocusTo, onPick) {
 
   let close = () => {};
   let error = '';
+  let status = '';
+  let busy = false;
+  let draftValue = localValue;
 
   function paint() {
     overlay.innerHTML = `
@@ -711,24 +711,52 @@ function promptFlashDealEnd(returnFocusTo, onPick) {
           The homepage flash card will count down to this time and drop the deal when it passes.
         </p>
         <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.35rem;">Deal ends at</label>
-        <input type="datetime-local" id="flash-end-input" value="${localValue}"
+        <input type="datetime-local" id="flash-end-input" value="${escapeHtml(draftValue)}" ${busy ? 'disabled' : ''}
           style="width:100%; padding:0.6rem 0.75rem; border:1px solid #E2E8F0; border-radius:10px; font-size:0.9rem;">
         ${error ? `<p style="color:#DC2626; font-size:0.8rem; margin-top:0.5rem;">${error}</p>` : ''}
+        ${status ? `<p style="color:#04562D; font-size:0.8rem; margin-top:0.5rem; font-weight:600;">${status}</p>` : ''}
         <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.25rem;">
-          <button id="flash-cancel" class="btn btn-sm" style="background:#F1F5F9; color:#475569;">Cancel</button>
-          <button id="flash-set" class="btn btn-sm" style="background:var(--primary); color:#fff;">Set Deal</button>
+          <button id="flash-cancel" type="button" class="btn btn-sm" style="background:#F1F5F9; color:#475569;">Cancel</button>
+          <button id="flash-set" type="button" class="btn btn-sm" ${busy ? 'disabled' : ''}
+            style="background:${busy ? '#94A3B8' : 'var(--primary)'}; color:#fff;">
+            ${busy ? 'Saving...' : 'Set Deal'}
+          </button>
         </div>
       </div>`;
 
     overlay.querySelector('#flash-cancel').addEventListener('click', () => close());
-    overlay.querySelector('#flash-set').addEventListener('click', () => {
-      const raw = overlay.querySelector('#flash-end-input').value;
-      const when = raw ? new Date(raw) : null;
-      if (!when || Number.isNaN(when.getTime())) { error = 'Pick a valid date and time.'; paint(); return; }
-      if (when.getTime() <= Date.now()) { error = 'The end time must be in the future.'; paint(); return; }
-      close();
-      onPick(when.toISOString());
+    overlay.querySelector('#flash-end-input')?.addEventListener('input', (event) => {
+      draftValue = event.target.value;
     });
+    overlay.querySelector('#flash-set').addEventListener('click', submit);
+  }
+
+  async function submit() {
+    if (busy) return;
+    const raw = overlay.querySelector('#flash-end-input')?.value || draftValue;
+    draftValue = raw;
+    const when = raw ? new Date(raw) : null;
+    if (!when || Number.isNaN(when.getTime())) { error = 'Pick a valid date and time.'; status = ''; paint(); return; }
+    if (when.getTime() <= Date.now()) { error = 'The end time must be in the future.'; status = ''; paint(); return; }
+
+    busy = true;
+    error = '';
+    status = 'Saving Flash Deal...';
+    paint();
+
+    try {
+      await onPick(when.toISOString());
+    } catch (err) {
+      busy = false;
+      status = '';
+      error = err?.message || 'Could not save the Flash Deal.';
+      paint();
+      return;
+    }
+
+    status = 'Flash Deal saved. It will show on the homepage while the countdown is active.';
+    paint();
+    setTimeout(() => close(), 700);
   }
 
   document.body.appendChild(overlay);

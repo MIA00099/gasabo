@@ -72,7 +72,10 @@ describe('the product tile is written once', () => {
  */
 describe('the Featured & Trending section', () => {
   it('filters on the two flags, not on recency', () => {
-    expect(SRC).toContain('state.products.filter((p) => p.isFeatured || p.isTrending)');
+    const helper = SRC.slice(SRC.indexOf('function isSpotlightProduct'), SRC.indexOf('function groupProductsBySection'));
+    expect(helper).toContain('product?.isFeatured || product?.isTrending');
+    expect(helper).not.toContain('isRecommended');
+    expect(SRC).toContain('state.products.filter(isSpotlightProduct)');
   });
 
   it('is uncapped - every flagged listing, not just the first few', () => {
@@ -124,16 +127,29 @@ describe('the Featured & Trending section', () => {
 });
 
 /**
- * A listing must appear in exactly one place: its own spotlight section if
- * flagged, or its category section otherwise - never both.
+ * A listing must appear in exactly one home-page product section: its own
+ * spotlight section if flagged, or a regular section otherwise - never both.
  */
 describe('spotlight and category sections do not duplicate listings', () => {
-  it('excludes spotlight ids from everything below, by id rather than by position', () => {
-    // By id: the spotlight draws flagged listings from anywhere in the list,
-    // so excluding "the first N" by index could still print one twice.
-    expect(FLAT, 'the catch-all list must drop the spotlight ids').toContain(
-      'const moreProducts = state.products .filter((p) => !spotlightIds.has(p.id))',
+  it('excludes Featured and Trending products from every regular section below', () => {
+    // By predicate: a listing marked Featured or Trending belongs to the
+    // spotlight section even if it would also match a category row.
+    expect(FLAT, 'the catch-all list must drop spotlight products').toContain(
+      'const moreProducts = state.products .filter((p) => !isSpotlightProduct(p))',
     );
+  });
+
+  it('does not repeat Featured or Trending products in Flash Deals on the homepage', () => {
+    expect(FLAT, 'home flash deals must exclude spotlight products').toContain(
+      'const visibleFlashDeals = flashDeals.filter((deal) => !isSpotlightProduct(deal) && !spotlightIds.has(deal.id));',
+    );
+    expect(SRC).toContain('const featuredDeal = visibleFlashDeals[0] || null;');
+
+    const modalStart = SRC.indexOf('<!-- Countdown Products Grid -->');
+    const modalEnd = SRC.indexOf('<div class="mt-6 pt-4 border-t border-gray-100', modalStart);
+    const modal = SRC.slice(modalStart, modalEnd);
+    expect(modal).toContain('visibleFlashDeals.length === 0');
+    expect(modal).toContain('visibleFlashDeals.map((deal)');
   });
 
   it('keeps a sane ceiling on the catch-all grid below the sections', () => {

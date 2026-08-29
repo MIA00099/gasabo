@@ -13,6 +13,10 @@ import { openShareModal } from '../../components/ShareModal.js';
 // "View all" button below the grid is for.
 const HOME_MAX_MORE = 15;
 
+function isSpotlightProduct(product) {
+  return !!(product?.isFeatured || product?.isTrending);
+}
+
 function groupProductsBySection(products, categories) {
   if (!Array.isArray(products) || products.length === 0) return [];
 
@@ -272,10 +276,11 @@ export function renderMarketplaceView(container) {
       stateEngine.loadMarketplaceHomeData(filters).catch(() => {});
     }
 
-    // The flash card shows the soonest-ending real deal an admin set up; the
-    // rest fill the "View all deals" modal. Empty until an admin creates one.
+    // The flash card starts from the soonest-ending real deals an admin set
+    // up. The actual home-visible list is finalized after the spotlight ids
+    // are known, because Featured / Trending products belong only in their
+    // own section on this page.
     const flashDeals = state.flashDeals || [];
-    const featuredDeal = flashDeals[0] || null;
 
     // Hero slider images an admin uploaded in the ads section - these are the
     // whole slider. Delete them all and the panel is empty, which is the point:
@@ -294,15 +299,16 @@ export function renderMarketplaceView(container) {
     // on the tile and changed nothing about where the listing actually
     // appeared. Uncapped, the same as a category section: it scrolls
     // horizontally rather than wrapping, so there is no count it outgrows.
-    const spotlightProducts = state.products.filter((p) => p.isFeatured || p.isTrending);
+    const spotlightProducts = state.products.filter(isSpotlightProduct);
     const spotlightIds = new Set(spotlightProducts.map((p) => p.id));
+    const visibleFlashDeals = flashDeals.filter((deal) => !isSpotlightProduct(deal) && !spotlightIds.has(deal.id));
+    const featuredDeal = visibleFlashDeals[0] || null;
 
-    // Everything not in the spotlight section, by id rather than by index -
-    // the spotlight draws from anywhere in the list, so slicing the first N
-    // out of state.products would print a featured listing twice: once in
-    // its spotlight section and again under its category below.
+    // Everything not in the spotlight section. Featured and Trending products
+    // must not be repeated in category rows, the lower grid, or flash deals:
+    // the first product row is their one home.
     const moreProducts = state.products
-      .filter((p) => !spotlightIds.has(p.id))
+      .filter((p) => !isSpotlightProduct(p))
       .slice(0, HOME_MAX_MORE);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
@@ -695,11 +701,11 @@ export function renderMarketplaceView(container) {
           </div>
 
           <!-- Countdown Products Grid -->
-          ${flashDeals.length === 0 ? `
+          ${visibleFlashDeals.length === 0 ? `
             <p class="text-center text-gray-500 text-sm py-10">${t('ui_flash_none')}</p>
           ` : `
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            ${flashDeals.map((deal) => {
+            ${visibleFlashDeals.map((deal) => {
               const was = Number(deal.originalPrice) || 0;
               const pct = was > deal.price ? Math.round((1 - deal.price / was) * 100) : 0;
               return `

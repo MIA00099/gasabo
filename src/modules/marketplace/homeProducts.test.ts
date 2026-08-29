@@ -115,10 +115,11 @@ describe('the Featured & Trending section', () => {
     // otherwise nothing. Its final branch must be the empty string, not a
     // rendered message.
     const chainStart = SRC.indexOf('productsLoading && state.products.length === 0 ?');
-    const chainEnd = SRC.indexOf('\n\n            <!-- Flash Deals');
+    const chainEnd = SRC.indexOf('<!-- Flash Deals', chainStart);
+    expect(chainEnd).toBeGreaterThan(chainStart);
     const chain = SRC.slice(chainStart, chainEnd);
     expect(chain).toContain('spotlightProducts.length > 0 ?');
-    expect(chain.trim().endsWith("` : ''}"), 'must fall through to an empty string, not a message').toBe(true);
+    expect(chain, 'must fall through to an empty string, not a message').toMatch(/`\s*:\s*''}\s*$/);
   });
 
   it('shows a loading state only before any product has ever loaded', () => {
@@ -139,9 +140,9 @@ describe('spotlight and category sections do not duplicate listings', () => {
     );
   });
 
-  it('does not repeat Featured or Trending products in Flash Deals on the homepage', () => {
-    expect(SECTIONS_FLAT, 'home flash deals must exclude spotlight products').toContain(
-      'const visibleFlashDeals = allFlashDeals.filter((deal) => ( !isSpotlightProduct(deal) && !spotlightIds.has(deal.id) ));',
+  it('keeps Flash Deals independent from the Featured and Trending rail', () => {
+    expect(SECTIONS_FLAT, 'flash deals must keep using active deal products').toContain(
+      'const visibleFlashDeals = allFlashDeals;',
     );
     expect(SECTIONS_SRC).toContain('featuredDeal: visibleFlashDeals[0] || null,');
 

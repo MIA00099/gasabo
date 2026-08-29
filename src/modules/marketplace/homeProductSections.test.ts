@@ -9,7 +9,7 @@ describe('home product section bucketing', () => {
     expect(isSpotlightProduct({})).toBe(false);
   });
 
-  it('keeps Featured and Trending products in the spotlight section only', () => {
+  it('keeps Featured and Trending products out of the regular product sections', () => {
     const featured = { id: 'toyota', title: 'Toyota', isFeatured: true, isTrending: false };
     const trending = { id: 'coffee', title: 'Coffee', isFeatured: false, isTrending: true };
     const regular = { id: 'phone', title: 'Phone', isFeatured: false, isTrending: false };
@@ -22,18 +22,18 @@ describe('home product section bucketing', () => {
 
     expect(sections.spotlightProducts.map((product) => product.id)).toEqual(['toyota', 'coffee']);
     expect(sections.moreProducts.map((product) => product.id)).toEqual(['phone']);
-    expect(sections.visibleFlashDeals.map((product) => product.id)).toEqual(['phone']);
-    expect(sections.featuredDeal?.id).toBe('phone');
+    expect(sections.visibleFlashDeals.map((product) => product.id)).toEqual(['toyota', 'coffee', 'phone']);
+    expect(sections.featuredDeal?.id).toBe('toyota');
   });
 
-  it('also removes a flash deal when its id already appears in spotlight data', () => {
+  it('keeps Flash Deals independent from the Featured and Trending rail', () => {
     const sections = getHomeProductSections({
       products: [{ id: 'coffee', title: 'Coffee', isFeatured: true }],
       flashDeals: [{ id: 'coffee', title: 'Coffee deal' }],
     });
 
     expect(sections.spotlightProducts.map((product) => product.id)).toEqual(['coffee']);
-    expect(sections.visibleFlashDeals).toEqual([]);
-    expect(sections.featuredDeal).toBe(null);
+    expect(sections.visibleFlashDeals.map((product) => product.id)).toEqual(['coffee']);
+    expect(sections.featuredDeal?.id).toBe('coffee');
   });
 });

@@ -525,9 +525,9 @@ export function renderMarketplaceView(container) {
                  since href="#" would otherwise push a hash the router strips
                  straight back off.
 
-                 Featured and Trending products are filtered out before this
-                 renders, so the home page has one clear place for those
-                 highlighted listings: the Featured & Trending rail above. -->
+                 Flash Deals remains independent from Featured / Trending:
+                 an admin setting a countdown should still make the deal
+                 visible, while regular category rows below stay filtered. -->
             <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 shrink-0">
                 <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : ''} transition"
                   ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>

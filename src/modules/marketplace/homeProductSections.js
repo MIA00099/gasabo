@@ -11,9 +11,11 @@ export function getHomeProductSections({ products = [], flashDeals = [], moreLim
   const regularProducts = allProducts.filter((product) => (
     !isSpotlightProduct(product) && !spotlightIds.has(product.id)
   ));
-  const visibleFlashDeals = allFlashDeals.filter((deal) => (
-    !isSpotlightProduct(deal) && !spotlightIds.has(deal.id)
-  ));
+  // Flash Deals are an independent promotion: if an admin sets a countdown on
+  // a product, the Flash Deals panel should work even when that product is
+  // also Featured or Trending. The spotlight-only rule only applies to the
+  // regular category/grid sections below.
+  const visibleFlashDeals = allFlashDeals;
 
   return {
     spotlightProducts,

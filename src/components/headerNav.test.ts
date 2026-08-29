@@ -77,6 +77,13 @@ describe('renderHeaderHtml does not throw', () => {
     expect(html).toMatch(/nav-left-group[^"]*min-w-0 overflow-hidden/);
   });
 
+  it('hides the responsive fit pass so the nav does not visibly shake on render', () => {
+    const html = renderHeaderHtml(ctx());
+    expect(html).toContain('data-fit-pending="true"');
+    expect(HEADER).toContain("removeAttribute('data-fit-pending')");
+    expect(CSS).toMatch(/\.nav-responsive-row\[data-fit-pending="true"\][\s\S]*opacity:\s*0/);
+  });
+
   it('marks fixed nav links as fit-aware items', () => {
     const html = renderHeaderHtml(ctx());
     for (const action of ['home', 'stores', 'vehicles', 'realestate', 'services', 'jobs']) {

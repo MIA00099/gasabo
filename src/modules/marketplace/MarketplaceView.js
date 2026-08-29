@@ -132,10 +132,10 @@ export function cleanupFlashClock() {
 }
 
 
-// The hero slider's interval, tracked the same way the flash clock is. Every
-// stateEngine notify re-renders this view, so an interval left running would
-// point at slides that have been thrown away - and a new one would be started
-// on top of it on every render, so they would stack up.
+// Kept for the app-wide cleanup hook. The hero used to auto-advance on an
+// interval, but that movement read like the page was refreshing/shaking while
+// people were trying to browse. Slides are now changed only by a deliberate
+// dot click.
 let heroSlideTimer = null;
 const reloadedFlashDealKeys = new Set();
 
@@ -145,8 +145,6 @@ export function cleanupHeroSlider() {
     heroSlideTimer = null;
   }
 }
-
-const SLIDE_DURATION = 4000;
 
 function startHeroSlider(container) {
   cleanupHeroSlider();
@@ -167,32 +165,11 @@ function startHeroSlider(container) {
     });
   }
 
-  function start() {
-    cleanupHeroSlider();
-    heroSlideTimer = setInterval(() => show(current + 1), SLIDE_DURATION);
-  }
-
   dots.forEach((dot) => {
     dot.addEventListener('click', () => {
       show(Number(dot.dataset.dot));
-      start(); // restart the clock so a chosen slide gets its full turn
     });
   });
-
-  // Pause while the reader is looking at or interacting with it - rotating a
-  // slide out from under someone mid-read is the usual complaint about
-  // carousels.
-  slider.addEventListener('mouseenter', cleanupHeroSlider);
-  slider.addEventListener('mouseleave', start);
-  slider.addEventListener('focusin', cleanupHeroSlider);
-  slider.addEventListener('focusout', start);
-
-  // Nothing to animate for someone who asked for less motion; they still get
-  // the dots to move through the slides by hand.
-  const stillness = window.matchMedia('(prefers-reduced-motion: reduce)');
-  if (stillness.matches) return;
-
-  start();
 }
 
 function startFlashClock(container) {

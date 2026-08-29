@@ -2,10 +2,9 @@
  * The hero slider and the Flash Deals card, checked as markup.
  *
  * Both are hand-written template strings. The slider's failure mode is that a
- * slide added without its matching dot is simply unreachable from the dots -
- * the timer still cycles onto it, so nothing looks broken until someone tries
- * to click back to it. startHeroSlider() reads `.slide` and `.dot` straight
- * from the DOM, so the two counts have to be kept in step by hand.
+ * slide added without its matching dot is simply unreachable from the dots.
+ * startHeroSlider() reads `.slide` and `.dot` straight from the DOM, so the
+ * two counts have to be kept in step by hand.
  *
  * The other thing guarded here is that the slider has no built-in content.
  * It used to carry six hardcoded slides that rendered whenever there were no
@@ -17,6 +16,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 const HOME = readFileSync('src/modules/marketplace/MarketplaceView.js', 'utf8');
+const CSS = readFileSync('src/styles/main.css', 'utf8');
 
 // The slider markup only - so a product card image elsewhere in the file
 // cannot satisfy or break these.
@@ -58,6 +58,22 @@ describe('hero slider', () => {
     // Zero ads leaves an empty panel and one ad never rotates; a row of dots
     // over either is a control that does nothing.
     expect(SLIDER, 'dots must be gated on more than one ad').toMatch(/\$\{dotCount > 1 \?/);
+  });
+
+  it('does not auto-advance hero ads like a page refresh', () => {
+    const driver = HOME.slice(HOME.indexOf('function startHeroSlider'), HOME.indexOf('function startFlashClock'));
+    expect(driver, 'slider should stay still unless the visitor clicks a dot').not.toContain('setInterval');
+    expect(driver, 'manual dots still switch slides').toContain("dot.addEventListener('click'");
+  });
+
+  it('changes slides with an opacity fade, not a horizontal shake', () => {
+    const slideStart = CSS.indexOf('.slide {');
+    const slideRule = CSS.slice(slideStart, CSS.indexOf('.slide img', slideStart));
+    const activeStart = CSS.indexOf('.slide.active {');
+    const activeRule = CSS.slice(activeStart, CSS.indexOf('.slide.cover-slide', activeStart));
+    expect(slideRule).toContain('transition: opacity');
+    expect(slideRule).not.toContain('translateX');
+    expect(activeRule).not.toContain('translateX');
   });
 
   it('renders admin hero ads as cover-slides so any-shape banners fill without cropping', () => {

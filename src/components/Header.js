@@ -234,7 +234,7 @@ export function renderHeaderHtml(ctx) {
            overflow-x-auto row let a wide left side scroll Post an Ad out of
            view - and the brief "all categories inline" regression made the
            left side very wide. -->
-      <div class="nav-responsive-row compact-container px-3 sm:px-4 lg:px-6 flex items-center h-10 gap-2 sm:gap-4 overflow-hidden">
+      <div class="nav-responsive-row compact-container px-3 sm:px-4 lg:px-6 flex items-center h-10 gap-2 sm:gap-4 overflow-hidden" data-fit-pending="true">
 
         <!-- FIXED LEFT: All Categories + the permanent links. The runtime fit
              pass hides tail links into More as space gets tight, so text is
@@ -465,6 +465,7 @@ function ensureFitObserver() {
  * resize and on every header render.
  */
 function fitNavCategories(root) {
+  const row = root.querySelector('.nav-responsive-row');
   const left = root.querySelector('.nav-left-group');
   const primaryItems = [...root.querySelectorAll('.nav-fixed-item')];
   const lane = root.querySelector('.nav-cat-fill');
@@ -491,7 +492,10 @@ function fitNavCategories(root) {
     }
   }
 
-  if (!lane || chips.length === 0) return;
+  if (!lane || chips.length === 0) {
+    row?.removeAttribute('data-fit-pending');
+    return;
+  }
   const laneRight = lane.getBoundingClientRect().right;
   let overflowing = false;
   for (const chip of chips) {
@@ -502,6 +506,7 @@ function fitNavCategories(root) {
       overflowing = true;
     }
   }
+  row?.removeAttribute('data-fit-pending');
 }
 
 export function bindMobileTabBarEvents(root, handlers) {

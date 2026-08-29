@@ -53,20 +53,32 @@ const REQUEST_TIMEOUT_MS = 15000;
 // somebody. Generated once and kept; it identifies nothing about the person
 // and is only ever compared against itself.
 const VISITOR_KEY_STORAGE = 'KIGALIMARKET_VISITOR_V1';
+let ephemeralVisitorCounter = 0;
+
+function newVisitorKey(prefix = 'visitor') {
+  const webCrypto = globalThis.crypto;
+  if (webCrypto?.randomUUID) return `${prefix}-${webCrypto.randomUUID()}`;
+  if (webCrypto?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    webCrypto.getRandomValues(bytes);
+    return `${prefix}-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`;
+  }
+  ephemeralVisitorCounter += 1;
+  return `${prefix}-${Date.now().toString(36)}-${ephemeralVisitorCounter.toString(36)}`;
+}
 
 export function getVisitorKey() {
   try {
     let key = localStorage.getItem(VISITOR_KEY_STORAGE);
     if (!key) {
-      key = (crypto.randomUUID && crypto.randomUUID()) ||
-        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+      key = newVisitorKey();
       localStorage.setItem(VISITOR_KEY_STORAGE, key);
     }
     return key;
   } catch {
     // Private mode with storage blocked. The like still registers for this
     // page view; it just will not be remembered on the next one.
-    return `ephemeral-${Math.random().toString(36).slice(2, 14)}`;
+    return newVisitorKey('ephemeral');
   }
 }
 

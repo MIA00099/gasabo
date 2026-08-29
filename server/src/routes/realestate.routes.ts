@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { prisma } from '../config/db.js';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 import { withDerivedPrices, priceToNumber } from '../utils/price.js';
+import { notifyAdminsWithModulePermission } from '../utils/notify.js';
 
 export const realEstateRouter = Router();
 
@@ -208,7 +210,7 @@ realEstateRouter.delete('/properties/:id', requireAuth, requirePermission('REAL_
 });
 
 realEstateRouter.put('/properties/:id', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
-  const { title, type, location, price, beds, baths, area, image, images, description } = req.body || {};
+  const { title, type, location, price, beds, baths, area, image, images, description, videoUrl } = req.body || {};
   if (!title) return res.status(400).json({ error: 'Property title is required.' });
 
   const properties = await getSection<any[]>('PROPERTIES', DEFAULT_PROPERTIES);
@@ -232,6 +234,7 @@ realEstateRouter.put('/properties/:id', requireAuth, requirePermission('REAL_EST
     area: area || properties[index].area,
     image: primaryImage,
     images: gallery.length ? gallery : [primaryImage],
+    videoId: typeof videoUrl === 'string' ? extractYouTubeId(videoUrl) : properties[index].videoId ?? null,
     description: description || properties[index].description,
   };
 
@@ -248,6 +251,48 @@ realEstateRouter.put('/properties/:id', requireAuth, requirePermission('REAL_EST
   });
 
   res.json({ properties });
+});
+
+const inquirySchema = z.object({
+  name: z.string().min(2).max(100),
+  phone: z.string().min(6).max(40),
+  message: z.string().max(1000).optional(),
+  propertyId: z.string().max(80).optional(),
+  propertyTitle: z.string().max(180).optional(),
+});
+
+realEstateRouter.post('/inquiries', async (req, res) => {
+  const parsed = inquirySchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Enter your name and phone number before sending the inquiry.', details: parsed.error.flatten() });
+  }
+
+  const inquiry = {
+    name: parsed.data.name.trim(),
+    phone: parsed.data.phone.trim(),
+    message: parsed.data.message?.trim() || '',
+    propertyId: parsed.data.propertyId?.trim() || null,
+    propertyTitle: parsed.data.propertyTitle?.trim() || null,
+  };
+  const subject = inquiry.propertyTitle ? ` about "${inquiry.propertyTitle}"` : '';
+  const body = inquiry.message ? ` Message: ${inquiry.message}` : '';
+
+  await notifyAdminsWithModulePermission('REAL_ESTATE_CONTENT', {
+    type: 'REALESTATE_INQUIRY',
+    message: `${inquiry.name} (${inquiry.phone}) sent a Gasabo Real Estate inquiry${subject}.${body}`,
+  });
+
+  await logAudit({
+    actorId: 'public-realestate-inquiry',
+    actorType: 'SYSTEM',
+    actorName: inquiry.name,
+    action: 'REALESTATE_INQUIRY_SUBMITTED',
+    module: 'Real Estate',
+    targetId: inquiry.propertyId || undefined,
+    details: inquiry,
+  });
+
+  res.status(201).json({ success: true, message: 'Inquiry received.' });
 });
 
 // Generic section editor for ABOUT / SERVICES / CONTACT

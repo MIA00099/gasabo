@@ -41,7 +41,7 @@ export function renderSecurityAuditAdmin(container) {
           <div>
             <h4 style="color: #0F172A; font-size: 1.05rem;">Database Backup Policy</h4>
             <p style="font-size: 0.85rem; color: #64748B;">
-              Each backup trigger is recorded to the audit log below with a timestamp for compliance tracking.
+              Each backup trigger writes a timestamped JSON snapshot to the private server backup directory and records the event below.
             </p>
           </div>
         </div>
@@ -89,8 +89,8 @@ export function renderSecurityAuditAdmin(container) {
     // Handlers
     container.querySelector('#trigger-backup-btn')?.addEventListener('click', async () => {
       try {
-        await stateEngine.triggerBackup();
-        alert('Database backup snapshot created successfully!');
+        const backup = await stateEngine.triggerBackup();
+        alert(`Database backup snapshot created: ${backup.fileName}`);
         stateEngine.loadAuditLogs().catch(() => {});
       } catch (err) {
         render();

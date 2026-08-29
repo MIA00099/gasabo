@@ -22,6 +22,15 @@ import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 import { openImageLightbox } from '../../components/imageLightbox.js';
 import { openShareModal } from '../../components/ShareModal.js';
 
+let cleanupDetailResizeListener = null;
+
+export function cleanupProductDetailPage() {
+  if (cleanupDetailResizeListener) {
+    cleanupDetailResizeListener();
+    cleanupDetailResizeListener = null;
+  }
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/[&<>"']/g, (m) => (
@@ -460,7 +469,9 @@ export function renderProductDetailPage(container, product, handlers = {}) {
     const img = t.querySelector('img');
     if (img && !img.complete) img.addEventListener('load', syncArrows, { once: true });
   });
+  cleanupProductDetailPage();
   window.addEventListener('resize', syncArrows);
+  cleanupDetailResizeListener = () => window.removeEventListener('resize', syncArrows);
 
   container.querySelector('#detail-zoom-btn')?.addEventListener('click', () => {
     openImageLightbox(images, product.title, {

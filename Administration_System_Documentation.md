@@ -68,24 +68,26 @@ Management      Management
 
 ## 4. Gasabo Real Estate Management
 
-Administrators manage all public-facing content for the real estate platform, including:
+Administrators manage public-facing content for the real estate platform, including:
 
-- Homepage, About, Services, and Solutions pages
-- Projects and Gallery
-- Team members and contact information
-- Company images and office location
+- Homepage hero content
+- About, Services, and Contact section content
+- Property listings, image galleries, and optional YouTube tours
+- Company contact information
 
 ---
 
 ## 5. Platform User Management
 
-Applies to registered platform users (distinct from marketplace sellers, who are governed separately under Section 3.2).
+Marketplace sellers are governed separately under Section 3.2. The database also has a distinct
+PlatformUser model for future buyer/user accounts, but the current admin UI manages
+Administrators and Sub-Administrators rather than a full public-user lifecycle.
 
 ```text
 User Registers
       │
       ▼
-Administrator Review
+Future Administrator Review
       │
       ▼
 View / Suspend / Activate / Reset Password / Assign Roles
@@ -100,7 +102,8 @@ Triggered automatically for:
 - Product expiring in 7 days
 - Product expired
 - Account suspended / activated
-- Password reset
+- Password reset requests and completed reset notices
+- Real-estate public inquiries
 
 ### Administrator Notifications
 Triggered automatically for:
@@ -125,4 +128,4 @@ Login → Authentication → Permission Verification → Access Granted / Denied
 - Audit logs and login history
 - Session management
 - Input validation
-- Automatic database backups
+- Manual database backup snapshots

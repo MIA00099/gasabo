@@ -6,6 +6,8 @@ import { signToken, requireAuth } from '../middleware/auth.js';
 import { fullPermissions, permissionsFromModuleList } from '../utils/permissions.js';
 import { logAudit } from '../utils/audit.js';
 import { notifyAdminsWithModulePermission } from '../utils/notify.js';
+import { isEmailTaken } from '../utils/accountEmail.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 export const authRouter = Router();
 
@@ -17,6 +19,18 @@ const registerSellerSchema = z.object({
   password: z.string().min(6),
 });
 
+const loginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  key: (req) => `login:${req.ip}:${String(req.body?.email || '').toLowerCase()}`,
+});
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 8,
+  key: (req) => `forgot-password:${req.ip}:${String(req.body?.email || '').toLowerCase()}`,
+});
+
 authRouter.post('/register/seller', async (req, res) => {
   const parsed = registerSellerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -24,8 +38,7 @@ authRouter.post('/register/seller', async (req, res) => {
   }
   const { fullName, email, phone, district, password } = parsed.data;
 
-  const existing = await prisma.seller.findUnique({ where: { email } });
-  if (existing) {
+  if (await isEmailTaken(email)) {
     return res.status(409).json({ error: 'An account with this email already exists.' });
   }
 
@@ -57,7 +70,7 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', loginLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Email/username and password are required.' });
@@ -134,7 +147,7 @@ const FORGOT_PASSWORD_REPLY =
  * another administrator through the RBAC screen, and platform users have no
  * password-reset path yet.
  */
-authRouter.post('/forgot-password', async (req, res) => {
+authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
   const parsed = forgotPasswordSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Enter the email address on your account.' });

@@ -33,6 +33,8 @@ let plainSubAdminToken: string;
 let sellerToken: string;
 let sellerId: string;
 let categoryId: string;
+let suffixSeq = 0;
+const suffix = () => `${Date.now()}-${suffixSeq++}`;
 
 async function createPendingProduct(title: string): Promise<string> {
   let activeSellerId = sellerId;
@@ -40,7 +42,7 @@ async function createPendingProduct(title: string): Promise<string> {
   if (!seller) {
     const newSeller = await prisma.seller.create({
       data: {
-        email: `rbac-seller-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.local`,
+        email: `rbac-seller-${suffix()}@test.local`,
         passwordHash: 'not-used',
         businessName: 'Fixture Seller',
         contactPhone: '+250780000000',
@@ -54,7 +56,7 @@ async function createPendingProduct(title: string): Promise<string> {
   const cat = categoryId ? await prisma.category.findUnique({ where: { id: categoryId } }) : null;
   if (!cat) {
     const newCat = await prisma.category.create({
-      data: { name: 'RBAC Fixtures', slug: `rbac-fixtures-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` },
+      data: { name: 'RBAC Fixtures', slug: `rbac-fixtures-${suffix()}` },
     });
     activeCatId = newCat.id;
     categoryId = newCat.id;

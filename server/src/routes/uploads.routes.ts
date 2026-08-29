@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, hasModulePermission, type AuthUser } from '../middleware/auth.js';
 import { env } from '../config/env.js';
 
 export const uploadsRouter = Router();
@@ -44,9 +44,37 @@ function ensureBucketReady(): Promise<void> {
   return bucketReadyPromise;
 }
 
-function randomFilename(originalname: string): string {
-  const ext = path.extname(originalname).toLowerCase() || '.jpg';
+function randomFilename(ext: string): string {
   return `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+}
+
+function detectImage(buffer: Buffer): { mime: string; ext: string } | null {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return { mime: 'image/jpeg', ext: '.jpg' };
+  }
+  if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+    return { mime: 'image/png', ext: '.png' };
+  }
+  if (
+    buffer.length >= 12 &&
+    buffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+    buffer.subarray(8, 12).toString('ascii') === 'WEBP'
+  ) {
+    return { mime: 'image/webp', ext: '.webp' };
+  }
+  if (buffer.length >= 6) {
+    const sig = buffer.subarray(0, 6).toString('ascii');
+    if (sig === 'GIF87a' || sig === 'GIF89a') return { mime: 'image/gif', ext: '.gif' };
+  }
+  return null;
+}
+
+async function canUpload(user: AuthUser) {
+  if (user.role === 'SELLER' || user.role === 'ADMINISTRATOR') return true;
+  if (user.role !== 'SUB_ADMINISTRATOR') return false;
+  return (await hasModulePermission(user, 'PRODUCTS')) ||
+    (await hasModulePermission(user, 'ADVERTISEMENTS')) ||
+    (await hasModulePermission(user, 'REAL_ESTATE_CONTENT'));
 }
 
 // Local disk fallback (original implementation) - gitignored, runtime user
@@ -72,7 +100,11 @@ const upload = multer({
   },
 });
 
-uploadsRouter.post('/', requireAuth, (req, res) => {
+uploadsRouter.post('/', requireAuth, async (req, res) => {
+  if (!(await canUpload(req.user!))) {
+    return res.status(403).json({ error: 'You do not have permission to upload images.' });
+  }
+
   upload.single('image')(req, res, async (err) => {
     if (err) {
       const message =
@@ -85,14 +117,19 @@ uploadsRouter.post('/', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'No image file was received.' });
     }
 
-    const filename = randomFilename(req.file.originalname);
+    const detected = detectImage(req.file.buffer);
+    if (!detected || detected.mime !== req.file.mimetype) {
+      return res.status(400).json({ error: 'The uploaded file does not match a supported image format.' });
+    }
+
+    const filename = randomFilename(detected.ext);
 
     try {
       if (supabase) {
         await ensureBucketReady();
         const { error } = await supabase.storage
           .from(BUCKET)
-          .upload(filename, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+          .upload(filename, req.file.buffer, { contentType: detected.mime, upsert: false });
         if (error) throw error;
         const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
         return res.status(201).json({ url: data.publicUrl });

@@ -88,4 +88,51 @@ describe('POST /api/realestate/properties (multi-image)', () => {
     const res = await addProperty({ title: 'No video', videoUrl: 'https://vimeo.com/12345' });
     expect(res.body.properties[0].videoId).toBeNull();
   });
+
+  it('updates and clears the YouTube video id on edit', async () => {
+    const created = await addProperty({ title: 'Editable tour', videoUrl: 'https://youtu.be/abc123DEF45' });
+    const id = created.body.properties[0].id;
+
+    const updated = await request(app)
+      .put(`/api/realestate/properties/${id}`)
+      .set(auth(adminToken))
+      .send({ title: 'Editable tour', images: ['/uploads/a.jpg'], videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+
+    expect(updated.status).toBe(200);
+    expect(updated.body.properties.find((p: { id: string }) => p.id === id).videoId).toBe('dQw4w9WgXcQ');
+
+    const cleared = await request(app)
+      .put(`/api/realestate/properties/${id}`)
+      .set(auth(adminToken))
+      .send({ title: 'Editable tour', images: ['/uploads/a.jpg'], videoUrl: '' });
+
+    expect(cleared.body.properties.find((p: { id: string }) => p.id === id).videoId).toBeNull();
+  });
+});
+
+describe('POST /api/realestate/inquiries', () => {
+  it('turns a public inquiry into admin notifications and audit', async () => {
+    await prisma.notification.deleteMany({ where: { type: 'REALESTATE_INQUIRY' } });
+
+    const res = await request(app).post('/api/realestate/inquiries').send({
+      name: 'Prospect Buyer',
+      phone: '+250788222333',
+      message: 'Looking for a house in Gasabo.',
+      propertyTitle: 'Family Home',
+    });
+
+    expect(res.status).toBe(201);
+    const note = await prisma.notification.findFirst({
+      where: { type: 'REALESTATE_INQUIRY', message: { contains: '+250788222333' } },
+    });
+    expect(note).toBeTruthy();
+
+    const audit = await prisma.auditLog.findFirst({ where: { action: 'REALESTATE_INQUIRY_SUBMITTED', actorName: 'Prospect Buyer' } });
+    expect(audit).toBeTruthy();
+  });
+
+  it('validates required contact fields', async () => {
+    const res = await request(app).post('/api/realestate/inquiries').send({ name: 'A' });
+    expect(res.status).toBe(400);
+  });
 });

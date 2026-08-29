@@ -20,10 +20,24 @@ import { rbacRouter } from './routes/rbac.routes.js';
 import { uploadsRouter } from './routes/uploads.routes.js';
 import { notificationsRouter } from './routes/notifications.routes.js';
 import { seoRouter } from './seo/routes.js';
+import { env } from './config/env.js';
 
 export const app = express();
 
-app.use(cors());
+const corsOrigins = env.CORS_ORIGIN
+  ? env.CORS_ORIGIN.split(',').map((origin) => origin.trim().replace(/\/+$/, '')).filter(Boolean)
+  : env.NODE_ENV === 'production'
+    ? [env.PUBLIC_SITE_URL]
+    : null;
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || corsOrigins === null || corsOrigins.includes(origin.replace(/\/+$/, ''))) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+}));
 app.use(express.json());
 
 // Serves files saved by uploadsRouter (POST /api/uploads) - e.g. a saved

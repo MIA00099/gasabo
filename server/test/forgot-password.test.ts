@@ -74,7 +74,7 @@ beforeAll(async () => {
   unscopedSubAdminId = unscoped.id;
 });
 
-const post = (body: unknown) => request(app).post('/api/auth/forgot-password').send(body);
+const post = (body: string | object | undefined) => request(app).post('/api/auth/forgot-password').send(body);
 
 describe('POST /api/auth/forgot-password', () => {
   it('needs no authentication - the caller is locked out', async () => {

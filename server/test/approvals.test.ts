@@ -29,6 +29,7 @@ let requesterToken: string;
 let secondAdminToken: string;
 let approverSubAdminToken: string;
 let plainSubAdminToken: string;
+let plainSubAdminId: string;
 let adminId: string;
 
 /** Unique suffix so each test can make its own fixtures without collisions. */
@@ -124,6 +125,7 @@ beforeAll(async () => {
   } satisfies AuthUser);
 
   const plain = await makeSubAdmin(['PRODUCTS', 'SELLERS']);
+  plainSubAdminId = plain.id;
   plainSubAdminToken = signToken({
     id: plain.id,
     email: plain.email,
@@ -222,6 +224,55 @@ describe('Who may approve', () => {
 
     expect(res.status).toBe(200);
     expect(await prisma.subAdministrator.findUnique({ where: { id: target.id } })).toBeNull();
+  });
+
+  it('hides other people approval requests from a sub-administrator without APPROVALS', async () => {
+    const someoneElses = await pendingRequest({ targetName: 'Not yours' });
+    const own = await pendingRequest({
+      requestedById: plainSubAdminId,
+      requestedByName: 'Plain Sub',
+      requestedByEmail: 'plain-sub@test.local',
+      targetName: 'Yours',
+    });
+
+    const res = await request(app)
+      .get('/api/approvals')
+      .set(auth(plainSubAdminToken));
+
+    expect(res.status).toBe(200);
+    const ids = res.body.requests.map((r: { id: string }) => r.id);
+    expect(ids).toContain(own.id);
+    expect(ids).not.toContain(someoneElses.id);
+  });
+
+  it('denies a sub-administrator without APPROVALS from rejecting someone else request', async () => {
+    const req = await pendingRequest();
+
+    const res = await request(app)
+      .post(`/api/approvals/${req.id}/reject`)
+      .set(auth(plainSubAdminToken))
+      .send({ note: 'Nope.' });
+
+    expect(res.status).toBe(403);
+    const after = await prisma.approvalRequest.findUniqueOrThrow({ where: { id: req.id } });
+    expect(after.status).toBe('PENDING');
+  });
+
+  it('still lets a sub-administrator withdraw their own pending request', async () => {
+    const req = await pendingRequest({
+      requestedById: plainSubAdminId,
+      requestedByName: 'Plain Sub',
+      requestedByEmail: 'plain-sub@test.local',
+    });
+
+    const res = await request(app)
+      .post(`/api/approvals/${req.id}/reject`)
+      .set(auth(plainSubAdminToken))
+      .send({ note: 'Withdrawn.' });
+
+    expect(res.status).toBe(200);
+    const after = await prisma.approvalRequest.findUniqueOrThrow({ where: { id: req.id } });
+    expect(after.status).toBe('REJECTED');
   });
 });
 

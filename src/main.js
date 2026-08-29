@@ -15,12 +15,12 @@ import {
   notReadyToast,
 } from './components/Header.js';
 // Listings render as a full page now (product-detail.html), not an overlay.
-import { renderProductDetailPage } from './modules/marketplace/ProductDetailPage.js';
+import { renderProductDetailPage, cleanupProductDetailPage } from './modules/marketplace/ProductDetailPage.js';
 import { getMarketplaceFooterHtml, bindMarketplaceFooterEvents } from './components/Footer.js';
 import { openCategoryDropdown } from './components/dropdownMenu.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
-  ROUTE_HOME, ROUTE_PRODUCT,
+  ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES,
 } from './store/router.js';
 
 const ADMIN_URL_HASH = '#/admin-portal';
@@ -146,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const cats = stateEngine.getState().categories || [];
     const match = cats.find((c) => pattern.test(c.name));
     if (!match) return false;
-    pushHome();
-    stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+    pushPath(pathForRoute(ROUTE_PRODUCTS));
+    stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
     const filters = stateEngine.getState().ui.marketplaceFilters || {};
     stateEngine.setUI({
       marketplaceTab: 'catalog',
@@ -167,14 +167,23 @@ document.addEventListener('DOMContentLoaded', () => {
    * signed into. Signed in, go to your own dashboard; signed out, sign up.
    */
   function goAccountOrSignup() {
-    pushHome();
-    stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
     const role = stateEngine.getState().currentUser.role;
     if (role === 'guest') {
+      pushPath(pathForRoute(ROUTE_AUTH));
+      stateEngine.setRoute({ kind: ROUTE_AUTH, id: null });
       stateEngine.setPortal('signup');
       return;
     }
-    stateEngine.routeToDashboard();
+    pushPath(pathForRoute(ROUTE_POST_AD));
+    stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null });
+    if (role === 'seller') {
+      stateEngine.setUI({ marketplaceTab: 'seller_portal' });
+      stateEngine.setPortal('marketplace');
+    } else if (role === 'admin' || role === 'sub_admin') {
+      stateEngine.setPortal('admin');
+    } else {
+      stateEngine.setPortal('marketplace');
+    }
   }
 
   function handleGoHome() {
@@ -212,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Same reason as the clock: this view is about to be replaced, and the
     // slider's interval would keep firing against slides that no longer exist.
     cleanupHeroSlider();
+    cleanupProductDetailPage();
 
     // Header Mount
     const headerMount = document.getElementById('header-mount');
@@ -239,8 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
       bindHeaderEvents(headerMount, {
         goHome: handleGoHome,
         selectCategory: (id) => {
-          pushHome();
-          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          pushPath(pathForRoute(ROUTE_PRODUCTS));
+          stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
           stateEngine.setUI({
             marketplaceTab: 'catalog',
@@ -255,14 +265,14 @@ document.addEventListener('DOMContentLoaded', () => {
           stateEngine.setPortal('realestate');
         },
         goStores: () => {
-          pushHome();
-          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          pushPath(pathForRoute(ROUTE_STORES));
+          stateEngine.setRoute({ kind: ROUTE_STORES, id: null });
           stateEngine.setUI({ marketplaceTab: 'stores' });
           stateEngine.setPortal('marketplace');
         },
         goVehicles: () => {
-          pushHome();
-          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          pushPath(pathForRoute(ROUTE_PRODUCTS));
+          stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
           const cats = stateEngine.getState().categories || [];
           const vehicles = cats.find(c => /vehicle|car|auto|motorcycle|moto|bike/i.test(c.name));
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
@@ -271,8 +281,8 @@ document.addEventListener('DOMContentLoaded', () => {
           stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }).catch(() => {});
         },
         goRealEstateCategory: () => {
-          pushHome();
-          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          pushPath(pathForRoute(ROUTE_PRODUCTS));
+          stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
           const cats = stateEngine.getState().categories || [];
           const re = cats.find((c) => /real[\s_-]?estate|propert|house|land|plot/i.test(c.name));
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
@@ -287,8 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
         goServices: () => {
           const found = goCategoryByName(/service/i);
           if (!found) {
-            pushHome();
-            stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+            pushPath(pathForRoute(ROUTE_PRODUCTS));
+            stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
             const filters = stateEngine.getState().ui.marketplaceFilters || {};
             stateEngine.setUI({
               marketplaceTab: 'catalog',
@@ -301,8 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
         goJobs: () => {
           const found = goCategoryByName(/job|employ|career|vacanc/i);
           if (!found) {
-            pushHome();
-            stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+            pushPath(pathForRoute(ROUTE_PRODUCTS));
+            stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
             const filters = stateEngine.getState().ui.marketplaceFilters || {};
             stateEngine.setUI({
               marketplaceTab: 'catalog',
@@ -325,8 +335,8 @@ document.addEventListener('DOMContentLoaded', () => {
             categories: listToShow,
             selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
             onSelect: (id) => {
-              pushHome();
-              stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+              pushPath(pathForRoute(ROUTE_PRODUCTS));
+              stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
               const filters = stateEngine.getState().ui.marketplaceFilters || {};
               stateEngine.setUI({
                 marketplaceTab: 'catalog',
@@ -357,8 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
             categories: s.categories || [],
             selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
             onSelect: (id) => {
-              pushHome();
-              stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+              pushPath(pathForRoute(ROUTE_PRODUCTS));
+              stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
               const filters = stateEngine.getState().ui.marketplaceFilters || {};
               stateEngine.setUI({
                 marketplaceTab: 'catalog',
@@ -411,8 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
               marketplaceFilters: { ...filters, selectedCategory: categoryId || 'all' },
             });
             stateEngine.loadProducts({ category: categoryId }).catch(() => {});
-            pushHome();
-            stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+            pushPath(pathForRoute(ROUTE_PRODUCTS));
+            stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
           },
         });
       } else if (state.route.kind === ROUTE_PRODUCT && state.routeListingMissing) {
@@ -436,6 +446,8 @@ document.addEventListener('DOMContentLoaded', () => {
           postAd: goAccountOrSignup,
           goSeller: () => stateEngine.routeToDashboard(),
           goVehicles: () => {
+            pushPath(pathForRoute(ROUTE_PRODUCTS));
+            stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
             const filters = stateEngine.getState().ui.marketplaceFilters || {};
             stateEngine.setUI({
               marketplaceTab: 'catalog',
@@ -466,8 +478,8 @@ document.addEventListener('DOMContentLoaded', () => {
         goHome: handleGoHome,
         goSignup: goAccountOrSignup,
         goStores: () => {
-          pushHome();
-          stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+          pushPath(pathForRoute(ROUTE_STORES));
+          stateEngine.setRoute({ kind: ROUTE_STORES, id: null });
           stateEngine.setUI({ marketplaceTab: 'stores' });
           stateEngine.setPortal('marketplace');
         },

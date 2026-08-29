@@ -170,5 +170,13 @@ for (const [key, value] of Object.entries(testEnv)) {
   process.env[key] = value;
 }
 
+// Do not inherit production/staging storage credentials from .env during
+// tests. dotenv.config() in server/src/config/env.ts will not override values
+// already present here, so blanking these unless .env.test explicitly sets
+// them keeps upload tests on the local disk fallback instead of a real
+// Supabase bucket.
+if (!('SUPABASE_URL' in testEnv)) process.env.SUPABASE_URL = '';
+if (!('SUPABASE_SERVICE_ROLE_KEY' in testEnv)) process.env.SUPABASE_SERVICE_ROLE_KEY = '';
+
 const redacted = testUrl.replace(/\/\/[^@]+@/, '//***:***@');
 console.log(`[test-safety] Isolated test database confirmed: ${redacted}`);

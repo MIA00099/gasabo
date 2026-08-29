@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../config/db.js';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
+import { createDatabaseBackup } from '../utils/databaseBackup.js';
 
 export const auditRouter = Router();
 
@@ -21,13 +22,25 @@ auditRouter.get('/', requireAuth, requirePermission('SYSTEM_SETTINGS'), async (_
 });
 
 auditRouter.post('/backup', requireAuth, requirePermission('SYSTEM_SETTINGS'), async (req, res) => {
+  const backup = await createDatabaseBackup({
+    id: req.user!.id,
+    name: req.user!.name,
+    role: req.user!.role,
+  });
+
   await logAudit({
     actorId: req.user!.id,
     actorType: req.user!.role,
     actorName: req.user!.name,
     action: 'DATABASE_BACKUP_CREATED',
     module: 'System Security',
-    details: 'Manual database snapshot created and stored securely.',
+    details: `Manual database snapshot created: ${backup.fileName}.`,
   });
-  res.json({ success: true, createdAt: new Date().toISOString() });
+  res.json({
+    success: true,
+    id: backup.id,
+    createdAt: backup.createdAt,
+    fileName: backup.fileName,
+    counts: backup.counts,
+  });
 });

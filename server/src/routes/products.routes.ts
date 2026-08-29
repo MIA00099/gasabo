@@ -542,7 +542,8 @@ productsRouter.put('/:id', requireAuth, async (req, res) => {
   const category = await prisma.category.findUnique({ where: { id: categoryId } });
   if (!category) return res.status(400).json({ error: 'Selected category does not exist.' });
 
-  const newStatus = product.status === 'REJECTED' ? 'PENDING' : product.status;
+  const needsFreshReview = isOwner && ['ACTIVE', 'REJECTED'].includes(product.status);
+  const newStatus = needsFreshReview ? 'PENDING' : product.status;
 
   const updated = await prisma.product.update({
     where: { id: product.id },
@@ -564,11 +565,21 @@ productsRouter.put('/:id', requireAuth, async (req, res) => {
     actorId: req.user!.id,
     actorType: req.user!.role,
     actorName: req.user!.name,
-    action: 'PRODUCT_UPDATED',
+    action: needsFreshReview ? 'PRODUCT_UPDATED_PENDING_REVIEW' : 'PRODUCT_UPDATED',
     module: 'Marketplace',
     targetId: product.id,
-    details: `Updated product "${title}".`,
+    details: needsFreshReview
+      ? `Seller updated "${title}" and it was returned to pending approval.`
+      : `Updated product "${title}".`,
   });
+
+  if (needsFreshReview) {
+    await notifyAdminsWithModulePermission('PRODUCT_APPROVAL', {
+      type: 'PRODUCT_APPROVAL_NEEDED',
+      message: `${req.user!.name} updated "${title}" - review is required before it goes live again.`,
+      excludeFullAdmins: true,
+    });
+  }
 
   res.json({ product: serializeProduct(updated) });
 });

@@ -6,7 +6,15 @@
  * source of truth anymore, it's a reactive cache the views read from.
  */
 import { api, getSession, setSession, setSessionExpiredHandler } from '../api/client.js';
-import { parseLocation, ROUTE_HOME, ROUTE_PRODUCT } from './router.js';
+import {
+  parseLocation,
+  ROUTE_AUTH,
+  ROUTE_HOME,
+  ROUTE_POST_AD,
+  ROUTE_PRODUCT,
+  ROUTE_PRODUCTS,
+  ROUTE_STORES,
+} from './router.js';
 
 // Cheap content-equality check for a background refresh's result against
 // what is already on screen. Used only to decide whether a forced marketplace
@@ -222,6 +230,9 @@ class StateEngine {
     this.data.route = route;
     this.data.routeListing = null;
     this.data.routeListingMissing = false;
+    const patchUI = (patch) => {
+      this.data.ui = { ...this.data.ui, ...patch };
+    };
 
     // Only the two listing routes carry an id to resolve. Everything else is
     // a page: an earlier version treated "anything that is not a product" as
@@ -232,7 +243,26 @@ class StateEngine {
       this.data.activePortal = 'realestate';
     } else if (route.kind === ROUTE_PRODUCT) {
       this.data.activePortal = 'marketplace';
-      this.setUI({ marketplaceTab: 'products' });
+      patchUI({ marketplaceTab: 'products' });
+    } else if (route.kind === ROUTE_PRODUCTS) {
+      this.data.activePortal = 'marketplace';
+      patchUI({ marketplaceTab: 'catalog' });
+    } else if (route.kind === ROUTE_STORES) {
+      this.data.activePortal = 'marketplace';
+      patchUI({ marketplaceTab: 'stores' });
+    } else if (route.kind === ROUTE_POST_AD) {
+      if (this.data.currentUser.role === 'guest') {
+        this.data.activePortal = 'signup';
+      } else if (this.data.currentUser.role === 'seller') {
+        this.data.activePortal = 'marketplace';
+        patchUI({ marketplaceTab: 'seller_portal' });
+      } else if (this.isAdmin()) {
+        this.data.activePortal = 'admin';
+      } else {
+        this.data.activePortal = 'marketplace';
+      }
+    } else if (route.kind === ROUTE_AUTH) {
+      this.data.activePortal = 'login';
     }
 
     this.notify();
@@ -664,9 +694,12 @@ class StateEngine {
   async loadProducts(filters = {}) {
     return this._run('products', async () => {
       const params = new URLSearchParams();
-      if (filters.category && filters.category !== 'all') params.set('category', filters.category);
-      if (filters.district && filters.district !== 'all') params.set('district', filters.district);
-      if (filters.search) params.set('search', filters.search);
+      const category = filters.category ?? filters.selectedCategory;
+      const district = filters.district ?? filters.selectedDistrict;
+      const search = filters.search ?? filters.searchQuery;
+      if (category && category !== 'all') params.set('category', category);
+      if (district && district !== 'all') params.set('district', district);
+      if (search) params.set('search', search);
       const qs = params.toString();
       const { products } = await api.get(`/products${qs ? `?${qs}` : ''}`);
       this.data.products = products;
@@ -1006,6 +1039,17 @@ class StateEngine {
     });
   }
 
+  async saveRealEstateSection(sectionKey, content) {
+    return this._run('realEstate', async () => {
+      const normalized = String(sectionKey).toLowerCase();
+      const data = await api.put(`/realestate/${sectionKey}`, content);
+      const updated = data[normalized];
+      this.data.realEstate = { ...this.data.realEstate, [normalized]: updated };
+      this.notify();
+      return updated;
+    });
+  }
+
   async addRealEstateProperty(propertyData) {
     return this._run('realEstate', async () => {
       const { properties } = await api.post('/realestate/properties', propertyData);
@@ -1076,6 +1120,10 @@ class StateEngine {
 
   async triggerBackup() {
     return this._run('auditLogs', () => api.post('/audit-logs/backup', {}));
+  }
+
+  async submitRealEstateInquiry(payload) {
+    return this._run('realEstateInquiry', () => api.post('/realestate/inquiries', payload));
   }
 
   // --- Advertisements / Banners ---

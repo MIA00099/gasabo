@@ -7,6 +7,7 @@ import { fullPermissions, permissionsFromModuleList } from '../utils/permissions
 import { logAudit } from '../utils/audit.js';
 import { isEmailTaken } from '../utils/accountEmail.js';
 import { notifyAdmins } from '../utils/notify.js';
+import { generateTemporaryPassword } from '../utils/passwords.js';
 
 export const rbacRouter = Router();
 
@@ -164,9 +165,7 @@ rbacRouter.post('/sub-admins/:id/reset-password', requireAuth, requirePermission
   const target = await prisma.subAdministrator.findUnique({ where: { id: req.params.id } });
   if (!target) return res.status(404).json({ error: 'Sub-Administrator not found.' });
 
-  // Same pattern as sellers.routes.ts's reset-password - in production this
-  // would email a reset link instead of returning a temp password directly.
-  const tempPassword = Math.random().toString(36).slice(-10);
+  const tempPassword = generateTemporaryPassword();
   const passwordHash = await bcrypt.hash(tempPassword, 10);
   await prisma.subAdministrator.update({ where: { id: target.id }, data: { passwordHash } });
 

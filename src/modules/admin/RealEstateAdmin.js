@@ -24,7 +24,7 @@ export function renderRealEstateAdmin(container) {
           <div>
             <h2 style="color: #0F172A; font-size: 1.3rem;">🏢 Gasabo Real Estate Content Management</h2>
             <p style="color: #64748B; font-size: 0.9rem;">
-              Manage the homepage hero content and individual property listings (houses, plots, commercial units).
+              Manage homepage content, contact details, service cards, and individual property listings.
             </p>
           </div>
 
@@ -57,6 +57,43 @@ export function renderRealEstateAdmin(container) {
           </button>
         </div>
 
+        <!-- ABOUT / CONTACT / SERVICES EDITOR -->
+        <div class="glass-panel" style="padding: 1.25rem 1.4rem; border-radius: 20px; margin-bottom: 1.25rem;">
+          <h3 style="color: #0F172A; font-size: 1.1rem; margin-bottom: 1rem;">Company Sections</h3>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>About Heading</label>
+              <input type="text" id="re-about-heading" class="form-control" value="${escapeHtml(reData.about?.heading || '')}">
+            </div>
+            <div class="form-group">
+              <label>Contact Phone</label>
+              <input type="text" id="re-contact-phone" class="form-control" value="${escapeHtml(reData.contact?.phone || '')}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>About Text</label>
+            <textarea id="re-about-text" class="form-control" rows="3">${escapeHtml(reData.about?.text || '')}</textarea>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Contact Email</label>
+              <input type="email" id="re-contact-email" class="form-control" value="${escapeHtml(reData.contact?.email || '')}">
+            </div>
+            <div class="form-group">
+              <label>Contact Address</label>
+              <input type="text" id="re-contact-address" class="form-control" value="${escapeHtml(reData.contact?.address || '')}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Services JSON</label>
+            <textarea id="re-services-json" class="form-control" rows="8" spellcheck="false">${escapeHtml(JSON.stringify(reData.services || [], null, 2))}</textarea>
+          </div>
+          <div id="re-sections-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
+          <button id="save-re-sections" class="btn btn-secondary btn-sm">
+            💾 Save Company Sections
+          </button>
+        </div>
+
         <!-- PROPERTY LISTINGS TABLE -->
         <h3 style="color: #0F172A; font-size: 1.15rem; margin-bottom: 1rem;">Property Listings (${reData.properties.length})</h3>
 
@@ -77,7 +114,7 @@ export function renderRealEstateAdmin(container) {
                 <tr>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
-                      <img src="${p.image}" alt="${escapeHtml(p.title)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
+                      <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
                       <div>
                         <div style="font-weight: 600; color: #0F172A;">${escapeHtml(p.title)}</div>
                         <div style="font-size: 0.78rem; color: #64748B;">${escapeHtml((p.description || '').substring(0, 45))}...</div>
@@ -116,6 +153,35 @@ export function renderRealEstateAdmin(container) {
       }
     });
 
+    container.querySelector('#save-re-sections')?.addEventListener('click', async () => {
+      const error = container.querySelector('#re-sections-error');
+      error.textContent = '';
+      let services;
+      try {
+        services = JSON.parse(container.querySelector('#re-services-json').value || '[]');
+        if (!Array.isArray(services)) throw new Error('Services JSON must be an array.');
+      } catch (err) {
+        error.textContent = err.message || 'Services JSON is invalid.';
+        return;
+      }
+
+      try {
+        await stateEngine.saveRealEstateSection('ABOUT', {
+          heading: container.querySelector('#re-about-heading').value.trim(),
+          text: container.querySelector('#re-about-text').value.trim(),
+        });
+        await stateEngine.saveRealEstateSection('CONTACT', {
+          phone: container.querySelector('#re-contact-phone').value.trim(),
+          email: container.querySelector('#re-contact-email').value.trim(),
+          address: container.querySelector('#re-contact-address').value.trim(),
+        });
+        await stateEngine.saveRealEstateSection('SERVICES', services);
+        alert('Gasabo Real Estate company sections updated successfully!');
+      } catch (err) {
+        error.textContent = err.message || 'Could not save company sections.';
+      }
+    });
+
     container.querySelector('#admin-add-property-btn')?.addEventListener('click', () => {
       openAddPropertyModal();
     });
@@ -145,10 +211,14 @@ export function renderRealEstateAdmin(container) {
 
 // image section repaints itself on upload, the rest of the form is untouched
 // so typed values elsewhere in the form are never lost.
-function openAddPropertyModal() {
+function openAddPropertyModal(propertyToEdit = null) {
   const districts = stateEngine.getState().districts;
   let imageMode = 'upload'; // 'upload' | 'url'
-  let imageUrls = []; // a property is a gallery now, not a single photo
+  let imageUrls = Array.isArray(propertyToEdit?.images)
+    ? [...propertyToEdit.images]
+    : propertyToEdit?.image
+      ? [propertyToEdit.image]
+      : []; // a property is a gallery now, not a single photo
   let imageUploading = false;
 
   const overlay = document.createElement('div');
@@ -328,7 +398,7 @@ function openAddPropertyModal() {
       area: form.area.value.trim(),
       images: imageUrls,
       image: imageUrls[0] || undefined,
-      videoUrl: form.videoUrl.value.trim() || undefined,
+      videoUrl: form.videoUrl.value.trim(),
       description: form.description.value.trim(),
     };
 

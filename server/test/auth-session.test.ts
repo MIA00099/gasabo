@@ -155,3 +155,26 @@ describe('GET /auth/me', () => {
     expect(res.body.user.permissions).toBeUndefined();
   });
 });
+
+describe('POST /auth/register/seller', () => {
+  it('rejects an email already used by another account table', async () => {
+    const email = `shadowed-${Date.now()}@test.local`;
+    await prisma.administrator.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash('test-password', 10),
+        name: 'Existing Admin',
+      },
+    });
+
+    const res = await request(app).post('/api/auth/register/seller').send({
+      fullName: 'Shadow Seller',
+      email,
+      phone: '+250700111222',
+      district: 'Gasabo',
+      password: 'SellerPass1',
+    });
+
+    expect(res.status).toBe(409);
+  });
+});

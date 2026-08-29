@@ -1,14 +1,18 @@
 import { Router } from 'express';
 import { prisma } from '../config/db.js';
-import { requireAuth, requireRole, requirePermission } from '../middleware/auth.js';
+import { requireAuth, requireRole, requirePermission, hasModulePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 import { notifyAdmins } from '../utils/notify.js';
 import { isEmailTaken } from '../utils/accountEmail.js';
 
 export const approvalsRouter = Router();
 
-approvalsRouter.get('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (_req, res) => {
-  const requests = await prisma.approvalRequest.findMany({ orderBy: { createdAt: 'desc' } });
+approvalsRouter.get('/', requireAuth, requireRole('ADMINISTRATOR', 'SUB_ADMINISTRATOR'), async (req, res) => {
+  const canReadAll = await hasModulePermission(req.user!, 'APPROVALS');
+  const requests = await prisma.approvalRequest.findMany({
+    where: canReadAll ? undefined : { requestedById: req.user!.id },
+    orderBy: { createdAt: 'desc' },
+  });
   res.json({ requests });
 });
 
@@ -141,6 +145,10 @@ approvalsRouter.post('/:id/reject', requireAuth, requireRole('ADMINISTRATOR', 'S
   const request = await prisma.approvalRequest.findUnique({ where: { id: req.params.id } });
   if (!request) return res.status(404).json({ error: 'Approval request not found.' });
   if (request.status !== 'PENDING') return res.status(409).json({ error: 'This request has already been resolved.' });
+  const isRequesterWithdrawing = request.requestedById === req.user!.id;
+  if (!isRequesterWithdrawing && !(await hasModulePermission(req.user!, 'APPROVALS'))) {
+    return res.status(403).json({ error: 'Only the requester, an Administrator, or a Sub-Administrator with APPROVALS can reject this request.' });
+  }
 
   const updated = await prisma.approvalRequest.update({
     where: { id: request.id },

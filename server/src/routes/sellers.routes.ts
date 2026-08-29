@@ -5,6 +5,7 @@ import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 import { isEmailTaken } from '../utils/accountEmail.js';
 import { notifyAdmins } from '../utils/notify.js';
+import { generateTemporaryPassword } from '../utils/passwords.js';
 
 export const sellersRouter = Router();
 
@@ -117,8 +118,7 @@ sellersRouter.post('/:id/reset-password', requireAuth, requirePermission('SELLER
   const seller = await prisma.seller.findUnique({ where: { id: req.params.id } });
   if (!seller) return res.status(404).json({ error: 'Seller not found.' });
 
-  // In production this would email a reset link instead of returning a temp password directly.
-  const tempPassword = Math.random().toString(36).slice(-10);
+  const tempPassword = generateTemporaryPassword();
   const bcrypt = await import('bcryptjs');
   const passwordHash = await bcrypt.default.hash(tempPassword, 10);
   await prisma.seller.update({ where: { id: seller.id }, data: { passwordHash } });

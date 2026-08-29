@@ -160,7 +160,7 @@ export function renderProductsPage(container) {
         stateEngine.setUI({ marketplaceFilters: { ...filters, selectedCategory: cat } });
         stateEngine.loadProducts({
           search: filters.searchQuery,
-          category: cat,
+          category: cat === 'all' ? undefined : cat,
           district: filters.selectedDistrict,
         }).catch(() => {});
       });

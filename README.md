@@ -1,7 +1,7 @@
 # Kigali Market Platform
 
 Rwandan marketplace + Gasabo Real Estate corporate site, with an admin/RBAC layer.
-Frontend is a vanilla-JS SPA (Vite); backend is Express + Prisma + SQLite.
+Frontend is a vanilla-JS SPA (Vite); backend is Express + Prisma + PostgreSQL.
 
 ## Running locally
 
@@ -10,12 +10,14 @@ Two servers run side by side in development:
 ```bash
 npm install
 
-# One-time setup: create the database and load demo data
-npx prisma db push
-npm run db:seed
+# One-time setup: create local PostgreSQL databases on port 5433
+npm run db:test:init
+
+# Load demo data into the local development database
+npm run dev:seed
 
 # Terminal 1 - backend API (port 3001)
-npm run server
+npm run dev:api
 
 # Terminal 2 - frontend dev server (port 5173, proxies /api to the backend)
 npm run dev
@@ -42,17 +44,34 @@ register a new seller via "Start Selling" on the Marketplace page.
 
 ```bash
 npm run build   # outputs to dist/
-npm run preview # serve the production build locally
+npm run preview # serve the frontend production build locally
 ```
 
-The backend has no separate build step - `npm run server` runs it directly via `tsx`.
+The backend has no separate build step. Production startup runs:
+
+```bash
+npm start
+```
+
+Production must provide PostgreSQL `DATABASE_URL`, direct migration `DIRECT_URL`,
+and a strong `JWT_SECRET` of at least 32 characters. `PUBLIC_SITE_URL` controls
+canonical, Open Graph, sitemap and robots URLs. `CORS_ORIGIN` is optional; when
+unset in production, the API allows only `PUBLIC_SITE_URL`.
 
 ## Tests
 
 ```bash
 npm test
+npm run test:e2e
 ```
 
-Note: the test suite wipes and re-seeds its own fixture data in the same SQLite
-database configured in `.env` - run `npm run db:seed` afterward if you want the
-demo accounts back for manual testing.
+The Vitest suite is destructive, but it is guarded: it refuses to run unless
+`.env.test` points at a local PostgreSQL database and sets
+`ALLOW_DESTRUCTIVE_DB_TESTS=yes`. Use `npm run db:test:init` to provision that
+local database.
+
+## Backups
+
+The admin backup action writes timestamped Prisma JSON snapshots to
+`server/backups/`, which is gitignored and not served publicly. Treat those
+files as sensitive because they include account password hashes.

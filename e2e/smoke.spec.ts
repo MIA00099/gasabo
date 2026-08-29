@@ -1,4 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+const gotoApp = (page: Page, path: string) => page.goto(path, { waitUntil: 'domcontentloaded' });
 
 /**
  * Boot smoke tests for the marketplace homepage.
@@ -13,7 +15,7 @@ import { test, expect } from '@playwright/test';
  */
 test.describe('marketplace homepage boot', () => {
   test('mounts past the loading screen with a working header', async ({ page }) => {
-    await page.goto('/');
+    await gotoApp(page, '/');
 
     // The loading fallback must be gone and the real header nav present - i.e.
     // the app booted rather than getting stuck on the splash.
@@ -29,7 +31,7 @@ test.describe('marketplace homepage boot', () => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(String(err)));
 
-    await page.goto('/');
+    await gotoApp(page, '/');
     await expect(page.locator('#header-mount nav')).toBeVisible();
     // Give the async boot loaders a moment to run and (potentially) throw.
     await page.waitForTimeout(1500);
@@ -38,12 +40,12 @@ test.describe('marketplace homepage boot', () => {
   });
 
   test('serves the marketplace title for search engines', async ({ page }) => {
-    await page.goto('/');
+    await gotoApp(page, '/');
     await expect(page).toHaveTitle(/Kigali Market/i);
   });
 
   test('language switch translates the nav and back', async ({ page }) => {
-    await page.goto('/');
+    await gotoApp(page, '/');
     const firstNavItem = page.locator('#header-mount nav ul li button').first();
     await expect(firstNavItem).toHaveText('Home');
 
@@ -52,5 +54,19 @@ test.describe('marketplace homepage boot', () => {
 
     await page.locator('.lang-pick[data-lang="en"]').first().click();
     await expect(firstNavItem).toHaveText('Home');
+  });
+
+  test('flat marketplace routes open their intended views on cold load', async ({ page }) => {
+    await gotoApp(page, '/products');
+    await expect(page.getByRole('heading', { name: 'All Categories' })).toBeVisible();
+
+    await gotoApp(page, '/stores');
+    await expect(page.locator('#stores-list')).toBeVisible();
+
+    await gotoApp(page, '/auth');
+    await expect(page.locator('#tab-login')).toHaveClass(/active/);
+
+    await gotoApp(page, '/post-ad');
+    await expect(page.locator('#tab-signup')).toHaveClass(/active/);
   });
 });

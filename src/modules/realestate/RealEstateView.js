@@ -539,10 +539,29 @@ export function renderRealEstateView(container) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    container.querySelector('#re-inquiry-form')?.addEventListener('submit', (e) => {
+    container.querySelector('#re-inquiry-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      alert('Thank you for contacting Gasabo Real Estate! Our team will call you back shortly.');
-      e.target.reset();
+      const form = e.currentTarget;
+      const status = form.querySelector('#re-inquiry-status');
+      const submit = form.querySelector('button[type="submit"]');
+      const payload = {
+        name: form.name.value.trim(),
+        phone: form.phone.value.trim(),
+        message: form.message.value.trim(),
+      };
+      submit.disabled = true;
+      status.textContent = '';
+      try {
+        await stateEngine.submitRealEstateInquiry(payload);
+        status.textContent = 'Thank you. Gasabo Real Estate has received your inquiry.';
+        status.style.color = '#047857';
+        form.reset();
+      } catch (err) {
+        status.textContent = err.message || 'Could not send your inquiry. Please call us directly.';
+        status.style.color = '#B91C1C';
+      } finally {
+        submit.disabled = false;
+      }
     });
   }
 
@@ -557,7 +576,7 @@ function renderHomeView(reData, properties) {
     <!-- HERO SECTION -->
     <section style="position: relative; overflow: hidden; background: ${RE_DARK};">
       <div style="position: absolute; inset: 0;">
-        <img src="${reData.hero.bgImage}" alt="Gasabo Real Estate" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.55;">
+        <img src="${escapeHtml(reData.hero.bgImage)}" alt="Gasabo Real Estate" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.55;">
         <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,23,42,0.96), ${RE_BLUE}CC);"></div>
       </div>
 
@@ -692,12 +711,40 @@ function renderServicesView(services) {
 }
 
 function renderAboutView(reData) {
+  const contact = reData.contact || {};
   return `
     <!-- ABOUT HERO -->
     <section style="padding: 5rem 1.5rem 6rem; background: ${RE_BLUE}; color: #fff; text-align: center;">
       <div style="max-width: 800px; margin: 0 auto;">
         <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">${escapeHtml(reData.about.heading)}</h1>
         <p style="font-size: 1.2rem; color: #cbd5e1; line-height: 1.7;">${escapeHtml(reData.about.text)}</p>
+      </div>
+    </section>
+    <section style="padding: 3rem 1.5rem; background: #F8FAFC;">
+      <div style="max-width: var(--page-max); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 2rem; align-items: start;">
+        <div>
+          <span style="color: ${RE_GOLD}; font-weight: 800; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.12em;">Contact</span>
+          <h2 style="font-size: 1.9rem; font-weight: 800; color: #0F172A; margin: 0.45rem 0 1rem;">Talk To Gasabo Real Estate</h2>
+          <p style="color: #475569; line-height: 1.7; margin-bottom: 1rem;">${escapeHtml(contact.address || 'Kigali, Rwanda')}</p>
+          <p style="color: #0F172A; font-weight: 700; margin-bottom: 0.35rem;">${escapeHtml(contact.phone || '0788350555')}</p>
+          <p style="color: #475569;">${escapeHtml(contact.email || 'info@gasaborealestate.com')}</p>
+        </div>
+        <form id="re-inquiry-form" style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 1.25rem; display: grid; gap: 0.85rem;">
+          <label style="display: grid; gap: 0.35rem; color: #0F172A; font-weight: 700; font-size: 0.85rem;">
+            Name
+            <input name="name" required minlength="2" style="border: 1px solid #CBD5E1; border-radius: 10px; padding: 0.75rem; font: inherit; font-weight: 500;" placeholder="Your name">
+          </label>
+          <label style="display: grid; gap: 0.35rem; color: #0F172A; font-weight: 700; font-size: 0.85rem;">
+            Phone
+            <input name="phone" required minlength="6" style="border: 1px solid #CBD5E1; border-radius: 10px; padding: 0.75rem; font: inherit; font-weight: 500;" placeholder="0788 000 000">
+          </label>
+          <label style="display: grid; gap: 0.35rem; color: #0F172A; font-weight: 700; font-size: 0.85rem;">
+            Message
+            <textarea name="message" rows="4" maxlength="1000" style="border: 1px solid #CBD5E1; border-radius: 10px; padding: 0.75rem; font: inherit; font-weight: 500; resize: vertical;" placeholder="Tell us what you are looking for"></textarea>
+          </label>
+          <div id="re-inquiry-status" style="min-height: 1.1rem; font-size: 0.84rem; font-weight: 700;"></div>
+          <button type="submit" style="background: ${RE_GREEN}; color: #ffffff; border: 0; border-radius: 10px; padding: 0.85rem 1rem; font-weight: 800; cursor: pointer;">Send Inquiry</button>
+        </form>
       </div>
     </section>
   `;
@@ -723,7 +770,7 @@ function renderPropertyGrid(list) {
             aria-label="View details for ${escapeHtml(prop.title)}, ${escapeHtml(prop.location)}, ${escapeHtml(prop.price)}"
             style="background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.25s ease;">
             <div style="position: relative; height: 220px; overflow: hidden;">
-              <img src="${prop.image}" alt="${escapeHtml(prop.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+              <img src="${escapeHtml(prop.image)}" alt="${escapeHtml(prop.title)}" style="width: 100%; height: 100%; object-fit: cover;">
               <span style="position: absolute; top: 14px; left: 14px; background: ${badge.bg}; color: ${badge.color}; font-size: 0.7rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">
                 ${badge.label}
               </span>

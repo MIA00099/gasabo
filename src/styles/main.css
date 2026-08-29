@@ -4550,6 +4550,57 @@ a[style]:hover,
   background-color: #14532d;
 }
 
+.nav-fixed-item[hidden],
+.nav-category-item[hidden] {
+  display: none !important;
+}
+
+.nav-fixed-links {
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .nav-fixed-links {
+    flex-shrink: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .nav-responsive-row {
+    gap: 0.5rem !important;
+  }
+
+  .nav-left-group,
+  .nav-fixed-links,
+  .nav-cat-fill {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  #nav-all-categories-2 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  #nav-all-categories-2 .nav-allcats-label {
+    display: none;
+  }
+
+  #header-post-ad-btn {
+    min-width: 2.35rem;
+    justify-content: center;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  #header-post-ad-btn .nav-post-label {
+    display: none;
+  }
+}
+
 /* Notification rows. The unread ones carry bg-green-50 and the read ones
    bg-white as utilities, so this needs the extra class to outrank them. */
 .notif-item.notif-item:hover {

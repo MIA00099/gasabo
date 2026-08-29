@@ -7,6 +7,7 @@ import { renderHeaderHtml } from './Header.js';
 
 const HEADER = readFileSync('src/components/Header.js', 'utf8');
 const MAIN = readFileSync('src/main.js', 'utf8');
+const CSS = readFileSync('src/styles/main.css', 'utf8');
 
 /** A representative ctx, matching what main.js passes renderHeaderHtml. */
 function ctx(overrides = {}) {
@@ -66,14 +67,35 @@ describe('renderHeaderHtml does not throw', () => {
 
   it('keeps More and Post an Ad in a shrink-0 group that cannot be pushed off', () => {
     // The requirement: More and Post an Ad always visible on the far right.
-    // The fixed-left group scrolls; the right group is shrink-0 and outside
-    // both the scroll and the fill lane, so nothing can push these off-screen.
+    // The fixed-left group hides links as needed; the right group is shrink-0
+    // and outside both fit lanes, so nothing can push these off-screen.
     const html = renderHeaderHtml(ctx());
     const rightGroup = html.slice(html.indexOf('id="nav-link-more"') - 200, html.indexOf('id="header-post-ad-btn"') + 200);
+    expect(html).toContain('nav-right-group');
     expect(rightGroup).toContain('id="nav-link-more"');
     expect(rightGroup).toContain('id="header-post-ad-btn"');
-    // the fixed-left group carries the horizontal scroll; the right group does not
-    expect(html).toMatch(/min-w-0 overflow-x-auto/);
+    expect(html).toMatch(/nav-left-group[^"]*min-w-0 overflow-hidden/);
+  });
+
+  it('marks fixed nav links as fit-aware items', () => {
+    const html = renderHeaderHtml(ctx());
+    for (const action of ['home', 'stores', 'vehicles', 'realestate', 'services', 'jobs']) {
+      expect(html, `${action} should be collapsible into More`).toContain(`data-nav-action="${action}"`);
+    }
+    expect(HEADER).toContain('item.getBoundingClientRect().right > leftRight + 1');
+  });
+
+  it('puts hidden fixed links into the More menu', () => {
+    expect(MAIN).toContain(".nav-fixed-item[hidden]");
+    expect(MAIN).toContain('prefixItems');
+    for (const id of ['__home', '__stores', '__vehicles', '__realestate', '__services', '__jobs']) {
+      expect(MAIN).toContain(id);
+    }
+  });
+
+  it('shortens the nav labels on narrow screens', () => {
+    expect(CSS).toMatch(/@media \(max-width: 520px\)[\s\S]*#nav-all-categories-2 \.nav-allcats-label[\s\S]*display:\s*none/);
+    expect(CSS).toMatch(/@media \(max-width: 380px\)[\s\S]*#header-post-ad-btn \.nav-post-label[\s\S]*display:\s*none/);
   });
 
   it('survives an empty ctx the way a cold load hands it', () => {

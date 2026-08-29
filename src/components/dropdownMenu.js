@@ -154,14 +154,17 @@ export function openDropdownMenu(anchor, { items = [], selectedId = null, label 
 }
 
 /**
- * The "All Categories" list, in terms of the generic menu above.
+ * The "All Categories" list, in terms of the generic menu above. `prefixItems`
+ * lets the responsive header put hidden primary nav links above the category
+ * list in the More menu.
  */
-export function openCategoryDropdown(anchor, { categories = [], selectedId = 'all', onSelect } = {}) {
+export function openCategoryDropdown(anchor, { categories = [], selectedId = 'all', prefixItems = [], onSelect } = {}) {
   return openDropdownMenu(anchor, {
     label: 'Browse categories',
     selectedId,
     onSelect,
     items: [
+      ...prefixItems,
       { id: 'all', label: 'All Categories', iconHtml: '<i class="fa-solid fa-border-all" style="color:#04562D"></i>' },
       ...categories.map((c) => ({
         id: c.id,

@@ -328,13 +328,93 @@ document.addEventListener('DOMContentLoaded', () => {
             await stateEngine.loadCategories().catch(() => {});
             s = stateEngine.getState();
           }
-          const alreadyInNav = /vehicle|car|real[\s_-]?estate|propert|service|job|employ|career|vacanc/i;
+          const tNav = (key) => getTranslation(currentLang, key);
+          const hiddenNavActions = new Set(
+            [...document.querySelectorAll('#header-mount .nav-fixed-item[hidden]')]
+              .map((el) => el.dataset.navAction)
+              .filter(Boolean),
+          );
+          const prefixItems = [
+            { action: 'home', id: '__home', label: tNav('ui_home'), iconHtml: '<i class="fa-solid fa-house" style="color:#04562D"></i>' },
+            { action: 'stores', id: '__stores', label: tNav('ui_stores'), iconHtml: '<i class="fa-solid fa-shop" style="color:#04562D"></i>' },
+            { action: 'vehicles', id: '__vehicles', label: tNav('ui_vehicles'), iconHtml: '<i class="fa-solid fa-car" style="color:#04562D"></i>' },
+            { action: 'realestate', id: '__realestate', label: tNav('ui_real_estate'), iconHtml: '<i class="fa-solid fa-house-chimney-window" style="color:#04562D"></i>' },
+            { action: 'services', id: '__services', label: tNav('ui_services'), iconHtml: '<i class="fa-solid fa-screwdriver-wrench" style="color:#04562D"></i>' },
+            { action: 'jobs', id: '__jobs', label: tNav('ui_jobs'), iconHtml: '<i class="fa-solid fa-briefcase" style="color:#04562D"></i>' },
+          ].filter((item) => hiddenNavActions.has(item.action));
+
+          const alreadyInNav = /vehicle|car|auto|motorcycle|moto|bike|real[\s_-]?estate|propert|house|land|plot|service|job|employ|career|vacanc/i;
           const rest = (s.categories || []).filter((c) => !alreadyInNav.test(c.name));
           const listToShow = rest.length > 0 ? rest : (s.categories || []);
           openCategoryDropdown(anchor, {
             categories: listToShow,
             selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',
+            prefixItems,
             onSelect: (id) => {
+              if (id === '__home') { handleGoHome(); return; }
+              if (id === '__stores') {
+                pushPath(pathForRoute(ROUTE_STORES));
+                stateEngine.setRoute({ kind: ROUTE_STORES, id: null });
+                stateEngine.setUI({ marketplaceTab: 'stores' });
+                stateEngine.setPortal('marketplace');
+                return;
+              }
+              if (id === '__vehicles') {
+                const cats = stateEngine.getState().categories || [];
+                const vehicles = cats.find(c => /vehicle|car|auto|motorcycle|moto|bike/i.test(c.name));
+                pushPath(pathForRoute(ROUTE_PRODUCTS));
+                stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
+                const filters = stateEngine.getState().ui.marketplaceFilters || {};
+                stateEngine.setUI({ marketplaceTab: 'catalog', marketplaceFilters: { ...filters, selectedCategory: vehicles ? vehicles.id : 'all' } });
+                stateEngine.setPortal('marketplace');
+                stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }).catch(() => {});
+                return;
+              }
+              if (id === '__realestate') {
+                pushPath(pathForRoute(ROUTE_PRODUCTS));
+                stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
+                const cats = stateEngine.getState().categories || [];
+                const re = cats.find((c) => /real[\s_-]?estate|propert|house|land|plot/i.test(c.name));
+                const filters = stateEngine.getState().ui.marketplaceFilters || {};
+                stateEngine.setUI({
+                  marketplaceTab: 'catalog',
+                  marketplaceFilters: { ...filters, selectedCategory: re ? re.id : 'all' },
+                });
+                stateEngine.setPortal('marketplace');
+                stateEngine.loadProducts({ category: re ? re.id : undefined }).catch(() => {});
+                return;
+              }
+              if (id === '__services') {
+                const found = goCategoryByName(/service/i);
+                if (!found) {
+                  pushPath(pathForRoute(ROUTE_PRODUCTS));
+                  stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
+                  const filters = stateEngine.getState().ui.marketplaceFilters || {};
+                  stateEngine.setUI({
+                    marketplaceTab: 'catalog',
+                    marketplaceFilters: { ...filters, selectedCategory: 'all', searchQuery: 'Services' },
+                  });
+                  stateEngine.setPortal('marketplace');
+                  stateEngine.loadProducts({ search: 'Services' }).catch(() => {});
+                }
+                return;
+              }
+              if (id === '__jobs') {
+                const found = goCategoryByName(/job|employ|career|vacanc/i);
+                if (!found) {
+                  pushPath(pathForRoute(ROUTE_PRODUCTS));
+                  stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
+                  const filters = stateEngine.getState().ui.marketplaceFilters || {};
+                  stateEngine.setUI({
+                    marketplaceTab: 'catalog',
+                    marketplaceFilters: { ...filters, selectedCategory: 'all', searchQuery: 'Jobs' },
+                  });
+                  stateEngine.setPortal('marketplace');
+                  stateEngine.loadProducts({ search: 'Jobs' }).catch(() => {});
+                }
+                return;
+              }
+
               pushPath(pathForRoute(ROUTE_PRODUCTS));
               stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
               const filters = stateEngine.getState().ui.marketplaceFilters || {};

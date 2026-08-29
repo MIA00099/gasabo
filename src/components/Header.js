@@ -228,42 +228,43 @@ export function renderHeaderHtml(ctx) {
     <!-- Navigation Bar -->
     <nav class="bg-brand-dark text-white flex-none">
       <!-- Two groups, not one scrolling row. The left group (All Categories +
-           the fixed links) scrolls inside itself when it does not fit; the
+           the fixed links) hides low-priority links when it does not fit; the
            right group (More + Post an Ad) is shrink-0 and sits outside that
-           scroll, so it can never be pushed off-screen. The old single
+           responsive fit, so it can never be pushed off-screen. The old single
            overflow-x-auto row let a wide left side scroll Post an Ad out of
            view - and the brief "all categories inline" regression made the
            left side very wide. -->
-      <div class="compact-container px-3 sm:px-4 lg:px-6 flex items-center h-10 gap-2 sm:gap-4">
+      <div class="nav-responsive-row compact-container px-3 sm:px-4 lg:px-6 flex items-center h-10 gap-2 sm:gap-4 overflow-hidden">
 
-        <!-- FIXED LEFT: All Categories + the permanent links. Scrolls inside
-             itself on a phone where they cannot all fit; never grows past its
-             own content, so it leaves the middle free on a wide screen. -->
-        <div class="flex items-center gap-2 sm:gap-4 min-w-0 overflow-x-auto no-scrollbar h-full whitespace-nowrap">
+        <!-- FIXED LEFT: All Categories + the permanent links. The runtime fit
+             pass hides tail links into More as space gets tight, so text is
+             never half-clipped and the right-side actions stay visible. -->
+        <div class="nav-left-group flex items-center gap-2 sm:gap-4 min-w-0 overflow-hidden h-full whitespace-nowrap">
           <button type="button" id="nav-all-categories-2" aria-haspopup="menu" aria-expanded="false"
+            aria-label="${escapeHtml(t('ui_all_categories'))}"
             class="bg-brand-green h-full px-3 sm:px-4 flex items-center gap-2 cursor-pointer shrink-0 font-semibold text-xs sm:text-sm whitespace-nowrap">
             <i class="fa-solid fa-bars text-xs sm:text-sm"></i>
-            <span>${escapeHtml(t('ui_all_categories'))}</span>
+            <span class="nav-allcats-label">${escapeHtml(t('ui_all_categories'))}</span>
             <i class="fa-solid fa-chevron-down text-[10px] ml-1"></i>
           </button>
 
-          <ul class="flex items-center gap-3 sm:gap-5 font-medium text-xs h-full whitespace-nowrap shrink-0">
-            <li class="h-full flex items-center shrink-0">
+          <ul class="nav-fixed-links flex items-center gap-3 sm:gap-5 font-medium text-xs h-full whitespace-nowrap min-w-0 overflow-hidden">
+            <li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="home">
               <button type="button" id="nav-link-mkt" class="${activePortal === 'marketplace' ? navLinkActive : navLink}">${escapeHtml(t('ui_home'))}</button>
             </li>
-            <li class="h-full flex items-center shrink-0">
+            <li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="stores">
               <button type="button" id="nav-link-stores" class="${navLink}">${escapeHtml(t('ui_stores'))}</button>
             </li>
-            <li class="h-full flex items-center shrink-0">
+            <li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="vehicles">
               <button type="button" id="nav-link-vehicles" class="${navLink}">${escapeHtml(t('ui_vehicles'))}</button>
             </li>
-            <li class="h-full flex items-center shrink-0">
+            <li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="realestate">
               <button type="button" id="nav-link-re" class="${navLink}">${escapeHtml(t('ui_real_estate'))}</button>
             </li>
-            <li class="h-full flex items-center shrink-0">
+            <li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="services">
               <button type="button" id="nav-link-services" class="${navLink}">${escapeHtml(t('ui_services'))}</button>
             </li>
-            <li class="h-full flex items-center shrink-0">
+            <li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="jobs">
               <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
             </li>
           </ul>
@@ -284,12 +285,13 @@ export function renderHeaderHtml(ctx) {
 
         <!-- RIGHT: pinned, always visible. More opens the full category list
              (the overflow included). -->
-        <div class="flex items-center gap-2 sm:gap-4 shrink-0 h-full">
+        <div class="nav-right-group flex items-center gap-2 sm:gap-4 shrink-0 h-full">
           <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
             class="${navLink} gap-1 shrink-0">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
           <button type="button" id="header-post-ad-btn"
+            aria-label="${escapeHtml(t('ui_post_ad'))}"
             class="bg-orange-500 text-white font-bold py-1 px-3 sm:px-4 rounded-full flex items-center gap-1.5 hover:bg-brand-orange transition-colors shadow-md text-xs sm:text-sm shrink-0 whitespace-nowrap">
-            <i class="fa-solid fa-plus-circle"></i> ${escapeHtml(t('ui_post_ad'))}
+            <i class="fa-solid fa-plus-circle"></i> <span class="nav-post-label">${escapeHtml(t('ui_post_ad'))}</span>
           </button>
         </div>
       </div>
@@ -381,6 +383,8 @@ export function bindHeaderEvents(root, handlers) {
   });
   // Show as many category links as fit; hide the rest (More still lists them).
   fitNavCategories(root);
+  requestAnimationFrame(() => fitNavCategories(root));
+  setTimeout(() => fitNavCategories(root), 120);
   // 'More' opens the full category list - the overflow included.
   on('#nav-link-more', 'click', (e) => openMore?.(e.currentTarget));
   // The way back into a seller's or admin's own dashboard from the shop.
@@ -461,14 +465,33 @@ function ensureFitObserver() {
  * resize and on every header render.
  */
 function fitNavCategories(root) {
+  const left = root.querySelector('.nav-left-group');
+  const primaryItems = [...root.querySelectorAll('.nav-fixed-item')];
   const lane = root.querySelector('.nav-cat-fill');
-  if (!lane) return;
-  const chips = [...lane.querySelectorAll('.nav-category-item')];
-  if (chips.length === 0) return;
+  const chips = lane ? [...lane.querySelectorAll('.nav-category-item')] : [];
 
-  // Start from a clean slate so a widened window can bring chips back.
+  // Start from a clean slate so a widened window can bring links back.
+  primaryItems.forEach((c) => c.removeAttribute('hidden'));
   chips.forEach((c) => c.removeAttribute('hidden'));
 
+  // The fixed links have a strict priority from left to right. When the row
+  // narrows, move the least-important tail items behind More before they can
+  // become clipped inside the left group. Checking scrollWidth is not enough
+  // here because the inner link list also clips overflow; edge measurement is
+  // the source of truth.
+  if (left) {
+    const leftRight = left.getBoundingClientRect().right;
+    let primaryOverflowing = false;
+    for (const item of primaryItems) {
+      if (primaryOverflowing) { item.setAttribute('hidden', ''); continue; }
+      if (item.getBoundingClientRect().right > leftRight + 1) {
+        item.setAttribute('hidden', '');
+        primaryOverflowing = true;
+      }
+    }
+  }
+
+  if (!lane || chips.length === 0) return;
   const laneRight = lane.getBoundingClientRect().right;
   let overflowing = false;
   for (const chip of chips) {

@@ -20,9 +20,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 const SRC = readFileSync('src/modules/marketplace/MarketplaceView.js', 'utf8');
+const SECTIONS_SRC = readFileSync('src/modules/marketplace/homeProductSections.js', 'utf8');
 // Newlines and indentation collapsed to single spaces, for assertions about
 // declarations that wrap across several lines.
 const FLAT = SRC.replace(/\s+/g, ' ');
+const SECTIONS_FLAT = SECTIONS_SRC.replace(/\s+/g, ' ');
 
 describe('the product tile is written once', () => {
   it('exists as a function', () => {
@@ -72,25 +74,23 @@ describe('the product tile is written once', () => {
  */
 describe('the Featured & Trending section', () => {
   it('filters on the two flags, not on recency', () => {
-    const helper = SRC.slice(SRC.indexOf('function isSpotlightProduct'), SRC.indexOf('function groupProductsBySection'));
+    const helper = SECTIONS_SRC.slice(SECTIONS_SRC.indexOf('function isSpotlightProduct'), SECTIONS_SRC.indexOf('function getHomeProductSections'));
     expect(helper).toContain('product?.isFeatured || product?.isTrending');
     expect(helper).not.toContain('isRecommended');
-    expect(SRC).toContain('state.products.filter(isSpotlightProduct)');
+    expect(SECTIONS_SRC).toContain('const spotlightProducts = allProducts.filter(isSpotlightProduct);');
   });
 
   it('is uncapped - every flagged listing, not just the first few', () => {
-    const decl = SRC.slice(SRC.indexOf('const spotlightProducts'), SRC.indexOf('const spotlightIds'));
+    const decl = SECTIONS_SRC.slice(SECTIONS_SRC.indexOf('const spotlightProducts'), SECTIONS_SRC.indexOf('const spotlightIds'));
     expect(decl, 'the spotlight section must not slice its product list').not.toMatch(/\.slice\(/);
   });
 
-  it('renders as its own section, not squeezed beside the Flash Deals card', () => {
-    // Flash Deals gets its own <section>...</section>, and the spotlight
-    // section starts only after that one has already closed.
-    const flashOpen = SRC.indexOf('id="flash-deals-card"');
-    const flashSectionEnd = SRC.indexOf('</section>', flashOpen);
+  it('renders as the first product section, before the Flash Deals card', () => {
     const spotlightStart = SRC.indexOf('spotlightProducts.length > 0 ?');
+    const flashOpen = SRC.indexOf('id="flash-deals-card"');
+    expect(spotlightStart).toBeGreaterThan(-1);
     expect(flashOpen).toBeGreaterThan(-1);
-    expect(spotlightStart, 'the spotlight section must come after Flash Deals closes').toBeGreaterThan(flashSectionEnd);
+    expect(spotlightStart, 'the spotlight section must come before Flash Deals').toBeLessThan(flashOpen);
   });
 
   it('carries the same section-header treatment as a category section: a colored bar, a bold title, and a count pill', () => {
@@ -115,7 +115,7 @@ describe('the Featured & Trending section', () => {
     // otherwise nothing. Its final branch must be the empty string, not a
     // rendered message.
     const chainStart = SRC.indexOf('productsLoading && state.products.length === 0 ?');
-    const chainEnd = SRC.indexOf('\n\n            <!-- Everything not in the Featured');
+    const chainEnd = SRC.indexOf('\n\n            <!-- Flash Deals');
     const chain = SRC.slice(chainStart, chainEnd);
     expect(chain).toContain('spotlightProducts.length > 0 ?');
     expect(chain.trim().endsWith("` : ''}"), 'must fall through to an empty string, not a message').toBe(true);
@@ -134,16 +134,16 @@ describe('spotlight and category sections do not duplicate listings', () => {
   it('excludes Featured and Trending products from every regular section below', () => {
     // By predicate: a listing marked Featured or Trending belongs to the
     // spotlight section even if it would also match a category row.
-    expect(FLAT, 'the catch-all list must drop spotlight products').toContain(
-      'const moreProducts = state.products .filter((p) => !isSpotlightProduct(p))',
+    expect(SECTIONS_FLAT, 'the catch-all list must drop spotlight products').toContain(
+      'const regularProducts = allProducts.filter((product) => ( !isSpotlightProduct(product) && !spotlightIds.has(product.id) ));',
     );
   });
 
   it('does not repeat Featured or Trending products in Flash Deals on the homepage', () => {
-    expect(FLAT, 'home flash deals must exclude spotlight products').toContain(
-      'const visibleFlashDeals = flashDeals.filter((deal) => !isSpotlightProduct(deal) && !spotlightIds.has(deal.id));',
+    expect(SECTIONS_FLAT, 'home flash deals must exclude spotlight products').toContain(
+      'const visibleFlashDeals = allFlashDeals.filter((deal) => ( !isSpotlightProduct(deal) && !spotlightIds.has(deal.id) ));',
     );
-    expect(SRC).toContain('const featuredDeal = visibleFlashDeals[0] || null;');
+    expect(SECTIONS_SRC).toContain('featuredDeal: visibleFlashDeals[0] || null,');
 
     const modalStart = SRC.indexOf('<!-- Countdown Products Grid -->');
     const modalEnd = SRC.indexOf('<div class="mt-6 pt-4 border-t border-gray-100', modalStart);

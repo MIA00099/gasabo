@@ -8,14 +8,11 @@ import { renderCategoryIcon, formatCategoryName } from '../../utils/categoryIcon
 import { starsHtml } from '../../utils/stars.js';
 import { openCategoryDropdown } from '../../components/dropdownMenu.js';
 import { openShareModal } from '../../components/ShareModal.js';
+import { getHomeProductSections, isSpotlightProduct } from './homeProductSections.js';
 
 // Beyond this the homepage stops being a homepage. The catalog is what the
 // "View all" button below the grid is for.
 const HOME_MAX_MORE = 15;
-
-function isSpotlightProduct(product) {
-  return !!(product?.isFeatured || product?.isTrending);
-}
 
 function groupProductsBySection(products, categories) {
   if (!Array.isArray(products) || products.length === 0) return [];
@@ -77,7 +74,7 @@ function productCardHtml(prod) {
     <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
         <div class="relative w-full h-48 sm:h-52 max-h-[240px] bg-gray-100 overflow-hidden flex items-center justify-center">
             <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-2 py-0.5 rounded-md z-10 shadow-sm">-${pct}%</div>
-            ${prod.isFeatured || prod.isTrending ? `
+            ${isSpotlightProduct(prod) ? `
               <div class="absolute top-2 right-2 z-10 ${prod.isFeatured ? 'bg-amber-400 text-amber-900' : 'bg-brand-green text-white'} text-[9px] font-bold px-2 py-0.5 rounded-md shadow-sm">
                 ${prod.isFeatured ? '⭐ Featured' : '🔥 Trending'}
               </div>
@@ -276,11 +273,16 @@ export function renderMarketplaceView(container) {
       stateEngine.loadMarketplaceHomeData(filters).catch(() => {});
     }
 
-    // The flash card starts from the soonest-ending real deals an admin set
-    // up. The actual home-visible list is finalized after the spotlight ids
-    // are known, because Featured / Trending products belong only in their
-    // own section on this page.
-    const flashDeals = state.flashDeals || [];
+    const {
+      spotlightProducts,
+      visibleFlashDeals,
+      featuredDeal,
+      moreProducts,
+    } = getHomeProductSections({
+      products: state.products,
+      flashDeals: state.flashDeals,
+      moreLimit: HOME_MAX_MORE,
+    });
 
     // Hero slider images an admin uploaded in the ads section - these are the
     // whole slider. Delete them all and the panel is empty, which is the point:
@@ -291,25 +293,6 @@ export function renderMarketplaceView(container) {
       (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
     );
     const dotCount = heroAds.length;
-
-    // The Featured & Trending section: every listing an administrator has
-    // flagged Featured or Trending, in one full section - not a fixed-size
-    // row. It used to be state.products.slice(0, TOP_ROW) beside the Flash
-    // Deals card - simply whatever was newest - so the two flags put a badge
-    // on the tile and changed nothing about where the listing actually
-    // appeared. Uncapped, the same as a category section: it scrolls
-    // horizontally rather than wrapping, so there is no count it outgrows.
-    const spotlightProducts = state.products.filter(isSpotlightProduct);
-    const spotlightIds = new Set(spotlightProducts.map((p) => p.id));
-    const visibleFlashDeals = flashDeals.filter((deal) => !isSpotlightProduct(deal) && !spotlightIds.has(deal.id));
-    const featuredDeal = visibleFlashDeals[0] || null;
-
-    // Everything not in the spotlight section. Featured and Trending products
-    // must not be repeated in category rows, the lower grid, or flash deals:
-    // the first product row is their one home.
-    const moreProducts = state.products
-      .filter((p) => !isSpotlightProduct(p))
-      .slice(0, HOME_MAX_MORE);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
@@ -494,6 +477,47 @@ export function renderMarketplaceView(container) {
                 </div>
             </section>
 
+            <!-- Featured & Trending - a real section now, styled exactly like
+                 the category sections below (colored bar, bold title, count
+                 badge, scroll arrows, one horizontally-scrolling row). Every
+                 flagged listing shows here, not just the first five, and (see
+                 moreProducts above, which excludes these ids) it does not
+                 also show again under its own category further down - each
+                 listing appears in exactly one section. Absent entirely when
+                 there is nothing flagged, the same as any category section
+                 with nothing in it. -->
+            ${productsLoading && state.products.length === 0 ? `
+              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
+                  <div class="bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100">
+                      ${t('ui_loading_items')}
+                  </div>
+              </section>
+            ` : spotlightProducts.length > 0 ? `
+              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
+                  <div class="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
+                      <div class="flex items-center gap-2">
+                          <span class="w-2.5 h-5 bg-brand-orange rounded-full inline-block"></span>
+                          <h3 class="text-sm sm:text-base font-black text-gray-900 tracking-tight">${t('ui_spotlight_section_title')}</h3>
+                          <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${spotlightProducts.length}</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="-1" aria-label="Scroll ${t('ui_spotlight_section_title')} left">
+                              <i class="fa-solid fa-chevron-left text-xs"></i>
+                          </button>
+                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="1" aria-label="Scroll ${t('ui_spotlight_section_title')} right">
+                              <i class="fa-solid fa-chevron-right text-xs"></i>
+                          </button>
+                      </div>
+                  </div>
+
+                  <!-- One row that scrolls horizontally (swipe on touch, arrows
+                       on desktop), same as the category sections below. -->
+                  <div id="spotlight-row" class="section-row flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-1">
+                      ${spotlightProducts.map((prod) => `<div class="shrink-0 w-40 sm:w-44 md:w-48">${productCardHtml(prod)}</div>`).join('')}
+                  </div>
+              </section>
+            ` : ''}
+
             <!-- Flash Deals - the delivered markup, class for class. Two
                  adjustments so it works inside the app: the countdown keeps
                  the ids the existing clock drives (it also feeds the modal),
@@ -501,12 +525,9 @@ export function renderMarketplaceView(container) {
                  since href="#" would otherwise push a hash the router strips
                  straight back off.
 
-                 Used to share a row with the Featured/Trending products,
-                 squeezed beside it as five compact cards with no heading of
-                 their own - a reader had no way to tell why those particular
-                 listings were first. Flash Deals now stands alone; Featured
-                 and Trending gets its own section below, in the same style as
-                 the category sections further down the page. -->
+                 Featured and Trending products are filtered out before this
+                 renders, so the home page has one clear place for those
+                 highlighted listings: the Featured & Trending rail above. -->
             <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 shrink-0">
                 <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : ''} transition"
                   ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>
@@ -557,47 +578,6 @@ export function renderMarketplaceView(container) {
 
                 </section>
             </section>
-
-            <!-- Featured & Trending - a real section now, styled exactly like
-                 the category sections below (colored bar, bold title, count
-                 badge, scroll arrows, one horizontally-scrolling row). Every
-                 flagged listing shows here, not just the first five, and (see
-                 moreProducts above, which excludes these ids) it does not
-                 also show again under its own category further down - each
-                 listing appears in exactly one section. Absent entirely when
-                 there is nothing flagged, the same as any category section
-                 with nothing in it. -->
-            ${productsLoading && state.products.length === 0 ? `
-              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
-                  <div class="bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100">
-                      ${t('ui_loading_items')}
-                  </div>
-              </section>
-            ` : spotlightProducts.length > 0 ? `
-              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
-                  <div class="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
-                      <div class="flex items-center gap-2">
-                          <span class="w-2.5 h-5 bg-brand-orange rounded-full inline-block"></span>
-                          <h3 class="text-sm sm:text-base font-black text-gray-900 tracking-tight">${t('ui_spotlight_section_title')}</h3>
-                          <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${spotlightProducts.length}</span>
-                      </div>
-                      <div class="flex items-center gap-1.5">
-                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="-1" aria-label="Scroll ${t('ui_spotlight_section_title')} left">
-                              <i class="fa-solid fa-chevron-left text-xs"></i>
-                          </button>
-                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="1" aria-label="Scroll ${t('ui_spotlight_section_title')} right">
-                              <i class="fa-solid fa-chevron-right text-xs"></i>
-                          </button>
-                      </div>
-                  </div>
-
-                  <!-- One row that scrolls horizontally (swipe on touch, arrows
-                       on desktop), same as the category sections below. -->
-                  <div id="spotlight-row" class="section-row flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-1">
-                      ${spotlightProducts.map((prod) => `<div class="shrink-0 w-40 sm:w-44 md:w-48">${productCardHtml(prod)}</div>`).join('')}
-                  </div>
-              </section>
-            ` : ''}
 
             <!-- Everything not in the Featured & Trending section above:
                  grouped by category (Electronics, Vehicles, ...), each its

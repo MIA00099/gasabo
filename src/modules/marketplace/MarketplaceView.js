@@ -201,10 +201,11 @@ function startFlashClock(container) {
   // Real deadline, not a made-up loop. The card carries the featured deal's
   // end time as an epoch-ms attribute; every tick shows the true remaining
   // time, so all viewers see the same finish and it stops at zero instead of
-  // resetting to 9999 the way the placeholder used to. No card attribute (no
-  // active deal) means the clock reads 00:00:00.
+  // resetting to 9999 the way the placeholder used to.
   const card = container.querySelector('#flash-deals-card');
   const endsAt = card ? Number(card.getAttribute('data-flash-ends-at')) : 0;
+  if (!endsAt) return;
+
   const initialRemainingMs = endsAt ? endsAt - Date.now() : 0;
 
   const updateCountdown = () => {
@@ -553,7 +554,8 @@ export function renderMarketplaceView(container) {
                     <p class="flash-empty">${t('ui_flash_none')}</p>
                   `}
 
-                  <div class="countdown">
+                  ${featuredDeal ? `
+                  <div class="countdown" aria-label="Flash deal countdown">
 
                     <div class="time-box">
                       <div class="number" id="deal-hours">00</div>
@@ -575,6 +577,7 @@ export function renderMarketplaceView(container) {
                     </div>
 
                   </div>
+                  ` : ''}
 
                 </section>
             </section>

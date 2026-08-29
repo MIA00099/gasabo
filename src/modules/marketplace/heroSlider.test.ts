@@ -83,7 +83,7 @@ describe('flash deals card', () => {
 
   it('keeps the countdown outside that row', () => {
     const headEnd = HOME.indexOf('</div>', HOME.indexOf('<div class="flash-head">'));
-    const countdown = HOME.indexOf('<div class="countdown">');
+    const countdown = HOME.indexOf('<div class="countdown"');
     expect(countdown).toBeGreaterThan(headEnd);
   });
 
@@ -93,5 +93,14 @@ describe('flash deals card', () => {
     for (const id of ['deal-hours', 'deal-mins', 'deal-secs']) {
       expect(HOME, `#${id} missing`).toContain(`id="${id}"`);
     }
+  });
+
+  it('only renders the countdown boxes when a real flash deal exists', () => {
+    const emptyText = HOME.indexOf('<p class="flash-empty">');
+    const countdownGate = HOME.indexOf('${featuredDeal ? `\n                  <div class="countdown"');
+
+    expect(emptyText, 'empty flash-deal message missing').toBeGreaterThan(-1);
+    expect(countdownGate, 'countdown must be gated by featuredDeal').toBeGreaterThan(emptyText);
+    expect(HOME, 'clock should not run without a deal end time').toContain('if (!endsAt) return;');
   });
 });

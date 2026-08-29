@@ -850,13 +850,20 @@ class StateEngine {
   }
 
   // Admin: set a product's flash-deal end time (ISO string) or clear it
-  // with null. Refreshes both the admin product list and the public deals.
+  // with null. The patch response is authoritative for this product, so update
+  // the public deals cache directly instead of racing it with a background
+  // reload that can briefly return stale data.
   async setProductFlashDeal(productId, endsAt) {
     return this._run('products', async () => {
       const { product } = await api.patch(`/products/${productId}/flash-deal`, { endsAt });
       this.data.products = this.data.products.map((p) => (p.id === productId ? product : p));
+      const dealEndsAt = product.flashDealEndsAt ? new Date(product.flashDealEndsAt).getTime() : 0;
+      const isActiveDeal = dealEndsAt > Date.now() && product.status === 'active';
+      const withoutCurrent = (this.data.flashDeals || []).filter((p) => p.id !== product.id);
+      this.data.flashDeals = isActiveDeal
+        ? [...withoutCurrent, product].sort((a, b) => new Date(a.flashDealEndsAt).getTime() - new Date(b.flashDealEndsAt).getTime())
+        : withoutCurrent;
       this.notify();
-      this.loadFlashDeals().catch(() => {});
       return product;
     });
   }

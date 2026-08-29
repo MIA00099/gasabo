@@ -73,7 +73,7 @@ function productCardHtml(prod) {
   return `
     <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
         <div class="relative w-full h-48 sm:h-52 max-h-[240px] bg-gray-100 overflow-hidden flex items-center justify-center">
-            <div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-2 py-0.5 rounded-md z-10 shadow-sm">-${pct}%</div>
+            ${hasDiscount ? `<div class="absolute top-2 left-2 bg-brand-orange text-white text-[9px] font-bold px-2 py-0.5 rounded-md z-10 shadow-sm">-${pct}%</div>` : ''}
             ${isSpotlightProduct(prod) ? `
               <div class="absolute top-2 right-2 z-10 ${prod.isFeatured ? 'bg-amber-400 text-amber-900' : 'bg-brand-green text-white'} text-[9px] font-bold px-2 py-0.5 rounded-md shadow-sm">
                 ${prod.isFeatured ? '⭐ Featured' : '🔥 Trending'}

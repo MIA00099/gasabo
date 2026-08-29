@@ -8,10 +8,10 @@
  *
  * Two things guarded here:
  *
- *  1. The tile is rendered from one function. It carries the discount badge,
- *     the price, the strikethrough, the stars and the like count - a second
- *     pasted copy would drift from the first the moment any of those changed,
- *     and different rows of one page would quietly disagree.
+ *  1. The tile is rendered from one function. It carries the real-discount
+ *     badge, the price, the strikethrough, the stars and the like count - a
+ *     second pasted copy would drift from the first the moment any of those
+ *     changed, and different rows of one page would quietly disagree.
  *  2. The cards carry .view-item-btn. That class is the entire click binding;
  *     without it the cards render perfectly and do nothing when tapped, which
  *     no other test would notice.
@@ -56,6 +56,12 @@ describe('the product tile is written once', () => {
   it('lazy-loads the images, since they start below the fold', () => {
     const fn = SRC.slice(SRC.indexOf('function productCardHtml'), SRC.indexOf('// Grey circles'));
     expect(fn).toContain('loading="lazy"');
+  });
+
+  it('does not render a fake discount badge when there is no real previous price', () => {
+    const fn = SRC.slice(SRC.indexOf('function productCardHtml'), SRC.indexOf('// Grey circles'));
+    expect(fn).toContain('const hasDiscount = was > prod.price;');
+    expect(fn).toContain('${hasDiscount ? `<div class="absolute top-2 left-2');
   });
 });
 

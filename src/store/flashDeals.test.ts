@@ -84,4 +84,15 @@ describe('admin flash deal state updates', () => {
 
     expect(stateEngine.data.flashDeals).toEqual([]);
   });
+
+  it('adds an expiring-soon active product immediately', async () => {
+    const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    apiPatch.mockResolvedValue({
+      product: { id: 'p1', title: 'Expiring soon product', status: 'expiring_soon', flashDealEndsAt: endsAt },
+    });
+
+    await stateEngine.setProductFlashDeal('p1', endsAt);
+
+    expect(stateEngine.data.flashDeals.map((product: any) => product.id)).toEqual(['p1']);
+  });
 });

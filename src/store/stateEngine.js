@@ -27,6 +27,9 @@ function sameJson(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+const PUBLIC_PRODUCT_STATUSES = new Set(['active', 'expiring_soon', 'ACTIVE']);
+const isPublicProduct = (product) => PUBLIC_PRODUCT_STATUSES.has(product?.status);
+
 const LANG_KEY = 'KIGALIMARKET_LANG';
 
 const ROLE_MAP = {
@@ -858,7 +861,7 @@ class StateEngine {
       const { product } = await api.patch(`/products/${productId}/flash-deal`, { endsAt });
       this.data.products = this.data.products.map((p) => (p.id === productId ? product : p));
       const dealEndsAt = product.flashDealEndsAt ? new Date(product.flashDealEndsAt).getTime() : 0;
-      const isActiveDeal = dealEndsAt > Date.now() && product.status === 'active';
+      const isActiveDeal = dealEndsAt > Date.now() && isPublicProduct(product);
       const withoutCurrent = (this.data.flashDeals || []).filter((p) => p.id !== product.id);
       this.data.flashDeals = isActiveDeal
         ? [...withoutCurrent, product].sort((a, b) => new Date(a.flashDealEndsAt).getTime() - new Date(b.flashDealEndsAt).getTime())

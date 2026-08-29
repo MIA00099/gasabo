@@ -633,6 +633,10 @@ productsRouter.patch('/:id/flash-deal', requireAuth, requirePermission('PRODUCTS
   const product = await prisma.product.findUnique({ where: { id: req.params.id } });
   if (!product) return res.status(404).json({ error: 'Product not found.' });
 
+  if (endsAt && product.status !== 'ACTIVE') {
+    return res.status(400).json({ error: 'Approve this product before adding it to Flash Deals.' });
+  }
+
   const updated = await prisma.product.update({
     where: { id: product.id },
     data: { flashDealEndsAt: endsAt },

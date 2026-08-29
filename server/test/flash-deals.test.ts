@@ -76,6 +76,14 @@ describe('PATCH /api/products/:id/flash-deal', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejects setting a deal on a product that is not public yet', async () => {
+    const id = await makeProduct('Pending patch deal', 'PENDING');
+    const res = await request(app).patch(`/api/products/${id}/flash-deal`)
+      .set(auth(adminToken)).send({ endsAt: inHours(3) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Approve this product');
+  });
+
   it('clears the deal with null', async () => {
     const id = await makeProduct('Deal clear');
     await request(app).patch(`/api/products/${id}/flash-deal`).set(auth(adminToken)).send({ endsAt: inHours(2) });

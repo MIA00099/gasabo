@@ -360,13 +360,15 @@ export function renderMarketplaceAdmin(container) {
         if (btn.dataset.active) {
           try {
             await stateEngine.setProductFlashDeal(id, null);
-          } catch (err) { /* re-render shows state.error */ }
+            alert('Flash Deal cleared.');
+          } catch (err) { alert(err.message || 'Could not clear the Flash Deal.'); }
           return;
         }
         promptFlashDealEnd(btn, async (isoEndsAt) => {
           try {
             await stateEngine.setProductFlashDeal(id, isoEndsAt);
-          } catch (err) { /* re-render shows state.error */ }
+            alert('Flash Deal saved. It will show on the homepage while the countdown is active.');
+          } catch (err) { alert(err.message || 'Could not save the Flash Deal.'); }
         });
       });
     });

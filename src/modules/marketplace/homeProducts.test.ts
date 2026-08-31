@@ -133,6 +133,21 @@ describe('the Featured & Trending section', () => {
   });
 });
 
+describe('the homepage category rail', () => {
+  it('uses large, readable icon targets', () => {
+    expect(SRC).toContain('const CATEGORY_ICON_SIZE = 44;');
+    expect(SRC).toContain('w-14 h-14 sm:w-[60px] sm:h-[60px]');
+    expect(SRC).toContain("min-w-[76px]");
+    expect(SRC).toContain('renderCategoryIcon(c.icon, { size: CATEGORY_ICON_SIZE');
+  });
+
+  it('keeps the loading skeleton the same size as the real category icons', () => {
+    const skeleton = SRC.slice(SRC.indexOf('const SKELETON_TILES'), SRC.indexOf('let flashClockTimer'));
+    expect(skeleton).toContain('w-14 h-14 sm:w-[60px] sm:h-[60px]');
+    expect(skeleton).toContain('min-w-[76px]');
+  });
+});
+
 /**
  * A listing must appear in exactly one home-page product section: its own
  * spotlight section if flagged, or a regular section otherwise - never both.

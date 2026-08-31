@@ -110,15 +110,19 @@ function productCardHtml(prod) {
   `;
 }
 
+const CATEGORY_TILE_CLASS = 'flex flex-col items-center gap-2 flex-1 min-w-[76px] px-2 py-1.5 cursor-pointer group cat-tile-btn';
+const CATEGORY_ICON_FRAME_CLASS = 'w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-full flex items-center justify-center transition transform group-hover:scale-105';
+const CATEGORY_ICON_SIZE = 44;
+
 // Grey circles, no labels. Deliberately not category-shaped placeholder
 // objects: the previous version of this strip rendered invented names
 // (Motorcycles, Bicycles, Land & Plots) that no category ever matched, and
 // a skeleton built the same way would reintroduce exactly that - text on
 // screen that stands for nothing in the database.
 const SKELETON_TILES = Array.from({ length: 5 }, () => `
-  <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1">
-      <div class="w-10 h-10 rounded-full bg-gray-100 animate-pulse"></div>
-      <div class="h-2 w-10 rounded bg-gray-100 animate-pulse"></div>
+  <div class="flex flex-col items-center gap-2 flex-1 min-w-[76px] px-2 py-1.5">
+      <div class="w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-full bg-gray-100 animate-pulse"></div>
+      <div class="h-2.5 w-14 rounded bg-gray-100 animate-pulse"></div>
   </div>
 `).join('');
 
@@ -425,11 +429,11 @@ export function renderMarketplaceView(container) {
             <section class="compact-container px-3 sm:px-4 lg:px-6 mt-[-15px] relative z-20 shrink-0">
                 <div class="flex justify-between items-center bg-white rounded-2xl shadow-md p-2 overflow-x-auto no-scrollbar gap-1 border border-gray-100">
 
-                    <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn ${filters.selectedCategory === 'all' || !filters.selectedCategory ? 'opacity-100' : 'opacity-80'}" data-cat="all">
-                        <div class="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center text-lg shadow-inner group-hover:bg-green-800 transition">
+                    <div class="${CATEGORY_TILE_CLASS} ${filters.selectedCategory === 'all' || !filters.selectedCategory ? 'opacity-100' : 'opacity-80'}" data-cat="all">
+                        <div class="${CATEGORY_ICON_FRAME_CLASS} bg-brand-green text-white text-2xl shadow-inner group-hover:bg-green-800">
                             <i class="fa-solid fa-border-all"></i>
                         </div>
-                        <span class="text-[11px] font-bold text-center leading-tight text-gray-900">All<br>Categories</span>
+                        <span class="text-xs font-extrabold text-center leading-tight text-gray-900">All<br>Categories</span>
                     </div>
 
                     ${state.categories.length === 0 && !categoriesAttempted ? SKELETON_TILES : (() => {
@@ -444,11 +448,11 @@ export function renderMarketplaceView(container) {
                       };
                       const sortedCats = [...state.categories].sort((a, b) => getCatPriority(a) - getCatPriority(b));
                       return sortedCats.map((c) => `
-                        <div class="flex flex-col items-center gap-1 flex-1 min-w-[64px] p-1 cursor-pointer group cat-tile-btn ${filters.selectedCategory === c.id ? 'opacity-100' : 'opacity-80'}" data-cat="${escapeHtml(c.id)}" title="${escapeHtml(formatCategoryName(c.name))}">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl transition transform group-hover:scale-110 ${filters.selectedCategory === c.id ? 'ring-2 ring-brand-green' : ''}">
-                                ${renderCategoryIcon(c.icon, { size: 26, alt: formatCategoryName(c.name) })}
+                        <div class="${CATEGORY_TILE_CLASS} ${filters.selectedCategory === c.id ? 'opacity-100' : 'opacity-80'}" data-cat="${escapeHtml(c.id)}" title="${escapeHtml(formatCategoryName(c.name))}">
+                            <div class="${CATEGORY_ICON_FRAME_CLASS} text-2xl ${filters.selectedCategory === c.id ? 'ring-2 ring-brand-green' : ''}">
+                                ${renderCategoryIcon(c.icon, { size: CATEGORY_ICON_SIZE, alt: formatCategoryName(c.name) })}
                             </div>
-                            <span class="text-[11px] font-bold text-center text-gray-900 leading-tight line-clamp-2">${escapeHtml(formatCategoryName(c.name))}</span>
+                            <span class="text-xs font-extrabold text-center text-gray-900 leading-tight line-clamp-2">${escapeHtml(formatCategoryName(c.name))}</span>
                         </div>
                       `).join('');
                     })()}

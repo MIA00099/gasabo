@@ -8,6 +8,7 @@ import { renderHeaderHtml } from './Header.js';
 const HEADER = readFileSync('src/components/Header.js', 'utf8');
 const MAIN = readFileSync('src/main.js', 'utf8');
 const CSS = readFileSync('src/styles/main.css', 'utf8');
+const REAL_ESTATE_VIEW = readFileSync('src/modules/realestate/RealEstateView.js', 'utf8');
 
 /** A representative ctx, matching what main.js passes renderHeaderHtml. */
 function ctx(overrides = {}) {
@@ -126,6 +127,32 @@ describe('the Post an Ad button', () => {
     expect(tag, 'the Post an Ad button moved').toBeTruthy();
     expect(tag![0], 'resting colour').toContain('bg-orange-500');
     expect(tag![0], 'hover colour').toContain('hover:bg-brand-orange');
+  });
+});
+
+describe('the Gasabo Real Estate top nav', () => {
+  it('puts the right-side controls under a class so responsive CSS can manage them', () => {
+    expect(REAL_ESTATE_VIEW).toContain('class="re-header-actions"');
+    expect(REAL_ESTATE_VIEW).toContain('class="re-header-divider"');
+  });
+
+  it('keeps the portal links available on phones instead of hiding them', () => {
+    const phoneGasaboCss = CSS.slice(
+      CSS.indexOf('@media (max-width: 750px)'),
+      CSS.indexOf('@media (max-width: 430px)'),
+    );
+    const phoneNavLinksRule = phoneGasaboCss.match(/\.top-nav \.nav-links\s*\{[\s\S]*?\}/)?.[0] || '';
+
+    expect(CSS).toMatch(/@media \(max-width: 750px\)[\s\S]*\.top-nav[\s\S]*display:\s*grid/);
+    expect(CSS).toMatch(/@media \(max-width: 750px\)[\s\S]*\.top-nav \.nav-left[\s\S]*display:\s*contents/);
+    expect(CSS).toMatch(/@media \(max-width: 750px\)[\s\S]*\.top-nav \.nav-links[\s\S]*overflow-x:\s*auto/);
+    expect(phoneNavLinksRule).toContain('display: flex');
+    expect(phoneNavLinksRule).not.toContain('display: none');
+  });
+
+  it('drops social icons before tablet widths so the market link is not squeezed', () => {
+    expect(CSS).toMatch(/@media \(max-width: 1060px\)[\s\S]*\.top-nav \.re-header-social[\s\S]*display:\s*none !important/);
+    expect(CSS).toMatch(/@media \(max-width: 1060px\)[\s\S]*\.top-nav \.re-header-divider[\s\S]*display:\s*none !important/);
   });
 });
 

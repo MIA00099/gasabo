@@ -133,7 +133,7 @@ body {
      social icons (and the divider that follows them) drop out there. They stay
      in the footer. */
   .re-header-social,
-  .re-header-social + div {
+  .top-nav .re-header-divider {
     display: none !important;
   }
 }
@@ -4099,6 +4099,7 @@ table {
   width: calc(100% - 20px);
   height: 68px;
   margin: 6px 10px;
+  box-sizing: border-box;
 
   background: #fff;
   border-radius: 11px;
@@ -4106,6 +4107,8 @@ table {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 18px;
+  overflow: hidden;
 
   padding: 0 30px;
 
@@ -4120,6 +4123,8 @@ table {
   height: 100%;
   display: flex;
   align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* BRAND */
@@ -4128,6 +4133,8 @@ table {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 0 0 auto;
+  min-width: 0;
 
   text-decoration: none;
   color: #0b2b61;
@@ -4144,7 +4151,7 @@ table {
 .top-nav .brand-name {
   font-size: 17px;
   font-weight: 700;
-  letter-spacing: -0.3px;
+  letter-spacing: 0;
 }
 
 /* DIVIDER */
@@ -4164,12 +4171,15 @@ table {
   display: flex;
   align-items: center;
   gap: 38px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .top-nav .nav-item {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
 
   text-decoration: none;
   color: #183b6b;
@@ -4180,6 +4190,23 @@ table {
   white-space: nowrap;
 
   transition: 0.2s ease;
+}
+
+.top-nav .re-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: 0 0 auto;
+  min-width: max-content;
+}
+
+.top-nav .re-header-social {
+  flex: 0 0 auto;
+}
+
+.top-nav .re-header-social a,
+.top-nav .re-header-divider {
+  flex: 0 0 auto;
 }
 
 .top-nav .nav-item:hover {
@@ -4255,6 +4282,38 @@ table {
 
 /* RESPONSIVE */
 
+@media (max-width: 1200px) {
+  .top-nav {
+    padding: 0 22px;
+    gap: 14px;
+  }
+
+  .top-nav .nav-divider {
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+
+  .top-nav .nav-links {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 1060px) {
+  .top-nav .re-header-social,
+  .top-nav .re-header-divider {
+    display: none !important;
+  }
+
+  .top-nav .nav-divider {
+    margin-left: 18px;
+    margin-right: 18px;
+  }
+
+  .top-nav .nav-links {
+    gap: 18px;
+  }
+}
+
 @media (max-width: 950px) {
 
   .top-nav {
@@ -4262,16 +4321,21 @@ table {
   }
 
   .top-nav .nav-divider {
-    margin-left: 20px;
-    margin-right: 20px;
+    margin-left: 14px;
+    margin-right: 14px;
   }
 
   .top-nav .nav-links {
-    gap: 20px;
+    gap: 14px;
   }
 
   .top-nav .brand-name {
     font-size: 15px;
+  }
+
+  .top-nav .nav-item {
+    gap: 6px;
+    font-size: 13px;
   }
 
   .top-nav .market-link {
@@ -4282,20 +4346,102 @@ table {
 @media (max-width: 750px) {
 
   .top-nav {
-    height: 65px;
-    padding: 0 15px;
+    height: auto;
+    min-height: 68px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand actions"
+      "links links";
+    align-items: center;
+    gap: 10px 12px;
+    padding: 10px 12px;
+    overflow: visible;
+  }
+
+  .top-nav .nav-left {
+    display: contents;
+    height: auto;
+    min-width: 0;
+  }
+
+  .top-nav .brand {
+    grid-area: brand;
+    min-width: 0;
+  }
+
+  .top-nav .brand img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .top-nav .brand-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+    font-size: 15px;
   }
 
   .top-nav .nav-links {
+    grid-area: links;
+    display: flex;
+    width: 100%;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-bottom: 2px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .top-nav .nav-links::-webkit-scrollbar {
     display: none;
+  }
+
+  .top-nav .nav-item {
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #e5e9ef;
+    border-radius: 8px;
+    background: #f8fafc;
+    font-size: 13px;
+    gap: 6px;
   }
 
   .top-nav .nav-divider {
     display: none;
   }
 
+  .top-nav .re-header-actions {
+    grid-area: actions;
+    gap: 0;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
   .top-nav .market-link {
     margin-left: auto;
+    gap: 6px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 430px) {
+  .top-nav {
+    width: calc(100% - 12px);
+    margin: 6px;
+  }
+
+  .top-nav .brand-name {
+    max-width: 132px;
+  }
+
+  .top-nav .market-link {
+    font-size: 12px;
+  }
+
+  .top-nav .back-arrow {
+    font-size: 18px;
   }
 }
 

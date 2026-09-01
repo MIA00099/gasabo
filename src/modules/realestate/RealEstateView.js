@@ -330,7 +330,7 @@ export function renderRealEstateView(container) {
           </div>
 
           <!-- RIGHT SIDE: SOCIAL ICONS & KIGALI MARKET -->
-          <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <div class="re-header-actions" style="display: flex; align-items: center; gap: 0.85rem;">
             <div class="re-header-social" style="display: flex; align-items: center; gap: 0.45rem;">
               <a href="https://www.instagram.com/gasabo_real_estate/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"
                 style="width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s ease;">
@@ -350,7 +350,7 @@ export function renderRealEstateView(container) {
               </a>
             </div>
 
-            <div style="width: 1px; height: 22px; background: #E2E8F0; margin: 0 0.15rem;"></div>
+            <div class="re-header-divider" style="width: 1px; height: 22px; background: #E2E8F0; margin: 0 0.15rem;"></div>
 
             <!-- KIGALI MARKET -->
             <a href="#" class="market-link" id="re-back-to-market-nav">

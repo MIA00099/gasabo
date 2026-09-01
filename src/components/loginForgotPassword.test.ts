@@ -87,13 +87,14 @@ describe('seller forgot password form', () => {
 });
 
 describe('jobs auth intent copy', () => {
-  it('makes the worker signup path clear', async () => {
+  it('does not present worker signup as a seller registration path', async () => {
     mocks.state.ui = { authIntent: 'worker' };
 
     const container = await renderLogin('signup');
 
-    expect(container.textContent).toContain('Become a Worker');
-    expect(container.textContent).toContain('customers can contact you for work');
+    expect(container.textContent).toContain('Sign Up');
+    expect(container.textContent).toContain('Create a seller account to start selling on Kigali Market');
+    expect(container.textContent).not.toContain('Become a Worker');
   });
 
   it('makes the post-job signup path clear', async () => {

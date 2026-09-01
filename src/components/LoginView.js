@@ -72,12 +72,9 @@ export function renderLoginView(container, initialMode = 'login') {
     const districts = state.districts || ['Gasabo', 'Nyarugenge', 'Kicukiro', 'Musanze', 'Rubavu', 'Huye'];
     const isLogin = mode === 'login';
     const authIntent = !isLogin ? state.ui?.authIntent : '';
-    const signupTitle = authIntent === 'worker' ? 'Become a Worker'
-      : authIntent === 'post_job' ? 'Post a Job'
+    const signupTitle = authIntent === 'post_job' ? 'Post a Job'
       : 'Sign Up';
-    const signupSubtitle = authIntent === 'worker'
-      ? 'Create an account so customers can contact you for work.'
-      : authIntent === 'post_job'
+    const signupSubtitle = authIntent === 'post_job'
         ? 'Create an account to post jobs and manage replies.'
         : 'Create a seller account to start selling on Kigali Market';
 

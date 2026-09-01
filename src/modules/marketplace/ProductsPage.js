@@ -1,7 +1,7 @@
 import { starsHtml } from '../../utils/stars.js';
 import { renderCategoryIcon, formatCategoryName } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
-import { pushPath, pathForListing, pathForRoute, ROUTE_AUTH, ROUTE_POST_AD, ROUTE_PRODUCT } from '../../store/router.js';
+import { pushPath, pathForListing, pathForRoute, ROUTE_POST_AD, ROUTE_PRODUCT } from '../../store/router.js';
 import { openShareModal } from '../../components/ShareModal.js';
 
 function escapeHtml(str) {
@@ -74,6 +74,7 @@ export function renderProductsPage(container) {
     const jobsPattern = /\b(job|jobs|employ|career|vacanc|worker)\b/i;
     const isJobsView = jobsPattern.test(activeCat?.name || '') || jobsPattern.test(filters.searchQuery || '');
     const heading = activeCat ? formatCategoryName(activeCat.name) : isJobsView ? 'Jobs' : 'All Categories';
+    const jobsNotice = state.ui.jobsNotice || '';
 
     const items = [...state.products].sort((a, b) => {
       if (sort === 'price_asc') return a.price - b.price;
@@ -143,7 +144,7 @@ export function renderProductsPage(container) {
                     <div>
                       <h2 class="text-lg md:text-xl font-black text-brand-dark mb-1">Jobs</h2>
                       <p class="text-xs md:text-sm text-gray-600 leading-relaxed max-w-2xl">
-                        Hire someone for a role or create an account so customers can contact you for work.
+                        Employers post jobs from a seller account. Workers browse active jobs here and contact the poster from the listing.
                       </p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2 shrink-0">
@@ -157,6 +158,11 @@ export function renderProductsPage(container) {
                       </button>
                     </div>
                   </div>
+                  ${jobsNotice ? `
+                    <p class="mt-3 text-xs text-brand-green bg-green-50 border border-green-100 rounded-xl px-3 py-2">
+                      ${escapeHtml(jobsNotice)}
+                    </p>
+                  ` : ''}
                 </section>
               ` : ''}
 
@@ -167,7 +173,7 @@ export function renderProductsPage(container) {
                   <p class="text-xs text-gray-500">Try selecting another category or clear your filters.</p>
                 </div>
               ` : `
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div id="products-results-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   ${items.map(productCard).join('')}
                 </div>
               `}
@@ -182,7 +188,7 @@ export function renderProductsPage(container) {
     container.querySelectorAll('.products-cat').forEach((btn) => {
       btn.addEventListener('click', () => {
         const cat = btn.dataset.cat;
-        stateEngine.setUI({ marketplaceFilters: { ...filters, selectedCategory: cat } });
+        stateEngine.setUI({ marketplaceFilters: { ...filters, selectedCategory: cat }, jobsNotice: '' });
         stateEngine.loadProducts({
           search: filters.searchQuery,
           category: cat === 'all' ? undefined : cat,
@@ -196,16 +202,19 @@ export function renderProductsPage(container) {
     });
 
     container.querySelector('#jobs-post-job-btn')?.addEventListener('click', () => {
-      stateEngine.setUI({ authIntent: 'post_job', sellerDashboardTab: 'new_product', productAdType: 'job' });
+      stateEngine.setUI({ authIntent: 'post_job', sellerDashboardTab: 'new_product', productAdType: 'job', jobsNotice: '' });
       pushPath(pathForRoute(ROUTE_POST_AD));
       stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null });
     });
 
     container.querySelector('#jobs-become-worker-btn')?.addEventListener('click', () => {
-      stateEngine.setUI({ authIntent: 'worker' });
-      pushPath(pathForRoute(ROUTE_AUTH));
-      stateEngine.setRoute({ kind: ROUTE_AUTH, id: null });
-      stateEngine.setPortal('signup');
+      stateEngine.setUI({
+        authIntent: '',
+        jobsNotice: 'Worker accounts are not separate yet. Browse the jobs below and open a listing to contact the employer.',
+      });
+      requestAnimationFrame(() => {
+        container.querySelector('#products-results-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     });
 
     // Cards navigate to the listing detail.

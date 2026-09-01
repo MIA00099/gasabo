@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ROUTE_AUTH, ROUTE_POST_AD, ROUTE_PRODUCTS, ROUTE_STORES } from './router.js';
+import { ROUTE_AUTH, ROUTE_FAQS, ROUTE_HELP_CENTER, ROUTE_POST_AD, ROUTE_PRODUCTS, ROUTE_STORES } from './router.js';
 
 const g = globalThis as any;
 g.window = {
@@ -47,6 +47,14 @@ describe('flat route adoption', () => {
     const state = stateEngine.getState();
     expect(state.activePortal).toBe('marketplace');
     expect(state.ui.marketplaceTab).toBe('stores');
+  });
+
+  it('opens support pages inside the public marketplace shell', () => {
+    stateEngine.setRoute({ kind: ROUTE_HELP_CENTER, id: null });
+    expect(stateEngine.getState().activePortal).toBe('marketplace');
+
+    stateEngine.setRoute({ kind: ROUTE_FAQS, id: null });
+    expect(stateEngine.getState().activePortal).toBe('marketplace');
   });
 
   it('opens /auth on the login view', () => {

@@ -6,6 +6,7 @@ import './styles/main.css';
 import { stateEngine } from './store/stateEngine.js';
 import { getTranslation } from './store/i18n.js';
 import { renderMarketplaceView, cleanupFlashClock, cleanupHeroSlider } from './modules/marketplace/MarketplaceView.js';
+import { renderHelpCenterPage, renderFaqPage } from './modules/marketplace/SupportPages.js';
 import { renderRealEstateView, openPropertyModal } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
 import { renderLoginView } from './components/LoginView.js';
@@ -20,7 +21,7 @@ import { getMarketplaceFooterHtml, bindMarketplaceFooterEvents } from './compone
 import { openCategoryDropdown } from './components/dropdownMenu.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
-  ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES,
+  ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_HELP_CENTER, ROUTE_FAQS,
 } from './store/router.js';
 
 const ADMIN_URL_HASH = '#/admin-portal';
@@ -184,6 +185,18 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       stateEngine.setPortal('marketplace');
     }
+  }
+
+  function goHelpCenter() {
+    pushPath(pathForRoute(ROUTE_HELP_CENTER));
+    stateEngine.setRoute({ kind: ROUTE_HELP_CENTER, id: null });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goFaqs() {
+    pushPath(pathForRoute(ROUTE_FAQS));
+    stateEngine.setRoute({ kind: ROUTE_FAQS, id: null });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function handleGoHome() {
@@ -481,6 +494,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Main Portal Rendering
     if (appElement) {
       appElement.innerHTML = '';
+      const footerHandlers = {
+        goHome: handleGoHome,
+        postAd: goAccountOrSignup,
+        goSeller: () => stateEngine.routeToDashboard(),
+        goHelp: goHelpCenter,
+        goFaqs,
+        goVehicles: () => {
+          pushPath(pathForRoute(ROUTE_PRODUCTS));
+          stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
+          const filters = stateEngine.getState().ui.marketplaceFilters || {};
+          stateEngine.setUI({
+            marketplaceTab: 'catalog',
+            marketplaceFilters: { ...filters, searchQuery: 'vehicles', selectedCategory: 'all' },
+          });
+          stateEngine.loadProducts({ search: 'vehicles' }).catch(() => {});
+          stateEngine.setPortal('marketplace');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+      };
+      const appendMarketplaceFooter = () => {
+        appElement.insertAdjacentHTML('beforeend', getMarketplaceFooterHtml());
+        bindMarketplaceFooterEvents(appElement, footerHandlers);
+      };
+
       if (activePortal === 'realestate') {
         renderRealEstateView(appElement);
       } else if (activePortal === 'admin') {
@@ -513,6 +550,18 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="text-sm text-gray-500">It may have been sold or removed.</p>
           </div>
         `;
+      } else if (state.route.kind === ROUTE_HELP_CENTER) {
+        cleanupFlashClock();
+        cleanupHeroSlider();
+        cleanupProductDetailPage();
+        renderHelpCenterPage(appElement, { goHome: handleGoHome });
+        appendMarketplaceFooter();
+      } else if (state.route.kind === ROUTE_FAQS) {
+        cleanupFlashClock();
+        cleanupHeroSlider();
+        cleanupProductDetailPage();
+        renderFaqPage(appElement, { goHome: handleGoHome });
+        appendMarketplaceFooter();
       } else if (activePortal === 'marketplace') {
         renderMarketplaceView(appElement);
         // Site footer at the bottom of the public marketplace pages (home,
@@ -520,24 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // the view's per-tab early returns. NOT on the seller dashboard - that
         // is a working area, not a storefront page, so it gets no footer.
         if (state.ui.marketplaceTab !== 'seller_portal') {
-        appElement.insertAdjacentHTML('beforeend', getMarketplaceFooterHtml());
-        bindMarketplaceFooterEvents(appElement, {
-          goHome: handleGoHome,
-          postAd: goAccountOrSignup,
-          goSeller: () => stateEngine.routeToDashboard(),
-          goVehicles: () => {
-            pushPath(pathForRoute(ROUTE_PRODUCTS));
-            stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
-            const filters = stateEngine.getState().ui.marketplaceFilters || {};
-            stateEngine.setUI({
-              marketplaceTab: 'catalog',
-              marketplaceFilters: { ...filters, searchQuery: 'vehicles', selectedCategory: 'all' },
-            });
-            stateEngine.loadProducts({ search: 'vehicles' }).catch(() => {});
-            stateEngine.setPortal('marketplace');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          },
-        });
+          appendMarketplaceFooter();
         }
       }
     }

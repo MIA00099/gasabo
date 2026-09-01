@@ -181,6 +181,16 @@ describe('a signed-in person is never offered a sign-up form', () => {
     expect(FOOTER).toContain("stateEngine.setPortal('marketplace')");
   });
 
+  it('adds Help Center and FAQ links to the marketplace footer', () => {
+    const FOOTER = readFileSync('src/components/Footer.js', 'utf8');
+    expect(markup(FOOTER)).toContain('id="mfoot-help"');
+    expect(markup(FOOTER)).toContain('Help Center');
+    expect(markup(FOOTER)).toContain('id="mfoot-faqs"');
+    expect(markup(FOOTER)).toContain('FAQs');
+    expect(FOOTER).toContain('handlers.goHelp');
+    expect(FOOTER).toContain('handlers.goFaqs');
+  });
+
   it('resets route on header and mobile navigation links', () => {
     expect(MAIN).toContain('goStores: () =>');
     expect(MAIN).toContain('goVehicles: () =>');

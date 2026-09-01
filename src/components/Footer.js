@@ -149,7 +149,11 @@ export function getMarketplaceFooterHtml() {
             </li>
             <li class="footer-contact-item">
               <i class="fa-solid fa-envelope contact-icon email-icon"></i>
-              <a href="mailto:info@kigalimarket.com" class="foot-nav-link">info@kigalimarket.com</a>
+              <a href="mailto:kigalimarket@gmail.com" class="foot-nav-link">kigalimarket@gmail.com</a>
+            </li>
+            <li class="footer-contact-item">
+              <i class="fa-solid fa-phone contact-icon phone-icon"></i>
+              <a href="tel:+250788350555" class="footer-phone-link foot-nav-link">+250 788 350 555</a>
             </li>
           </ul>
         </div>
@@ -161,6 +165,8 @@ export function getMarketplaceFooterHtml() {
       <div class="footer-bottom-bar">
         <div class="footer-copyright">All rights reserved &copy; 2026 Kigali Market</div>
         <div class="footer-bottom-links">
+          <a href="/help-center" id="mfoot-help" class="foot-bottom-link">Help Center</a>
+          <a href="/faqs" id="mfoot-faqs" class="foot-bottom-link">FAQs</a>
           <a href="#" class="foot-bottom-link">About Us</a>
           <a href="#" class="foot-bottom-link">Terms &amp; Conditions</a>
           <a href="#" class="foot-bottom-link">Privacy Policy</a>
@@ -195,6 +201,8 @@ export function bindMarketplaceFooterEvents(container, handlers = {}) {
   });
   on('#mfoot-postad', () => (handlers.postAd ? handlers.postAd() : goHome()));
   on('#mfoot-seller', () => (handlers.goSeller ? handlers.goSeller() : goHome()));
+  on('#mfoot-help', () => (handlers.goHelp ? handlers.goHelp() : goHome()));
+  on('#mfoot-faqs', () => (handlers.goFaqs ? handlers.goFaqs() : goHome()));
 }
 
 function defaultGoHome() {

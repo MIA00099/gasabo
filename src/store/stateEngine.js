@@ -14,6 +14,8 @@ import {
   ROUTE_PRODUCT,
   ROUTE_PRODUCTS,
   ROUTE_STORES,
+  ROUTE_HELP_CENTER,
+  ROUTE_FAQS,
 } from './router.js';
 
 // Cheap content-equality check for a background refresh's result against
@@ -253,6 +255,8 @@ class StateEngine {
     } else if (route.kind === ROUTE_STORES) {
       this.data.activePortal = 'marketplace';
       patchUI({ marketplaceTab: 'stores' });
+    } else if (route.kind === ROUTE_HELP_CENTER || route.kind === ROUTE_FAQS) {
+      this.data.activePortal = 'marketplace';
     } else if (route.kind === ROUTE_POST_AD) {
       if (this.data.currentUser.role === 'guest') {
         this.data.activePortal = 'signup';

@@ -4096,6 +4096,9 @@ table {
    --------------------------------------------------------------------------- */
 
 .top-nav {
+  position: sticky;
+  top: 6px;
+  z-index: 980;
   width: calc(100% - 20px);
   height: 68px;
   margin: 6px 10px;

@@ -131,6 +131,12 @@ describe('the Post an Ad button', () => {
 });
 
 describe('the Gasabo Real Estate top nav', () => {
+  it('stays pinned while the Real Estate portal scrolls', () => {
+    expect(CSS).toMatch(/\.top-nav\s*\{[\s\S]*position:\s*sticky/);
+    expect(CSS).toMatch(/\.top-nav\s*\{[\s\S]*top:\s*6px/);
+    expect(CSS).toMatch(/\.top-nav\s*\{[\s\S]*z-index:\s*980/);
+  });
+
   it('puts the right-side controls under a class so responsive CSS can manage them', () => {
     expect(REAL_ESTATE_VIEW).toContain('class="re-header-actions"');
     expect(REAL_ESTATE_VIEW).toContain('class="re-header-divider"');

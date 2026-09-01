@@ -2629,6 +2629,11 @@ footer a:hover {
   gap: 2.5rem;
 }
 
+#market-footer .large-footer-container {
+  grid-template-columns: minmax(260px, 1.35fr) repeat(3, minmax(130px, 1fr)) minmax(240px, 1.2fr);
+  gap: 2rem;
+}
+
 .footer-col-title {
   color: #FFFFFF;
   font-size: 1.15rem;
@@ -2918,6 +2923,9 @@ footer a:hover {
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
   }
+  #market-footer .large-footer-container {
+    grid-template-columns: 1fr 1fr;
+  }
   .slim-sticky-inner {
     gap: 0.75rem;
   }
@@ -2930,6 +2938,9 @@ footer a:hover {
   .large-footer-container {
     grid-template-columns: 1fr;
     gap: 2rem;
+  }
+  #market-footer .large-footer-container {
+    grid-template-columns: 1fr;
   }
   .sticky-divider {
     display: none;

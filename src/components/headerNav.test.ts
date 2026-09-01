@@ -183,10 +183,22 @@ describe('a signed-in person is never offered a sign-up form', () => {
 
   it('adds Help Center and FAQ links to the marketplace footer', () => {
     const FOOTER = readFileSync('src/components/Footer.js', 'utf8');
+    const marketFooterStart = FOOTER.indexOf('<footer class="large-footer" id="market-footer">');
+    const helpColumnStart = FOOTER.indexOf('<h4 class="footer-col-title">Help</h4>', marketFooterStart);
+    const sellColumnStart = FOOTER.indexOf('<h4 class="footer-col-title">Sell</h4>', marketFooterStart);
+    const bottomLinksStart = FOOTER.indexOf('<div class="footer-bottom-links">', marketFooterStart);
+
     expect(markup(FOOTER)).toContain('id="mfoot-help"');
     expect(markup(FOOTER)).toContain('Help Center');
     expect(markup(FOOTER)).toContain('id="mfoot-faqs"');
     expect(markup(FOOTER)).toContain('FAQs');
+    expect(marketFooterStart).toBeGreaterThan(-1);
+    expect(helpColumnStart).toBeGreaterThan(-1);
+    expect(helpColumnStart).toBeLessThan(sellColumnStart);
+    expect(FOOTER.slice(helpColumnStart, sellColumnStart)).toContain('id="mfoot-help"');
+    expect(FOOTER.slice(helpColumnStart, sellColumnStart)).toContain('id="mfoot-faqs"');
+    expect(FOOTER.slice(bottomLinksStart)).not.toContain('id="mfoot-help"');
+    expect(FOOTER.slice(bottomLinksStart)).not.toContain('id="mfoot-faqs"');
     expect(FOOTER).toContain('handlers.goHelp');
     expect(FOOTER).toContain('handlers.goFaqs');
   });

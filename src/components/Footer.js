@@ -133,6 +133,14 @@ export function getMarketplaceFooterHtml() {
         </div>
 
         <div class="footer-col">
+          <h4 class="footer-col-title">Help</h4>
+          <ul class="footer-links-list">
+            <li><a href="/help-center" id="mfoot-help" class="foot-nav-link">Help Center</a></li>
+            <li><a href="/faqs" id="mfoot-faqs" class="foot-nav-link">FAQs</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
           <h4 class="footer-col-title">Sell</h4>
           <ul class="footer-links-list">
             <li><a href="#" id="mfoot-postad" class="foot-nav-link">Post an Ad</a></li>
@@ -165,8 +173,6 @@ export function getMarketplaceFooterHtml() {
       <div class="footer-bottom-bar">
         <div class="footer-copyright">All rights reserved &copy; 2026 Kigali Market</div>
         <div class="footer-bottom-links">
-          <a href="/help-center" id="mfoot-help" class="foot-bottom-link">Help Center</a>
-          <a href="/faqs" id="mfoot-faqs" class="foot-bottom-link">FAQs</a>
           <a href="#" class="foot-bottom-link">About Us</a>
           <a href="#" class="foot-bottom-link">Terms &amp; Conditions</a>
           <a href="#" class="foot-bottom-link">Privacy Policy</a>

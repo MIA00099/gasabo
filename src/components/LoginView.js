@@ -71,6 +71,15 @@ export function renderLoginView(container, initialMode = 'login') {
     const state = stateEngine.getState();
     const districts = state.districts || ['Gasabo', 'Nyarugenge', 'Kicukiro', 'Musanze', 'Rubavu', 'Huye'];
     const isLogin = mode === 'login';
+    const authIntent = !isLogin ? state.ui?.authIntent : '';
+    const signupTitle = authIntent === 'worker' ? 'Become a Worker'
+      : authIntent === 'post_job' ? 'Post a Job'
+      : 'Sign Up';
+    const signupSubtitle = authIntent === 'worker'
+      ? 'Create an account so customers can contact you for work.'
+      : authIntent === 'post_job'
+        ? 'Create an account to post jobs and manage replies.'
+        : 'Create a seller account to start selling on Kigali Market';
 
     container.innerHTML = `
       <main id="app-container" class="px-4 py-8 flex items-center justify-center bg-[#F4F7F6] min-h-[calc(100vh-140px)]">
@@ -182,8 +191,8 @@ export function renderLoginView(container, initialMode = 'login') {
             ` : `
               <!-- SIGN UP FORM -->
               <div>
-                <h2 class="text-2xl font-bold text-gray-900">Sign Up</h2>
-                <p class="text-xs text-gray-500 mt-0.5">Create a seller account to start selling on Kigali Market</p>
+                <h2 class="text-2xl font-bold text-gray-900">${escapeHtml(signupTitle)}</h2>
+                <p class="text-xs text-gray-500 mt-0.5">${escapeHtml(signupSubtitle)}</p>
               </div>
 
               <div class="space-y-3 pt-1">

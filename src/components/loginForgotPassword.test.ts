@@ -26,11 +26,11 @@ vi.mock('../store/stateEngine.js', () => ({
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-async function renderLogin() {
+async function renderLogin(initialMode = 'login') {
   const { renderLoginView } = await import('./LoginView.js');
   const container = document.createElement('div');
   document.body.appendChild(container);
-  renderLoginView(container, 'login');
+  renderLoginView(container, initialMode);
   return container;
 }
 
@@ -83,5 +83,25 @@ describe('seller forgot password form', () => {
 
     expect(container.textContent).toContain('Password reset request sent.');
     expect(container.textContent).toContain('Seller Support has been notified.');
+  });
+});
+
+describe('jobs auth intent copy', () => {
+  it('makes the worker signup path clear', async () => {
+    mocks.state.ui = { authIntent: 'worker' };
+
+    const container = await renderLogin('signup');
+
+    expect(container.textContent).toContain('Become a Worker');
+    expect(container.textContent).toContain('customers can contact you for work');
+  });
+
+  it('makes the post-job signup path clear', async () => {
+    mocks.state.ui = { authIntent: 'post_job' };
+
+    const container = await renderLogin('signup');
+
+    expect(container.textContent).toContain('Post a Job');
+    expect(container.textContent).toContain('post jobs and manage replies');
   });
 });

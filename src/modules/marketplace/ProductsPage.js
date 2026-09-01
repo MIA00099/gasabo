@@ -1,7 +1,7 @@
 import { starsHtml } from '../../utils/stars.js';
 import { renderCategoryIcon, formatCategoryName } from '../../utils/categoryIcon.js';
 import { stateEngine } from '../../store/stateEngine.js';
-import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
+import { pushPath, pathForListing, pathForRoute, ROUTE_AUTH, ROUTE_POST_AD, ROUTE_PRODUCT } from '../../store/router.js';
 import { openShareModal } from '../../components/ShareModal.js';
 
 function escapeHtml(str) {
@@ -71,7 +71,9 @@ export function renderProductsPage(container) {
     if (!categoriesAttempted) stateEngine.loadCategories().catch(() => {});
 
     const activeCat = state.categories.find((c) => c.id === filters.selectedCategory);
-    const heading = activeCat ? formatCategoryName(activeCat.name) : 'All Categories';
+    const jobsPattern = /\b(job|jobs|employ|career|vacanc|worker)\b/i;
+    const isJobsView = jobsPattern.test(activeCat?.name || '') || jobsPattern.test(filters.searchQuery || '');
+    const heading = activeCat ? formatCategoryName(activeCat.name) : isJobsView ? 'Jobs' : 'All Categories';
 
     const items = [...state.products].sort((a, b) => {
       if (sort === 'price_asc') return a.price - b.price;
@@ -135,6 +137,29 @@ export function renderProductsPage(container) {
                 </div>
               </div>
 
+              ${isJobsView ? `
+                <section class="jobs-action-panel bg-white border border-gray-100 rounded-2xl shadow-sm p-4 md:p-5 mb-6">
+                  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <h2 class="text-lg md:text-xl font-black text-brand-dark mb-1">Jobs</h2>
+                      <p class="text-xs md:text-sm text-gray-600 leading-relaxed max-w-2xl">
+                        Hire someone for a role or create an account so customers can contact you for work.
+                      </p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 shrink-0">
+                      <button type="button" id="jobs-post-job-btn" class="inline-flex items-center justify-center gap-2 bg-brand-green text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm hover:bg-green-800 transition shadow-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Post a Job</span>
+                      </button>
+                      <button type="button" id="jobs-become-worker-btn" class="inline-flex items-center justify-center gap-2 bg-brand-dark text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm hover:bg-gray-800 transition shadow-sm">
+                        <i class="fa-solid fa-briefcase"></i>
+                        <span>Become a Worker</span>
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              ` : ''}
+
               ${items.length === 0 ? `
                 <div class="bg-white rounded-2xl border border-gray-100 py-16 text-center shadow-sm">
                   <i class="fa-solid fa-magnifying-glass text-4xl text-gray-300 mb-3"></i>
@@ -168,6 +193,19 @@ export function renderProductsPage(container) {
 
     container.querySelector('#products-sort')?.addEventListener('change', (e) => {
       stateEngine.setUI({ productsSort: e.target.value });
+    });
+
+    container.querySelector('#jobs-post-job-btn')?.addEventListener('click', () => {
+      stateEngine.setUI({ authIntent: 'post_job' });
+      pushPath(pathForRoute(ROUTE_POST_AD));
+      stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null });
+    });
+
+    container.querySelector('#jobs-become-worker-btn')?.addEventListener('click', () => {
+      stateEngine.setUI({ authIntent: 'worker' });
+      pushPath(pathForRoute(ROUTE_AUTH));
+      stateEngine.setRoute({ kind: ROUTE_AUTH, id: null });
+      stateEngine.setPortal('signup');
     });
 
     // Cards navigate to the listing detail.

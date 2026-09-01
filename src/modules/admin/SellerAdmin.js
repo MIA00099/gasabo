@@ -3,6 +3,9 @@
  */
 import { stateEngine } from '../../store/stateEngine.js';
 
+let resettingSellerId = null;
+let passwordResetResult = null;
+
 export function renderSellerAdmin(container) {
   function render() {
     const state = stateEngine.getState();
@@ -27,6 +30,22 @@ export function renderSellerAdmin(container) {
         ${state.error ? `
           <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
             ⚠️ ${escapeHtml(state.error)}
+          </div>
+        ` : ''}
+
+        ${passwordResetResult ? `
+          <div id="seller-reset-result" style="background:#F0FDF4;border:1px solid #BBF7D0;color:#14532D;padding:1rem 1.25rem;border-radius:12px;margin-bottom:1.5rem;">
+            <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+              <div>
+                <div style="font-size:0.92rem;font-weight:800;">Temporary password for ${escapeHtml(passwordResetResult.name)}</div>
+                <div style="font-size:0.8rem;color:#166534;margin-top:0.25rem;">Give this password to the seller. They can sign in with it, then change it from Account settings.</div>
+              </div>
+              <button id="seller-reset-dismiss" type="button" style="border:none;background:transparent;color:#166534;font-weight:800;cursor:pointer;font-size:0.8rem;">Dismiss</button>
+            </div>
+            <div style="display:flex;gap:0.75rem;align-items:center;margin-top:0.75rem;flex-wrap:wrap;">
+              <code id="seller-reset-password-value" style="background:#fff;border:1px solid #86EFAC;border-radius:8px;padding:0.5rem 0.7rem;font-size:0.95rem;font-weight:800;color:#0F172A;letter-spacing:0.02em;">${escapeHtml(passwordResetResult.tempPassword)}</code>
+              <button id="seller-reset-copy" type="button" style="background:#04562D;color:#fff;border:none;border-radius:8px;padding:0.5rem 0.8rem;font-weight:800;font-size:0.8rem;cursor:pointer;">Copy password</button>
+            </div>
           </div>
         ` : ''}
 
@@ -75,8 +94,8 @@ export function renderSellerAdmin(container) {
                   <td>${new Date(s.joinedDate).toLocaleDateString()}</td>
                   <td class="tbl-actions-col">
                     <div class="adm-action-group">
-                      <button class="btn btn-sm btn-secondary reset-pass-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}">
-                        🔑 Reset Pass
+                      <button class="btn btn-sm btn-secondary reset-pass-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" ${resettingSellerId === s.id ? 'disabled' : ''}>
+                        ${resettingSellerId === s.id ? 'Resetting...' : '🔑 Reset Pass'}
                       </button>
                       <button class="btn btn-sm btn-secondary change-email-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-email="${escapeHtml(s.email)}">
                         ✉️ Change Email
@@ -98,12 +117,40 @@ export function renderSellerAdmin(container) {
     `;
 
     // Event Handlers
+    container.querySelector('#seller-reset-dismiss')?.addEventListener('click', () => {
+      passwordResetResult = null;
+      render();
+    });
+
+    container.querySelector('#seller-reset-copy')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const value = container.querySelector('#seller-reset-password-value')?.textContent || '';
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        btn.textContent = 'Copied';
+      } catch {
+        btn.textContent = 'Select password';
+      }
+    });
+
     container.querySelectorAll('.reset-pass-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
+        if (resettingSellerId) return;
+        resettingSellerId = btn.dataset.id;
+        passwordResetResult = null;
+        render();
         try {
           const result = await stateEngine.resetSellerPassword(btn.dataset.id);
-          alert(`Temporary password for ${btn.dataset.name}: ${result.tempPassword}\n\n(In production this would be emailed/SMS'd to the seller instead of shown here.)`);
+          passwordResetResult = {
+            name: btn.dataset.name,
+            tempPassword: result.tempPassword,
+          };
         } catch (err) {
+          // stateEngine exposes the server message in state.error; the final
+          // render below paints it in the existing error banner.
+        } finally {
+          resettingSellerId = null;
           render();
         }
       });

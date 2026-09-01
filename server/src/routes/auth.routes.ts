@@ -125,8 +125,8 @@ const forgotPasswordSchema = z.object({ email: z.string().email() });
 // The same answer whichever way it goes. Saying "no account with that email"
 // would turn this into a way to find out who has one.
 const FORGOT_PASSWORD_REPLY =
-  "If that email belongs to a seller account, we've passed the request to our team. " +
-  'They will send you a temporary password shortly - check back, or call 0788350555 if it is urgent.';
+  'Password reset request sent. If that email belongs to an active seller account, Seller Support has been notified. ' +
+  'An admin will create a temporary password in Seller Management and contact you. Call 0788350555 if it is urgent.';
 
 /**
  * "Forgot password?" on the sign-in screen.
@@ -170,7 +170,7 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
     if (!alreadyPending) {
       await notifyAdminsWithModulePermission('SELLERS', {
         type: 'PASSWORD_RESET_REQUEST',
-        message: `${seller.businessName} (${seller.email}) forgot their password and asked for a reset. Use Reset Password in Seller Management, then pass the temporary password on.`,
+        message: `Password reset request: ${seller.businessName} (${seller.email}). Open Seller Management, click Reset Pass, then give the temporary password to the seller. This request does not change the password until Reset Pass is used.`,
       });
 
       await logAudit({

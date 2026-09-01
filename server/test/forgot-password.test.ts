@@ -118,7 +118,19 @@ describe('POST /api/auth/forgot-password', () => {
 
     for (const n of notifications) {
       expect(n.message, 'the message must name the account to reset').toContain(seller.businessName);
+      expect(n.message, 'the message must tell admins what action to take').toContain('click Reset Pass');
+      expect(n.message, 'the message must make clear the request itself does not reset the password').toContain(
+        'does not change the password',
+      );
     }
+  });
+
+  it('clearly tells the seller what happens next without promising an instant reset', async () => {
+    const res = await post({ email: sellerEmail });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('Password reset request sent.');
+    expect(res.body.message).toContain('Seller Support has been notified.');
+    expect(res.body.message).toContain('temporary password');
   });
 
   it('does not stack up a fresh notification on every attempt', async () => {

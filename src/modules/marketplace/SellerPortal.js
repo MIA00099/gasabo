@@ -56,33 +56,43 @@ function openSellerAccountModal(sellerUser) {
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:18px;max-width:440px;width:100%;padding:1.5rem 1.75rem;max-height:90vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <h3 style="font-size:1.15rem;font-weight:800;color:#0F172A;">Account settings</h3>
+        <div>
+          <h3 style="font-size:1.15rem;font-weight:800;color:#0F172A;">Account settings</h3>
+          <p style="font-size:0.78rem;color:#64748B;margin-top:0.2rem;">${escapeHtml(sellerUser.email || '')}</p>
+        </div>
         <button id="acc-close" aria-label="Close" style="width:34px;height:34px;border:none;background:#F1F5F9;border-radius:50%;cursor:pointer;font-size:1rem;">✕</button>
       </div>
 
-      <h4 style="font-weight:700;color:#334155;font-size:0.9rem;margin-bottom:0.5rem;">Profile</h4>
-      <label style="display:block;font-size:0.75rem;color:#64748B;margin-bottom:0.2rem;">Business / display name</label>
-      <input id="acc-name" type="text" value="${escapeHtml(sellerUser.name || '')}" style="${field}">
-      <label style="display:block;font-size:0.75rem;color:#64748B;margin-bottom:0.2rem;">Phone number</label>
-      <input id="acc-phone" type="tel" value="${escapeHtml(sellerUser.phone || '')}" style="${field}">
-      <button id="acc-save-profile" style="background:#04562D;color:#fff;border:none;border-radius:10px;padding:0.55rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;">Save profile</button>
-      <div id="acc-profile-msg" style="font-size:0.8rem;margin-top:0.4rem;"></div>
+      <form id="acc-profile-form">
+        <h4 style="font-weight:700;color:#334155;font-size:0.9rem;margin-bottom:0.5rem;">Profile</h4>
+        <label style="display:block;font-size:0.75rem;color:#64748B;margin-bottom:0.2rem;">Business / display name</label>
+        <input id="acc-name" type="text" value="${escapeHtml(sellerUser.name || '')}" autocomplete="organization" style="${field}">
+        <label style="display:block;font-size:0.75rem;color:#64748B;margin-bottom:0.2rem;">Phone number</label>
+        <input id="acc-phone" type="tel" value="${escapeHtml(sellerUser.phone || '')}" autocomplete="tel" style="${field}">
+        <button id="acc-save-profile" type="submit" style="background:#04562D;color:#fff;border:none;border-radius:10px;padding:0.55rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;">Save profile</button>
+        <div id="acc-profile-msg" aria-live="polite" style="font-size:0.8rem;margin-top:0.4rem;min-height:1.1rem;"></div>
+      </form>
 
       <hr style="margin:1.25rem 0;border:none;border-top:1px solid #E2E8F0;">
 
-      <h4 style="font-weight:700;color:#334155;font-size:0.9rem;margin-bottom:0.5rem;">Change password</h4>
-      <input id="acc-cur-pw" type="password" placeholder="Current password" autocomplete="current-password" style="${field}">
-      <input id="acc-new-pw" type="password" placeholder="New password (at least 6 characters)" autocomplete="new-password" style="${field}">
-      <button id="acc-save-pw" style="background:#0F172A;color:#fff;border:none;border-radius:10px;padding:0.55rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;">Update password</button>
-      <div id="acc-pw-msg" style="font-size:0.8rem;margin-top:0.4rem;"></div>
+      <form id="acc-password-form">
+        <h4 style="font-weight:700;color:#334155;font-size:0.9rem;margin-bottom:0.5rem;">Change password</h4>
+        <input id="acc-cur-pw" type="password" placeholder="Current password" autocomplete="current-password" style="${field}">
+        <input id="acc-new-pw" type="password" placeholder="New password (at least 6 characters)" autocomplete="new-password" style="${field}">
+        <input id="acc-confirm-pw" type="password" placeholder="Confirm new password" autocomplete="new-password" style="${field}">
+        <button id="acc-save-pw" type="submit" style="background:#0F172A;color:#fff;border:none;border-radius:10px;padding:0.55rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;">Update password</button>
+        <div id="acc-pw-msg" aria-live="polite" style="font-size:0.8rem;margin-top:0.4rem;min-height:1.1rem;"></div>
+      </form>
     </div>
   `;
   const close = () => overlay.remove();
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   overlay.querySelector('#acc-close').addEventListener('click', close);
   const setMsg = (el, text, ok) => { el.textContent = text; el.style.color = ok ? '#059669' : '#B91C1C'; };
+  let passwordSaving = false;
 
-  overlay.querySelector('#acc-save-profile').addEventListener('click', async () => {
+  overlay.querySelector('#acc-profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
     const name = overlay.querySelector('#acc-name').value.trim();
     const phone = overlay.querySelector('#acc-phone').value.trim();
     const msg = overlay.querySelector('#acc-profile-msg');
@@ -90,22 +100,40 @@ function openSellerAccountModal(sellerUser) {
     if (phone.length < 6) return setMsg(msg, 'Enter a valid phone number.', false);
     try {
       await stateEngine.updateSellerProfile({ name, phone });
-      setMsg(msg, '✔ Profile updated.', true);
+      setMsg(msg, 'Profile updated.', true);
     } catch (err) { setMsg(msg, err?.message || 'Could not update your profile.', false); }
   });
 
-  overlay.querySelector('#acc-save-pw').addEventListener('click', async () => {
+  overlay.querySelector('#acc-password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (passwordSaving) return;
     const cur = overlay.querySelector('#acc-cur-pw').value;
     const nw = overlay.querySelector('#acc-new-pw').value;
+    const confirm = overlay.querySelector('#acc-confirm-pw').value;
     const msg = overlay.querySelector('#acc-pw-msg');
+    const button = overlay.querySelector('#acc-save-pw');
     if (!cur) return setMsg(msg, 'Enter your current password.', false);
     if (nw.length < 6) return setMsg(msg, 'New password must be at least 6 characters.', false);
+    if (nw !== confirm) return setMsg(msg, 'New passwords do not match.', false);
     try {
+      passwordSaving = true;
+      button.disabled = true;
+      button.textContent = 'Updating password...';
+      button.style.opacity = '0.75';
+      setMsg(msg, 'Saving password change...', true);
       await stateEngine.changePassword(cur, nw);
-      setMsg(msg, '✔ Password updated.', true);
+      setMsg(msg, 'Password updated. Use the new password next time you sign in.', true);
       overlay.querySelector('#acc-cur-pw').value = '';
       overlay.querySelector('#acc-new-pw').value = '';
-    } catch (err) { setMsg(msg, err?.message || 'Could not change your password.', false); }
+      overlay.querySelector('#acc-confirm-pw').value = '';
+    } catch (err) {
+      setMsg(msg, err?.message || 'Could not change your password.', false);
+    } finally {
+      passwordSaving = false;
+      button.disabled = false;
+      button.textContent = 'Update password';
+      button.style.opacity = '1';
+    }
   });
 
   document.body.appendChild(overlay);

@@ -133,17 +133,18 @@ export function renderLoginView(container, initialMode = 'login') {
                        pushed a bare hash and did nothing. A button, because it
                        is an action; type="button" because this sits inside the
                        sign-in form and must not submit it. -->
-                  <button type="button" id="forgot-pass-link" class="text-brand-green font-semibold hover:underline">Forgot password?</button>
+                  <button type="button" id="forgot-pass-link" class="text-brand-green font-semibold hover:underline">Forgot seller password?</button>
                 </div>
 
                 ${forgotOpen ? `
                   <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
                     <div class="flex items-start justify-between gap-2">
                       <div>
-                        <p class="text-xs font-bold text-gray-800">Reset your password</p>
+                        <p class="text-xs font-bold text-gray-800">Seller password reset</p>
                         <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
-                          Enter the email on your seller account. Our team will set a temporary
-                          password and send it to you.
+                          Enter the email on your seller account. This sends a reset request to
+                          Seller Support; your password changes only after an admin creates a
+                          temporary password and gives it to you.
                         </p>
                       </div>
                       <button type="button" id="forgot-close-btn" class="text-gray-400 hover:text-gray-600 shrink-0" aria-label="Close password reset">
@@ -163,7 +164,7 @@ export function renderLoginView(container, initialMode = 'login') {
                           class="flex-1 min-w-0 bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
                         <button type="button" id="forgot-submit-btn" ${forgotSubmitting ? 'disabled' : ''}
                           class="bg-brand-dark text-white font-bold text-xs px-4 rounded-lg hover:bg-gray-800 transition shrink-0 disabled:opacity-60">
-                          ${forgotSubmitting ? 'Sending...' : 'Send request'}
+                          ${forgotSubmitting ? 'Sending request...' : 'Request reset'}
                         </button>
                       </div>
                     `}
@@ -355,7 +356,7 @@ export function renderLoginView(container, initialMode = 'login') {
         captureInputs();
         const email = formData.forgotEmail.trim();
         if (!email || !email.includes('@')) {
-          forgotError = 'Enter the email address on your account.';
+          forgotError = 'Enter the email address on your seller account.';
           update();
           return;
         }

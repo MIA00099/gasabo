@@ -1007,6 +1007,102 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   max-width: 92px;
 }
 
+.home-category-rail-shell {
+  position: relative;
+}
+
+.home-category-rail {
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  padding-left: 3rem !important;
+  padding-right: 3rem !important;
+}
+
+.home-category-rail .cat-tile-btn {
+  scroll-snap-align: start;
+}
+
+.home-cat-scroll-btn {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  width: 38px;
+  height: 46px;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  border: 1px solid #D8DEE7;
+  background: #ffffff;
+  color: #0B1C3A;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+.home-cat-scroll-btn:hover {
+  color: var(--primary-green);
+  border-color: var(--primary-green);
+  transform: translateY(-50%) scale(1.04);
+}
+
+.home-cat-scroll-btn:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+.home-cat-scroll-btn-left {
+  left: 10px;
+}
+
+.home-cat-scroll-btn-right {
+  right: 10px;
+}
+
+.home-cat-scroll-fade {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  z-index: 2;
+  width: 52px;
+  pointer-events: none;
+}
+
+.home-cat-scroll-fade-left {
+  left: 1px;
+  border-radius: 1rem 0 0 1rem;
+  background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0));
+}
+
+.home-cat-scroll-fade-right {
+  right: 1px;
+  border-radius: 0 1rem 1rem 0;
+  background: linear-gradient(270deg, #ffffff 0%, rgba(255, 255, 255, 0));
+}
+
+@media (max-width: 520px) {
+  .home-category-rail {
+    padding-left: 2.55rem !important;
+    padding-right: 2.55rem !important;
+  }
+
+  .home-cat-scroll-btn {
+    width: 34px;
+    height: 42px;
+  }
+
+  .home-cat-scroll-btn-left {
+    left: 8px;
+  }
+
+  .home-cat-scroll-btn-right {
+    right: 8px;
+  }
+
+  .home-cat-scroll-fade {
+    width: 42px;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Product card - spec layout: media panel with a discount slot, then meta,
    title, price, rating and seller, then the action row.

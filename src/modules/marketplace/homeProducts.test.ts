@@ -21,6 +21,7 @@ import { readFileSync } from 'node:fs';
 
 const SRC = readFileSync('src/modules/marketplace/MarketplaceView.js', 'utf8');
 const SECTIONS_SRC = readFileSync('src/modules/marketplace/homeProductSections.js', 'utf8');
+const CSS = readFileSync('src/styles/main.css', 'utf8');
 // Newlines and indentation collapsed to single spaces, for assertions about
 // declarations that wrap across several lines.
 const FLAT = SRC.replace(/\s+/g, ' ');
@@ -145,6 +146,15 @@ describe('the homepage category rail', () => {
     const skeleton = SRC.slice(SRC.indexOf('const SKELETON_TILES'), SRC.indexOf('let flashClockTimer'));
     expect(skeleton).toContain('w-14 h-14 sm:w-[60px] sm:h-[60px]');
     expect(skeleton).toContain('min-w-[76px]');
+  });
+
+  it('adds visible controls for scrolling the long category strip', () => {
+    expect(SRC).toContain('id="home-category-rail"');
+    expect(SRC).toContain('home-cat-scroll-btn-left');
+    expect(SRC).toContain('home-cat-scroll-btn-right');
+    expect(SRC).toContain('data-target="home-category-rail"');
+    expect(CSS).toContain('.home-category-rail-shell');
+    expect(CSS).toContain('.home-cat-scroll-fade-right');
   });
 });
 

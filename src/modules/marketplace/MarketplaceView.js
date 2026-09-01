@@ -427,7 +427,12 @@ export function renderMarketplaceView(container) {
               real ids are uuids - so "Cars" reliably showed nothing at all.
             -->
             <section class="compact-container px-3 sm:px-4 lg:px-6 mt-[-15px] relative z-20 shrink-0">
-                <div class="flex justify-between items-center bg-white rounded-2xl shadow-md p-2 overflow-x-auto no-scrollbar gap-1 border border-gray-100">
+                <div class="home-category-rail-shell">
+                  <button type="button" class="section-scroll-btn home-cat-scroll-btn home-cat-scroll-btn-left" data-target="home-category-rail" data-dir="-1" aria-label="Scroll categories left">
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <div class="home-cat-scroll-fade home-cat-scroll-fade-left" aria-hidden="true"></div>
+                  <div id="home-category-rail" class="home-category-rail flex justify-between items-center bg-white rounded-2xl shadow-md p-2 overflow-x-auto no-scrollbar gap-1 border border-gray-100">
 
                     <div class="${CATEGORY_TILE_CLASS} ${filters.selectedCategory === 'all' || !filters.selectedCategory ? 'opacity-100' : 'opacity-80'}" data-cat="all">
                         <div class="${CATEGORY_ICON_FRAME_CLASS} bg-brand-green text-white text-2xl shadow-inner group-hover:bg-green-800">
@@ -456,6 +461,11 @@ export function renderMarketplaceView(container) {
                         </div>
                       `).join('');
                     })()}
+                  </div>
+                  <div class="home-cat-scroll-fade home-cat-scroll-fade-right" aria-hidden="true"></div>
+                  <button type="button" class="section-scroll-btn home-cat-scroll-btn home-cat-scroll-btn-right" data-target="home-category-rail" data-dir="1" aria-label="Scroll categories right">
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
                 </div>
             </section>
 

@@ -74,6 +74,7 @@ beforeEach(() => {
   mocks.state.loading = { myProducts: false, categories: false, productForm: false, imageUpload: false };
   mocks.state.error = null;
   mocks.state.myProducts = [];
+  mocks.state.categories = [{ id: 'cat-1', name: 'Agriculture', icon: '' }];
 });
 
 describe('seller account password settings', () => {
@@ -114,5 +115,39 @@ describe('seller account password settings', () => {
     expect(document.querySelector<HTMLInputElement>('#acc-cur-pw')!.value).toBe('');
     expect(document.querySelector<HTMLInputElement>('#acc-new-pw')!.value).toBe('');
     expect(document.querySelector<HTMLInputElement>('#acc-confirm-pw')!.value).toBe('');
+  });
+});
+
+describe('seller job ad form', () => {
+  it('shows job-specific fields and selects only the Jobs category', async () => {
+    mocks.state.ui = { sellerDashboardTab: 'new_product', productImageMode: 'url', productImages: [], productAdType: 'job' };
+    mocks.state.categories = [
+      { id: 'cars', name: 'Cars', icon: '' },
+      { id: 'jobs', name: 'Jobs', icon: '' },
+    ];
+
+    const container = await renderPortal();
+
+    expect(container.textContent).toContain('Post a Job');
+    expect(container.textContent).toContain('Job Category');
+    expect(container.textContent).toContain('Job Title');
+    expect(container.textContent).toContain('Salary / Budget (RWF)');
+    expect(container.textContent).toContain('Work Type');
+    expect(container.textContent).toContain('Job Description');
+    expect(container.textContent).not.toContain('Item Condition');
+    expect(container.querySelector<HTMLSelectElement>('#p-category')!.value).toBe('jobs');
+    expect(Array.from(container.querySelectorAll('#p-category option')).map((option) => option.textContent?.trim())).toEqual(['Jobs']);
+  });
+
+  it('blocks job submission clearly when no Jobs category exists', async () => {
+    mocks.state.ui = { sellerDashboardTab: 'new_product', productImageMode: 'url', productImages: [], productAdType: 'job' };
+    mocks.state.categories = [{ id: 'cars', name: 'Cars', icon: '' }];
+
+    const container = await renderPortal();
+
+    expect(container.textContent).toContain('Jobs category not available');
+    expect(container.textContent).toContain('Create a Jobs category before posting a job.');
+    expect(container.querySelector<HTMLSelectElement>('#p-category')!.disabled).toBe(true);
+    expect(container.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(true);
   });
 });

@@ -65,5 +65,20 @@ describe('flat route adoption', () => {
     const state = stateEngine.getState();
     expect(state.activePortal).toBe('marketplace');
     expect(state.ui.marketplaceTab).toBe('seller_portal');
+    expect(state.ui.sellerDashboardTab).toBe('new_product');
+    expect(state.ui.productAdType).toBe('product');
+  });
+
+  it('opens the job form when post-ad is carrying a job intent', () => {
+    stateEngine.data.currentUser = { id: 'seller-1', name: 'Seller', email: 's@test.local', role: 'seller' };
+    stateEngine.data.ui.authIntent = 'post_job';
+
+    stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null });
+
+    const state = stateEngine.getState();
+    expect(state.activePortal).toBe('marketplace');
+    expect(state.ui.marketplaceTab).toBe('seller_portal');
+    expect(state.ui.sellerDashboardTab).toBe('new_product');
+    expect(state.ui.productAdType).toBe('job');
   });
 });

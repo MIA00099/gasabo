@@ -258,7 +258,11 @@ class StateEngine {
         this.data.activePortal = 'signup';
       } else if (this.data.currentUser.role === 'seller') {
         this.data.activePortal = 'marketplace';
-        patchUI({ marketplaceTab: 'seller_portal' });
+        patchUI({
+          marketplaceTab: 'seller_portal',
+          sellerDashboardTab: 'new_product',
+          productAdType: this.data.ui.authIntent === 'post_job' ? 'job' : 'product',
+        });
       } else if (this.isAdmin()) {
         this.data.activePortal = 'admin';
       } else {
@@ -441,7 +445,12 @@ class StateEngine {
     this.data.route = { kind: ROUTE_HOME, id: null };
     const role = this.data.currentUser.role;
     if (role === 'seller') {
-      this.setUI({ marketplaceTab: 'seller_portal' });
+      this.setUI({
+        marketplaceTab: 'seller_portal',
+        ...(this.data.ui.authIntent === 'post_job'
+          ? { sellerDashboardTab: 'new_product', productAdType: 'job' }
+          : {}),
+      });
       this.setPortal('marketplace');
     } else if (role === 'admin' || role === 'sub_admin') {
       this.setPortal('admin');

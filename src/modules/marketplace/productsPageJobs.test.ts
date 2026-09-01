@@ -23,7 +23,7 @@ describe('ProductsPage jobs actions', () => {
   });
 
   it('wires the buttons to existing post-ad and signup routes', () => {
-    expect(SRC).toContain("stateEngine.setUI({ authIntent: 'post_job' })");
+    expect(SRC).toContain("stateEngine.setUI({ authIntent: 'post_job', sellerDashboardTab: 'new_product', productAdType: 'job' })");
     expect(SRC).toContain('pathForRoute(ROUTE_POST_AD)');
     expect(SRC).toContain('stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null })');
     expect(SRC).toContain("stateEngine.setUI({ authIntent: 'worker' })");

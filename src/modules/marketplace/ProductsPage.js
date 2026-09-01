@@ -196,7 +196,7 @@ export function renderProductsPage(container) {
     });
 
     container.querySelector('#jobs-post-job-btn')?.addEventListener('click', () => {
-      stateEngine.setUI({ authIntent: 'post_job' });
+      stateEngine.setUI({ authIntent: 'post_job', sellerDashboardTab: 'new_product', productAdType: 'job' });
       pushPath(pathForRoute(ROUTE_POST_AD));
       stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null });
     });

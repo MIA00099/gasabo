@@ -12,6 +12,139 @@ import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 // enforced in createProductSchema (server/src/routes/products.routes.ts).
 const MAX_IMAGES = 10;
 
+const AD_TYPE_ACTIVE_CLASS = 'ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-brand-green bg-green-50 text-brand-green font-semibold text-xs transition';
+const AD_TYPE_INACTIVE_CLASS = 'ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition';
+
+const AD_TYPES = [
+  ['product', {
+    label: 'Product',
+    icon: 'fa-box',
+    noun: 'Product',
+    formTitle: 'Post Your Ad',
+    subtitle: 'Fill in the details below to post your ad',
+    editSubtitle: 'Update the details of your ad below',
+    categoryLabel: 'Category',
+    titleLabel: 'Title',
+    titlePlaceholder: 'Enter ad title',
+    priceLabel: 'Price (RWF)',
+    pricePlaceholder: 'Price',
+    conditionLabel: 'Item Condition',
+    conditionPlaceholder: 'e.g. Brand New',
+    descriptionLabel: 'Description',
+    descriptionPlaceholder: 'Describe your product, service or item...',
+    uploadTitle: 'Upload Photos',
+    uploadHelp: 'Drag & drop or click to upload',
+    uploadLimit: 'Max 10 photos',
+    coverHelp: 'the first photo is the cover buyers see in the grid',
+    submitLabel: 'Continue',
+  }],
+  ['vehicle', {
+    label: 'Vehicle',
+    icon: 'fa-car',
+    noun: 'Vehicle',
+    categoryPattern: /\b(vehicle|vehicles|car|cars|automotive|auto|motorcycle|motorcycles)\b/i,
+    formTitle: 'Post a Vehicle',
+    subtitle: 'Add the vehicle details buyers need before they contact you',
+    editSubtitle: 'Update the vehicle details below',
+    categoryLabel: 'Vehicle Category',
+    missingCategoryLabel: 'Vehicle category not available',
+    missingCategoryMessage: 'Create a Vehicles or Cars category before posting a vehicle.',
+    titleLabel: 'Vehicle Title',
+    titlePlaceholder: 'e.g. Toyota Land Cruiser 2020',
+    priceLabel: 'Price (RWF)',
+    pricePlaceholder: 'e.g. 25000000',
+    conditionLabel: 'Vehicle Condition',
+    conditionPlaceholder: 'e.g. Used, excellent condition',
+    descriptionLabel: 'Vehicle Description',
+    descriptionPlaceholder: 'Add mileage, transmission, fuel type, ownership papers and inspection notes...',
+    uploadTitle: 'Upload Vehicle Photos',
+    uploadHelp: 'Show exterior, interior and documents if helpful',
+    uploadLimit: 'Max 10 photos',
+    coverHelp: 'the first photo is the cover buyers see in the grid',
+    submitLabel: 'Submit Vehicle',
+  }],
+  ['property', {
+    label: 'Property',
+    icon: 'fa-house',
+    noun: 'Property',
+    categoryPattern: /\b(real\s*estate|property|properties|house|houses|plot|plots|land|rent)\b/i,
+    formTitle: 'Post a Property',
+    subtitle: 'Add location, price and property details for serious inquiries',
+    editSubtitle: 'Update the property details below',
+    categoryLabel: 'Property Category',
+    missingCategoryLabel: 'Property category not available',
+    missingCategoryMessage: 'Create a Real Estate, Houses or Plots category before posting a property.',
+    titleLabel: 'Property Title',
+    titlePlaceholder: 'e.g. 3 bedroom house in Gasabo',
+    priceLabel: 'Price / Rent (RWF)',
+    pricePlaceholder: 'e.g. 350000',
+    conditionLabel: 'Property Status',
+    conditionPlaceholder: 'e.g. For rent, furnished',
+    descriptionLabel: 'Property Description',
+    descriptionPlaceholder: 'Add bedrooms, bathrooms, amenities, nearby roads and viewing details...',
+    uploadTitle: 'Upload Property Photos',
+    uploadHelp: 'Show the front, rooms and key spaces',
+    uploadLimit: 'Max 10 photos',
+    coverHelp: 'the first photo is the cover buyers see in the grid',
+    submitLabel: 'Submit Property',
+  }],
+  ['service', {
+    label: 'Service',
+    icon: 'fa-briefcase',
+    noun: 'Service',
+    categoryPattern: /\b(service|services)\b/i,
+    formTitle: 'Post a Service',
+    subtitle: 'Describe what you offer and how customers can book you',
+    editSubtitle: 'Update the service details below',
+    categoryLabel: 'Service Category',
+    missingCategoryLabel: 'Service category not available',
+    missingCategoryMessage: 'Create a Services category before posting a service.',
+    titleLabel: 'Service Title',
+    titlePlaceholder: 'e.g. Home cleaning service',
+    priceLabel: 'Service Fee (RWF)',
+    pricePlaceholder: 'e.g. 20000',
+    conditionLabel: 'Availability',
+    conditionPlaceholder: 'e.g. Available weekdays',
+    descriptionLabel: 'Service Description',
+    descriptionPlaceholder: 'Explain the service, coverage area, timing and what is included...',
+    uploadTitle: 'Upload Service Photos',
+    uploadHelp: 'Add work samples, team photos or a service poster',
+    uploadLimit: 'Max 10 photos',
+    coverHelp: 'the first photo is the cover customers see in the grid',
+    submitLabel: 'Submit Service',
+  }],
+  ['job', {
+    label: 'Job',
+    icon: 'fa-user-tie',
+    noun: 'Job',
+    categoryPattern: /\b(job|jobs|employment|career|careers|vacancy|vacancies|worker|workers)\b/i,
+    formTitle: 'Post a Job',
+    subtitle: 'Add the role, pay and requirements workers need before they apply',
+    editSubtitle: 'Update the job details below',
+    categoryLabel: 'Job Category',
+    missingCategoryLabel: 'Jobs category not available',
+    missingCategoryMessage: 'Create a Jobs category before posting a job.',
+    titleLabel: 'Job Title',
+    titlePlaceholder: 'e.g. Housekeeper needed in Gasabo',
+    priceLabel: 'Salary / Budget (RWF)',
+    pricePlaceholder: 'e.g. 150000',
+    conditionLabel: 'Work Type',
+    conditionPlaceholder: 'e.g. Full-time, part-time, contract',
+    descriptionLabel: 'Job Description',
+    descriptionPlaceholder: 'Describe responsibilities, requirements, working hours and how to apply...',
+    uploadTitle: 'Add Job Image',
+    uploadHelp: 'Upload a logo, workplace photo or job poster',
+    uploadLimit: 'Max 10 images',
+    coverHelp: 'the first image is the cover workers see in the grid',
+    submitLabel: 'Submit Job',
+    imageMissingUpload: 'Add at least one job image - choose a file and wait for the upload to finish.',
+    imageMissingUrl: 'Add at least one job image URL.',
+  }],
+];
+
+const AD_TYPE_CONFIGS = Object.fromEntries(AD_TYPES);
+const AD_TYPE_ORDER = AD_TYPES.map(([type]) => type);
+
 let productFormValues = { title: '', category: '', price: '', district: '', condition: '', description: '' };
 
 function captureProductFormValues(container) {
@@ -31,6 +164,59 @@ function captureProductFormValues(container) {
 
 function resetProductFormValues(sellerDistrict) {
   productFormValues = { title: '', category: '', price: '', district: sellerDistrict, condition: '', description: '' };
+}
+
+function normalizeAdType(type) {
+  return AD_TYPE_CONFIGS[type] ? type : 'product';
+}
+
+function getCurrentAdType(state, activeTab) {
+  if (activeTab === 'new_product' && state.ui.authIntent === 'post_job' && !state.ui.productAdType) {
+    return 'job';
+  }
+  return normalizeAdType(state.ui.productAdType || 'product');
+}
+
+function getAdCopy(type) {
+  return AD_TYPE_CONFIGS[normalizeAdType(type)];
+}
+
+function getCategoryChoices(categories, type) {
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const copy = getAdCopy(type);
+  if (!copy.categoryPattern) return safeCategories;
+  return safeCategories.filter((category) => copy.categoryPattern.test(category.name || ''));
+}
+
+function getDefaultCategoryForAdType(categories, type) {
+  const choices = getCategoryChoices(categories, type);
+  return choices[0]?.id || '';
+}
+
+function ensureCategoryForAdType(categories, type) {
+  const choices = getCategoryChoices(categories, type);
+  if (!choices.length) {
+    if (type !== 'product') productFormValues.category = '';
+    return '';
+  }
+  if (choices.some((category) => category.id === productFormValues.category)) {
+    return productFormValues.category;
+  }
+  productFormValues.category = choices[0].id;
+  return productFormValues.category;
+}
+
+function categoryNameForValue(categories, value) {
+  const found = (Array.isArray(categories) ? categories : []).find((category) => category.id === value || category.name === value);
+  return found?.name || value || '';
+}
+
+function inferAdTypeFromCategoryName(categoryName) {
+  for (const type of ['job', 'vehicle', 'property', 'service']) {
+    const pattern = AD_TYPE_CONFIGS[type].categoryPattern;
+    if (pattern?.test(categoryName || '')) return type;
+  }
+  return 'product';
 }
 
 export function renderSellerPortal(container) {
@@ -152,6 +338,11 @@ function renderSellerDashboardView(container, sellerUser) {
     const imageUploading = !!state.loading.imageUpload;
     // A list now, not one url. Both upload mode and URL mode append to it.
     const images = state.ui.productImages || [];
+    const adType = getCurrentAdType(state, activeTab);
+    const adCopy = getAdCopy(adType);
+    const categoryChoices = getCategoryChoices(state.categories, adType);
+    const selectedCategory = ensureCategoryForAdType(state.categories, adType);
+    const categoryMissing = adType !== 'product' && categoryChoices.length === 0;
 
     if (!myProductsAttempted) {
       stateEngine.loadMyProducts().catch(() => {});
@@ -209,8 +400,8 @@ function renderSellerDashboardView(container, sellerUser) {
           <!-- POST / EDIT YOUR AD FORM -->
           <div class="mb-6">
             <div class="mb-3">
-              <h1 class="text-xl md:text-2xl font-bold text-gray-900">${activeTab === 'edit_product' ? 'Edit Your Ad' : 'Post Your Ad'}</h1>
-              <p class="text-xs text-gray-500">${activeTab === 'edit_product' ? 'Update the details of your ad below' : 'Fill in the details below to post your ad'}</p>
+              <h1 class="text-xl md:text-2xl font-bold text-gray-900">${activeTab === 'edit_product' ? `Edit ${adCopy.noun} Ad` : adCopy.formTitle}</h1>
+              <p class="text-xs text-gray-500">${activeTab === 'edit_product' ? adCopy.editSubtitle : adCopy.subtitle}</p>
             </div>
 
 
@@ -224,46 +415,47 @@ function renderSellerDashboardView(container, sellerUser) {
                     <div>
                       <label class="block text-xs font-bold text-gray-800 mb-1.5">Ad Type</label>
                       <div class="flex flex-wrap gap-2" id="ad-type-group">
-                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-brand-green bg-green-50 text-brand-green font-semibold text-xs transition">
-                          <i class="fa-solid fa-box text-xs"></i> Product
-                        </button>
-                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition">
-                          <i class="fa-solid fa-car text-xs"></i> Vehicle
-                        </button>
-                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition">
-                          <i class="fa-solid fa-house text-xs"></i> Property
-                        </button>
-                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition">
-                          <i class="fa-solid fa-briefcase text-xs"></i> Service
-                        </button>
-                        <button type="button" class="ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition">
-                          <i class="fa-solid fa-user-tie text-xs"></i> Job
-                        </button>
+                        ${AD_TYPE_ORDER.map((type) => {
+                          const copy = getAdCopy(type);
+                          const isSelected = type === adType;
+                          return `
+                            <button type="button" data-ad-type="${type}" aria-pressed="${isSelected ? 'true' : 'false'}" class="${isSelected ? AD_TYPE_ACTIVE_CLASS : AD_TYPE_INACTIVE_CLASS}">
+                              <i class="fa-solid ${copy.icon} text-xs"></i> ${copy.label}
+                            </button>
+                          `;
+                        }).join('')}
                       </div>
                     </div>
 
                     <!-- Category -->
                     <div>
-                      <label class="block text-xs font-bold text-gray-800 mb-1">Category</label>
+                      <label class="block text-xs font-bold text-gray-800 mb-1">${adCopy.categoryLabel}</label>
                       <div class="relative">
-                        <select id="p-category" class="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
-                          ${state.categories.map(c => `<option value="${c.id}" ${c.id===productFormValues.category?'selected':''}>${categoryIconText(c.icon)} ${escapeHtml(c.name)}</option>`).join('')}
+                        <select id="p-category" required ${categoryMissing || formSubmitting ? 'disabled' : ''} class="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green disabled:bg-gray-100 disabled:text-gray-500">
+                          ${categoryMissing
+                            ? `<option value="">${escapeHtml(adCopy.missingCategoryLabel)}</option>`
+                            : categoryChoices.map(c => `<option value="${c.id}" ${c.id===selectedCategory?'selected':''}>${categoryIconText(c.icon)} ${escapeHtml(c.name)}</option>`).join('')}
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                           <i class="fa-solid fa-chevron-down text-xs"></i>
                         </div>
                       </div>
+                      ${categoryMissing ? `
+                        <p class="mt-1.5 text-[11px] text-red-700 bg-red-50 border border-red-100 rounded-lg px-2.5 py-2">
+                          ${escapeHtml(adCopy.missingCategoryMessage)}
+                        </p>
+                      ` : ''}
                     </div>
 
                     <!-- Title & Price -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label class="block text-xs font-bold text-gray-800 mb-1">Title</label>
-                        <input type="text" id="p-title" required placeholder="Enter ad title" value="${escapeHtml(productFormValues.title)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
+                        <label class="block text-xs font-bold text-gray-800 mb-1">${adCopy.titleLabel}</label>
+                        <input type="text" id="p-title" required placeholder="${escapeHtml(adCopy.titlePlaceholder)}" value="${escapeHtml(productFormValues.title)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
                       </div>
                       <div>
-                        <label class="block text-xs font-bold text-gray-800 mb-1">Price (RWF)</label>
-                        <input type="number" id="p-price" required placeholder="Price" min="1" value="${escapeHtml(productFormValues.price)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
+                        <label class="block text-xs font-bold text-gray-800 mb-1">${adCopy.priceLabel}</label>
+                        <input type="number" id="p-price" required placeholder="${escapeHtml(adCopy.pricePlaceholder)}" min="1" value="${escapeHtml(productFormValues.price)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
                       </div>
                     </div>
 
@@ -276,15 +468,15 @@ function renderSellerDashboardView(container, sellerUser) {
                         </select>
                       </div>
                       <div>
-                        <label class="block text-xs font-bold text-gray-800 mb-1">Item Condition</label>
-                        <input type="text" id="p-condition" required placeholder="e.g. Brand New" value="${escapeHtml(productFormValues.condition)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
+                        <label class="block text-xs font-bold text-gray-800 mb-1">${adCopy.conditionLabel}</label>
+                        <input type="text" id="p-condition" required placeholder="${escapeHtml(adCopy.conditionPlaceholder)}" value="${escapeHtml(productFormValues.condition)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green">
                       </div>
                     </div>
 
                     <!-- Description -->
                     <div>
-                      <label class="block text-xs font-bold text-gray-800 mb-1">Description</label>
-                      <textarea id="p-desc" rows="3" required placeholder="Describe your product, service or item..." class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green resize-none">${escapeHtml(productFormValues.description)}</textarea>
+                      <label class="block text-xs font-bold text-gray-800 mb-1">${adCopy.descriptionLabel}</label>
+                      <textarea id="p-desc" rows="3" required placeholder="${escapeHtml(adCopy.descriptionPlaceholder)}" class="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green resize-none">${escapeHtml(productFormValues.description)}</textarea>
                     </div>
                   </div>
 
@@ -296,9 +488,9 @@ function renderSellerDashboardView(container, sellerUser) {
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
                         </svg>
                       </div>
-                      <h3 class="text-base font-bold text-brand-green mb-1">Upload Photos</h3>
-                      <p class="text-gray-500 text-xs mb-2">Drag & drop or click to upload</p>
-                      <p class="text-gray-400 text-[10px] mb-3">Max 10 photos</p>
+                      <h3 class="text-base font-bold text-brand-green mb-1">${adCopy.uploadTitle}</h3>
+                      <p class="text-gray-500 text-xs mb-2">${adCopy.uploadHelp}</p>
+                      <p class="text-gray-400 text-[10px] mb-3">${adCopy.uploadLimit}</p>
 
                       <div class="flex gap-2 mb-3">
                         <button type="button" id="img-mode-upload-btn" class="px-2.5 py-1 text-[10px] font-bold rounded ${imageMode==='upload'?'bg-brand-green text-white':'bg-gray-200 text-gray-700'}">Device Upload</button>
@@ -319,7 +511,7 @@ function renderSellerDashboardView(container, sellerUser) {
                           `).join('')}
                         </div>
                         <p class="text-[10px] text-gray-500 mb-2">
-                          ${images.length} of ${MAX_IMAGES} &middot; the first photo is the cover buyers see in the grid
+                          ${images.length} of ${MAX_IMAGES} &middot; ${adCopy.coverHelp}
                         </p>
                       ` : ''}
 
@@ -343,8 +535,8 @@ function renderSellerDashboardView(container, sellerUser) {
 
                 <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
                   <button type="button" id="cancel-add-btn" class="text-xs font-semibold text-gray-500 hover:underline">Cancel</button>
-                  <button type="submit" class="bg-brand-green text-white font-bold py-2.5 px-8 rounded-lg hover:bg-green-800 transition shadow-md text-xs" ${formSubmitting || imageUploading ? 'disabled' : ''}>
-                    ${formSubmitting ? (activeTab === 'edit_product' ? 'Saving...' : 'Publishing...') : (activeTab === 'edit_product' ? 'Save Changes' : 'Continue')}
+                  <button type="submit" class="bg-brand-green text-white font-bold py-2.5 px-8 rounded-lg hover:bg-green-800 transition shadow-md text-xs disabled:opacity-60 disabled:cursor-not-allowed" ${formSubmitting || imageUploading || categoryMissing ? 'disabled' : ''}>
+                    ${formSubmitting ? (activeTab === 'edit_product' ? 'Saving...' : 'Publishing...') : (activeTab === 'edit_product' ? `Save ${adCopy.noun}` : adCopy.submitLabel)}
                   </button>
                 </div>
               </form>
@@ -479,21 +671,21 @@ function renderSellerDashboardView(container, sellerUser) {
     container.querySelector('#seller-account-btn')?.addEventListener('click', () => openSellerAccountModal(sellerUser));
     container.querySelector('#add-new-prod-btn')?.addEventListener('click', () => {
       resetProductFormValues(sellerUser.district);
-      stateEngine.setUI({ sellerDashboardTab: 'new_product' });
+      stateEngine.setUI({ sellerDashboardTab: 'new_product', productAdType: 'product' });
     });
     container.querySelector('#cancel-add-btn')?.addEventListener('click', () => {
       resetProductFormValues(sellerUser.district);
       // Also drop the photos. Abandoning a draft and starting another one
       // otherwise carries the previous listing's photos into it.
-      stateEngine.setUI({ sellerDashboardTab: 'active', productImages: [] });
+      stateEngine.setUI({ sellerDashboardTab: 'active', productAdType: 'product', authIntent: '', productImages: [] });
     });
 
     container.querySelectorAll('.ad-type-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        container.querySelectorAll('.ad-type-btn').forEach((b) => {
-          b.className = 'ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-gray-200 text-gray-600 font-medium text-xs hover:bg-gray-50 transition';
-        });
-        btn.className = 'ad-type-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-brand-green bg-green-50 text-brand-green font-semibold text-xs transition';
+        const nextType = normalizeAdType(btn.dataset.adType);
+        captureProductFormValues(container);
+        productFormValues.category = getDefaultCategoryForAdType(stateEngine.getState().categories, nextType);
+        stateEngine.setUI({ productAdType: nextType });
       });
     });
 
@@ -582,19 +774,30 @@ function renderSellerDashboardView(container, sellerUser) {
 
     container.querySelector('#create-product-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitState = stateEngine.getState();
+      const submitAdType = getCurrentAdType(submitState, activeTab);
+      const submitCopy = getAdCopy(submitAdType);
       const title = container.querySelector('#p-title').value;
       const category = container.querySelector('#p-category').value;
       const price = container.querySelector('#p-price').value;
       const district = container.querySelector('#p-district').value;
       const condition = container.querySelector('#p-condition').value;
       const description = container.querySelector('#p-desc').value;
-      const chosenImages = stateEngine.getState().ui.productImages || [];
+      const chosenImages = submitState.ui.productImages || [];
+      const allowedCategories = getCategoryChoices(submitState.categories, submitAdType);
+
+      if (submitAdType !== 'product' && !allowedCategories.some((allowed) => allowed.id === category)) {
+        captureProductFormValues(container);
+        stateEngine.data.error = submitCopy.missingCategoryMessage;
+        stateEngine.notify();
+        return;
+      }
 
       if (!chosenImages.length) {
         captureProductFormValues(container);
         stateEngine.data.error = imageMode === 'upload'
-          ? 'Add at least one photo - choose files and wait for the upload to finish.'
-          : 'Add at least one photo URL.';
+          ? (submitCopy.imageMissingUpload || 'Add at least one photo - choose files and wait for the upload to finish.')
+          : (submitCopy.imageMissingUrl || 'Add at least one photo URL.');
         stateEngine.notify();
         return;
       }
@@ -603,14 +806,14 @@ function renderSellerDashboardView(container, sellerUser) {
         const editingId = stateEngine.getState().ui.editingProductId;
         if (activeTab === 'edit_product' && editingId) {
           await stateEngine.updateProduct(editingId, { title, category, price, district, condition, description, images: chosenImages });
-          alert('Product updated successfully!');
+          alert(`${submitCopy.noun} updated successfully!`);
           resetProductFormValues(sellerUser.district);
-          stateEngine.setUI({ sellerDashboardTab: 'active', editingProductId: null, productImageMode: 'url', productImages: [] });
+          stateEngine.setUI({ sellerDashboardTab: 'active', editingProductId: null, productAdType: 'product', authIntent: '', productImageMode: 'url', productImages: [] });
         } else {
           await stateEngine.createProduct({ title, category, price, district, condition, description, images: chosenImages });
-          alert('Product submitted! It will appear on the marketplace once an admin reviews and approves it - you can track its status under "Awaiting Review".');
+          alert(`${submitCopy.noun} submitted! It will appear on the marketplace once an admin reviews and approves it - you can track its status under "Awaiting Review".`);
           resetProductFormValues(sellerUser.district);
-          stateEngine.setUI({ sellerDashboardTab: 'pending', productImageMode: 'url', productImages: [] });
+          stateEngine.setUI({ sellerDashboardTab: 'pending', productAdType: 'product', authIntent: '', productImageMode: 'url', productImages: [] });
         }
       } catch (err) {
         captureProductFormValues(container);
@@ -644,9 +847,11 @@ function renderSellerDashboardView(container, sellerUser) {
           description: prod.description || '',
         };
         const imgs = Array.isArray(prod.images) && prod.images.length ? [...prod.images] : (prod.image ? [prod.image] : []);
+        const adType = inferAdTypeFromCategoryName(categoryNameForValue(stateEngine.getState().categories, productFormValues.category));
         stateEngine.setUI({
           sellerDashboardTab: 'edit_product',
           editingProductId: prod.id,
+          productAdType: adType,
           productImageMode: 'url',
           productImages: imgs,
         });

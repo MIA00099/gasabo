@@ -1160,11 +1160,13 @@ class StateEngine {
     });
   }
 
-  // No `type`: HERO_SLIDER is the only one, and the server fills it in. The
-  // other two types the admin form used to offer rendered nowhere.
-  async createBanner(title, imageUrl, { targetUrl = null } = {}) {
+  // `type` is HERO_SLIDER (homepage hero carousel) or FLASH_PROMO (the moving
+  // image rail beside the Flash Deals card); omitted, the server defaults it to
+  // HERO_SLIDER. The retired HOMEPAGE_BANNER / PROMOTIONAL_BANNER types the old
+  // admin form offered still render nowhere and the server rejects them.
+  async createBanner(title, imageUrl, { targetUrl = null, type } = {}) {
     return this._run('banners', async () => {
-      const { banner } = await api.post('/advertisements', { title, imageUrl, targetUrl });
+      const { banner } = await api.post('/advertisements', { title, imageUrl, targetUrl, type });
       // Re-fetch rather than hand-append: the list endpoint reshapes each
       // record (id/title/subtitle/image/status) differently from what POST
       // returns (the raw Advertisement row), so appending the raw response

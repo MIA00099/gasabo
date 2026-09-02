@@ -263,10 +263,16 @@ export function renderMarketplaceAdmin(container) {
             </table>
           </div>
         ` : `
-          <!-- BANNERS MANAGEMENT -->
-          <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-            <button id="add-banner-btn" class="btn btn-primary btn-sm">
-              ➕ Add New Banner
+          <!-- BANNERS MANAGEMENT - two placements: Hero Slide (homepage hero
+               carousel) and Flash Rail Image (the moving strip beside the
+               homepage Flash Deals card). The card's subtitle shows which one
+               each ad feeds. -->
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 1rem;">
+            <button id="add-hero-slide-btn" class="btn btn-primary btn-sm">
+              ➕ Hero Slide
+            </button>
+            <button id="add-flash-rail-btn" class="btn btn-primary btn-sm">
+              ➕ Flash Rail Image
             </button>
           </div>
 
@@ -423,14 +429,21 @@ export function renderMarketplaceAdmin(container) {
       });
     });
 
-    container.querySelector('#add-banner-btn')?.addEventListener('click', (e) => {
-      // Was two prompt() boxes for a title and a pasted image URL - no upload,
-      // and no way to make a Hero Slider ad, so the slider could never be fed
-      // from here. The modal uploads a real image.
+    // Two entry points, one modal. Each uploads a real image (Supabase in
+    // production) and creates the ad for its placement - the storefront reads
+    // HERO_SLIDER and FLASH_PROMO, nothing else.
+    container.querySelector('#add-hero-slide-btn')?.addEventListener('click', (e) => {
       promptBannerCreate(e.currentTarget, async ({ title, targetUrl, file }) => {
         const imageUrl = await stateEngine.uploadImage(file);
-        await stateEngine.createBanner(title, imageUrl, { targetUrl });
-      });
+        await stateEngine.createBanner(title, imageUrl, { targetUrl, type: 'HERO_SLIDER' });
+      }, { placement: 'hero' });
+    });
+
+    container.querySelector('#add-flash-rail-btn')?.addEventListener('click', (e) => {
+      promptBannerCreate(e.currentTarget, async ({ title, targetUrl, file }) => {
+        const imageUrl = await stateEngine.uploadImage(file);
+        await stateEngine.createBanner(title, imageUrl, { targetUrl, type: 'FLASH_PROMO' });
+      }, { placement: 'flash' });
     });
 
     container.querySelectorAll('.del-banner-btn').forEach(btn => {
@@ -772,12 +785,18 @@ function promptFlashDealEnd(returnFocusTo, onPick) {
  * through the real /uploads flow (Supabase in production) rather than being a
  * pasted link that might rot.
  *
- * There is no type picker. It used to offer Homepage Banner and Promotional
- * Banner alongside Hero Slider, but only Hero Slider is rendered anywhere -
- * picking either of the others produced an ad that saved fine and then never
- * appeared, with nothing to say why. Every ad is a hero-slider ad now.
+ * There is no type picker inside the modal: the caller fixes the placement
+ * (`hero` or `flash`) via its own button, and this only adjusts the copy so
+ * the admin knows where the image will show. Homepage Banner and Promotional
+ * Banner - which saved fine and then rendered nowhere - are gone for good.
  */
-function promptBannerCreate(returnFocusTo, onSubmit) {
+function promptBannerCreate(returnFocusTo, onSubmit, { placement = 'hero' } = {}) {
+  const isFlash = placement === 'flash';
+  const heading = isFlash ? '🖼️ Add Flash Rail Image' : '🖼️ Add Hero Slide';
+  const blurb = isFlash
+    ? 'This image scrolls in the moving rail beside the homepage <strong>Flash Deals</strong> card.'
+    : 'This image goes on the <strong>homepage hero carousel</strong>.';
+  const modalLabel = isFlash ? 'Add flash rail image' : 'Add hero slide';
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.style.cssText =
@@ -792,9 +811,9 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
   function paint() {
     overlay.innerHTML = `
       <div class="glass-card" style="max-width:460px; width:100%; padding:1.5rem; max-height:90vh; overflow:auto;" role="document">
-        <h3 style="color:#0F172A; margin-bottom:0.25rem;">🖼️ Add Ad / Slider Image</h3>
+        <h3 style="color:#0F172A; margin-bottom:0.25rem;">${heading}</h3>
         <p style="font-size:0.85rem; color:#64748B; margin-bottom:1rem;">
-          This image goes on the <strong>homepage hero carousel</strong>.
+          ${blurb}
         </p>
 
         <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Title</label>
@@ -854,7 +873,7 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
   document.body.appendChild(overlay);
   paint();
   ({ close } = makeAccessibleModal(overlay, {
-    label: 'Add ad or slider image',
+    label: modalLabel,
     returnFocusTo,
     onClose: () => { if (previewUrl) URL.revokeObjectURL(previewUrl); },
   }));

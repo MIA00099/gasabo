@@ -120,20 +120,32 @@ describe('flash deals card', () => {
     expect(HOME, 'clock should not run without a deal end time').toContain('if (!endsAt) return;');
   });
 
-  it('fills the wide Flash Deals row with a moving product rail', () => {
+  it('fills the wide Flash Deals row with a moving image rail an admin fills', () => {
     expect(HOME).toContain('class="flash-home-row"');
     expect(HOME).toContain('class="flash-promo-panel"');
     expect(HOME).toContain('class="flash-promo-marquee"');
-    expect(HOME).toContain('class="flash-promo-card flash-promo-product-card view-item-btn"');
-    expect(HOME).toContain('renderFlashProductCards(state.products || [])');
+    // The rail is admin-uploaded FLASH_PROMO ads now, not live product cards.
+    expect(HOME).toContain('renderFlashPromoImages(state.banners || [])');
+    expect(HOME, 'rail tiles come from FLASH_PROMO ads').toContain("b.type === 'FLASH_PROMO'");
+    expect(HOME).toContain('class="flash-promo-ad-card"');
     expect(HOME).toContain('id="flash-promo-post-ad-btn"');
     expect(HOME).not.toContain('id="flash-promo-worker-btn"');
+    expect(HOME, 'the rail no longer renders live product cards').not.toContain('renderFlashProductCards');
     expect(HOME).not.toContain('renderFlashPromoCards(heroAds)');
     expect(CSS).toContain('.flash-home-row');
-    expect(CSS).toContain('.flash-promo-product-card');
-    expect(CSS).toContain('.flash-promo-product-img');
+    expect(CSS).toContain('.flash-promo-ad-card');
     expect(CSS).toContain('animation: flash-promo-scroll');
     expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+
+  it('leads the homepage body - above the Featured & Trending section', () => {
+    const flashSection = HOME.indexOf('<!-- Flash Deals - the delivered markup');
+    const spotlightSection = HOME.indexOf('<!-- Featured & Trending - a real section');
+    const catRail = HOME.indexOf('id="home-category-rail"');
+    expect(flashSection).toBeGreaterThan(-1);
+    expect(spotlightSection).toBeGreaterThan(-1);
+    expect(catRail, 'Flash Deals still sits below the category rail').toBeLessThan(flashSection);
+    expect(flashSection, 'Flash Deals must come before Featured & Trending').toBeLessThan(spotlightSection);
   });
 
   it('keeps the Flash panel CTA focused on posting ads', () => {

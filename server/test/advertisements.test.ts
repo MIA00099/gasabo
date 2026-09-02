@@ -42,6 +42,14 @@ describe('POST /api/advertisements', () => {
     expect(res.body.banner.type).toBe('HERO_SLIDER');
   });
 
+  it('lets an admin create a Flash Promo rail image', async () => {
+    const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
+      title: 'Rail Image', type: 'FLASH_PROMO', imageUrl: '/rail.png', targetUrl: 'https://example.com/deal',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.banner.type).toBe('FLASH_PROMO');
+  });
+
   it('requires a title and an image', async () => {
     const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({ type: 'HERO_SLIDER' });
     expect(res.status).toBe(400);

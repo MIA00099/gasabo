@@ -126,48 +126,47 @@ const SKELETON_TILES = Array.from({ length: 5 }, () => `
   </div>
 `).join('');
 
-function flashProductCardHtml(product, duplicate = false) {
-  const image = (product.images && product.images[0]) || '';
-  const price = Number(product.price) || 0;
-  const categoryName = product.category && typeof product.category === 'object'
-    ? formatCategoryName(product.category.name)
-    : formatCategoryName(product.category || '');
-  const label = product.isFeatured ? 'Featured' : product.isTrending ? 'Trending' : (categoryName || 'Listing');
-  const hidden = duplicate ? ' aria-hidden="true"' : ' role="button" tabindex="0"';
-
-  return `
-    <div class="flash-promo-card flash-promo-product-card view-item-btn" data-id="${escapeHtml(product.id)}"${hidden}>
-      <div class="flash-promo-product-img">
-        ${image
-          ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(product.title)}" loading="lazy">`
-          : '<i class="fa-solid fa-image"></i>'}
-      </div>
-      <div class="flash-promo-product-info">
-        <span>${escapeHtml(label)}</span>
-        <strong>${escapeHtml(product.title)}</strong>
-        <em>RWF ${price.toLocaleString()}</em>
-      </div>
-    </div>
-  `;
+// One image tile in the Flash Deals rail. These are ads an admin uploaded
+// (Admin -> Marketplace -> Ad Banners -> "Flash Rail Image"), not products, so
+// the tile is the image alone - wrapped in its link when the ad carries one.
+// `duplicate` marks the second copy the CSS scroll needs; it is hidden from
+// assistive tech and taken out of the tab order so the same ad is not
+// announced or focused twice.
+function flashPromoImageHtml(ad, duplicate = false) {
+  const attrs = duplicate ? ' aria-hidden="true" tabindex="-1"' : '';
+  const img = `<img src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}" loading="lazy">`;
+  return ad.targetUrl
+    ? `<a href="${escapeHtml(ad.targetUrl)}" class="flash-promo-ad-card"${attrs}>${img}</a>`
+    : `<span class="flash-promo-ad-card"${attrs}>${img}</span>`;
 }
 
-function renderFlashProductCards(products = []) {
-  const sourceProducts = products.filter((product) => product && product.id).slice(0, 10);
-  if (sourceProducts.length === 0) {
+// The moving rail beside the Flash Deals card. Fed entirely by FLASH_PROMO
+// ads an admin uploaded - no ads, no rail (a short prompt shows in its place),
+// the same rule the hero slider follows. The list is padded to at least four
+// and then rendered twice: the CSS animation translates the track by -50%, so
+// it needs two identical halves to loop seamlessly.
+function renderFlashPromoImages(banners = []) {
+  const now = Date.now();
+  const promo = (banners || []).filter(
+    (b) => b && b.type === 'FLASH_PROMO' && b.status === 'ACTIVE'
+      && b.image && (!b.endDate || new Date(b.endDate).getTime() > now),
+  );
+
+  if (promo.length === 0) {
     return `
       <div class="flash-promo-empty">
-        <i class="fa-solid fa-box-open"></i>
-        <span>Products will appear here when listings load.</span>
+        <i class="fa-solid fa-image"></i>
+        <span>Promo images added in the admin appear here.</span>
       </div>
     `;
   }
 
-  const visibleProducts = sourceProducts.length >= 4
-    ? sourceProducts
-    : Array.from({ length: 4 }, (_, i) => sourceProducts[i % sourceProducts.length]);
+  const padded = promo.length >= 4
+    ? promo
+    : Array.from({ length: 4 }, (_, i) => promo[i % promo.length]);
 
-  return visibleProducts.map((product) => flashProductCardHtml(product)).join('') +
-    visibleProducts.map((product) => flashProductCardHtml(product, true)).join('');
+  return padded.map((ad) => flashPromoImageHtml(ad)).join('') +
+    padded.map((ad) => flashPromoImageHtml(ad, true)).join('');
 }
 
 let flashClockTimer = null;
@@ -319,7 +318,7 @@ export function renderMarketplaceView(container) {
       (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
     );
     const dotCount = heroAds.length;
-    const flashProductCards = renderFlashProductCards(state.products || []);
+    const flashPromoImages = renderFlashPromoImages(state.banners || []);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
@@ -514,47 +513,6 @@ export function renderMarketplaceView(container) {
                 </div>
             </section>
 
-            <!-- Featured & Trending - a real section now, styled exactly like
-                 the category sections below (colored bar, bold title, count
-                 badge, scroll arrows, one horizontally-scrolling row). Every
-                 flagged listing shows here, not just the first five, and (see
-                 moreProducts above, which excludes these ids) it does not
-                 also show again under its own category further down - each
-                 listing appears in exactly one section. Absent entirely when
-                 there is nothing flagged, the same as any category section
-                 with nothing in it. -->
-            ${productsLoading && state.products.length === 0 ? `
-              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
-                  <div class="bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100">
-                      ${t('ui_loading_items')}
-                  </div>
-              </section>
-            ` : spotlightProducts.length > 0 ? `
-              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
-                  <div class="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
-                      <div class="flex items-center gap-2">
-                          <span class="w-2.5 h-5 bg-brand-orange rounded-full inline-block"></span>
-                          <h3 class="text-sm sm:text-base font-black text-gray-900 tracking-tight">${t('ui_spotlight_section_title')}</h3>
-                          <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${spotlightProducts.length}</span>
-                      </div>
-                      <div class="flex items-center gap-1.5">
-                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="-1" aria-label="Scroll ${t('ui_spotlight_section_title')} left">
-                              <i class="fa-solid fa-chevron-left text-xs"></i>
-                          </button>
-                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="1" aria-label="Scroll ${t('ui_spotlight_section_title')} right">
-                              <i class="fa-solid fa-chevron-right text-xs"></i>
-                          </button>
-                      </div>
-                  </div>
-
-                  <!-- One row that scrolls horizontally (swipe on touch, arrows
-                       on desktop), same as the category sections below. -->
-                  <div id="spotlight-row" class="section-row flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-1">
-                      ${spotlightProducts.map((prod) => `<div class="shrink-0 w-40 sm:w-44 md:w-48">${productCardHtml(prod)}</div>`).join('')}
-                  </div>
-              </section>
-            ` : ''}
-
             <!-- Flash Deals - the delivered markup, class for class. Two
                  adjustments so it works inside the app: the countdown keeps
                  the ids the existing clock drives (it also feeds the modal),
@@ -564,7 +522,11 @@ export function renderMarketplaceView(container) {
 
                  Flash Deals remains independent from Featured / Trending:
                  an admin setting a countdown should still make the deal
-                 visible, while regular category rows below stay filtered. -->
+                 visible, while regular category rows below stay filtered.
+
+                 Sits first on the homepage body, above Featured & Trending -
+                 a live countdown is the most time-sensitive thing on the
+                 page, so it leads rather than sitting mid-scroll. -->
             <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 shrink-0">
               <div class="flash-home-row">
                 <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : ''} transition"
@@ -619,14 +581,13 @@ export function renderMarketplaceView(container) {
                 </section>
                 <aside class="flash-promo-panel" aria-label="Kigali Market promotions">
                   <div class="flash-promo-copy">
-                    <span class="flash-promo-eyebrow">Live Products</span>
-                    <h3>Products moving now</h3>
-                    <p>Browse active listings while waiting for the next timed flash deal.</p>
+                    <span class="flash-promo-eyebrow">Sponsored</span>
+                    <h3>Partner promotions</h3>
                   </div>
 
-                  <div class="flash-promo-marquee" aria-label="Moving product listings">
+                  <div class="flash-promo-marquee" aria-label="Sponsored images">
                     <div class="flash-promo-track">
-                      ${flashProductCards}
+                      ${flashPromoImages}
                     </div>
                   </div>
 
@@ -639,6 +600,47 @@ export function renderMarketplaceView(container) {
                 </aside>
               </div>
             </section>
+
+            <!-- Featured & Trending - a real section now, styled exactly like
+                 the category sections below (colored bar, bold title, count
+                 badge, scroll arrows, one horizontally-scrolling row). Every
+                 flagged listing shows here, not just the first five, and (see
+                 moreProducts above, which excludes these ids) it does not
+                 also show again under its own category further down - each
+                 listing appears in exactly one section. Absent entirely when
+                 there is nothing flagged, the same as any category section
+                 with nothing in it. -->
+            ${productsLoading && state.products.length === 0 ? `
+              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
+                  <div class="bg-white rounded-xl p-8 text-center text-gray-500 border border-gray-100">
+                      ${t('ui_loading_items')}
+                  </div>
+              </section>
+            ` : spotlightProducts.length > 0 ? `
+              <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
+                  <div class="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
+                      <div class="flex items-center gap-2">
+                          <span class="w-2.5 h-5 bg-brand-orange rounded-full inline-block"></span>
+                          <h3 class="text-sm sm:text-base font-black text-gray-900 tracking-tight">${t('ui_spotlight_section_title')}</h3>
+                          <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${spotlightProducts.length}</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="-1" aria-label="Scroll ${t('ui_spotlight_section_title')} left">
+                              <i class="fa-solid fa-chevron-left text-xs"></i>
+                          </button>
+                          <button type="button" class="section-scroll-btn w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-brand-green hover:text-brand-green flex items-center justify-center transition" data-target="spotlight-row" data-dir="1" aria-label="Scroll ${t('ui_spotlight_section_title')} right">
+                              <i class="fa-solid fa-chevron-right text-xs"></i>
+                          </button>
+                      </div>
+                  </div>
+
+                  <!-- One row that scrolls horizontally (swipe on touch, arrows
+                       on desktop), same as the category sections below. -->
+                  <div id="spotlight-row" class="section-row flex gap-3 overflow-x-auto no-scrollbar scroll-smooth pb-1">
+                      ${spotlightProducts.map((prod) => `<div class="shrink-0 w-40 sm:w-44 md:w-48">${productCardHtml(prod)}</div>`).join('')}
+                  </div>
+              </section>
+            ` : ''}
 
             <!-- Everything not in the Featured & Trending section above:
                  grouped by category (Electronics, Vehicles, ...), each its

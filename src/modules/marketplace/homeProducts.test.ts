@@ -92,12 +92,12 @@ describe('the Featured & Trending section', () => {
     expect(decl, 'the spotlight section must not slice its product list').not.toMatch(/\.slice\(/);
   });
 
-  it('renders as the first product section, before the Flash Deals card', () => {
+  it('renders after the Flash Deals card, which now leads the homepage body', () => {
     const spotlightStart = SRC.indexOf('spotlightProducts.length > 0 ?');
     const flashOpen = SRC.indexOf('id="flash-deals-card"');
     expect(spotlightStart).toBeGreaterThan(-1);
     expect(flashOpen).toBeGreaterThan(-1);
-    expect(spotlightStart, 'the spotlight section must come before Flash Deals').toBeLessThan(flashOpen);
+    expect(flashOpen, 'Flash Deals must come before the Featured & Trending section').toBeLessThan(spotlightStart);
   });
 
   it('carries the same section-header treatment as a category section: a colored bar, a bold title, and a count pill', () => {
@@ -122,7 +122,9 @@ describe('the Featured & Trending section', () => {
     // otherwise nothing. Its final branch must be the empty string, not a
     // rendered message.
     const chainStart = SRC.indexOf('productsLoading && state.products.length === 0 ?');
-    const chainEnd = SRC.indexOf('<!-- Flash Deals', chainStart);
+    // Flash Deals moved above this chain, so the section that now follows it
+    // is the grouped category rows.
+    const chainEnd = SRC.indexOf('<!-- Everything not in the Featured', chainStart);
     expect(chainEnd).toBeGreaterThan(chainStart);
     const chain = SRC.slice(chainStart, chainEnd);
     expect(chain).toContain('spotlightProducts.length > 0 ?');

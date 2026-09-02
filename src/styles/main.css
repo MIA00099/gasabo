@@ -4598,9 +4598,9 @@ table {
 
 .flash-deals {
   width: 100%;
-  max-width: 360px;
-  min-height: 230px;
-  padding: 18px 19px 33px;
+  max-width: 320px;
+  min-height: 168px;
+  padding: 13px 15px 16px;
   background: #063f2b;
   color: white;
 
@@ -4613,9 +4613,9 @@ table {
 
 .flash-home-row {
   display: grid;
-  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(228px, 300px) minmax(0, 1fr);
   align-items: stretch;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .flash-home-row .flash-deals {
@@ -4626,10 +4626,10 @@ table {
 .flash-promo-panel {
   position: relative;
   min-width: 0;
-  min-height: 230px;
+  min-height: 168px;
   overflow: hidden;
-  border-radius: 16px;
-  padding: 18px 20px;
+  border-radius: 14px;
+  padding: 12px 14px;
   color: #fff;
   background:
     repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 18px),
@@ -4638,7 +4638,7 @@ table {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 0.9rem;
+  gap: 0.55rem;
 }
 
 .flash-promo-copy,
@@ -4652,12 +4652,12 @@ table {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.2rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
-  padding: 0.28rem 0.6rem;
+  padding: 0.2rem 0.5rem;
   color: #FDE68A;
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -4666,23 +4666,15 @@ table {
 .flash-promo-copy h3 {
   margin: 0;
   color: #fff;
-  font-size: 1.75rem;
-  line-height: 1.05;
+  font-size: 1.02rem;
+  line-height: 1.15;
   font-weight: 900;
   letter-spacing: 0;
   text-wrap: balance;
 }
 
-.flash-promo-copy p {
-  max-width: 56ch;
-  margin: 0.45rem 0 0;
-  color: #DCE8F2;
-  font-size: 0.9rem;
-  line-height: 1.45;
-}
-
 .flash-promo-marquee {
-  margin-inline: -20px;
+  margin-inline: -14px;
   overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
@@ -4691,7 +4683,7 @@ table {
 .flash-promo-track {
   display: flex;
   width: max-content;
-  gap: 0.75rem;
+  gap: 0.5rem;
   padding: 0.1rem 0;
   align-items: stretch;
   animation: flash-promo-scroll 30s linear infinite;
@@ -4702,93 +4694,29 @@ table {
   animation-play-state: paused;
 }
 
-.flash-promo-product-card {
-  flex: 0 0 172px;
-  min-height: 176px;
-  border: 0;
+/* Rail tile: an admin-uploaded FLASH_PROMO image, nothing else. Small on
+   purpose - the rail is a glance, not a second product grid. */
+.flash-promo-ad-card {
+  flex: 0 0 128px;
+  height: 82px;
+  display: block;
   border-radius: 8px;
+  overflow: hidden;
   background: #fff;
-  color: #0B1C3A;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
-.flash-promo-product-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.2);
-}
-
-.flash-promo-product-img {
-  height: 104px;
-  background: #F1F5F9;
-  color: #CBD5E1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.flash-promo-product-img img {
+.flash-promo-ad-card img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-}
-
-.flash-promo-product-img i {
-  font-size: 1.45rem;
-}
-
-.flash-promo-product-info {
-  min-height: 72px;
-  padding: 0.55rem 0.65rem 0.65rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.16rem;
-}
-
-.flash-promo-product-info span {
-  width: fit-content;
-  max-width: 100%;
-  border-radius: 5px;
-  background: #FEF3C7;
-  color: #92400E;
-  padding: 0.16rem 0.34rem;
-  font-size: 0.58rem;
-  line-height: 1;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.flash-promo-product-info strong {
-  display: -webkit-box;
-  color: #0B1C3A;
-  font-size: 0.84rem;
-  line-height: 1.16;
-  font-weight: 850;
-  overflow: hidden;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.flash-promo-product-info em {
-  color: var(--primary-green);
-  font-size: 0.86rem;
-  line-height: 1.1;
-  font-style: normal;
-  font-weight: 900;
-  margin-top: auto;
+  object-fit: cover;
+  display: block;
 }
 
 .flash-promo-empty {
-  width: min(420px, 100vw - 4rem);
-  min-height: 108px;
+  width: auto;
+  max-width: 100%;
+  min-height: 82px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.12);
@@ -4796,10 +4724,10 @@ table {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  padding: 1rem;
-  font-size: 0.88rem;
-  font-weight: 800;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .flash-promo-actions {
@@ -4810,15 +4738,15 @@ table {
 }
 
 .flash-promo-action {
-  min-height: 40px;
+  min-height: 34px;
   border: 0;
   border-radius: 8px;
-  padding: 0.65rem 0.9rem;
+  padding: 0.5rem 0.8rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  font-size: 0.82rem;
+  gap: 0.4rem;
+  font-size: 0.78rem;
   font-weight: 850;
   line-height: 1;
   cursor: pointer;
@@ -4869,26 +4797,27 @@ table {
   }
 
   .flash-home-row .flash-deals {
-    max-width: 360px;
+    max-width: 320px;
   }
 }
 
 @media (max-width: 600px) {
   .flash-promo-panel {
-    min-height: 240px;
-    padding: 16px;
+    min-height: 150px;
+    padding: 12px;
   }
 
   .flash-promo-copy h3 {
-    font-size: 1.35rem;
+    font-size: 0.98rem;
   }
 
   .flash-promo-marquee {
-    margin-inline: -16px;
+    margin-inline: -12px;
   }
 
-  .flash-promo-product-card {
-    flex-basis: 166px;
+  .flash-promo-ad-card {
+    flex-basis: 116px;
+    height: 76px;
   }
 
   .flash-promo-actions {
@@ -4925,7 +4854,7 @@ table {
 
 .flash-deals h2 {
   margin: 0;
-  font-size: 25px;
+  font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: white;
@@ -4939,7 +4868,7 @@ table {
   display: inline-block;
   color: white;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 700;
   text-decoration: underline;
 }
@@ -4948,15 +4877,15 @@ table {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   margin-top: auto;
 }
 
 .flash-deals .time-box {
-  width: 58px;
-  height: 64px;
+  width: 46px;
+  height: 50px;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -4965,20 +4894,20 @@ table {
 
 .flash-deals .time-box .number {
   color: #063f2b;
-  font-size: 26px;
-  line-height: 26px;
+  font-size: 19px;
+  line-height: 19px;
   font-weight: 800;
 }
 
 .flash-deals .time-box .label {
   color: #063f2b;
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 700;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .flash-deals .separator {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 800;
   color: #fff;
 }
@@ -5423,11 +5352,11 @@ button[disabled]:hover,
 .flash-deals .flash-product {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-  padding: 8px;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
@@ -5437,10 +5366,10 @@ button[disabled]:hover,
 }
 
 .flash-deals .flash-product-img {
-  width: 52px;
-  height: 52px;
-  flex: 0 0 52px;
-  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 7px;
   background: #fff;
   overflow: hidden;
   display: flex;
@@ -5460,7 +5389,7 @@ button[disabled]:hover,
 
 .flash-deals .flash-product-info h3 {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
@@ -5469,13 +5398,13 @@ button[disabled]:hover,
 }
 
 .flash-deals .flash-product-price {
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 800;
   color: #ffd21c;
 }
 
 .flash-deals .flash-empty {
-  margin-top: 16px;
-  font-size: 13px;
+  margin-top: 10px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
 }

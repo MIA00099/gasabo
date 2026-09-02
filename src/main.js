@@ -6,7 +6,10 @@ import './styles/main.css';
 import { stateEngine } from './store/stateEngine.js';
 import { getTranslation } from './store/i18n.js';
 import { renderMarketplaceView, cleanupFlashClock, cleanupHeroSlider } from './modules/marketplace/MarketplaceView.js';
-import { renderHelpCenterPage, renderFaqPage } from './modules/marketplace/SupportPages.js';
+import {
+  renderHelpCenterPage, renderFaqPage,
+  renderAboutPage, renderTermsPage, renderPrivacyPage,
+} from './modules/marketplace/SupportPages.js';
 import { renderRealEstateView, openPropertyModal } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
 import { renderLoginView } from './components/LoginView.js';
@@ -22,7 +25,19 @@ import { openCategoryDropdown } from './components/dropdownMenu.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
   ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_HELP_CENTER, ROUTE_FAQS,
+  ROUTE_ABOUT, ROUTE_TERMS, ROUTE_PRIVACY,
 } from './store/router.js';
+
+// Route kind -> the SupportPages renderer that draws it. All render inside the
+// public marketplace shell with the site footer beneath (see the switch in
+// renderApp). Adding an info page is: a route here, a footer link, done.
+const SUPPORT_PAGE_RENDERERS = {
+  [ROUTE_HELP_CENTER]: renderHelpCenterPage,
+  [ROUTE_FAQS]: renderFaqPage,
+  [ROUTE_ABOUT]: renderAboutPage,
+  [ROUTE_TERMS]: renderTermsPage,
+  [ROUTE_PRIVACY]: renderPrivacyPage,
+};
 
 const ADMIN_URL_HASH = '#/admin-portal';
 
@@ -187,17 +202,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function goHelpCenter() {
-    pushPath(pathForRoute(ROUTE_HELP_CENTER));
-    stateEngine.setRoute({ kind: ROUTE_HELP_CENTER, id: null });
+  // All the SupportPages routes (Help Center, FAQs, About, Terms, Privacy)
+  // navigate the same way: push the flat path, set the route, scroll to top.
+  function goSupportPage(kind) {
+    pushPath(pathForRoute(kind));
+    stateEngine.setRoute({ kind, id: null });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-
-  function goFaqs() {
-    pushPath(pathForRoute(ROUTE_FAQS));
-    stateEngine.setRoute({ kind: ROUTE_FAQS, id: null });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  const goHelpCenter = () => goSupportPage(ROUTE_HELP_CENTER);
+  const goFaqs = () => goSupportPage(ROUTE_FAQS);
+  const goAbout = () => goSupportPage(ROUTE_ABOUT);
+  const goTerms = () => goSupportPage(ROUTE_TERMS);
+  const goPrivacy = () => goSupportPage(ROUTE_PRIVACY);
 
   function handleGoHome() {
     pushHome();
@@ -500,6 +516,9 @@ document.addEventListener('DOMContentLoaded', () => {
         goSeller: () => stateEngine.routeToDashboard(),
         goHelp: goHelpCenter,
         goFaqs,
+        goAbout,
+        goTerms,
+        goPrivacy,
         goVehicles: () => {
           pushPath(pathForRoute(ROUTE_PRODUCTS));
           stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
@@ -550,17 +569,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="text-sm text-gray-500">It may have been sold or removed.</p>
           </div>
         `;
-      } else if (state.route.kind === ROUTE_HELP_CENTER) {
+      } else if (SUPPORT_PAGE_RENDERERS[state.route.kind]) {
         cleanupFlashClock();
         cleanupHeroSlider();
         cleanupProductDetailPage();
-        renderHelpCenterPage(appElement, { goHome: handleGoHome });
-        appendMarketplaceFooter();
-      } else if (state.route.kind === ROUTE_FAQS) {
-        cleanupFlashClock();
-        cleanupHeroSlider();
-        cleanupProductDetailPage();
-        renderFaqPage(appElement, { goHome: handleGoHome });
+        SUPPORT_PAGE_RENDERERS[state.route.kind](appElement, { goHome: handleGoHome });
         appendMarketplaceFooter();
       } else if (activePortal === 'marketplace') {
         renderMarketplaceView(appElement);

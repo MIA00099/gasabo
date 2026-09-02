@@ -203,6 +203,23 @@ describe('a signed-in person is never offered a sign-up form', () => {
     expect(FOOTER).toContain('handlers.goFaqs');
   });
 
+  it('wires the footer bottom bar to the About, Terms and Privacy pages', () => {
+    const FOOTER = readFileSync('src/components/Footer.js', 'utf8');
+    const marketFooterStart = FOOTER.indexOf('<footer class="large-footer" id="market-footer">');
+    const bottomLinksStart = FOOTER.indexOf('<div class="footer-bottom-links">', marketFooterStart);
+    const bottomBar = FOOTER.slice(bottomLinksStart, FOOTER.indexOf('</div>', bottomLinksStart));
+
+    expect(bottomBar).toContain('id="mfoot-about"');
+    expect(bottomBar).toContain('href="/about"');
+    expect(bottomBar).toContain('id="mfoot-terms"');
+    expect(bottomBar).toContain('href="/terms"');
+    expect(bottomBar).toContain('id="mfoot-privacy"');
+    expect(bottomBar).toContain('href="/privacy"');
+    expect(FOOTER).toContain('handlers.goAbout');
+    expect(FOOTER).toContain('handlers.goTerms');
+    expect(FOOTER).toContain('handlers.goPrivacy');
+  });
+
   it('resets route on header and mobile navigation links', () => {
     expect(MAIN).toContain('goStores: () =>');
     expect(MAIN).toContain('goVehicles: () =>');

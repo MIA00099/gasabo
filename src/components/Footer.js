@@ -95,9 +95,9 @@ export function getLargeFooterHtml(currentLang = 'en') {
           All rights reserved &copy; 2026
         </div>
         <div class="footer-bottom-links">
-          <a href="#" class="foot-bottom-link">About Us</a>
-          <a href="#" class="foot-bottom-link">Terms &amp; Conditions</a>
-          <a href="#" class="foot-bottom-link">Privacy Policy</a>
+          <a href="/about" class="foot-bottom-link">About Us</a>
+          <a href="/terms" class="foot-bottom-link">Terms &amp; Conditions</a>
+          <a href="/privacy" class="foot-bottom-link">Privacy Policy</a>
         </div>
       </div>
     </footer>
@@ -173,9 +173,9 @@ export function getMarketplaceFooterHtml() {
       <div class="footer-bottom-bar">
         <div class="footer-copyright">All rights reserved &copy; 2026 Kigali Market</div>
         <div class="footer-bottom-links">
-          <a href="#" class="foot-bottom-link">About Us</a>
-          <a href="#" class="foot-bottom-link">Terms &amp; Conditions</a>
-          <a href="#" class="foot-bottom-link">Privacy Policy</a>
+          <a href="/about" id="mfoot-about" class="foot-bottom-link">About Us</a>
+          <a href="/terms" id="mfoot-terms" class="foot-bottom-link">Terms &amp; Conditions</a>
+          <a href="/privacy" id="mfoot-privacy" class="foot-bottom-link">Privacy Policy</a>
         </div>
       </div>
     </footer>
@@ -209,6 +209,9 @@ export function bindMarketplaceFooterEvents(container, handlers = {}) {
   on('#mfoot-seller', () => (handlers.goSeller ? handlers.goSeller() : goHome()));
   on('#mfoot-help', () => (handlers.goHelp ? handlers.goHelp() : goHome()));
   on('#mfoot-faqs', () => (handlers.goFaqs ? handlers.goFaqs() : goHome()));
+  on('#mfoot-about', () => (handlers.goAbout ? handlers.goAbout() : goHome()));
+  on('#mfoot-terms', () => (handlers.goTerms ? handlers.goTerms() : goHome()));
+  on('#mfoot-privacy', () => (handlers.goPrivacy ? handlers.goPrivacy() : goHome()));
 }
 
 function defaultGoHome() {

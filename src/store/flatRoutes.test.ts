@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ROUTE_AUTH, ROUTE_FAQS, ROUTE_HELP_CENTER, ROUTE_POST_AD, ROUTE_PRODUCTS, ROUTE_STORES } from './router.js';
+import {
+  ROUTE_ABOUT, ROUTE_AUTH, ROUTE_FAQS, ROUTE_HELP_CENTER, ROUTE_POST_AD,
+  ROUTE_PRIVACY, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_TERMS, parseLocation,
+} from './router.js';
 
 const g = globalThis as any;
 g.window = {
@@ -50,11 +53,17 @@ describe('flat route adoption', () => {
   });
 
   it('opens support pages inside the public marketplace shell', () => {
-    stateEngine.setRoute({ kind: ROUTE_HELP_CENTER, id: null });
-    expect(stateEngine.getState().activePortal).toBe('marketplace');
+    for (const kind of [ROUTE_HELP_CENTER, ROUTE_FAQS, ROUTE_ABOUT, ROUTE_TERMS, ROUTE_PRIVACY]) {
+      stateEngine.setRoute({ kind, id: null });
+      expect(stateEngine.getState().activePortal, kind).toBe('marketplace');
+    }
+  });
 
-    stateEngine.setRoute({ kind: ROUTE_FAQS, id: null });
-    expect(stateEngine.getState().activePortal).toBe('marketplace');
+  it('maps the company and legal paths to their flat routes', () => {
+    expect(parseLocation('/about')).toEqual({ kind: ROUTE_ABOUT, id: null });
+    expect(parseLocation('/terms')).toEqual({ kind: ROUTE_TERMS, id: null });
+    expect(parseLocation('/privacy')).toEqual({ kind: ROUTE_PRIVACY, id: null });
+    expect(parseLocation('/privacy/')).toEqual({ kind: ROUTE_PRIVACY, id: null });
   });
 
   it('opens /auth on the login view', () => {

@@ -16,6 +16,9 @@ import {
   ROUTE_STORES,
   ROUTE_HELP_CENTER,
   ROUTE_FAQS,
+  ROUTE_ABOUT,
+  ROUTE_TERMS,
+  ROUTE_PRIVACY,
 } from './router.js';
 
 // Cheap content-equality check for a background refresh's result against
@@ -255,7 +258,13 @@ class StateEngine {
     } else if (route.kind === ROUTE_STORES) {
       this.data.activePortal = 'marketplace';
       patchUI({ marketplaceTab: 'stores' });
-    } else if (route.kind === ROUTE_HELP_CENTER || route.kind === ROUTE_FAQS) {
+    } else if (
+      route.kind === ROUTE_HELP_CENTER ||
+      route.kind === ROUTE_FAQS ||
+      route.kind === ROUTE_ABOUT ||
+      route.kind === ROUTE_TERMS ||
+      route.kind === ROUTE_PRIVACY
+    ) {
       this.data.activePortal = 'marketplace';
     } else if (route.kind === ROUTE_POST_AD) {
       if (this.data.currentUser.role === 'guest') {

@@ -19,6 +19,7 @@ import {
   ROUTE_ABOUT,
   ROUTE_TERMS,
   ROUTE_PRIVACY,
+  ROUTE_CONTACT,
 } from './router.js';
 
 // Cheap content-equality check for a background refresh's result against
@@ -104,6 +105,8 @@ function initialData({ currentUser, currentLang, route }) {
     auditLogs: [],
     systemUsers: [],
     notifications: [],
+    // Public "Contact Us" submissions, for the admin Contact Messages panel.
+    contactMessages: [],
     // Current URL route (see store/router.js). Seeded from the address bar
     // so a cold load of /product/<id> already knows what to open before
     // anything renders.
@@ -263,7 +266,8 @@ class StateEngine {
       route.kind === ROUTE_FAQS ||
       route.kind === ROUTE_ABOUT ||
       route.kind === ROUTE_TERMS ||
-      route.kind === ROUTE_PRIVACY
+      route.kind === ROUTE_PRIVACY ||
+      route.kind === ROUTE_CONTACT
     ) {
       this.data.activePortal = 'marketplace';
     } else if (route.kind === ROUTE_POST_AD) {
@@ -1189,6 +1193,40 @@ class StateEngine {
     return this._run('banners', async () => {
       await api.delete(`/advertisements/${bannerId}`);
       this.data.banners = this.data.banners.filter((b) => b.id !== bannerId);
+      this.notify();
+    });
+  }
+
+  // --- Contact messages ---
+
+  // Public: the "Contact Us" form. No auth. The server stores the message,
+  // notifies admins in-app and emails the contact address (best-effort).
+  async submitContactMessage(payload) {
+    return this._run('contactForm', () => api.post('/contact', payload));
+  }
+
+  async loadContactMessages() {
+    return this._run('contactMessages', async () => {
+      const { messages } = await api.get('/contact');
+      this.data.contactMessages = messages;
+      this.notify();
+      return messages;
+    });
+  }
+
+  async setContactMessageStatus(id, status) {
+    return this._run('contactMessages', async () => {
+      const { message } = await api.patch(`/contact/${id}`, { status });
+      this.data.contactMessages = this.data.contactMessages.map((m) => (m.id === id ? message : m));
+      this.notify();
+      return message;
+    });
+  }
+
+  async deleteContactMessage(id) {
+    return this._run('contactMessages', async () => {
+      await api.delete(`/contact/${id}`);
+      this.data.contactMessages = this.data.contactMessages.filter((m) => m.id !== id);
       this.notify();
     });
   }

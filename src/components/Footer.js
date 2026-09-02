@@ -6,6 +6,7 @@
 import { stateEngine } from '../store/stateEngine.js';
 import { getTranslation } from '../store/i18n.js';
 import { pushHome, ROUTE_HOME } from '../store/router.js';
+import { CONTACT_EMAIL } from '../config/site.js';
 
 export function getLargeFooterHtml(currentLang = 'en') {
   return `
@@ -137,6 +138,7 @@ export function getMarketplaceFooterHtml() {
           <ul class="footer-links-list">
             <li><a href="/help-center" id="mfoot-help" class="foot-nav-link">Help Center</a></li>
             <li><a href="/faqs" id="mfoot-faqs" class="foot-nav-link">FAQs</a></li>
+            <li><a href="/contact" id="mfoot-contact" class="foot-nav-link">Contact Us</a></li>
           </ul>
         </div>
 
@@ -157,7 +159,7 @@ export function getMarketplaceFooterHtml() {
             </li>
             <li class="footer-contact-item">
               <i class="fa-solid fa-envelope contact-icon email-icon"></i>
-              <a href="mailto:kigalimarket@gmail.com" class="foot-nav-link">kigalimarket@gmail.com</a>
+              <a href="mailto:${CONTACT_EMAIL}" class="foot-nav-link">${CONTACT_EMAIL}</a>
             </li>
             <li class="footer-contact-item">
               <i class="fa-solid fa-phone contact-icon phone-icon"></i>
@@ -209,6 +211,7 @@ export function bindMarketplaceFooterEvents(container, handlers = {}) {
   on('#mfoot-seller', () => (handlers.goSeller ? handlers.goSeller() : goHome()));
   on('#mfoot-help', () => (handlers.goHelp ? handlers.goHelp() : goHome()));
   on('#mfoot-faqs', () => (handlers.goFaqs ? handlers.goFaqs() : goHome()));
+  on('#mfoot-contact', () => (handlers.goContact ? handlers.goContact() : goHome()));
   on('#mfoot-about', () => (handlers.goAbout ? handlers.goAbout() : goHome()));
   on('#mfoot-terms', () => (handlers.goTerms ? handlers.goTerms() : goHome()));
   on('#mfoot-privacy', () => (handlers.goPrivacy ? handlers.goPrivacy() : goHome()));

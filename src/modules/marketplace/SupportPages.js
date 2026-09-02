@@ -1,5 +1,6 @@
 import { pushHome, ROUTE_HOME } from '../../store/router.js';
 import { stateEngine } from '../../store/stateEngine.js';
+import { CONTACT_EMAIL, CONTACT_PHONE } from '../../config/site.js';
 
 const SAFETY_TIPS = [
   "Don't do anything online that you wouldn't do in real life.",
@@ -35,7 +36,7 @@ const FAQ_ITEMS = [
   {
     category: 'support',
     question: 'How can I contact Kigali Market for support or inquiries?',
-    answer: 'Call or WhatsApp +250 788 350 555, email kigalimarket@gmail.com, or contact Kigali Market on Facebook, Instagram and TikTok.',
+    answer: `Call or WhatsApp ${CONTACT_PHONE}, email ${CONTACT_EMAIL}, or contact Kigali Market on Facebook, Instagram and TikTok.`,
   },
   {
     category: 'promotions',
@@ -125,9 +126,9 @@ export function renderHelpCenterPage(container, handlers = {}) {
               <i class="fa-solid fa-phone"></i>
               <span><strong>Call/WhatsApp</strong><br>+250 788 350 555</span>
             </a>
-            <a href="mailto:kigalimarket@gmail.com" class="support-contact-row">
+            <a href="mailto:${CONTACT_EMAIL}" class="support-contact-row">
               <i class="fa-solid fa-envelope"></i>
-              <span><strong>Email</strong><br>kigalimarket@gmail.com</span>
+              <span><strong>Email</strong><br>${CONTACT_EMAIL}</span>
             </a>
             <div class="support-contact-row">
               <i class="fa-solid fa-location-dot"></i>
@@ -271,8 +272,8 @@ const ABOUT_SECTIONS = [
     heading: 'Contact Us',
     body: [
       { ul: [
-        'Phone / WhatsApp: +250 788 350 555',
-        'Email: kigalimarket@gmail.com',
+        `Phone / WhatsApp: ${CONTACT_PHONE}`,
+        `Email: ${CONTACT_EMAIL}`,
       ] },
     ],
   },
@@ -358,7 +359,7 @@ const TERMS_SECTIONS = [
     body: [
       { p: 'These Terms of Use constitute the entire agreement between you and Kigali Market regarding use of the platform. See our full Privacy Policy for data practices.' },
       { p: 'We reserve the right to update these Terms at any time. Continued use of Kigali Market after changes constitutes acceptance of the new terms.' },
-      { p: 'If you have questions, contact us at kigalimarket@gmail.com.' },
+      { p: `If you have questions, contact us at ${CONTACT_EMAIL}.` },
     ],
   },
 ];
@@ -539,6 +540,178 @@ export function renderPrivacyPage(container, handlers = {}) {
     subtitle: 'How Kigali Market collects, uses, and protects your personal information.',
     updated: 'September 2026',
     sections: PRIVACY_SECTIONS,
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   Contact page - a real form. Submits to POST /api/contact, which stores the
+   message, notifies admins in-app and emails CONTACT_EMAIL (best-effort).
+
+   main.js re-renders this whole view on every stateEngine notify (including
+   the two that fire around the submit request), so the visitor's typed input
+   lives in a module-scoped draft that is repopulated on each render rather
+   than in DOM state that the re-render would wipe.
+   --------------------------------------------------------------------------- */
+
+const contactDraft = { name: '', email: '', phone: '', subject: '', message: '', sent: false };
+const CONTACT_FIELDS = [
+  ['name', '#cf-name'],
+  ['email', '#cf-email'],
+  ['phone', '#cf-phone'],
+  ['subject', '#cf-subject'],
+  ['message', '#cf-message'],
+];
+
+// Called from main.js's goContact() so a fresh navigation to /contact starts
+// with a blank form even after a previous message was sent this session.
+export function resetContactDraft() {
+  Object.assign(contactDraft, { name: '', email: '', phone: '', subject: '', message: '', sent: false });
+}
+
+export function renderContactPage(container, handlers = {}) {
+  const state = stateEngine.getState();
+  const sending = !!state.loading?.contactForm;
+  const error = state.error;
+
+  if (contactDraft.sent) {
+    container.innerHTML = supportShell({
+      eyebrow: 'Contact',
+      title: 'Message sent',
+      icon: 'fa-circle-check',
+      subtitle: `Thanks for getting in touch. The Kigali Market team will reply to ${contactDraft.email || 'the email you gave'}.`,
+      body: `
+        <section class="support-card bg-white border border-gray-100 rounded-2xl p-6 md:p-8 shadow-sm text-center">
+          <i class="fa-solid fa-circle-check text-4xl text-brand-green mb-3"></i>
+          <h2 class="text-xl font-black text-brand-dark mb-1">We've got your message</h2>
+          <p class="text-sm text-gray-600 mb-5">Most enquiries get a reply within a couple of working days.</p>
+          <button type="button" id="contact-send-another" class="inline-flex items-center gap-2 bg-brand-green text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-green-800 transition">
+            <i class="fa-solid fa-rotate-left"></i> Send another message
+          </button>
+        </section>
+      `,
+    });
+    bindBackHome(container, handlers.goHome);
+    container.querySelector('#contact-send-another')?.addEventListener('click', () => {
+      resetContactDraft();
+      stateEngine.clearError();
+      renderContactPage(container, handlers);
+    });
+    return;
+  }
+
+  container.innerHTML = supportShell({
+    eyebrow: 'Contact',
+    title: 'Contact Us',
+    icon: 'fa-paper-plane',
+    subtitle: "Questions, feedback, or a problem with a listing? Send a message and we'll get back to you.",
+    body: `
+      <div class="grid grid-cols-1 lg:grid-cols-[1.4fr_0.85fr] gap-5">
+        <form id="contact-form" class="support-card bg-white border border-gray-100 rounded-2xl p-5 md:p-6 shadow-sm" novalidate>
+          ${error ? `
+            <div class="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-3">
+              ${escapeHtml(error)}
+            </div>
+          ` : ''}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <label class="block">
+              <span class="block text-xs font-bold text-brand-dark mb-1.5">Name</span>
+              <input id="cf-name" type="text" required maxlength="100" autocomplete="name"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-green-100">
+            </label>
+            <label class="block">
+              <span class="block text-xs font-bold text-brand-dark mb-1.5">Email</span>
+              <input id="cf-email" type="email" required maxlength="150" autocomplete="email"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-green-100">
+            </label>
+            <label class="block">
+              <span class="block text-xs font-bold text-brand-dark mb-1.5">Phone <span class="text-gray-400 font-medium">(optional)</span></span>
+              <input id="cf-phone" type="tel" maxlength="40" autocomplete="tel"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-green-100">
+            </label>
+            <label class="block">
+              <span class="block text-xs font-bold text-brand-dark mb-1.5">Subject <span class="text-gray-400 font-medium">(optional)</span></span>
+              <input id="cf-subject" type="text" maxlength="160"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-green-100">
+            </label>
+          </div>
+          <label class="block mb-4">
+            <span class="block text-xs font-bold text-brand-dark mb-1.5">Message</span>
+            <textarea id="cf-message" required rows="6" maxlength="2000"
+              class="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-green-100 resize-y"></textarea>
+          </label>
+          <button type="submit" id="cf-submit" ${sending ? 'disabled' : ''}
+            class="inline-flex items-center justify-center gap-2 bg-brand-green text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-green-800 transition disabled:opacity-60 disabled:cursor-not-allowed">
+            <i class="fa-solid ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}"></i>
+            ${sending ? 'Sending…' : 'Send message'}
+          </button>
+        </form>
+
+        <aside class="support-card bg-brand-dark text-white rounded-2xl p-5 md:p-6 shadow-sm">
+          <h2 class="text-xl font-black mb-4">Other ways to reach us</h2>
+          <div class="space-y-4 text-sm">
+            <a href="tel:${CONTACT_PHONE.replace(/[^+\d]/g, '')}" class="support-contact-row">
+              <i class="fa-solid fa-phone"></i>
+              <span><strong>Call / WhatsApp</strong><br>${CONTACT_PHONE}</span>
+            </a>
+            <a href="mailto:${CONTACT_EMAIL}" class="support-contact-row">
+              <i class="fa-solid fa-envelope"></i>
+              <span><strong>Email</strong><br>${CONTACT_EMAIL}</span>
+            </a>
+            <div class="support-contact-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span><strong>Location</strong><br>Kigali, Rwanda</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    `,
+  });
+
+  bindBackHome(container, handlers.goHome);
+
+  const readFields = () => {
+    for (const [key, sel] of CONTACT_FIELDS) {
+      const el = container.querySelector(sel);
+      if (el) contactDraft[key] = el.value;
+    }
+  };
+
+  // Repopulate from the draft (survives the re-render) and keep it current.
+  for (const [key, sel] of CONTACT_FIELDS) {
+    const el = container.querySelector(sel);
+    if (!el) continue;
+    el.value = contactDraft[key] || '';
+    el.addEventListener('input', () => { contactDraft[key] = el.value; });
+  }
+
+  container.querySelector('#contact-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (sending) return;
+    readFields();
+
+    const name = contactDraft.name.trim();
+    const email = contactDraft.email.trim();
+    const message = contactDraft.message.trim();
+    if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || message.length < 2) {
+      stateEngine.data.error = 'Please enter your name, a valid email address and a message.';
+      stateEngine.notify();
+      return;
+    }
+
+    try {
+      await stateEngine.submitContactMessage({
+        name,
+        email,
+        phone: contactDraft.phone.trim() || undefined,
+        subject: contactDraft.subject.trim() || undefined,
+        message,
+      });
+      contactDraft.sent = true;
+      stateEngine.notify();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // Failure message is surfaced through state.error on the re-render.
+    }
   });
 }
 

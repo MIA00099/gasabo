@@ -111,6 +111,9 @@ Triggered automatically for:
 - Suspension requests
 - Security alerts
 - System errors
+- Contact form submissions (also emailed to the platform contact address, and
+  listed in the Contact Messages panel; visible to Administrators and any
+  Sub-Administrator holding the Reports permission)
 
 ---
 

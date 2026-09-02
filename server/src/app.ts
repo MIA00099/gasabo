@@ -19,6 +19,7 @@ import { advertisementsRouter } from './routes/advertisements.routes.js';
 import { rbacRouter } from './routes/rbac.routes.js';
 import { uploadsRouter } from './routes/uploads.routes.js';
 import { notificationsRouter } from './routes/notifications.routes.js';
+import { contactRouter } from './routes/contact.routes.js';
 import { seoRouter } from './seo/routes.js';
 import { env } from './config/env.js';
 
@@ -59,6 +60,7 @@ app.use('/api/advertisements', advertisementsRouter);
 app.use('/api/rbac', rbacRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/contact', contactRouter);
 
 // 404 handler for unmatched /api routes
 app.use('/api', (req, res) => {

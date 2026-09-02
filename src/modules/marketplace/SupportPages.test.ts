@@ -30,7 +30,7 @@ describe('marketplace support pages', () => {
     expect(container.textContent).toContain("Don't do anything online");
     expect(container.textContent).toContain('Call/WhatsApp');
     expect(container.textContent).toContain('+250 788 350 555');
-    expect(container.textContent).toContain('kigalimarket@gmail.com');
+    expect(container.textContent).toContain('kigalimarket20@gmail.com');
     expect(container.textContent).toContain('Kigali, Rwanda');
     expect(container.textContent).not.toContain('main.help_center');
   });
@@ -61,7 +61,7 @@ describe('marketplace support pages', () => {
     expect(container.textContent).toContain("Rwanda's leading online classifieds marketplace");
     expect(container.textContent).toContain('Our Values');
     expect(container.textContent).toContain('Trust & Safety');
-    expect(container.textContent).toContain('kigalimarket@gmail.com');
+    expect(container.textContent).toContain('kigalimarket20@gmail.com');
   });
 
   it('renders the Terms & Conditions page from the terms document', async () => {
@@ -87,6 +87,22 @@ describe('marketplace support pages', () => {
     expect(container.textContent).toContain('Information We Collect');
     expect(container.textContent).toContain('We do not sell your personal data');
     expect(container.textContent).toContain('Your Rights');
+  });
+
+  it('renders the Contact page with a submittable form and the site email', async () => {
+    const { renderContactPage } = await import('./SupportPages.js');
+    const container = document.createElement('div');
+
+    renderContactPage(container);
+
+    expect(container.textContent).toContain('Contact Us');
+    expect(container.querySelector('#contact-form')).toBeTruthy();
+    for (const id of ['#cf-name', '#cf-email', '#cf-phone', '#cf-subject', '#cf-message', '#cf-submit']) {
+      expect(container.querySelector(id), id).toBeTruthy();
+    }
+    expect(container.querySelector('#cf-email')?.getAttribute('type')).toBe('email');
+    expect(container.textContent).toContain('kigalimarket20@gmail.com');
+    expect(container.textContent).not.toContain('kigalimarket@gmail.com');
   });
 
   it('filters FAQ answers by search text', async () => {

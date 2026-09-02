@@ -192,15 +192,18 @@ describe('a signed-in person is never offered a sign-up form', () => {
     expect(markup(FOOTER)).toContain('Help Center');
     expect(markup(FOOTER)).toContain('id="mfoot-faqs"');
     expect(markup(FOOTER)).toContain('FAQs');
+    expect(markup(FOOTER)).toContain('id="mfoot-contact"');
     expect(marketFooterStart).toBeGreaterThan(-1);
     expect(helpColumnStart).toBeGreaterThan(-1);
     expect(helpColumnStart).toBeLessThan(sellColumnStart);
     expect(FOOTER.slice(helpColumnStart, sellColumnStart)).toContain('id="mfoot-help"');
     expect(FOOTER.slice(helpColumnStart, sellColumnStart)).toContain('id="mfoot-faqs"');
+    expect(FOOTER.slice(helpColumnStart, sellColumnStart)).toContain('id="mfoot-contact"');
     expect(FOOTER.slice(bottomLinksStart)).not.toContain('id="mfoot-help"');
     expect(FOOTER.slice(bottomLinksStart)).not.toContain('id="mfoot-faqs"');
     expect(FOOTER).toContain('handlers.goHelp');
     expect(FOOTER).toContain('handlers.goFaqs');
+    expect(FOOTER).toContain('handlers.goContact');
   });
 
   it('wires the footer bottom bar to the About, Terms and Privacy pages', () => {

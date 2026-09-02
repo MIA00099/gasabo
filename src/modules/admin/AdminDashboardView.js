@@ -8,6 +8,7 @@ import { renderRealEstateAdmin } from './RealEstateAdmin.js';
 import { renderApprovalWorkflowAdmin } from './ApprovalWorkflowAdmin.js';
 import { renderUserRBACAdmin } from './UserRBACAdmin.js';
 import { renderSecurityAuditAdmin } from './SecurityAuditAdmin.js';
+import { renderContactMessagesAdmin } from './ContactMessagesAdmin.js';
 
 export function renderAdminDashboardView(container) {
   const state = stateEngine.getState();
@@ -56,6 +57,14 @@ export function renderAdminDashboardView(container) {
     }
     const pendingProductsCount = isFullAdmin ? 0 : (state.pendingProducts?.length || 0);
 
+    // Same eventual-consistency pattern: load the contact inbox up front (when
+    // this admin can see it) so the sidebar's unread badge is accurate before
+    // anyone opens the tab.
+    if (currentUser.permissions?.reports && state.loading.contactMessages === undefined) {
+      stateEngine.loadContactMessages().catch(() => {});
+    }
+    const newContactCount = (state.contactMessages || []).filter((m) => m.status === 'NEW').length;
+
     // Mirrors the server-side requirePermission() checks (server/src/middleware/auth.ts) -
     // that's the real security boundary; this just keeps a Sub-Administrator from
     // clicking into a panel that will 403 on every action inside it. "Multi-Admin
@@ -66,6 +75,7 @@ export function renderAdminDashboardView(container) {
       marketplace: !!(perms.product_mgmt || perms.category_mgmt || perms.banner_mgmt || perms.product_approval),
       sellers: !!perms.seller_mgmt,
       realestate: !!perms.realestate_content,
+      contact: !!perms.reports,
       rbac: !!perms.user_mgmt,
       audit: !!perms.system_settings,
     };
@@ -111,6 +121,15 @@ export function renderAdminDashboardView(container) {
               ${tabAccess.realestate ? `
                 <button class="adm-side-btn ${activeTab==='realestate'?'active':''}" data-tab="realestate">
                   <span>🏢 Real Estate CMS</span>
+                </button>
+              ` : ''}
+
+              ${tabAccess.contact ? `
+                <button class="adm-side-btn ${activeTab==='contact'?'active':''}" data-tab="contact">
+                  <span>📨 Contact Messages</span>
+                  ${newContactCount > 0 ? `
+                    <span style="background: #dc2626; color: #ffffff; position: absolute; right: 12px; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${newContactCount}</span>
+                  ` : ''}
                 </button>
               ` : ''}
 
@@ -225,6 +244,7 @@ export function renderAdminDashboardView(container) {
     else if (activeTab === 'marketplace') renderMarketplaceAdmin(mount);
     else if (activeTab === 'sellers') renderSellerAdmin(mount);
     else if (activeTab === 'realestate') renderRealEstateAdmin(mount);
+    else if (activeTab === 'contact') renderContactMessagesAdmin(mount);
     else if (activeTab === 'rbac') renderUserRBACAdmin(mount);
     else if (activeTab === 'audit') renderSecurityAuditAdmin(mount);
   }

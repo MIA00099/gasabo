@@ -199,6 +199,25 @@ model Notification {
   createdAt     DateTime @default(now())
 }
 
+// 12. Contact Message Model (public "Contact Us" form on the marketplace side)
+// One row per submission from /contact. Kept even after it is read/archived -
+// it is the record that a message came in. Not a Notification: that table is
+// the admin's alert feed (and its rows get cleared/marked read), this is the
+// durable log an admin works through in the Contact Messages panel.
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  status    String   @default("NEW") // "NEW" | "READ" | "ARCHIVED"
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
 // 11. Approval Request Model (Multi-Admin Dual Authorization Workflow)
 model ApprovalRequest {
   id                  String    @id @default(uuid())

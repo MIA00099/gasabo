@@ -16,6 +16,7 @@
  *   about.html          ->  /about             about Kigali Market
  *   terms.html          ->  /terms             terms & conditions
  *   privacy.html        ->  /privacy           privacy policy
+ *   contact.html        ->  /contact           contact form
  *   (real estate)       ->  /property/:id      single property
  *
  * The admin portal stays on its #/admin-portal hash: it is deliberately
@@ -34,6 +35,7 @@ export const ROUTE_FAQS = 'faqs';
 export const ROUTE_ABOUT = 'about';
 export const ROUTE_TERMS = 'terms';
 export const ROUTE_PRIVACY = 'privacy';
+export const ROUTE_CONTACT = 'contact';
 
 // Listing ids are product UUIDs or real-estate "re_<timestamp>" keys.
 // Anything else is treated as unknown rather than fetched, so a junk URL
@@ -50,6 +52,7 @@ const FLAT_ROUTES = {
   '/about': ROUTE_ABOUT,
   '/terms': ROUTE_TERMS,
   '/privacy': ROUTE_PRIVACY,
+  '/contact': ROUTE_CONTACT,
 };
 
 /** Read the current address bar into a route descriptor. */

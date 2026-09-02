@@ -15,6 +15,19 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   CORS_ORIGIN: z.string().optional(),
+  // Where "Contact Us" form submissions and their email notifications go.
+  // Also the address shown across the marketplace/support pages (the Gasabo
+  // Real Estate portal keeps its own info@gasaborealestate.com).
+  CONTACT_EMAIL: z.string().email().default('kigalimarket20@gmail.com'),
+  // Optional SMTP transport for outbound mail (currently just the contact-form
+  // notification). All absent -> utils/email.ts logs the message instead of
+  // sending, the same way uploads.routes.ts falls back to local disk when
+  // Supabase Storage isn't configured. Set all of HOST/USER/PASS to send.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().transform((v) => parseInt(v, 10)).optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
   // Public origin this site is served from, used to build the absolute URLs
   // that crawlers and social scrapers require: <link rel="canonical">,
   // og:url, og:image and every <loc> in the sitemap. Relative URLs are

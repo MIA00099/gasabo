@@ -9,6 +9,7 @@ import { renderMarketplaceView, cleanupFlashClock, cleanupHeroSlider } from './m
 import {
   renderHelpCenterPage, renderFaqPage,
   renderAboutPage, renderTermsPage, renderPrivacyPage,
+  renderContactPage, resetContactDraft,
 } from './modules/marketplace/SupportPages.js';
 import { renderRealEstateView, openPropertyModal } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
@@ -25,7 +26,7 @@ import { openCategoryDropdown } from './components/dropdownMenu.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
   ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_HELP_CENTER, ROUTE_FAQS,
-  ROUTE_ABOUT, ROUTE_TERMS, ROUTE_PRIVACY,
+  ROUTE_ABOUT, ROUTE_TERMS, ROUTE_PRIVACY, ROUTE_CONTACT,
 } from './store/router.js';
 
 // Route kind -> the SupportPages renderer that draws it. All render inside the
@@ -37,6 +38,7 @@ const SUPPORT_PAGE_RENDERERS = {
   [ROUTE_ABOUT]: renderAboutPage,
   [ROUTE_TERMS]: renderTermsPage,
   [ROUTE_PRIVACY]: renderPrivacyPage,
+  [ROUTE_CONTACT]: renderContactPage,
 };
 
 const ADMIN_URL_HASH = '#/admin-portal';
@@ -214,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const goAbout = () => goSupportPage(ROUTE_ABOUT);
   const goTerms = () => goSupportPage(ROUTE_TERMS);
   const goPrivacy = () => goSupportPage(ROUTE_PRIVACY);
+  const goContact = () => { resetContactDraft(); goSupportPage(ROUTE_CONTACT); };
 
   function handleGoHome() {
     pushHome();
@@ -519,6 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
         goAbout,
         goTerms,
         goPrivacy,
+        goContact,
         goVehicles: () => {
           pushPath(pathForRoute(ROUTE_PRODUCTS));
           stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });

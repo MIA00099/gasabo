@@ -1,6 +1,6 @@
 import { stateEngine } from '../../store/stateEngine.js';
 import { getTranslation } from '../../store/i18n.js';
-import { pushPath, pathForListing, pathForRoute, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS } from '../../store/router.js';
+import { pushPath, pathForListing, pathForRoute, ROUTE_POST_AD, ROUTE_PRODUCT } from '../../store/router.js';
 import { renderSellerPortal } from './SellerPortal.js';
 import { renderStoresPage } from './StoresPage.js';
 import { renderProductsPage } from './ProductsPage.js';
@@ -126,74 +126,48 @@ const SKELETON_TILES = Array.from({ length: 5 }, () => `
   </div>
 `).join('');
 
-const JOBS_CATEGORY_PATTERN = /\b(job|jobs|employ|career|vacanc|worker)\b/i;
-
-function flashPromoCardHtml(item, duplicate = false) {
-  const hidden = duplicate ? ' aria-hidden="true"' : '';
-  if (item.image) {
-    return `
-      <div class="flash-promo-card flash-promo-banner-card"${hidden}>
-        <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" loading="lazy">
-        <div>
-          <span>${escapeHtml(item.label)}</span>
-          <strong>${escapeHtml(item.title)}</strong>
-        </div>
-      </div>
-    `;
-  }
+function flashProductCardHtml(product, duplicate = false) {
+  const image = (product.images && product.images[0]) || '';
+  const price = Number(product.price) || 0;
+  const categoryName = product.category && typeof product.category === 'object'
+    ? formatCategoryName(product.category.name)
+    : formatCategoryName(product.category || '');
+  const label = product.isFeatured ? 'Featured' : product.isTrending ? 'Trending' : (categoryName || 'Listing');
+  const hidden = duplicate ? ' aria-hidden="true"' : ' role="button" tabindex="0"';
 
   return `
-    <div class="flash-promo-card"${hidden}>
-      <span class="flash-promo-icon"><i class="fa-solid ${escapeHtml(item.icon)}"></i></span>
-      <span class="flash-promo-card-copy">
-        <em>${escapeHtml(item.label)}</em>
-        <strong>${escapeHtml(item.title)}</strong>
-        <span>${escapeHtml(item.text)}</span>
-      </span>
+    <div class="flash-promo-card flash-promo-product-card view-item-btn" data-id="${escapeHtml(product.id)}"${hidden}>
+      <div class="flash-promo-product-img">
+        ${image
+          ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(product.title)}" loading="lazy">`
+          : '<i class="fa-solid fa-image"></i>'}
+      </div>
+      <div class="flash-promo-product-info">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(product.title)}</strong>
+        <em>RWF ${price.toLocaleString()}</em>
+      </div>
     </div>
   `;
 }
 
-function renderFlashPromoCards(heroAds = []) {
-  const bannerCards = heroAds
-    .filter((ad) => ad && ad.image)
-    .slice(0, 3)
-    .map((ad) => ({
-      image: ad.image,
-      label: 'Sponsored',
-      title: ad.title || 'Kigali Market ad',
-    }));
+function renderFlashProductCards(products = []) {
+  const sourceProducts = products.filter((product) => product && product.id).slice(0, 10);
+  if (sourceProducts.length === 0) {
+    return `
+      <div class="flash-promo-empty">
+        <i class="fa-solid fa-box-open"></i>
+        <span>Products will appear here when listings load.</span>
+      </div>
+    `;
+  }
 
-  const fallbackCards = [
-    {
-      icon: 'fa-bullhorn',
-      label: 'Promoted ads',
-      title: 'Show products here',
-      text: 'Feature listings where buyers are already looking.',
-    },
-    {
-      icon: 'fa-briefcase',
-      label: 'Jobs',
-      title: 'Workers and employers',
-      text: 'Post jobs or browse current work opportunities.',
-    },
-    {
-      icon: 'fa-bolt',
-      label: 'Flash sales',
-      title: 'Timed offers stand out',
-      text: 'Countdown deals get a stronger homepage position.',
-    },
-    {
-      icon: 'fa-store',
-      label: 'Seller tools',
-      title: 'Manage your listings',
-      text: 'Keep products, prices and photos fresh.',
-    },
-  ];
+  const visibleProducts = sourceProducts.length >= 4
+    ? sourceProducts
+    : Array.from({ length: 4 }, (_, i) => sourceProducts[i % sourceProducts.length]);
 
-  const items = [...bannerCards, ...fallbackCards];
-  return items.map((item) => flashPromoCardHtml(item)).join('') +
-    items.map((item) => flashPromoCardHtml(item, true)).join('');
+  return visibleProducts.map((product) => flashProductCardHtml(product)).join('') +
+    visibleProducts.map((product) => flashProductCardHtml(product, true)).join('');
 }
 
 let flashClockTimer = null;
@@ -345,7 +319,7 @@ export function renderMarketplaceView(container) {
       (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
     );
     const dotCount = heroAds.length;
-    const flashPromoCards = renderFlashPromoCards(heroAds);
+    const flashProductCards = renderFlashProductCards(state.products || []);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
@@ -645,14 +619,14 @@ export function renderMarketplaceView(container) {
                 </section>
                 <aside class="flash-promo-panel" aria-label="Kigali Market promotions">
                   <div class="flash-promo-copy">
-                    <span class="flash-promo-eyebrow">Kigali Market Ads</span>
-                    <h3>Promote, hire and sell faster</h3>
-                    <p>Featured listings, timed deals and jobs stay visible where buyers are already browsing.</p>
+                    <span class="flash-promo-eyebrow">Live Products</span>
+                    <h3>Products moving now</h3>
+                    <p>Browse active listings while waiting for the next timed flash deal.</p>
                   </div>
 
-                  <div class="flash-promo-marquee" aria-label="Promotional highlights">
+                  <div class="flash-promo-marquee" aria-label="Moving product listings">
                     <div class="flash-promo-track">
-                      ${flashPromoCards}
+                      ${flashProductCards}
                     </div>
                   </div>
 
@@ -660,10 +634,6 @@ export function renderMarketplaceView(container) {
                     <button type="button" id="flash-promo-post-ad-btn" class="flash-promo-action flash-promo-action-primary">
                       <i class="fa-solid fa-plus"></i>
                       <span>Post an Ad</span>
-                    </button>
-                    <button type="button" id="flash-promo-worker-btn" class="flash-promo-action flash-promo-action-dark">
-                      <i class="fa-solid fa-briefcase"></i>
-                      <span>Become a Worker</span>
                     </button>
                   </div>
                 </aside>
@@ -928,27 +898,6 @@ export function renderMarketplaceView(container) {
       stateEngine.setUI({ authIntent: '', sellerDashboardTab: 'new_product', productAdType: 'product' });
       pushPath(pathForRoute(ROUTE_POST_AD));
       stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null });
-    });
-
-    container.querySelector('#flash-promo-worker-btn')?.addEventListener('click', () => {
-      const latestState = stateEngine.getState();
-      const latestFilters = latestState.ui.marketplaceFilters || {};
-      const jobsCategory = (latestState.categories || []).find((c) => JOBS_CATEGORY_PATTERN.test(c.name || ''));
-      const nextFilters = {
-        ...latestFilters,
-        selectedCategory: jobsCategory ? jobsCategory.id : 'all',
-        searchQuery: jobsCategory ? '' : 'jobs',
-      };
-
-      pushPath(pathForRoute(ROUTE_PRODUCTS));
-      stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
-      stateEngine.setUI({ marketplaceTab: 'catalog', marketplaceFilters: nextFilters, jobsNotice: '' });
-      stateEngine.loadProducts({
-        category: jobsCategory ? jobsCategory.id : undefined,
-        search: jobsCategory ? undefined : 'jobs',
-        district: latestFilters.selectedDistrict,
-      }).catch(() => {});
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     container.querySelectorAll('.view-item-btn').forEach((btn) => {

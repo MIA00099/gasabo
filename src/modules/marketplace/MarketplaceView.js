@@ -1,6 +1,6 @@
 import { stateEngine } from '../../store/stateEngine.js';
 import { getTranslation } from '../../store/i18n.js';
-import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
+import { pushPath, pathForListing, pathForRoute, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS } from '../../store/router.js';
 import { renderSellerPortal } from './SellerPortal.js';
 import { renderStoresPage } from './StoresPage.js';
 import { renderProductsPage } from './ProductsPage.js';
@@ -125,6 +125,76 @@ const SKELETON_TILES = Array.from({ length: 5 }, () => `
       <div class="h-2.5 w-14 rounded bg-gray-100 animate-pulse"></div>
   </div>
 `).join('');
+
+const JOBS_CATEGORY_PATTERN = /\b(job|jobs|employ|career|vacanc|worker)\b/i;
+
+function flashPromoCardHtml(item, duplicate = false) {
+  const hidden = duplicate ? ' aria-hidden="true"' : '';
+  if (item.image) {
+    return `
+      <div class="flash-promo-card flash-promo-banner-card"${hidden}>
+        <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" loading="lazy">
+        <div>
+          <span>${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.title)}</strong>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="flash-promo-card"${hidden}>
+      <span class="flash-promo-icon"><i class="fa-solid ${escapeHtml(item.icon)}"></i></span>
+      <span class="flash-promo-card-copy">
+        <em>${escapeHtml(item.label)}</em>
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(item.text)}</span>
+      </span>
+    </div>
+  `;
+}
+
+function renderFlashPromoCards(heroAds = []) {
+  const bannerCards = heroAds
+    .filter((ad) => ad && ad.image)
+    .slice(0, 3)
+    .map((ad) => ({
+      image: ad.image,
+      label: 'Sponsored',
+      title: ad.title || 'Kigali Market ad',
+    }));
+
+  const fallbackCards = [
+    {
+      icon: 'fa-bullhorn',
+      label: 'Promoted ads',
+      title: 'Show products here',
+      text: 'Feature listings where buyers are already looking.',
+    },
+    {
+      icon: 'fa-briefcase',
+      label: 'Jobs',
+      title: 'Workers and employers',
+      text: 'Post jobs or browse current work opportunities.',
+    },
+    {
+      icon: 'fa-bolt',
+      label: 'Flash sales',
+      title: 'Timed offers stand out',
+      text: 'Countdown deals get a stronger homepage position.',
+    },
+    {
+      icon: 'fa-store',
+      label: 'Seller tools',
+      title: 'Manage your listings',
+      text: 'Keep products, prices and photos fresh.',
+    },
+  ];
+
+  const items = [...bannerCards, ...fallbackCards];
+  return items.map((item) => flashPromoCardHtml(item)).join('') +
+    items.map((item) => flashPromoCardHtml(item, true)).join('');
+}
 
 let flashClockTimer = null;
 
@@ -275,6 +345,7 @@ export function renderMarketplaceView(container) {
       (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
     );
     const dotCount = heroAds.length;
+    const flashPromoCards = renderFlashPromoCards(heroAds);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
@@ -521,6 +592,7 @@ export function renderMarketplaceView(container) {
                  an admin setting a countdown should still make the deal
                  visible, while regular category rows below stay filtered. -->
             <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 shrink-0">
+              <div class="flash-home-row">
                 <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : ''} transition"
                   ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>
 
@@ -571,6 +643,31 @@ export function renderMarketplaceView(container) {
                   ` : ''}
 
                 </section>
+                <aside class="flash-promo-panel" aria-label="Kigali Market promotions">
+                  <div class="flash-promo-copy">
+                    <span class="flash-promo-eyebrow">Kigali Market Ads</span>
+                    <h3>Promote, hire and sell faster</h3>
+                    <p>Featured listings, timed deals and jobs stay visible where buyers are already browsing.</p>
+                  </div>
+
+                  <div class="flash-promo-marquee" aria-label="Promotional highlights">
+                    <div class="flash-promo-track">
+                      ${flashPromoCards}
+                    </div>
+                  </div>
+
+                  <div class="flash-promo-actions">
+                    <button type="button" id="flash-promo-post-ad-btn" class="flash-promo-action flash-promo-action-primary">
+                      <i class="fa-solid fa-plus"></i>
+                      <span>Post an Ad</span>
+                    </button>
+                    <button type="button" id="flash-promo-worker-btn" class="flash-promo-action flash-promo-action-dark">
+                      <i class="fa-solid fa-briefcase"></i>
+                      <span>Become a Worker</span>
+                    </button>
+                  </div>
+                </aside>
+              </div>
             </section>
 
             <!-- Everything not in the Featured & Trending section above:
@@ -825,6 +922,33 @@ export function renderMarketplaceView(container) {
     container.querySelector('#modal-view-catalog-btn')?.addEventListener('click', () => {
       closeModal();
       stateEngine.setUI({ marketplaceTab: 'catalog' });
+    });
+
+    container.querySelector('#flash-promo-post-ad-btn')?.addEventListener('click', () => {
+      stateEngine.setUI({ authIntent: '', sellerDashboardTab: 'new_product', productAdType: 'product' });
+      pushPath(pathForRoute(ROUTE_POST_AD));
+      stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null });
+    });
+
+    container.querySelector('#flash-promo-worker-btn')?.addEventListener('click', () => {
+      const latestState = stateEngine.getState();
+      const latestFilters = latestState.ui.marketplaceFilters || {};
+      const jobsCategory = (latestState.categories || []).find((c) => JOBS_CATEGORY_PATTERN.test(c.name || ''));
+      const nextFilters = {
+        ...latestFilters,
+        selectedCategory: jobsCategory ? jobsCategory.id : 'all',
+        searchQuery: jobsCategory ? '' : 'jobs',
+      };
+
+      pushPath(pathForRoute(ROUTE_PRODUCTS));
+      stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
+      stateEngine.setUI({ marketplaceTab: 'catalog', marketplaceFilters: nextFilters, jobsNotice: '' });
+      stateEngine.loadProducts({
+        category: jobsCategory ? jobsCategory.id : undefined,
+        search: jobsCategory ? undefined : 'jobs',
+        district: latestFilters.selectedDistrict,
+      }).catch(() => {});
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     container.querySelectorAll('.view-item-btn').forEach((btn) => {

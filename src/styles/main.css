@@ -4611,6 +4611,270 @@ table {
   flex-direction: column;
 }
 
+.flash-home-row {
+  display: grid;
+  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.flash-home-row .flash-deals {
+  max-width: none;
+  height: 100%;
+}
+
+.flash-promo-panel {
+  position: relative;
+  min-width: 0;
+  min-height: 230px;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 18px 20px;
+  color: #fff;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 18px),
+    linear-gradient(135deg, #0B1C3A 0%, #07472F 100%);
+  box-shadow: 0 12px 28px rgba(11, 28, 58, 0.16);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.flash-promo-copy,
+.flash-promo-marquee,
+.flash-promo-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.flash-promo-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  padding: 0.28rem 0.6rem;
+  color: #FDE68A;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.flash-promo-copy h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.75rem;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.flash-promo-copy p {
+  max-width: 56ch;
+  margin: 0.45rem 0 0;
+  color: #DCE8F2;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.flash-promo-marquee {
+  margin-inline: -20px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+}
+
+.flash-promo-track {
+  display: flex;
+  width: max-content;
+  gap: 0.75rem;
+  padding: 0.1rem 0;
+  animation: flash-promo-scroll 30s linear infinite;
+  will-change: transform;
+}
+
+.flash-promo-panel:hover .flash-promo-track {
+  animation-play-state: paused;
+}
+
+.flash-promo-card {
+  flex: 0 0 230px;
+  min-height: 82px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.flash-promo-banner-card img {
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.16);
+  flex: 0 0 58px;
+}
+
+.flash-promo-banner-card span,
+.flash-promo-card-copy em {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: #FDE68A;
+  font-size: 0.66rem;
+  line-height: 1;
+  font-style: normal;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.flash-promo-banner-card strong,
+.flash-promo-card-copy strong {
+  display: block;
+  color: #fff;
+  font-size: 0.92rem;
+  line-height: 1.15;
+  font-weight: 850;
+}
+
+.flash-promo-card-copy span {
+  display: block;
+  margin-top: 0.22rem;
+  color: #CFE0EC;
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+.flash-promo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #F97316;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  font-size: 1rem;
+}
+
+.flash-promo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.flash-promo-action {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.flash-promo-action:hover {
+  transform: translateY(-1px);
+}
+
+.flash-promo-action:active {
+  transform: translateY(0);
+}
+
+.flash-promo-action:focus-visible {
+  outline: 3px solid rgba(253, 230, 138, 0.9);
+  outline-offset: 2px;
+}
+
+.flash-promo-action-primary {
+  background: #F97316;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.24);
+}
+
+.flash-promo-action-primary:hover {
+  background: #EA580C;
+}
+
+.flash-promo-action-dark {
+  background: #fff;
+  color: #0B1C3A;
+  box-shadow: 0 8px 18px rgba(255, 255, 255, 0.14);
+}
+
+.flash-promo-action-dark:hover {
+  background: #F8FAFC;
+}
+
+@keyframes flash-promo-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flash-promo-track {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .flash-home-row {
+    grid-template-columns: 1fr;
+  }
+
+  .flash-home-row .flash-deals {
+    max-width: 360px;
+  }
+}
+
+@media (max-width: 600px) {
+  .flash-promo-panel {
+    min-height: 240px;
+    padding: 16px;
+  }
+
+  .flash-promo-copy h3 {
+    font-size: 1.35rem;
+  }
+
+  .flash-promo-marquee {
+    margin-inline: -16px;
+  }
+
+  .flash-promo-card {
+    flex-basis: 206px;
+  }
+
+  .flash-promo-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .flash-promo-action {
+    width: 100%;
+  }
+}
+
 /* Heading left, "View all deals" right, on one row.
 
    In English that is exactly the reference: the heading measures 175px and

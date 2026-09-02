@@ -16,10 +16,12 @@ describe('ProductsPage jobs actions', () => {
   });
 
   it('renders clear jobs calls to action', () => {
+    expect(SRC).toContain('jobs-action-buttons');
     expect(SRC).toContain('id="jobs-post-job-btn"');
     expect(SRC).toContain('Post a Job');
     expect(SRC).toContain('id="jobs-become-worker-btn"');
     expect(SRC).toContain('Become a Worker');
+    expect(SRC).toContain('min-w-[190px]');
   });
 
   it('wires job posting to seller posting and keeps workers in the jobs list', () => {

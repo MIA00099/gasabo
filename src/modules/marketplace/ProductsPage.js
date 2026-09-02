@@ -147,12 +147,12 @@ export function renderProductsPage(container) {
                         Employers post jobs from a seller account. Workers browse active jobs here and contact the poster from the listing.
                       </p>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-2 shrink-0">
-                      <button type="button" id="jobs-post-job-btn" class="inline-flex items-center justify-center gap-2 bg-brand-green text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm hover:bg-green-800 transition shadow-sm">
+                    <div class="jobs-action-buttons flex flex-col sm:flex-row gap-2 shrink-0">
+                      <button type="button" id="jobs-post-job-btn" class="inline-flex items-center justify-center gap-2 min-w-[190px] bg-brand-green text-white font-bold px-4 py-2.5 rounded-lg text-xs md:text-sm hover:bg-green-800 transition shadow-sm">
                         <i class="fa-solid fa-plus"></i>
                         <span>Post a Job</span>
                       </button>
-                      <button type="button" id="jobs-become-worker-btn" class="inline-flex items-center justify-center gap-2 bg-brand-dark text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm hover:bg-gray-800 transition shadow-sm">
+                      <button type="button" id="jobs-become-worker-btn" class="inline-flex items-center justify-center gap-2 min-w-[190px] bg-brand-dark text-white font-bold px-4 py-2.5 rounded-lg text-xs md:text-sm hover:bg-gray-800 transition shadow-sm">
                         <i class="fa-solid fa-briefcase"></i>
                         <span>Become a Worker</span>
                       </button>

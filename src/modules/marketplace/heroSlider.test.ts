@@ -119,4 +119,24 @@ describe('flash deals card', () => {
     expect(countdownGate, 'countdown must be gated by featuredDeal').toBeGreaterThan(emptyText);
     expect(HOME, 'clock should not run without a deal end time').toContain('if (!endsAt) return;');
   });
+
+  it('fills the wide Flash Deals row with a moving promotion panel', () => {
+    expect(HOME).toContain('class="flash-home-row"');
+    expect(HOME).toContain('class="flash-promo-panel"');
+    expect(HOME).toContain('class="flash-promo-marquee"');
+    expect(HOME).toContain('id="flash-promo-post-ad-btn"');
+    expect(HOME).toContain('id="flash-promo-worker-btn"');
+    expect(HOME).toContain('renderFlashPromoCards(heroAds)');
+    expect(CSS).toContain('.flash-home-row');
+    expect(CSS).toContain('animation: flash-promo-scroll');
+    expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+
+  it('wires the promo CTAs to real app routes', () => {
+    expect(HOME).toContain('pathForRoute(ROUTE_POST_AD)');
+    expect(HOME).toContain('pathForRoute(ROUTE_PRODUCTS)');
+    expect(HOME).toContain('JOBS_CATEGORY_PATTERN');
+    expect(HOME).not.toContain('flash-promo-post-ad-btn" href="#"');
+    expect(HOME).not.toContain('flash-promo-worker-btn" href="#"');
+  });
 });

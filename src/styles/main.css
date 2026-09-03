@@ -4154,30 +4154,32 @@ table {
         width: 100%;
     }
 
-    /* Drop the page gutter on the hero section so the banner below can run to
-       both screen edges. */
+    /* Drop the page gutter on the hero section so the banner runs as wide as
+       the screen allows - but never past it, so there is no horizontal
+       scroll. */
     #view-home > section:first-child {
         padding-inline: 0;
     }
 
-    /* The banner runs edge to edge (cancelling the wrapper's 16px side
-       padding) and fills a set 2.4:1 slot rather than shrinking to a thin
-       strip - a wide banner in a narrow viewport is width-bound with
-       object-fit:contain, so it's given a taller box and object-fit:cover,
+    /* The banner spans the container (no negative-margin bleed - that pushed
+       it off-screen) and fills a 2:1 slot instead of shrinking to a thin
+       strip: a wide banner in a narrow viewport is width-bound with
+       object-fit:contain, so it gets a taller box and object-fit:cover,
        anchored on the centre where the message sits. */
     .hero-section-wrapper .slider-container {
         position: relative;
         inset: auto;
-        width: calc(100% + 32px);
-        margin-inline: -16px;
+        width: 100%;
+        margin-inline: 0;
         height: auto;
         min-height: 0;
         aspect-ratio: auto;
         clip-path: none;
         display: block;
-        overflow: visible;
+        overflow: hidden;
         padding: 0;
         margin-top: 14px;
+        border-radius: 14px;
         z-index: 10;
     }
 
@@ -4185,9 +4187,9 @@ table {
         position: absolute;
         inset: 0;
         display: block;
-        aspect-ratio: 2.4 / 1;
+        aspect-ratio: 2 / 1;
         height: auto;
-        border-radius: 0;
+        border-radius: 14px;
         overflow: hidden;
         box-shadow: 0 10px 24px rgba(0, 27, 69, 0.16);
     }
@@ -4208,7 +4210,7 @@ table {
         max-height: none;
         object-fit: cover;
         object-position: center;
-        border-radius: 0;
+        border-radius: 14px;
         display: block;
         filter: none;
     }

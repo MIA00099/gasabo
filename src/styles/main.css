@@ -3993,15 +3993,19 @@ table {
         top: calc(-72% + 18px);
     }
 
-    /* Clip the slider (and the ad image filling it) to the navy inner ellipse,
-       so a cover-slide backdrop never paints over the gold arc. The ellipse is
-       the ::after navy shape expressed in the slider's own box (it sits at
-       right:0 width:55%, i.e. left edge at 45% of the hero): a %-radius is of
-       the slider box, so rx = (132/2)/55 = 120%, cx = (45 + 66 - 45)/55 = 120%,
-       cy = -72 + 125 = 53%, ry = 125%; the -/+9px is half the 18px gold band.
-       Verified against the live arc with hit-testing. */
+    /* The slider used to be clipped to the navy ellipse so a cover-slide
+       backdrop couldn't spill onto the gold arc - but that same ellipse also
+       clipped the left of a contained banner, which read as the ad being
+       cropped. The ad matters more than the arc reaching all the way in:
+       drop the clip and make the panel a rounded card of the blurred fill
+       instead, with the whole ad shown inside it. */
     .hero-section-wrapper .slider-container {
-        clip-path: ellipse(calc(120% - 9px) calc(125% - 9px) at calc(120% + 9px) calc(53% + 9px));
+        clip-path: none;
+        padding: 14px 18px 14px 14px;
+    }
+
+    .hero-section-wrapper .slide {
+        border-radius: 20px;
     }
 }
 
@@ -4075,11 +4079,12 @@ table {
 .slide.cover-slide .slide-fg {
     position: relative;
     z-index: 1;
-    width: auto;
-    height: auto;
+    width: 100%;
+    height: 100%;
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+    object-position: center;
     filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
 }
 
@@ -4117,15 +4122,12 @@ table {
 
 /* Tablet + mobile (below the 1024px desktop split).
 
-   The admin "Hero Slider" ads are wide banners, but the panel is a tall navy
-   box built as the desktop right-hand side. Contain-fitting a ~3:1 banner into
-   it left large blurred bars top and bottom that read as broken empty space.
-   Below the desktop breakpoint the hero stacks - white text, then the ad - and
-   the ad panel takes the banner's own shape: only the visible slide is in
-   normal flow so the container's height:auto tracks it, the image is full
-   width at its natural height, and the blurred backdrop (only ever there to
-   hide letterbox bars) is dropped since there are none. Placed after the base
-   slider rules so it wins the cascade without inflating selectors. */
+   Below the desktop breakpoint the hero stacks - white text, then the ad -
+   and the ad sits in a fixed 2:1 slot. The whole uploaded image is always
+   shown (object-fit: contain, so nothing is cropped whatever its shape), and
+   a blurred, zoomed copy of it fills whatever the contained image doesn't
+   cover, so the slot never has bare bars. Placed after the base slider rules
+   so it wins the cascade without inflating selectors. */
 @media (max-width: 1023px) {
     /* .compact-container prefix only to out-specify Tailwind's md:flex-row /
        md:p-6 utilities on this element (equal specificity, but they are
@@ -4162,10 +4164,7 @@ table {
     }
 
     /* The banner spans the container (no negative-margin bleed - that pushed
-       it off-screen) and fills a 2:1 slot instead of shrinking to a thin
-       strip: a wide banner in a narrow viewport is width-bound with
-       object-fit:contain, so it gets a taller box and object-fit:cover,
-       anchored on the centre where the message sits. */
+       it off-screen). Fixed 2:1 slot so the height is predictable. */
     .hero-section-wrapper .slider-container {
         position: relative;
         inset: auto;
@@ -4173,13 +4172,14 @@ table {
         margin-inline: 0;
         height: auto;
         min-height: 0;
-        aspect-ratio: auto;
+        aspect-ratio: 2 / 1;
         clip-path: none;
         display: block;
         overflow: hidden;
         padding: 0;
         margin-top: 14px;
         border-radius: 14px;
+        box-shadow: 0 10px 24px rgba(0, 27, 69, 0.16);
         z-index: 10;
     }
 
@@ -4187,38 +4187,34 @@ table {
         position: absolute;
         inset: 0;
         display: block;
-        aspect-ratio: 2 / 1;
-        height: auto;
+        height: 100%;
         border-radius: 14px;
         overflow: hidden;
-        box-shadow: 0 10px 24px rgba(0, 27, 69, 0.16);
     }
 
-    /* Only the visible slide is in normal flow, so the container's height:auto
-       tracks the current banner. */
-    .hero-section-wrapper .slide.active {
-        position: relative;
-    }
-
+    /* The whole image, never cropped, whatever its aspect ratio. */
     .hero-section-wrapper .slide img,
     .hero-section-wrapper .slide.cover-slide .slide-fg,
     .hero-section-wrapper .slide.has-caption img {
         position: relative;
+        z-index: 1;
         width: 100%;
         height: 100%;
         max-width: 100%;
-        max-height: none;
-        object-fit: cover;
+        max-height: 100%;
+        object-fit: contain;
         object-position: center;
-        border-radius: 14px;
+        border-radius: 0;
         display: block;
         filter: none;
     }
 
-    /* Panel now fills the slot, so there are no bars for the blurred fill to
-       cover. */
+    /* Blurred, zoomed copy of the image filling the space the contained image
+       leaves, so a wide (or tall, or square) banner reads as framed rather
+       than floating in bars. */
     .hero-section-wrapper .slide.cover-slide .slide-bg {
-        display: none;
+        display: block;
+        object-fit: cover;
     }
 
     .hero-section-wrapper .slider-dots {

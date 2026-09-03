@@ -218,6 +218,24 @@ model ContactMessage {
   @@index([status])
 }
 
+// 13. Real Estate Inquiry Model (public "Talk To Gasabo Real Estate" form)
+// The Gasabo counterpart of ContactMessage: one durable row per inquiry sent
+// from the Real Estate site, worked through in the Real Estate CMS panel.
+// Carries a phone (not an email) and an optional property reference.
+model RealEstateInquiry {
+  id            String   @id @default(uuid())
+  name          String
+  phone         String
+  message       String?
+  propertyId    String?
+  propertyTitle String?
+  status        String   @default("NEW") // "NEW" | "READ" | "ARCHIVED"
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+
+  @@index([status])
+}
+
 // 11. Approval Request Model (Multi-Admin Dual Authorization Workflow)
 model ApprovalRequest {
   id                  String    @id @default(uuid())

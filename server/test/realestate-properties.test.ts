@@ -18,6 +18,8 @@ import { signToken, type AuthUser } from '../src/middleware/auth.js';
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 let adminToken: string;
+let sellerToken: string;
+let plainSubAdminToken: string;
 
 async function addProperty(body: Record<string, unknown>) {
   return request(app).post('/api/realestate/properties').set(auth(adminToken)).send(body);
@@ -29,6 +31,19 @@ beforeAll(async () => {
     data: { email: `re-admin-${Date.now()}@t.local`, passwordHash, name: 'RE Admin', role: 'ADMINISTRATOR' },
   });
   adminToken = signToken({ id: admin.id, email: admin.email, name: admin.name, role: 'ADMINISTRATOR' } as AuthUser);
+
+  const seller = await prisma.seller.create({
+    data: { email: `re-seller-${Date.now()}@t.local`, passwordHash, businessName: 'RE Seller', contactPhone: '+250 700 000 000', district: 'Gasabo' },
+  });
+  sellerToken = signToken({ id: seller.id, email: seller.email, name: seller.businessName, role: 'SELLER' } as AuthUser);
+
+  const sub = await prisma.subAdministrator.create({
+    data: {
+      email: `re-sub-${Date.now()}@t.local`, passwordHash, name: 'Plain Sub',
+      permissions: JSON.stringify(['PRODUCTS']), createdById: admin.id,
+    },
+  });
+  plainSubAdminToken = signToken({ id: sub.id, email: sub.email, name: sub.name, role: 'SUB_ADMINISTRATOR' } as AuthUser);
 });
 
 describe('POST /api/realestate/properties (multi-image)', () => {
@@ -111,7 +126,7 @@ describe('POST /api/realestate/properties (multi-image)', () => {
 });
 
 describe('POST /api/realestate/inquiries', () => {
-  it('turns a public inquiry into admin notifications and audit', async () => {
+  it('stores the inquiry and turns it into admin notifications and audit', async () => {
     await prisma.notification.deleteMany({ where: { type: 'REALESTATE_INQUIRY' } });
 
     const res = await request(app).post('/api/realestate/inquiries').send({
@@ -122,6 +137,12 @@ describe('POST /api/realestate/inquiries', () => {
     });
 
     expect(res.status).toBe(201);
+
+    const saved = await prisma.realEstateInquiry.findFirst({ where: { phone: '+250788222333' } });
+    expect(saved, 'the inquiry should be stored in a row').toBeTruthy();
+    expect(saved!.status).toBe('NEW');
+    expect(saved!.propertyTitle).toBe('Family Home');
+
     const note = await prisma.notification.findFirst({
       where: { type: 'REALESTATE_INQUIRY', message: { contains: '+250788222333' } },
     });
@@ -134,5 +155,46 @@ describe('POST /api/realestate/inquiries', () => {
   it('validates required contact fields', async () => {
     const res = await request(app).post('/api/realestate/inquiries').send({ name: 'A' });
     expect(res.status).toBe(400);
+  });
+});
+
+describe('admin GET / PATCH / DELETE /api/realestate/inquiries', () => {
+  it('lists inquiries for an admin, newest first', async () => {
+    await request(app).post('/api/realestate/inquiries').send({ name: 'Lister One', phone: '0788000001' });
+
+    const res = await request(app).get('/api/realestate/inquiries').set(auth(adminToken));
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.inquiries)).toBe(true);
+    const times = res.body.inquiries.map((i: any) => new Date(i.createdAt).getTime());
+    expect(times).toEqual([...times].sort((a, b) => b - a));
+  });
+
+  it('refuses a Sub-Administrator without REAL_ESTATE_CONTENT, a seller, and an anonymous caller', async () => {
+    expect((await request(app).get('/api/realestate/inquiries').set(auth(plainSubAdminToken))).status).toBe(403);
+    expect((await request(app).get('/api/realestate/inquiries').set(auth(sellerToken))).status).toBe(403);
+    expect((await request(app).get('/api/realestate/inquiries')).status).toBe(401);
+  });
+
+  it('updates status through the allowed values and rejects a bad one', async () => {
+    await request(app).post('/api/realestate/inquiries').send({ name: 'Statusy', phone: '0788000002', message: 'q' });
+    const inq = await prisma.realEstateInquiry.findFirst({ where: { phone: '0788000002' } });
+
+    const ok = await request(app).patch(`/api/realestate/inquiries/${inq!.id}`).set(auth(adminToken)).send({ status: 'ARCHIVED' });
+    expect(ok.status).toBe(200);
+    expect(ok.body.inquiry.status).toBe('ARCHIVED');
+
+    const bad = await request(app).patch(`/api/realestate/inquiries/${inq!.id}`).set(auth(adminToken)).send({ status: 'SPAM' });
+    expect(bad.status).toBe(400);
+  });
+
+  it('deletes an inquiry, and refuses delete without the permission', async () => {
+    await request(app).post('/api/realestate/inquiries').send({ name: 'Deletey', phone: '0788000003' });
+    const inq = await prisma.realEstateInquiry.findFirst({ where: { phone: '0788000003' } });
+
+    expect((await request(app).delete(`/api/realestate/inquiries/${inq!.id}`).set(auth(sellerToken))).status).toBe(403);
+
+    const del = await request(app).delete(`/api/realestate/inquiries/${inq!.id}`).set(auth(adminToken));
+    expect(del.status).toBe(200);
+    expect(await prisma.realEstateInquiry.findUnique({ where: { id: inq!.id } })).toBeNull();
   });
 });

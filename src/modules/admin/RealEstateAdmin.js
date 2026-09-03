@@ -5,6 +5,14 @@ import { stateEngine } from '../../store/stateEngine.js';
 
 const PROPERTY_TYPE_LABELS = { house: '🏠 House', plot: '🟩 Plot / Land', commercial: '🏢 Commercial' };
 
+const INQUIRY_TABS = [['all', 'All'], ['NEW', 'New'], ['READ', 'Read'], ['ARCHIVED', 'Archived']];
+const INQUIRY_BADGE = {
+  NEW: 'background: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE;',
+  READ: 'background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0;',
+  ARCHIVED: 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;',
+};
+const waDigits = (phone) => String(phone || '').replace(/[^\d]/g, '').replace(/^0/, '250');
+
 export function renderRealEstateAdmin(container) {
   function render() {
     const state = stateEngine.getState();
@@ -12,6 +20,7 @@ export function renderRealEstateAdmin(container) {
     const attempted = state.loading.realEstate !== undefined;
 
     if (!attempted) stateEngine.loadRealEstate().catch(() => {});
+    if (state.loading.realEstateInquiries === undefined) stateEngine.loadRealEstateInquiries().catch(() => {});
 
     if (!reData.hero) {
       container.innerHTML = `<div style="text-align:center; padding: 3rem; color: #64748B;">Loading real estate content...</div>`;
@@ -138,6 +147,8 @@ export function renderRealEstateAdmin(container) {
             </tbody>
           </table>
         </div>
+
+        ${renderInquiriesSection(state)}
       </div>
     `;
 
@@ -204,9 +215,88 @@ export function renderRealEstateAdmin(container) {
         }
       });
     });
+
+    // Inquiries panel
+    container.querySelectorAll('.re-inq-filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => stateEngine.setUI({ realEstateInquiryFilter: btn.dataset.filter }));
+    });
+    container.querySelectorAll('.re-inq-status-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          await stateEngine.setRealEstateInquiryStatus(btn.dataset.id, btn.dataset.status);
+        } catch (err) { /* state.error already set */ }
+      });
+    });
+    container.querySelectorAll('.re-inq-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this inquiry permanently?')) return;
+        try {
+          await stateEngine.deleteRealEstateInquiry(btn.dataset.id);
+        } catch (err) { /* state.error already set */ }
+      });
+    });
   }
 
   render();
+}
+
+function renderInquiriesSection(state) {
+  const all = state.realEstateInquiries || [];
+  const loading = !!state.loading.realEstateInquiries || state.loading.realEstateInquiries === undefined;
+  const filter = state.ui.realEstateInquiryFilter || 'all';
+  const list = filter === 'all' ? all : all.filter((i) => i.status === filter);
+  const newCount = all.filter((i) => i.status === 'NEW').length;
+
+  return `
+    <h3 style="color: #0F172A; font-size: 1.15rem; margin: 2rem 0 1rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+      📨 Inquiries
+      ${newCount > 0 ? `<span style="background: #DBEAFE; color: #1D4ED8; font-size: 0.75rem; font-weight: 800; padding: 2px 9px; border-radius: 9999px;">${newCount} new</span>` : ''}
+      <span style="display: inline-flex; gap: 0.35rem; margin-left: auto; background: #F1F5F9; padding: 3px; border-radius: 10px; border: 1px solid #E2E8F0;">
+        ${INQUIRY_TABS.map(([key, label]) => `
+          <button class="btn btn-sm re-inq-filter-btn" data-filter="${key}"
+            style="color:${filter === key ? '#fff' : '#64748B'}; background:${filter === key ? 'var(--primary)' : 'transparent'}; font-size: 0.78rem; padding: 3px 9px;">
+            ${label}
+          </button>
+        `).join('')}
+      </span>
+    </h3>
+
+    ${loading && all.length === 0 ? `
+      <div style="text-align: center; padding: 2rem; color: #64748B;">Loading inquiries…</div>
+    ` : list.length === 0 ? `
+      <div style="text-align: center; padding: 2rem; background: #F8FAFC; border-radius: var(--radius-md); border: 1px dashed #E2E8F0; color: #64748B;">
+        ${filter === 'all' ? 'No inquiries yet. Submissions from the Gasabo "Talk To Gasabo Real Estate" form appear here.' : `No ${filter.toLowerCase()} inquiries.`}
+      </div>
+    ` : `
+      <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+        ${list.map((i) => `
+          <div class="glass-panel" style="padding: 1rem 1.25rem; border-radius: 16px; border-left: 4px solid ${i.status === 'NEW' ? '#2563EB' : i.status === 'ARCHIVED' ? '#D97706' : '#CBD5E1'};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+              <div style="min-width: 200px;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                  <strong style="color: #0F172A;">${escapeHtml(i.name)}</strong>
+                  <span class="badge" style="${INQUIRY_BADGE[i.status] || INQUIRY_BADGE.READ} font-size: 0.68rem;">${escapeHtml(i.status)}</span>
+                </div>
+                <div style="font-size: 0.83rem; color: #64748B; margin-top: 0.2rem;">
+                  📞 <a href="tel:${escapeHtml(String(i.phone).replace(/\s+/g, ''))}" style="color: var(--primary); font-weight: 600;">${escapeHtml(i.phone)}</a>
+                  ${i.propertyTitle ? ` &nbsp;•&nbsp; 🏠 ${escapeHtml(i.propertyTitle)}` : ''}
+                </div>
+              </div>
+              <div style="font-size: 0.75rem; color: #94A3B8; white-space: nowrap;">${new Date(i.createdAt).toLocaleString()}</div>
+            </div>
+            ${i.message ? `<p style="font-size: 0.88rem; color: #334155; margin: 0.6rem 0 0; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(i.message)}</p>` : ''}
+            <div style="display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap;">
+              <a class="btn btn-sm" href="https://wa.me/${escapeHtml(waDigits(i.phone))}" target="_blank" rel="noopener noreferrer" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">WhatsApp</a>
+              ${i.status !== 'READ' ? `<button class="btn btn-sm re-inq-status-btn" data-id="${i.id}" data-status="READ" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">Mark read</button>` : ''}
+              ${i.status !== 'ARCHIVED' ? `<button class="btn btn-sm re-inq-status-btn" data-id="${i.id}" data-status="ARCHIVED" style="background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A;">Archive</button>` : ''}
+              ${i.status !== 'NEW' ? `<button class="btn btn-sm re-inq-status-btn" data-id="${i.id}" data-status="NEW" style="background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0;">Reopen</button>` : ''}
+              <button class="btn btn-sm btn-danger re-inq-delete-btn" data-id="${i.id}">Delete</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `}
+  `;
 }
 
 // image section repaints itself on upload, the rest of the form is untouched

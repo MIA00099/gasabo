@@ -101,6 +101,9 @@ function initialData({ currentUser, currentLang, route }) {
     publicSellers: [],
     banners: [],
     realEstate: { hero: null, about: null, services: [], contact: null, properties: [] },
+    // Public "Talk To Gasabo Real Estate" submissions, for the Real Estate CMS
+    // Inquiries panel.
+    realEstateInquiries: [],
     approvalRequests: [],
     auditLogs: [],
     systemUsers: [],
@@ -1160,6 +1163,33 @@ class StateEngine {
 
   async submitRealEstateInquiry(payload) {
     return this._run('realEstateInquiry', () => api.post('/realestate/inquiries', payload));
+  }
+
+  // Admin: the Real Estate CMS "Inquiries" panel. Gated on REAL_ESTATE_CONTENT.
+  async loadRealEstateInquiries() {
+    return this._run('realEstateInquiries', async () => {
+      const { inquiries } = await api.get('/realestate/inquiries');
+      this.data.realEstateInquiries = inquiries;
+      this.notify();
+      return inquiries;
+    });
+  }
+
+  async setRealEstateInquiryStatus(id, status) {
+    return this._run('realEstateInquiries', async () => {
+      const { inquiry } = await api.patch(`/realestate/inquiries/${id}`, { status });
+      this.data.realEstateInquiries = this.data.realEstateInquiries.map((i) => (i.id === id ? inquiry : i));
+      this.notify();
+      return inquiry;
+    });
+  }
+
+  async deleteRealEstateInquiry(id) {
+    return this._run('realEstateInquiries', async () => {
+      await api.delete(`/realestate/inquiries/${id}`);
+      this.data.realEstateInquiries = this.data.realEstateInquiries.filter((i) => i.id !== id);
+      this.notify();
+    });
   }
 
   // --- Advertisements / Banners ---

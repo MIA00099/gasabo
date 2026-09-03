@@ -278,6 +278,20 @@ realEstateRouter.post('/inquiries', async (req, res) => {
   const subject = inquiry.propertyTitle ? ` about "${inquiry.propertyTitle}"` : '';
   const body = inquiry.message ? ` Message: ${inquiry.message}` : '';
 
+  // Durable record, the Gasabo counterpart of a ContactMessage row - what the
+  // Real Estate CMS "Inquiries" panel works through. Notification + audit
+  // below are the alert and the trail; this is the inbox.
+  const saved = await prisma.realEstateInquiry.create({
+    data: {
+      name: inquiry.name,
+      phone: inquiry.phone,
+      message: inquiry.message || null,
+      propertyId: inquiry.propertyId,
+      propertyTitle: inquiry.propertyTitle,
+      ipAddress: req.ip,
+    },
+  });
+
   await notifyAdminsWithModulePermission('REAL_ESTATE_CONTENT', {
     type: 'REALESTATE_INQUIRY',
     message: `${inquiry.name} (${inquiry.phone}) sent a Gasabo Real Estate inquiry${subject}.${body}`,
@@ -312,11 +326,84 @@ realEstateRouter.post('/inquiries', async (req, res) => {
     actorName: inquiry.name,
     action: 'REALESTATE_INQUIRY_SUBMITTED',
     module: 'Real Estate',
-    targetId: inquiry.propertyId || undefined,
+    targetId: saved.id,
     details: inquiry,
   });
 
   res.status(201).json({ success: true, message: 'Inquiry received.' });
+});
+
+// --- Admin: the Real Estate CMS "Inquiries" panel (REAL_ESTATE_CONTENT) ---
+
+const INQUIRY_STATUSES = ['NEW', 'READ', 'ARCHIVED'] as const;
+
+function serializeInquiry(i: {
+  id: string; name: string; phone: string; message: string | null;
+  propertyId: string | null; propertyTitle: string | null; status: string; createdAt: Date;
+}) {
+  return {
+    id: i.id,
+    name: i.name,
+    phone: i.phone,
+    message: i.message || null,
+    propertyId: i.propertyId || null,
+    propertyTitle: i.propertyTitle || null,
+    status: i.status,
+    createdAt: i.createdAt,
+  };
+}
+
+realEstateRouter.get('/inquiries', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (_req, res) => {
+  const inquiries = await prisma.realEstateInquiry.findMany({ orderBy: { createdAt: 'desc' } });
+  res.json({ inquiries: inquiries.map(serializeInquiry) });
+});
+
+const inquiryStatusSchema = z.object({ status: z.enum(INQUIRY_STATUSES) });
+
+realEstateRouter.patch('/inquiries/:id', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
+  const parsed = inquiryStatusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: `Status must be one of: ${INQUIRY_STATUSES.join(', ')}.` });
+  }
+
+  const existing = await prisma.realEstateInquiry.findUnique({ where: { id: req.params.id } });
+  if (!existing) return res.status(404).json({ error: 'Inquiry not found.' });
+
+  const updated = await prisma.realEstateInquiry.update({
+    where: { id: existing.id },
+    data: { status: parsed.data.status },
+  });
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'REALESTATE_INQUIRY_STATUS_CHANGED',
+    module: 'Real Estate',
+    targetId: existing.id,
+    details: `Marked Gasabo inquiry from ${existing.name} as ${parsed.data.status}.`,
+  });
+
+  res.json({ inquiry: serializeInquiry(updated) });
+});
+
+realEstateRouter.delete('/inquiries/:id', requireAuth, requirePermission('REAL_ESTATE_CONTENT'), async (req, res) => {
+  const existing = await prisma.realEstateInquiry.findUnique({ where: { id: req.params.id } });
+  if (!existing) return res.status(404).json({ error: 'Inquiry not found or already deleted.' });
+
+  await prisma.realEstateInquiry.delete({ where: { id: existing.id } });
+
+  await logAudit({
+    actorId: req.user!.id,
+    actorType: req.user!.role,
+    actorName: req.user!.name,
+    action: 'REALESTATE_INQUIRY_DELETED',
+    module: 'Real Estate',
+    targetId: existing.id,
+    details: `Deleted Gasabo inquiry from ${existing.name} (${existing.phone}).`,
+  });
+
+  res.json({ success: true });
 });
 
 // Generic section editor for ABOUT / SERVICES / CONTACT

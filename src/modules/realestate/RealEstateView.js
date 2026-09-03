@@ -868,12 +868,13 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
 
   overlay.innerHTML = `
     <!-- FULL PAGE STICKY HEADER -->
-    <header style="position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #E2E8F0; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+    <header style="position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #E2E8F0; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; row-gap: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
       <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-        <a href="/" id="re-detail-logo-home" title="Gasabo Real Estate home" aria-label="Gasabo Real Estate home"
-          style="display: flex; align-items: center; flex-shrink: 0;">
+        <a href="/" id="re-detail-logo-home" title="Gasabo Real Estate home page" aria-label="Gasabo Real Estate home page"
+          style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; text-decoration: none;">
           <img src="/real-estate-logo.png" alt="Gasabo Real Estate"
             style="height: 38px; width: 38px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid #E2E8F0;">
+          <span style="font-weight: 800; color: #0F172A; font-size: 0.82rem; line-height: 1.1; white-space: nowrap;">Home Page</span>
         </a>
         <button id="re-modal-close" data-modal-close aria-label="Back to properties"
           style="display: flex; align-items: center; gap: 8px; background: #F1F5F9; border: 1px solid #CBD5E1; padding: 0.55rem 1.2rem; border-radius: 9999px; font-weight: 700; color: #0F172A; cursor: pointer; font-size: 0.9rem; transition: all 0.2s ease; white-space: nowrap;">

@@ -165,6 +165,10 @@ export function getMarketplaceFooterHtml() {
               <i class="fa-solid fa-phone contact-icon phone-icon"></i>
               <a href="tel:+250788350555" class="footer-phone-link foot-nav-link">+250 788 350 555</a>
             </li>
+            <li class="footer-contact-item">
+              <i class="fa-brands fa-whatsapp contact-icon" style="color: #25D366;"></i>
+              <a href="https://wa.me/250788350555" target="_blank" rel="noopener noreferrer" class="foot-nav-link">WhatsApp: +250 788 350 555</a>
+            </li>
           </ul>
         </div>
 

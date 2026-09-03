@@ -179,10 +179,10 @@ export function cleanupFlashClock() {
 }
 
 
-// Kept for the app-wide cleanup hook. The hero used to auto-advance on an
-// interval, but that movement read like the page was refreshing/shaking while
-// people were trying to browse. Slides are now changed only by a deliberate
-// dot click.
+// The hero ads rotate on a slow timer (see startHeroSlider). An earlier
+// version turned this off because a fast auto-advance read like the page was
+// reloading; the rotation here is deliberately gentle and easy to interrupt
+// so it reads as a carousel, not a refresh.
 let heroSlideTimer = null;
 const reloadedFlashDealKeys = new Set();
 
@@ -199,9 +199,10 @@ function startHeroSlider(container) {
   const slider = container.querySelector('#heroSlider');
   const slides = [...container.querySelectorAll('.slide')];
   const dots = [...container.querySelectorAll('.dot')];
+  // Nothing to rotate through with a single ad (and no ads means no panel).
   if (!slider || slides.length < 2) return;
 
-  let current = 0;
+  let current = Math.max(0, slides.findIndex((s) => s.classList.contains('active')));
 
   function show(index) {
     current = (index + slides.length) % slides.length;
@@ -212,11 +213,38 @@ function startHeroSlider(container) {
     });
   }
 
+  // Auto-advance through the admin's hero ads. Held back so it never feels
+  // like a page refresh:
+  //   - a slow 6s step, with the existing 0.22s opacity crossfade,
+  //   - paused while the pointer is over the panel or a dot has keyboard
+  //     focus, and while the tab is in the background,
+  //   - off entirely for visitors who ask for reduced motion (the dots still
+  //     work), and
+  //   - the timer restarts from zero on a manual dot click, so a deliberate
+  //     pick is not pulled away a moment later.
+  const HERO_ROTATE_MS = 6000;
+  const reduceMotion =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function scheduleRotation() {
+    cleanupHeroSlider();
+    if (reduceMotion) return;
+    heroSlideTimer = setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      if (slider.matches(':hover') || slider.contains(document.activeElement)) return;
+      show(current + 1);
+    }, HERO_ROTATE_MS);
+  }
+
   dots.forEach((dot) => {
     dot.addEventListener('click', () => {
       show(Number(dot.dataset.dot));
+      scheduleRotation();
     });
   });
+
+  scheduleRotation();
 }
 
 function startFlashClock(container) {

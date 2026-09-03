@@ -60,10 +60,17 @@ describe('hero slider', () => {
     expect(SLIDER, 'dots must be gated on more than one ad').toMatch(/\$\{dotCount > 1 \?/);
   });
 
-  it('does not auto-advance hero ads like a page refresh', () => {
+  it('auto-rotates the hero ads gently - pausable, and off for reduced motion', () => {
     const driver = HOME.slice(HOME.indexOf('function startHeroSlider'), HOME.indexOf('function startFlashClock'));
-    expect(driver, 'slider should stay still unless the visitor clicks a dot').not.toContain('setInterval');
+    // It rotates on a timer now, but every guard that keeps it from reading
+    // like a page refresh has to be there.
+    expect(driver, 'the ads advance on a timer').toContain('setInterval');
+    expect(driver, 'not a jittery fast step').toContain('HERO_ROTATE_MS = 6000');
+    expect(driver, 'off for prefers-reduced-motion').toContain("matchMedia('(prefers-reduced-motion: reduce)')");
+    expect(driver, 'paused while the tab is in the background').toContain("document.visibilityState === 'hidden'");
+    expect(driver, 'paused on hover / keyboard focus').toContain("slider.matches(':hover')");
     expect(driver, 'manual dots still switch slides').toContain("dot.addEventListener('click'");
+    expect(driver, 'a manual pick restarts the timer').toMatch(/show\(Number\(dot\.dataset\.dot\)\);\s*scheduleRotation\(\);/);
   });
 
   it('changes slides with an opacity fade, not a horizontal shake', () => {

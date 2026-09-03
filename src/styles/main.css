@@ -4005,119 +4005,8 @@ table {
     }
 }
 
-/* Tablet */
-@media (max-width: 1023px) and (min-width: 768px) {
-    .hero-section-wrapper {
-        min-height: 360px;
-        height: 380px;
-        border-radius: 0 0 0 40px;
-        overflow: hidden;
-    }
-
-    .hero-section-wrapper::before {
-        width: 145%;
-        height: 245%;
-        left: 42%;
-        top: -72%;
-    }
-
-    .hero-section-wrapper::after {
-        width: calc(145% - 16px);
-        height: calc(245% - 16px);
-        left: calc(42% + 16px);
-        top: calc(-72% + 16px);
-    }
-
-    .hero-section-wrapper .slider-container {
-        /* Clip the ad to the navy arc so the blurred backdrop never paints over
-           the gold line (tablet: slider 50% wide, arc left 42%, 145%x245%, 16px
-           band -> 8px half). Same derivation as the desktop note above. */
-        clip-path: ellipse(calc(145% - 8px) calc(122.5% - 8px) at calc(129% + 8px) calc(50.5% + 8px));
-        width: 50%;
-        min-height: 260px;
-        height: 100%;
-        padding: 12px 16px;
-        overflow: hidden;
-    }
-}
-
-/* Mobile (Base - 0px to 767px): Mobile-first stacked layout with fluid minimum height & zero overflow */
-@media (max-width: 767px) {
-    .hero-section-wrapper {
-        height: auto;
-        min-height: 480px;
-        border-radius: 0 0 0 32px;
-        flex-direction: column;
-        align-items: stretch;
-        justify-content: flex-start;
-        padding-bottom: 24px;
-        overflow: hidden;
-    }
-
-    .hero-section-wrapper::before {
-        width: 220%;
-        height: 190%;
-        left: -60%;
-        top: 38%;
-        border-radius: 50%;
-    }
-
-    .hero-section-wrapper::after {
-        width: calc(220% - 14px);
-        height: calc(190% - 14px);
-        left: calc(-60% + 7px);
-        top: calc(38% + 7px);
-        border-radius: 50%;
-    }
-
-    .hero-section-wrapper .slider-container {
-        position: relative;
-        top: auto;
-        right: auto;
-        width: 100%;
-        min-height: 220px;
-        height: auto;
-        aspect-ratio: 16 / 9;
-        margin-top: 14px;
-        clip-path: none;
-        padding: 8px 16px 28px 16px;
-        justify-content: center;
-        overflow: hidden;
-        z-index: 10;
-    }
-
-    .hero-section-wrapper .slider-dots {
-        position: absolute;
-        bottom: 8px;
-        right: auto;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 20;
-    }
-
-    .hero-section-wrapper .slide img,
-    .hero-section-wrapper .slide.has-caption img {
-        width: 100%;
-        height: 100%;
-        max-height: 100%;
-        max-width: 100%;
-        object-fit: cover;
-        border-radius: 14px;
-    }
-
-    /* Ad shown whole (never cropped) over its blurred fill: the sharp image is
-       contained in the full-width banner and the backdrop fills the frame. This
-       overrides the .slide img cover rule above (which is for the built-in
-       cut-out product slides). */
-    .hero-section-wrapper .slide.cover-slide .slide-fg {
-        width: auto;
-        height: auto;
-        max-height: 100%;
-        max-width: 100%;
-        object-fit: contain;
-        border-radius: 0;
-    }
-}
+/* Tablet + mobile hero: see the stacked-layout override just after the base
+   slider styles below (it needs to come after them in the cascade). */
 
 /* --- Image Slider Styles --- */
 .slider-container {
@@ -4224,6 +4113,106 @@ table {
     background-color: #F5A623; /* Brand orange to stand out on dark blue */
     width: 18px;
     border-radius: 6px;
+}
+
+/* Tablet + mobile (below the 1024px desktop split).
+
+   The admin "Hero Slider" ads are wide banners, but the panel is a tall navy
+   box built as the desktop right-hand side. Contain-fitting a ~3:1 banner into
+   it left large blurred bars top and bottom that read as broken empty space.
+   Below the desktop breakpoint the hero stacks - white text, then the ad - and
+   the ad panel takes the banner's own shape: only the visible slide is in
+   normal flow so the container's height:auto tracks it, the image is full
+   width at its natural height, and the blurred backdrop (only ever there to
+   hide letterbox bars) is dropped since there are none. Placed after the base
+   slider rules so it wins the cascade without inflating selectors. */
+@media (max-width: 1023px) {
+    /* .compact-container prefix only to out-specify Tailwind's md:flex-row /
+       md:p-6 utilities on this element (equal specificity, but they are
+       emitted after this file's rules). */
+    .compact-container .hero-section-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        height: auto;
+        min-height: 0;
+        border-radius: 0 0 0 32px;
+        padding: 16px 16px 20px;
+        overflow: hidden;
+    }
+
+    /* The navy / gold arc is the desktop right-hand panel; once the layout
+       stacks there is no side for it to fill, so it only reads as clutter. */
+    .hero-section-wrapper::before,
+    .hero-section-wrapper::after {
+        display: none;
+    }
+
+    /* Full-width text column - md:w-[45%] in the markup only describes the
+       desktop row. */
+    .hero-section-wrapper > div:first-child {
+        width: 100%;
+    }
+
+    .hero-section-wrapper .slider-container {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        aspect-ratio: auto;
+        clip-path: none;
+        display: block;
+        overflow: visible;
+        padding: 0;
+        margin-top: 16px;
+        z-index: 10;
+    }
+
+    .hero-section-wrapper .slide {
+        position: absolute;
+        inset: 0;
+        display: block;
+        height: auto;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(0, 27, 69, 0.18);
+    }
+
+    /* Only the visible slide is in normal flow, so the container's height:auto
+       tracks the current banner. */
+    .hero-section-wrapper .slide.active {
+        position: relative;
+    }
+
+    .hero-section-wrapper .slide img,
+    .hero-section-wrapper .slide.cover-slide .slide-fg,
+    .hero-section-wrapper .slide.has-caption img {
+        position: relative;
+        width: 100%;
+        height: auto;
+        max-width: 100%;
+        max-height: none;
+        object-fit: contain;
+        border-radius: 16px;
+        display: block;
+        filter: none;
+    }
+
+    /* Panel now fits the banner, so there are no bars for the blurred fill to
+       cover. */
+    .hero-section-wrapper .slide.cover-slide .slide-bg {
+        display: none;
+    }
+
+    .hero-section-wrapper .slider-dots {
+        position: absolute;
+        left: 50%;
+        right: auto;
+        bottom: 10px;
+        transform: translateX(-50%);
+        z-index: 20;
+    }
 }
 
 /* ---------------------------------------------------------------------------

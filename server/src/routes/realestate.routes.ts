@@ -5,6 +5,7 @@ import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 import { withDerivedPrices, priceToNumber } from '../utils/price.js';
 import { notifyAdminsWithModulePermission } from '../utils/notify.js';
+import { sendMail } from '../utils/email.js';
 
 export const realEstateRouter = Router();
 
@@ -280,6 +281,29 @@ realEstateRouter.post('/inquiries', async (req, res) => {
   await notifyAdminsWithModulePermission('REAL_ESTATE_CONTENT', {
     type: 'REALESTATE_INQUIRY',
     message: `${inquiry.name} (${inquiry.phone}) sent a Gasabo Real Estate inquiry${subject}.${body}`,
+  });
+
+  // Email the Gasabo contact address, the same way the marketplace contact
+  // form emails env.CONTACT_EMAIL. Recipient is the CONTACT section's own
+  // email (what the Real Estate footer shows), so an admin who changes it in
+  // the CMS redirects inquiries too. Best-effort: no-op + log when SMTP is
+  // unconfigured (see utils/email.ts); the in-app notification above and the
+  // audit row below have already recorded the inquiry.
+  const contactSection = (await getSection('CONTACT', DEFAULTS.CONTACT)) as { email?: string };
+  const inquiryTo =
+    (typeof contactSection?.email === 'string' && contactSection.email) ||
+    (DEFAULTS.CONTACT as { email: string }).email;
+  await sendMail({
+    to: inquiryTo,
+    subject: `Gasabo Real Estate inquiry${subject || ` from ${inquiry.name}`}`,
+    text: [
+      'New inquiry from the Gasabo Real Estate site.',
+      '',
+      `Name:     ${inquiry.name}`,
+      `Phone:    ${inquiry.phone}`,
+      inquiry.propertyTitle ? `Property: ${inquiry.propertyTitle}` : null,
+      inquiry.message ? `\nMessage:\n${inquiry.message}` : null,
+    ].filter((line) => line !== null).join('\n'),
   });
 
   await logAudit({

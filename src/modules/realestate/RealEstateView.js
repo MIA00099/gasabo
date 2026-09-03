@@ -868,11 +868,18 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
 
   overlay.innerHTML = `
     <!-- FULL PAGE STICKY HEADER -->
-    <header style="position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #E2E8F0; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
-      <button id="re-modal-close" data-modal-close aria-label="Back to properties"
-        style="display: flex; align-items: center; gap: 8px; background: #F1F5F9; border: 1px solid #CBD5E1; padding: 0.55rem 1.2rem; border-radius: 9999px; font-weight: 700; color: #0F172A; cursor: pointer; font-size: 0.9rem; transition: all 0.2s ease;">
-        ← Back to Properties
-      </button>
+    <header style="position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #E2E8F0; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+      <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+        <a href="/" id="re-detail-logo-home" title="Gasabo Real Estate home" aria-label="Gasabo Real Estate home"
+          style="display: flex; align-items: center; flex-shrink: 0;">
+          <img src="/real-estate-logo.png" alt="Gasabo Real Estate"
+            style="height: 38px; width: 38px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid #E2E8F0;">
+        </a>
+        <button id="re-modal-close" data-modal-close aria-label="Back to properties"
+          style="display: flex; align-items: center; gap: 8px; background: #F1F5F9; border: 1px solid #CBD5E1; padding: 0.55rem 1.2rem; border-radius: 9999px; font-weight: 700; color: #0F172A; cursor: pointer; font-size: 0.9rem; transition: all 0.2s ease; white-space: nowrap;">
+          ← Back to Properties
+        </button>
+      </div>
 
       <div style="display: flex; align-items: center; gap: 10px;">
         <button type="button" id="re-share-head-btn" aria-label="Share property link"
@@ -1220,6 +1227,19 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   overlay.querySelector('#re-share-card-btn')?.addEventListener('click', () => doShareProperty('#re-share-card-btn'));
 
   overlay.querySelector('#re-modal-close').addEventListener('click', close);
+
+  // The Gasabo logo goes to the Real Estate home page - not "back", not the
+  // marketplace. Same approach as the related-property cards above: don't call
+  // close() (its onClose is history.back()), just repoint the route. main.js's
+  // syncListingModal sees a non-listing route and removes this overlay itself.
+  overlay.querySelector('#re-detail-logo-home')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    pushHome();
+    stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+    stateEngine.setPortal('realestate');
+    stateEngine.setUI({ realEstateTab: 'home' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   // Returned so main.js can dismiss it when the URL changes (Back/Forward).
   return overlay;

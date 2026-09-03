@@ -3,7 +3,7 @@
  *
  * The Gasabo Real Estate portal (src/modules/realestate/*) is deliberately
  * NOT covered by this - it carries its own brand and its own
- * info@gasaborealestate.com contact address.
+ * gasaborealestaterwanda@gmail.com contact address.
  */
 
 // Public "contact us" address. Shown on every marketplace and support page

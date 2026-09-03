@@ -38,7 +38,7 @@ export function getLargeFooterHtml(currentLang = 'en') {
             </li>
             <li class="footer-contact-item">
               <i class="fa-solid fa-envelope contact-icon email-icon"></i>
-              <a href="mailto:info@gasaborealestate.com" class="foot-nav-link">Email: info@gasaborealestate.com</a>
+              <a href="mailto:gasaborealestaterwanda@gmail.com" class="foot-nav-link">Email: gasaborealestaterwanda@gmail.com</a>
             </li>
             <li style="margin-top: 0.6rem;">
               <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.4rem;">Follow Us:</div>

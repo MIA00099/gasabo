@@ -48,7 +48,9 @@ function gasaboFooterHtml(contact) {
   const c = contact || {};
   const phone = c.phone || '0788350555';
   const phoneDigits = String(phone).replace(/\s+/g, '');
-  const email = c.email || 'info@gasaborealestate.com';
+  // International format for wa.me (no "+", no spaces, "07..." -> "2507...").
+  const waDigits = String(phone).replace(/[^\d]/g, '').replace(/^0/, '250');
+  const email = c.email || 'gasaborealestaterwanda@gmail.com';
   const address = c.address || 'Kacyiru, Gasabo, Kigali';
 
   return `
@@ -78,6 +80,10 @@ function gasaboFooterHtml(contact) {
             <li style="display: flex; align-items: center; gap: 8px;">
               <i class="fa-solid fa-phone" style="color: #22C55E; font-size: 0.95rem; width: 16px;"></i>
               <a href="tel:${escapeHtml(phoneDigits)}" style="color: #ffffff; font-weight: 700; text-decoration: none;">${escapeHtml(phone)}</a>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-brands fa-whatsapp" style="color: #25D366; font-size: 0.95rem; width: 16px;"></i>
+              <a href="https://wa.me/${escapeHtml(waDigits)}" target="_blank" rel="noopener noreferrer" style="color: #ffffff; font-weight: 700; text-decoration: none;">WhatsApp: ${escapeHtml(phone)}</a>
             </li>
             <li style="display: flex; align-items: center; gap: 8px;">
               <i class="fa-solid fa-envelope" style="color: #94A3B8; font-size: 0.95rem; width: 16px;"></i>
@@ -727,7 +733,7 @@ function renderAboutView(reData) {
           <h2 style="font-size: 1.9rem; font-weight: 800; color: #0F172A; margin: 0.45rem 0 1rem;">Talk To Gasabo Real Estate</h2>
           <p style="color: #475569; line-height: 1.7; margin-bottom: 1rem;">${escapeHtml(contact.address || 'Kigali, Rwanda')}</p>
           <p style="color: #0F172A; font-weight: 700; margin-bottom: 0.35rem;">${escapeHtml(contact.phone || '0788350555')}</p>
-          <p style="color: #475569;">${escapeHtml(contact.email || 'info@gasaborealestate.com')}</p>
+          <p style="color: #475569;">${escapeHtml(contact.email || 'gasaborealestaterwanda@gmail.com')}</p>
         </div>
         <form id="re-inquiry-form" style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 1.25rem; display: grid; gap: 0.85rem;">
           <label style="display: grid; gap: 0.35rem; color: #0F172A; font-weight: 700; font-size: 0.85rem;">

@@ -50,7 +50,7 @@ function gasaboFooterHtml(contact) {
   const phoneDigits = String(phone).replace(/\s+/g, '');
   // International format for wa.me (no "+", no spaces, "07..." -> "2507...").
   const waDigits = String(phone).replace(/[^\d]/g, '').replace(/^0/, '250');
-  const email = c.email || 'gasaborealestaterwanda@gmail.com';
+  const email = c.email || 'gasaboestaterwanda@gmail.com';
   const address = c.address || 'Kacyiru, Gasabo, Kigali';
 
   return `
@@ -733,7 +733,7 @@ function renderAboutView(reData) {
           <h2 style="font-size: 1.9rem; font-weight: 800; color: #0F172A; margin: 0.45rem 0 1rem;">Talk To Gasabo Real Estate</h2>
           <p style="color: #475569; line-height: 1.7; margin-bottom: 1rem;">${escapeHtml(contact.address || 'Kigali, Rwanda')}</p>
           <p style="color: #0F172A; font-weight: 700; margin-bottom: 0.35rem;">${escapeHtml(contact.phone || '0788350555')}</p>
-          <p style="color: #475569;">${escapeHtml(contact.email || 'gasaborealestaterwanda@gmail.com')}</p>
+          <p style="color: #475569;">${escapeHtml(contact.email || 'gasaboestaterwanda@gmail.com')}</p>
         </div>
         <form id="re-inquiry-form" style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 1.25rem; display: grid; gap: 0.85rem;">
           <label style="display: grid; gap: 0.35rem; color: #0F172A; font-weight: 700; font-size: 0.85rem;">

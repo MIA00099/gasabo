@@ -17,7 +17,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().optional(),
   // Where "Contact Us" form submissions and their email notifications go.
   // Also the address shown across the marketplace/support pages (the Gasabo
-  // Real Estate portal keeps its own gasaborealestaterwanda@gmail.com).
+  // Real Estate portal keeps its own gasaboestaterwanda@gmail.com).
   CONTACT_EMAIL: z.string().email().default('kigalimarket20@gmail.com'),
   // Optional SMTP transport for outbound mail (currently just the contact-form
   // notification). All absent -> utils/email.ts logs the message instead of

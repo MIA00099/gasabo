@@ -30,7 +30,7 @@ const DEFAULTS: Record<string, unknown> = {
   CONTACT: {
     address: 'Gasabo District, Kigali, Rwanda',
     phone: '0788350555',
-    email: 'gasaborealestaterwanda@gmail.com',
+    email: 'gasaboestaterwanda@gmail.com',
   },
 };
 

@@ -4646,9 +4646,10 @@ table {
   will-change: transform;
 }
 
-.flash-promo-panel:hover .flash-promo-track {
-  animation-play-state: paused;
-}
+/* The rail loops continuously and is NOT paused on hover or tap: on a touch
+   screen a tap counts as :hover and stuck the marquee until you tapped
+   elsewhere. Links inside stay clickable while it moves. (prefers-reduced-
+   motion still stops it - see the media query below.) */
 
 /* Rail tile: an admin-uploaded FLASH_PROMO image, nothing else. Small on
    purpose - the rail is a glance, not a second product grid. */

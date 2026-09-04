@@ -3927,39 +3927,13 @@ table {
 }
 
 /*
- * The reference design is built with two oversized ellipses.
- * Keeping the shapes in CSS makes the hero sharp at every screen size.
+ * The old design's gold + navy double arc. Superseded by the single
+ * white / dark crescent split (see .slider-container, per the
+ * kheeeeeen.html sample) - kept only so the markup's hooks still resolve.
  */
-.hero-section-wrapper::before {
-    content: "";
-    position: absolute;
-    z-index: 0;
-    pointer-events: none;
-
-    /* GOLD OUTER ARC */
-    width: 128%;
-    height: 235%;
-    left: 17%;
-    top: -67%;
-
-    border-radius: 50%;
-    background: #D99500;
-}
-
+.hero-section-wrapper::before,
 .hero-section-wrapper::after {
-    content: "";
-    position: absolute;
-    z-index: 0;
-    pointer-events: none;
-
-    /* NAVY INNER AREA */
-    width: calc(128% - 18px);
-    height: calc(235% - 18px);
-    left: calc(17% + 18px);
-    top: calc(-67% + 18px);
-
-    border-radius: 50%;
-    background: #001B45;
+    display: none;
 }
 
 /* Keep hero content above the background shapes */
@@ -3975,124 +3949,114 @@ table {
 /* Desktop sizing */
 @media (min-width: 1024px) {
     .hero-section-wrapper {
-        height: clamp(330px, 40vh, 430px);
+        height: clamp(380px, 44vh, 480px);
         border-radius: 0 0 0 64px;
     }
 
-    .hero-section-wrapper::before {
-        width: 132%;
-        height: 250%;
-        left: 45%;
-        top: -72%;
-    }
-
+    /* The white / dark crescent split (.slider-container) is the whole
+       right-hand design now - the old gold + navy double arc is gone. */
+    .hero-section-wrapper::before,
     .hero-section-wrapper::after {
-        width: calc(132% - 18px);
-        height: calc(250% - 18px);
-        left: calc(45% + 18px);
-        top: calc(-72% + 18px);
+        display: none;
     }
 
-    /* The slider used to be clipped to the navy ellipse so a cover-slide
-       backdrop couldn't spill onto the gold arc - but that same ellipse also
-       clipped the left of a contained banner, which read as the ad being
-       cropped. The ad matters more than the arc reaching all the way in:
-       drop the clip and make the panel a rounded card of the blurred fill
-       instead, with the whole ad shown inside it. */
     .hero-section-wrapper .slider-container {
-        clip-path: none;
-        padding: 14px 18px 14px 14px;
-    }
-
-    .hero-section-wrapper .slide {
-        border-radius: 20px;
+        width: 54%;
     }
 }
 
 /* Tablet + mobile hero: see the stacked-layout override just after the base
    slider styles below (it needs to come after them in the cascade). */
 
-/* --- Image Slider Styles --- */
+/* --- Image slider - "curved split" per the kheeeeeen.html sample.
+   The image panel is a dark crescent carved out of the right side (deepest at
+   the vertical centre); each ad photo fills it edge to edge (object-fit:
+   cover) and drifts in with a slow ken-burns zoom. --- */
 .slider-container {
     position: absolute;
     top: 0;
     right: 0;
-    width: 55%;
+    width: 52%;
     height: 100%;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 12px 24px 12px 10px;
+    background: #0B1E39;
+    padding: 0;
     z-index: 10;
+    clip-path: ellipse(100% 100% at 100% 50%);
+}
+
+/* Warm glow at the seam of the curve (the sample's .orange-crescent). */
+#heroSlider::before {
+    content: "";
+    position: absolute;
+    left: -6%;
+    top: 50%;
+    width: 38%;
+    height: 130%;
+    transform: translateY(-50%);
+    background: radial-gradient(ellipse at center, rgba(237, 162, 3, 0.4), transparent 70%);
+    filter: blur(38px);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Keeps the seam readable over a bright photo. */
+#heroSlider::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 45%);
+    z-index: 6;
+    pointer-events: none;
 }
 
 .slide {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
     opacity: 0;
-    transform: none;
-    transition: opacity 0.22s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     visibility: hidden;
-    overflow: hidden;
-}
-
-.slide img {
-     max-height: 100%;
-     max-width: 100%;
-     width: 100%;
-     height: 100%;
-     object-fit: cover;
-     filter: drop-shadow(0 12px 20px rgba(0,0,0,0.30));
+    transform: scale(1.07);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    z-index: 1;
 }
 
 .slide.active {
     opacity: 1;
-    transform: none;
     visibility: visible;
-    z-index: 10;
+    z-index: 2;
+    transform: scale(1);
+    transition: opacity 0.6s ease, transform 7s ease-out;
 }
 
 .slide.cover-slide {
     overflow: hidden;
 }
 
-.slide.cover-slide .slide-bg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
-    object-fit: cover;
-    filter: blur(22px) brightness(0.82);
-    transform: scale(1.12);
-    z-index: 0;
-}
-
+.slide img,
 .slide.cover-slide .slide-fg {
-    position: relative;
-    z-index: 1;
     width: 100%;
     height: 100%;
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
-    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+    display: block;
+    filter: none;
 }
 
-/* Slider Indicators (Dots) */
+/* The sample fills the panel with one image; the blurred backdrop copy the
+   old letterbox treatment used is not needed. */
+.slide.cover-slide .slide-bg {
+    display: none;
+}
+
+/* Slider indicators - the sample's pill active dot, bottom-right. */
 .slider-dots {
     position: absolute;
-    bottom: 20px;
-    right: 40px; /* Align with the slider content */
+    bottom: 26px;
+    right: 42px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -4100,38 +4064,33 @@ table {
 }
 
 .dot {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.55);
     cursor: pointer;
-    transition: background-color 0.3s, width 0.3s;
-    /* The dots are <button> here rather than <div>, so that a keyboard can
-       reach them at all; these two lines strip the button chrome back to the
-       source file's appearance. */
     padding: 0;
     border: none;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: width 0.3s ease, background-color 0.3s ease;
 }
 
 .dot.active {
-    background-color: #F5A623; /* Brand orange to stand out on dark blue */
-    width: 18px;
-    border-radius: 6px;
+    width: 28px;
+    border-radius: 20px;
+    background-color: #ffffff;
 }
 
-/* Tablet + mobile (below the 1024px desktop split).
+/* Phone (below 768px, where the markup's flex-col applies).
 
-   Below the desktop breakpoint the hero stacks - white text, then the ad -
-   and the ad sits in a fixed 2:1 slot. The whole uploaded image is always
-   shown (object-fit: contain, so nothing is cropped whatever its shape), and
-   a blurred, zoomed copy of it fills whatever the contained image doesn't
-   cover, so the slot never has bare bars. Placed after the base slider rules
-   so it wins the cascade without inflating selectors. */
-@media (max-width: 1023px) {
-    /* .compact-container prefix only to out-specify Tailwind's md:flex-row /
-       md:p-6 utilities on this element (equal specificity, but they are
-       emitted after this file's rules). */
+   Per the kheeeeeen.html sample the hero stacks here - white text on top,
+   then a wide image panel that runs edge to edge and tucks under the text
+   with a curved top. Tablet + desktop keep the side-by-side crescent (the
+   sample stacks only on phones too). Placed after the base slider rules so it
+   wins the cascade without inflating selectors. */
+@media (max-width: 767px) {
+    /* .compact-container prefix only to out-specify Tailwind's flex-col /
+       p-4 utilities on this element. Horizontal padding is 0 so the image can
+       reach both edges; the text block carries its own p-4 in the markup. */
     .compact-container .hero-section-wrapper {
         flex-direction: column;
         align-items: stretch;
@@ -4139,12 +4098,10 @@ table {
         height: auto;
         min-height: 0;
         border-radius: 0 0 0 32px;
-        padding: 16px 16px 20px;
+        padding: 16px 0 0;
         overflow: hidden;
     }
 
-    /* The navy / gold arc is the desktop right-hand panel; once the layout
-       stacks there is no side for it to fill, so it only reads as clutter. */
     .hero-section-wrapper::before,
     .hero-section-wrapper::after {
         display: none;
@@ -4156,31 +4113,37 @@ table {
         width: 100%;
     }
 
-    /* Drop the page gutter on the hero section so the banner runs as wide as
-       the screen allows - but never past it, so there is no horizontal
-       scroll. */
+    /* Let the image panel run to both screen edges (but never past). */
     #view-home > section:first-child {
         padding-inline: 0;
     }
 
-    /* The banner spans the container (no negative-margin bleed - that pushed
-       it off-screen). Fixed 2:1 slot so the height is predictable. */
     .hero-section-wrapper .slider-container {
         position: relative;
         inset: auto;
         width: 100%;
-        margin-inline: 0;
+        margin: 14px 0 0;
         height: auto;
         min-height: 0;
-        aspect-ratio: 2 / 1;
-        clip-path: none;
+        aspect-ratio: 3 / 2;
         display: block;
         overflow: hidden;
         padding: 0;
-        margin-top: 14px;
-        border-radius: 14px;
-        box-shadow: 0 10px 24px rgba(0, 27, 69, 0.16);
+        border-radius: 0;
+        box-shadow: none;
+        /* Curved top edge - the image comes up under the white section. */
+        clip-path: ellipse(135% 100% at 50% 100%);
         z-index: 10;
+    }
+
+    /* Side glow is a desktop-seam thing; the top gradient keeps the curved
+       seam legible on mobile. */
+    #heroSlider::before {
+        display: none;
+    }
+
+    #heroSlider::after {
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.22), transparent 42%);
     }
 
     .hero-section-wrapper .slide {
@@ -4188,40 +4151,32 @@ table {
         inset: 0;
         display: block;
         height: 100%;
-        border-radius: 14px;
-        overflow: hidden;
+        border-radius: 0;
     }
 
-    /* The whole image, never cropped, whatever its aspect ratio. */
     .hero-section-wrapper .slide img,
     .hero-section-wrapper .slide.cover-slide .slide-fg,
     .hero-section-wrapper .slide.has-caption img {
-        position: relative;
-        z-index: 1;
         width: 100%;
         height: 100%;
         max-width: 100%;
         max-height: 100%;
-        object-fit: contain;
+        object-fit: cover;
         object-position: center;
         border-radius: 0;
         display: block;
         filter: none;
     }
 
-    /* Blurred, zoomed copy of the image filling the space the contained image
-       leaves, so a wide (or tall, or square) banner reads as framed rather
-       than floating in bars. */
     .hero-section-wrapper .slide.cover-slide .slide-bg {
-        display: block;
-        object-fit: cover;
+        display: none;
     }
 
     .hero-section-wrapper .slider-dots {
         position: absolute;
         left: 50%;
         right: auto;
-        bottom: 10px;
+        bottom: 16px;
         transform: translateX(-50%);
         z-index: 20;
     }

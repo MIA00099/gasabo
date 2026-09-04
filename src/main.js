@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedCategory: state.ui.marketplaceFilters?.selectedCategory || 'all',
       });
 
-      bindHeaderEvents(headerMount, {
+      const headerHandlers = {
         goHome: handleGoHome,
         selectCategory: (id) => {
           pushPath(pathForRoute(ROUTE_PRODUCTS));
@@ -354,15 +354,21 @@ document.addEventListener('DOMContentLoaded', () => {
             stateEngine.loadProducts({ search: 'Jobs' }).catch(() => {});
           }
         },
-        openMore: async (anchor) => {
+        openMore: async (anchor, { forceAllNavLinks = false } = {}) => {
           let s = stateEngine.getState();
           if (!s.categories || s.categories.length === 0) {
             await stateEngine.loadCategories().catch(() => {});
             s = stateEngine.getState();
           }
           const tNav = (key) => getTranslation(currentLang, key);
+          // `[hidden]` is what the desktop fit pass sets on links that did not
+          // fit; `offsetParent === null` also catches the phone, where the whole
+          // `.nav-fixed-links` row is display:none. `forceAllNavLinks` (the phone
+          // "All Categories" button) lists every nav link, since a phone has no
+          // other nav bar to reach them from.
           const hiddenNavActions = new Set(
-            [...document.querySelectorAll('#header-mount .nav-fixed-item[hidden]')]
+            [...document.querySelectorAll('#header-mount .nav-fixed-item')]
+              .filter((el) => forceAllNavLinks || el.matches('.nav-fixed-item[hidden]') || el.offsetParent === null)
               .map((el) => el.dataset.navAction)
               .filter(Boolean),
           );
@@ -474,6 +480,16 @@ document.addEventListener('DOMContentLoaded', () => {
         markAllRead: () => stateEngine.markAllNotificationsRead().catch(() => {}),
         markRead: (id) => stateEngine.markNotificationRead(id).catch(() => {}),
         openCategories: (anchor) => {
+          // Below 768px the marketplace nav folds its link row away, so the
+          // "All Categories" button doubles as the nav menu: it opens the
+          // combined primary-nav + categories list instead of categories alone.
+          const isPhone = typeof window !== 'undefined'
+            && typeof window.matchMedia === 'function'
+            && window.matchMedia('(max-width: 767px)').matches;
+          if (isPhone) {
+            headerHandlers.openMore(anchor, { forceAllNavLinks: true });
+            return;
+          }
           const s = stateEngine.getState();
           openCategoryDropdown(anchor, {
             categories: s.categories || [],
@@ -497,7 +513,8 @@ document.addEventListener('DOMContentLoaded', () => {
             },
           });
         },
-      });
+      };
+      bindHeaderEvents(headerMount, headerHandlers);
 
       }
       if (appElement) appElement.style.paddingTop = '';

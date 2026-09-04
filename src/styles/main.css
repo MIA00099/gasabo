@@ -5364,3 +5364,112 @@ button[disabled]:hover,
   font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
 }
+
+/* ===========================================================================
+   MOBILE RESPONSIVENESS PASS   phone <=767 | tablet 768-1023 | desktop >=1024
+
+   Every rule here is inside a max-width media query or keyed to a phone-only
+   class, so the desktop rendering (>=1024px) is byte-for-byte unchanged.
+   Scope:
+     - marketplace nav bar: the fixed link row, the inline category chips and
+       "More" fold away below 768px; the "All Categories" button becomes the
+       menu (it opens a combined nav + categories list - see openCategories in
+       main.js), leaving a clean  [All Categories]  ....  [Post an Ad]  bar.
+     - /products catalog: the category sidebar is stacked full-width below the
+       1024px layout breakpoint, where left open it buries the grid. It becomes
+       a closed-by-default drawer there and stays a normal sidebar from 1024 up.
+     - product grids collapse to one column on very narrow phones, and the card
+       image switches from a fixed pixel height to a 4:3 aspect ratio so it
+       scales with the (now much wider) card.
+   =========================================================================== */
+
+/* Belt-and-braces against sideways scroll (html already clips overflow-x). */
+html,
+body {
+  max-width: 100%;
+}
+
+/* --- Marketplace top nav: collapse to a menu button below the tablet line -- */
+@media (max-width: 767px) {
+  /* Fold the link row, the chip lane and "More" into the All Categories
+     button. !important mirrors the existing .nav-fixed-item[hidden] rule and
+     out-ranks the Tailwind `flex` utility on these same elements. */
+  .nav-responsive-row .nav-fixed-links,
+  .nav-responsive-row .nav-cat-fill,
+  .nav-responsive-row #nav-link-more {
+    display: none !important;
+  }
+
+  /* The button is now the whole left side; let it size to content and keep
+     its label (the 520px rule below would otherwise strip it to an icon). */
+  .nav-responsive-row .nav-left-group {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  #nav-all-categories-2 {
+    flex: 0 0 auto;
+  }
+  #nav-all-categories-2 .nav-allcats-label {
+    display: inline;
+  }
+
+  /* Post an Ad has room for its label again with the middle lanes gone. */
+  #header-post-ad-btn {
+    min-width: 0;
+  }
+  #header-post-ad-btn .nav-post-label {
+    display: inline;
+  }
+}
+
+/* --- /products catalog: closed-by-default category drawer below 1024px ----- */
+@media (max-width: 1023px) {
+  .products-cat-panel {
+    display: none;
+  }
+  .products-cat-panel.is-open {
+    display: block;
+  }
+}
+.products-cat-toggle .chev {
+  transition: transform 0.2s ease;
+}
+.products-cat-toggle[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+
+/* --- Product grids: one column on the narrowest phones (~320-360px) -------
+   Above that the existing 2-column mobile grid stands; a detail-heavy card
+   only gets genuinely cramped below ~360px. #id out-ranks Tailwind's
+   .grid-cols-2; the doubled class matches the ultrawide block's trick for the
+   same reason (Tailwind wins on source order at equal specificity). */
+@media (max-width: 360px) {
+  #products-results-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-more-grid.home-more-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Product card image: fixed height -> aspect ratio on phones ------------ */
+@media (max-width: 767px) {
+  .products-card-media {
+    height: auto !important;      /* nulls Tailwind h-48 / sm:h-52 */
+    max-height: none !important;  /* nulls max-h-[240px] on the home tile */
+    aspect-ratio: 4 / 3;
+  }
+}
+
+/* --- Marketplace footer: the 5-column grid overflowed 901-1120px ----------
+   #market-footer's grid is
+     minmax(260px,1.35fr) repeat(3, minmax(130px,1fr)) minmax(240px,1.2fr)
+   whose track minimums (890px) + four 32px gaps + the 64px section padding
+   need ~1080px. It only collapsed to two columns at <=900px, so 901-1080px
+   (1024 included) scrolled sideways. Collapse it across that whole band; it
+   matches what <=900px already does. */
+@media (min-width: 901px) and (max-width: 1120px) {
+  #market-footer .large-footer-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}

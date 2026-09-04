@@ -22,7 +22,7 @@ function productCard(prod) {
     <div class="products-card bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col justify-between"
       data-id="${prod.id}" role="button" tabindex="0">
       
-      <div class="relative w-full h-48 sm:h-52 bg-gray-100 overflow-hidden flex items-center justify-center">
+      <div class="products-card-media relative w-full h-48 sm:h-52 bg-gray-100 overflow-hidden flex items-center justify-center">
         ${hasDiscount ? `<div class="absolute top-3 left-3 bg-brand-orange text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-10 shadow-sm">-${pct}%</div>` : ''}
         ${prod.isFeatured || prod.isTrending ? `<div class="absolute top-3 right-3 z-10 ${prod.isFeatured ? 'bg-amber-400 text-amber-900' : 'bg-brand-green text-white'} text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">${prod.isFeatured ? '⭐ Featured' : '🔥 Trending'}</div>` : ''}
         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
@@ -89,8 +89,24 @@ export function renderProductsPage(container) {
           <div class="flex flex-col lg:flex-row gap-8">
             <!-- Sidebar -->
             <aside class="lg:w-1/4">
-              <h2 class="text-xl font-bold mb-4 px-2 text-gray-900">Categories</h2>
-              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden py-2">
+              <h2 class="hidden lg:block text-xl font-bold mb-4 px-2 text-gray-900">Categories</h2>
+
+              <!-- Below the desktop layout breakpoint (1024px) the sidebar is
+                   stacked full-width above the grid, where left open it fills
+                   the screen before the first product. There it is a
+                   closed-by-default drawer; the CSS keeps it always-open from
+                   1024px up, so desktop is unchanged. -->
+              <button type="button" id="products-cat-toggle"
+                class="products-cat-toggle lg:hidden w-full flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-2xl shadow-sm px-4 py-3 mb-3 text-sm font-bold text-gray-800"
+                aria-expanded="false" aria-controls="products-cat-panel">
+                <span class="flex items-center gap-2 min-w-0">
+                  <i class="fa-solid fa-bars text-brand-green shrink-0"></i>
+                  <span class="truncate">Categories<span class="text-gray-400 font-medium"> &middot; ${escapeHtml(heading)}</span></span>
+                </span>
+                <i class="fa-solid fa-chevron-down chev text-xs text-gray-400 shrink-0"></i>
+              </button>
+
+              <div id="products-cat-panel" class="products-cat-panel bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden py-2">
                 <ul class="text-sm font-medium text-gray-700">
                   <li>
                     <button type="button" data-cat="all"
@@ -183,6 +199,15 @@ export function renderProductsPage(container) {
         </div>
       </div>
     `;
+
+    // Mobile / tablet: the category list is a closed-by-default drawer. Picking
+    // a category re-renders the whole page, which drops `is-open` and closes it.
+    const catToggle = container.querySelector('#products-cat-toggle');
+    const catPanel = container.querySelector('#products-cat-panel');
+    catToggle?.addEventListener('click', () => {
+      const open = catPanel?.classList.toggle('is-open') || false;
+      catToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
 
     // Sidebar category selection.
     container.querySelectorAll('.products-cat').forEach((btn) => {

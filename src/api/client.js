@@ -7,6 +7,37 @@
 
 const SESSION_KEY = 'KIGALIMARKET_SESSION_V1';
 
+/**
+ * Where the REST API lives.
+ *
+ * On the website this is '' - the SPA is served from the same origin as the
+ * API, so fetch('/api/...') just works. The native app (Capacitor) is loaded
+ * from https://localhost with no backend of its own, so its build sets
+ * VITE_API_BASE_URL to the deployed origin (e.g. https://www.kigalimarket.com)
+ * and every call, and every server-relative /uploads/ image, is rewritten to
+ * point there. See .env.example and MOBILE_APP.md.
+ */
+export const API_BASE = String(import.meta.env?.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+
+/** Absolute URL for a server-relative media path ('/uploads/x.jpg'); anything
+ *  already absolute (https://, data:) or empty is returned unchanged. */
+export function resolveMediaUrl(url) {
+  if (!API_BASE || typeof url !== 'string') return url;
+  return url.startsWith('/uploads/') ? API_BASE + url : url;
+}
+
+/** Walk a parsed API response and rewrite every '/uploads/...' string to an
+ *  absolute URL. No-op when API_BASE is '' (the website build). */
+function withResolvedMedia(value) {
+  if (!API_BASE) return value;
+  if (typeof value === 'string') return resolveMediaUrl(value);
+  if (Array.isArray(value)) return value.map(withResolvedMedia);
+  if (value && typeof value === 'object') {
+    for (const key of Object.keys(value)) value[key] = withResolvedMedia(value[key]);
+  }
+  return value;
+}
+
 export function getSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -93,7 +124,7 @@ async function request(method, path, body) {
 
   let res;
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(`${API_BASE}/api${path}`, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -110,7 +141,7 @@ async function request(method, path, body) {
 
   let data = null;
   try {
-    data = await res.json();
+    data = withResolvedMedia(await res.json());
   } catch {
     // Some responses (e.g. 204) have no body - that's fine.
   }
@@ -148,7 +179,7 @@ async function uploadFile(path, file) {
 
   let res;
   try {
-    res = await fetch(`/api${path}`, { method: 'POST', headers, body: formData, signal: controller.signal });
+    res = await fetch(`${API_BASE}/api${path}`, { method: 'POST', headers, body: formData, signal: controller.signal });
   } catch (err) {
     if (err.name === 'AbortError') {
       throw new Error('The upload took too long and was cancelled. Please try again.');
@@ -160,7 +191,7 @@ async function uploadFile(path, file) {
 
   let data = null;
   try {
-    data = await res.json();
+    data = withResolvedMedia(await res.json());
   } catch {
     // no body
   }

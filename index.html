@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- viewport-fit=cover: let content extend under the notch / rounded corners
+       on phones so the safe-area-inset-* vars the layout already uses (mobile
+       tab bar, native-app status bar) resolve to real values. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <!-- Kept under ~60 characters: Bing and Google both truncate the title in
        results past roughly that, and Bing's URL Inspection flagged the old
        83-character one as "Title too long". Brand first, then what the site

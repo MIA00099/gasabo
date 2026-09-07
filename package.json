@@ -20,7 +20,11 @@
     "dev:api": "tsx scripts/test-db.ts start && dotenv -e .env.local -- tsx server/src/index.ts",
     "dev:seed": "tsx scripts/test-db.ts start && dotenv -e .env.local -- tsx prisma/seed.ts",
     "test:e2e": "playwright test",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "app:build": "vite build --mode app && cap sync android",
+    "app:sync": "cap sync android",
+    "app:android": "cap open android",
+    "app:add:android": "cap add android"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -46,6 +50,12 @@
     "vitest": "^4.1.11"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/cli": "^6.2.2",
+    "@capacitor/core": "^6.2.2",
+    "@capacitor/splash-screen": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3",
     "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.112.2",
     "@types/multer": "^2.2.0",

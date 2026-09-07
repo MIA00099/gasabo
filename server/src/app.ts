@@ -31,9 +31,24 @@ const corsOrigins = env.CORS_ORIGIN
     ? [env.PUBLIC_SITE_URL]
     : null;
 
+// The Capacitor native app (see capacitor.config.ts / MOBILE_APP.md) is served
+// from one of these fixed WebView origins, never a real web page - a browser
+// tab cannot forge them - so they are always allowed alongside CORS_ORIGIN.
+const NATIVE_APP_ORIGINS = [
+  'capacitor://localhost',
+  'ionic://localhost',
+  'http://localhost',
+  'https://localhost',
+];
+
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || corsOrigins === null || corsOrigins.includes(origin.replace(/\/+$/, ''))) {
+    if (
+      !origin
+      || corsOrigins === null
+      || corsOrigins.includes(origin.replace(/\/+$/, ''))
+      || NATIVE_APP_ORIGINS.includes(origin.replace(/\/+$/, ''))
+    ) {
       return callback(null, true);
     }
     return callback(null, false);

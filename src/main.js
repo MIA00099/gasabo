@@ -28,6 +28,9 @@ import {
   ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_HELP_CENTER, ROUTE_FAQS,
   ROUTE_ABOUT, ROUTE_TERMS, ROUTE_PRIVACY, ROUTE_CONTACT,
 } from './store/router.js';
+// No-op in a browser; configures the status bar / splash / Back button when
+// the same bundle runs inside the Capacitor native shell.
+import { initNativeApp } from './native/app.js';
 
 // Route kind -> the SupportPages renderer that draws it. All render inside the
 // public marketplace shell with the site footer beneath (see the switch in
@@ -116,6 +119,8 @@ function syncListingModal(state) {
 
 document.addEventListener('DOMContentLoaded', () => {
   const appElement = document.getElementById('app');
+
+  initNativeApp();
 
   function checkAdminRoute() {
     if (window.location.hash === ADMIN_URL_HASH) {

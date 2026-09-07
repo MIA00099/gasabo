@@ -4642,14 +4642,14 @@ table {
   gap: 0.5rem;
   padding: 0.1rem 0;
   align-items: stretch;
-  animation: flash-promo-scroll 30s linear infinite;
+  /* 48s (was 30s) is a calm reading pace rather than a rush. The rail loops
+     continuously and is NOT paused on hover or tap: on a touch screen a tap
+     counts as :hover and stuck the marquee until you tapped elsewhere. Links
+     inside stay clickable while it moves. (prefers-reduced-motion still stops
+     it - see the media query below.) */
+  animation: flash-promo-scroll 48s linear infinite;
   will-change: transform;
 }
-
-/* The rail loops continuously and is NOT paused on hover or tap: on a touch
-   screen a tap counts as :hover and stuck the marquee until you tapped
-   elsewhere. Links inside stay clickable while it moves. (prefers-reduced-
-   motion still stops it - see the media query below.) */
 
 /* Rail tile: an admin-uploaded FLASH_PROMO image, nothing else. Small on
    purpose - the rail is a glance, not a second product grid. */
@@ -4738,7 +4738,11 @@ table {
     transform: translate3d(0, 0, 0);
   }
   to {
-    transform: translate3d(-50%, 0, 0);
+    /* The track is the promo list rendered twice. A plain -50% lands half a
+       flex `gap` (0.5rem) short of where the second copy begins, so every
+       loop jumped ~4px - the "it speeds up when it ends" flick. Travel the
+       extra half-gap so copy 2 sits exactly where copy 1 started: seamless. */
+    transform: translate3d(calc(-50% - 0.25rem), 0, 0);
   }
 }
 
@@ -5472,5 +5476,48 @@ body {
 @media (min-width: 901px) and (max-width: 1120px) {
   #market-footer .large-footer-container {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* --- Flash Deals card: fill the width on phones ---------------------------
+   It was capped at 320px and centred, so it sat in a narrow column with a
+   gap each side while the Partner-promotions panel below it ran full width.
+   Let it fill the row like everything else; when there is no active deal
+   (no countdown) drop the tall min-height so it is not a big empty box. */
+@media (max-width: 767px) {
+  .flash-home-row .flash-deals {
+    max-width: none;
+    margin-inline: 0;
+  }
+  .flash-deals.flash-deals-empty {
+    min-height: 0;
+    padding-bottom: 14px;
+  }
+}
+
+/* --- Category rail: smaller icon circles on phones ----------------------
+   The 72px circles filled almost the whole tile. Shrink the circle and the
+   icon inside it (the <img> carries an inline width/height from
+   renderCategoryIcon, hence !important; emoji icons carry an inline
+   font-size). Desktop keeps the 72px tiles. */
+@media (max-width: 767px) {
+  .home-category-rail .cat-tile-btn {
+    min-width: 66px;
+    gap: 0.3rem;
+  }
+  .home-category-rail .cat-tile-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
+  }
+  .home-category-rail .cat-tile-icon > img {
+    width: 52px !important;
+    height: 52px !important;
+  }
+  .home-category-rail .cat-tile-icon > span {
+    font-size: 32px !important;
+  }
+  .home-category-rail .cat-tile-btn > span {
+    font-size: 0.68rem;
   }
 }

@@ -111,7 +111,7 @@ function productCardHtml(prod) {
 }
 
 const CATEGORY_TILE_CLASS = 'flex flex-col items-center gap-2 flex-1 min-w-[92px] px-2 py-1.5 cursor-pointer group cat-tile-btn';
-const CATEGORY_ICON_FRAME_CLASS = 'w-[72px] h-[72px] rounded-full flex items-center justify-center overflow-hidden shrink-0 transition transform group-hover:scale-105';
+const CATEGORY_ICON_FRAME_CLASS = 'cat-tile-icon w-[72px] h-[72px] rounded-full flex items-center justify-center overflow-hidden shrink-0 transition transform group-hover:scale-105';
 const CATEGORY_ICON_SIZE = 72;
 
 // Grey circles, no labels. Deliberately not category-shaped placeholder
@@ -120,8 +120,8 @@ const CATEGORY_ICON_SIZE = 72;
 // a skeleton built the same way would reintroduce exactly that - text on
 // screen that stands for nothing in the database.
 const SKELETON_TILES = Array.from({ length: 5 }, () => `
-  <div class="flex flex-col items-center gap-2 flex-1 min-w-[92px] px-2 py-1.5">
-      <div class="w-[72px] h-[72px] rounded-full bg-gray-100 animate-pulse"></div>
+  <div class="cat-tile-btn flex flex-col items-center gap-2 flex-1 min-w-[92px] px-2 py-1.5">
+      <div class="cat-tile-icon w-[72px] h-[72px] rounded-full bg-gray-100 animate-pulse"></div>
       <div class="h-2.5 w-14 rounded bg-gray-100 animate-pulse"></div>
   </div>
 `).join('');
@@ -557,7 +557,7 @@ export function renderMarketplaceView(container) {
                  page, so it leads rather than sitting mid-scroll. -->
             <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 shrink-0">
               <div class="flash-home-row">
-                <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : ''} transition"
+                <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : 'flash-deals-empty'} transition"
                   ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>
 
                   <div class="flash-head">

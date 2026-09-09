@@ -4076,7 +4076,7 @@ table {
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    padding: clamp(1rem, 4vh, 2rem) clamp(0.75rem, 2vw, 2rem) clamp(1rem, 4vh, 2rem) clamp(4rem, 10vw, 9rem);
+    padding: clamp(0.5rem, 2vh, 1rem) clamp(0.5rem, 1.5vw, 1.25rem) clamp(0.5rem, 2vh, 1rem) clamp(1.75rem, 4vw, 4rem);
 }
 
 .slide.cover-slide .slide-fg {
@@ -4256,7 +4256,7 @@ table {
     }
 
     .hero-section-wrapper .hero-ad-link {
-        padding: clamp(1.75rem, 9vw, 2.75rem) 0.75rem 0.75rem;
+        padding: clamp(0.75rem, 4vw, 1.25rem) clamp(0.25rem, 2vw, 0.75rem) 0.5rem;
     }
 
     .hero-section-wrapper .slide.cover-slide .slide-fg {
@@ -4265,7 +4265,7 @@ table {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
-        object-position: center center;
+        object-position: center top;
         border-radius: 0;
         display: block;
         filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.24));

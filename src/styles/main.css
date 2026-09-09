@@ -3988,9 +3988,9 @@ table {
    slider styles below (it needs to come after them in the cascade). */
 
 /* --- Image slider - "curved split" per the kheeeeeen.html sample.
-   The panel keeps the same crescent shape and the same 6s / 18s timing, but
-   the real uploaded ad is resized into the slot so text-heavy banners do not
-   lose edges on phone, tablet, or desktop. --- */
+   The panel keeps the same crescent shape and the same 6s / 18s timing. The
+   real uploaded ad preserves its proportions so it stays responsive on phone,
+   tablet, and desktop; the blurred copy behind it fills the hero shape. --- */
 .slider-container {
     --hero-slide-ms: 6000ms;
     --hero-reference-loop-ms: 18000ms;
@@ -4073,7 +4073,7 @@ table {
 
 .hero-ad-link {
     position: absolute;
-    inset: 0;
+    inset: clamp(16px, 2vw, 28px) clamp(10px, 1.6vw, 24px) clamp(16px, 2vw, 28px) clamp(72px, 8vw, 112px);
     z-index: 4;
     display: block;
     box-sizing: border-box;
@@ -4088,7 +4088,7 @@ table {
     height: 100%;
     max-width: 100%;
     max-height: 100%;
-    object-fit: fill;
+    object-fit: contain;
     object-position: center center;
     display: block;
     filter: none;
@@ -4168,14 +4168,14 @@ table {
     background-color: #ffffff;
 }
 
-/* Phone (below 768px, where the markup's flex-col applies).
+/* Tablet + phone (below desktop width).
 
    Per the kheeeeeen.html sample the hero stacks here - white text on top,
    then a wide image panel that runs edge to edge and tucks under the text
-   with a curved top. Tablet + desktop keep the side-by-side crescent (the
-   sample stacks only on phones too). Placed after the base slider rules so it
-   wins the cascade without inflating selectors. */
-@media (max-width: 767px) {
+   with a curved top. Tablet portrait needs the same treatment because wide
+   uploaded banners become too narrow in the desktop split. Placed after the
+   base slider rules so it wins the cascade without inflating selectors. */
+@media (max-width: 1023px) {
     /* .compact-container prefix only to out-specify Tailwind's flex-col /
        p-4 utilities on this element. Horizontal padding is 0 so the image can
        reach both edges; the text block carries its own p-4 in the markup. */
@@ -4211,8 +4211,8 @@ table {
         inset: auto;
         width: 100%;
         margin: 14px 0 0;
-        height: clamp(350px, 52vh, 420px);
-        min-height: 350px;
+        height: clamp(220px, 56vw, 420px);
+        min-height: 220px;
         display: block;
         overflow: hidden;
         padding: 0;
@@ -4260,11 +4260,15 @@ table {
         height: 100%;
         max-width: 100%;
         max-height: 100%;
-        object-fit: fill;
+        object-fit: contain;
         object-position: center center;
         border-radius: 0;
         display: block;
         filter: none;
+    }
+
+    .hero-section-wrapper .hero-ad-link {
+        inset: clamp(30px, 6vw, 48px) clamp(8px, 2vw, 18px) clamp(8px, 2vw, 18px);
     }
 
     .hero-section-wrapper .slide.cover-slide .slide-bg {

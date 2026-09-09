@@ -83,16 +83,16 @@ describe('hero slider', () => {
     expect(activeRule).not.toContain('translateX');
   });
 
-  it('renders admin hero ads as cover-slides so any-shape banners fill without cropping', () => {
-    // Admin-uploaded ads are full photos/banners of any aspect ratio, so they
-    // get the cover-slide treatment: a blurred, zoomed backdrop of the image
-    // (.slide-bg) behind the whole, uncropped image (.slide-fg). Without this
-    // an uploaded banner rendered tiny and boxed in flat navy.
+  it('renders admin hero ads inside a wide slider frame without poster padding', () => {
+    // Admin-uploaded hero ads are usually wide banners. The slider frame should
+    // match that shape so the full image can be shown without the big empty
+    // top/bottom area that came from placing a banner inside a tall panel.
     expect(SLIDER, 'ad slides must be cover-slides').toMatch(/class="slide cover-slide/);
     expect(SLIDER, 'blurred backdrop image').toContain('class="slide-bg"');
     expect(SLIDER, 'sharp foreground image').toContain('class="slide-fg"');
     expect(SLIDER, 'linked ads need a real frame around the foreground image').toContain('class="hero-ad-link"');
 
+    const sliderRule = CSS.match(/\n\.slider-container \{([\s\S]*?)\n\}/)?.[1] || '';
     const fgStart = CSS.indexOf('.slide.cover-slide .slide-fg {');
     const fgRule = CSS.slice(fgStart, CSS.indexOf('}', fgStart));
     const bgStart = CSS.indexOf('.slide.cover-slide .slide-bg {');
@@ -100,10 +100,12 @@ describe('hero slider', () => {
     const linkStart = CSS.indexOf('.hero-ad-link {');
     const linkRule = CSS.slice(linkStart, CSS.indexOf('}', linkStart));
 
-    expect(fgRule, 'the sharp uploaded ad must be shown whole').toContain('object-fit: contain');
+    expect(sliderRule, 'hero slider should use a wide banner frame').toContain('aspect-ratio: 2.65 / 1');
+    expect(fgRule, 'the sharp uploaded ad must stay complete inside that frame').toContain('object-fit: contain');
     expect(bgRule, 'the blurred copy fills the curved panel behind it').toContain('object-fit: cover');
     expect(bgRule, 'the blurred copy must stay visible').not.toContain('display: none');
-    expect(linkRule, 'foreground ad needs safe padding inside the curved mask').toContain('padding: clamp');
+    expect(linkRule, 'foreground ad frame must not add poster padding').not.toContain('padding:');
+    expect(linkRule, 'foreground ad frame clips to the slider bounds').toContain('overflow: hidden');
   });
 
   it('keeps the reference-style opacity and scale motion on active hero ads', () => {

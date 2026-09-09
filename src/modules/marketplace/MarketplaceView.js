@@ -529,9 +529,9 @@ export function renderMarketplaceView(container) {
                                Wrapped in a link when the ad carries a target. -->
                           <div class="slide cover-slide ${i === 0 ? 'active' : ''}" data-slide="${i}">
                             <img class="slide-bg" src="${escapeHtml(ad.image)}" alt="" aria-hidden="true">
-                            ${ad.targetUrl ? `<a href="${escapeHtml(ad.targetUrl)}" style="display:contents">` : ''}
+                            ${ad.targetUrl ? `<a href="${escapeHtml(ad.targetUrl)}" class="hero-ad-link">` : '<div class="hero-ad-link">'}
                             <img class="slide-fg" src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}">
-                            ${ad.targetUrl ? `</a>` : ''}
+                            ${ad.targetUrl ? `</a>` : '</div>'}
                           </div>
                         `).join('')}
 

@@ -91,6 +91,26 @@ describe('hero slider', () => {
     expect(SLIDER, 'ad slides must be cover-slides').toMatch(/class="slide cover-slide/);
     expect(SLIDER, 'blurred backdrop image').toContain('class="slide-bg"');
     expect(SLIDER, 'sharp foreground image').toContain('class="slide-fg"');
+    expect(SLIDER, 'linked ads need a real frame around the foreground image').toContain('class="hero-ad-link"');
+
+    const fgStart = CSS.indexOf('.slide.cover-slide .slide-fg {');
+    const fgRule = CSS.slice(fgStart, CSS.indexOf('}', fgStart));
+    const bgStart = CSS.indexOf('.slide.cover-slide .slide-bg {');
+    const bgRule = CSS.slice(bgStart, CSS.indexOf('}', bgStart));
+    const linkStart = CSS.indexOf('.hero-ad-link {');
+    const linkRule = CSS.slice(linkStart, CSS.indexOf('}', linkStart));
+
+    expect(fgRule, 'the sharp uploaded ad must be shown whole').toContain('object-fit: contain');
+    expect(bgRule, 'the blurred copy fills the curved panel behind it').toContain('object-fit: cover');
+    expect(bgRule, 'the blurred copy must stay visible').not.toContain('display: none');
+    expect(linkRule, 'foreground ad needs safe padding inside the curved mask').toContain('padding: clamp');
+  });
+
+  it('keeps the reference-style opacity and scale motion on active hero ads', () => {
+    expect(CSS).toContain('@keyframes heroAdBackdropMove');
+    expect(CSS).toContain('@keyframes heroAdImageMove');
+    expect(CSS).toContain('.slide.active .slide-bg');
+    expect(CSS).toContain('.slide.active .slide-fg');
   });
 });
 

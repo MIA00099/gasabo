@@ -83,10 +83,11 @@ describe('hero slider', () => {
     expect(activeRule).not.toContain('translateX');
   });
 
-  it('renders admin hero ads inside a wide slider frame without poster padding', () => {
-    // Admin-uploaded hero ads are usually wide banners. The slider frame should
-    // match that shape so the full image can be shown without the big empty
-    // top/bottom area that came from placing a banner inside a tall panel.
+  it('renders admin hero ads as full-frame cover slides like the reference hero', () => {
+    // The reference HTML treats the ad image as the hero image itself: the
+    // slider fills the available panel and the image covers that full curved
+    // frame. It must not shrink into a centered poster with empty space around
+    // it.
     expect(SLIDER, 'ad slides must be cover-slides').toMatch(/class="slide cover-slide/);
     expect(SLIDER, 'blurred backdrop image').toContain('class="slide-bg"');
     expect(SLIDER, 'sharp foreground image').toContain('class="slide-fg"');
@@ -100,8 +101,9 @@ describe('hero slider', () => {
     const linkStart = CSS.indexOf('.hero-ad-link {');
     const linkRule = CSS.slice(linkStart, CSS.indexOf('}', linkStart));
 
-    expect(sliderRule, 'hero slider should use a wide banner frame').toContain('aspect-ratio: 2.65 / 1');
-    expect(fgRule, 'the sharp uploaded ad must stay complete inside that frame').toContain('object-fit: contain');
+    expect(sliderRule, 'hero slider should fill the right hero panel').toContain('height: 100%');
+    expect(sliderRule, 'hero slider should not shrink into a banner strip').not.toContain('aspect-ratio');
+    expect(fgRule, 'the sharp uploaded ad must cover the whole slider frame').toContain('object-fit: cover');
     expect(bgRule, 'the blurred copy fills the curved panel behind it').toContain('object-fit: cover');
     expect(bgRule, 'the blurred copy must stay visible').not.toContain('display: none');
     expect(linkRule, 'foreground ad frame must not add poster padding').not.toContain('padding:');

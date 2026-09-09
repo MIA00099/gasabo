@@ -3993,18 +3993,16 @@ table {
    cover) and drifts in with a slow ken-burns zoom. --- */
 .slider-container {
     position: absolute;
-    top: 50%;
+    top: 0;
     right: 0;
     width: 52%;
-    height: auto;
-    aspect-ratio: 2.65 / 1;
+    height: 100%;
     overflow: hidden;
     background: #0B1E39;
     padding: 0;
     z-index: 10;
-    clip-path: ellipse(115% 100% at 100% 50%);
+    clip-path: ellipse(100% 100% at 100% 50%);
     isolation: isolate;
-    transform: translateY(-50%);
 }
 
 /* Warm glow at the seam of the curve (the sample's .orange-crescent). */
@@ -4087,7 +4085,7 @@ table {
     height: 100%;
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center center;
     display: block;
     filter: none;
@@ -4212,16 +4210,15 @@ table {
         inset: auto;
         width: 100%;
         margin: 14px 0 0;
-        height: auto;
-        min-height: 0;
-        aspect-ratio: 2.65 / 1;
+        height: clamp(350px, 52vh, 420px);
+        min-height: 350px;
         display: block;
         overflow: hidden;
         padding: 0;
         border-radius: 0;
         box-shadow: none;
         /* Curved top edge - the image comes up under the white section. */
-        clip-path: ellipse(180% 115% at 50% 100%);
+        clip-path: ellipse(115% 100% at 50% 100%);
         z-index: 10;
         transform: none;
     }
@@ -4262,7 +4259,7 @@ table {
         height: 100%;
         max-width: 100%;
         max-height: 100%;
-        object-fit: contain;
+        object-fit: cover;
         object-position: center center;
         border-radius: 0;
         display: block;

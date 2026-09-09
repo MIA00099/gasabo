@@ -1018,6 +1018,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   padding-right: 3rem !important;
 }
 
+.home-category-rail-shell.is-at-start .home-category-rail {
+  padding-left: 0.5rem !important;
+}
+
+.home-category-rail-shell.is-at-end .home-category-rail {
+  padding-right: 0.5rem !important;
+}
+
 .home-category-rail .cat-tile-btn {
   scroll-snap-align: start;
 }
@@ -1050,6 +1058,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transform: translateY(-50%) scale(0.98);
 }
 
+.home-cat-scroll-btn.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) scale(0.94);
+}
+
 .home-cat-scroll-btn-left {
   left: 10px;
 }
@@ -1065,6 +1079,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   z-index: 2;
   width: 52px;
   pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.home-cat-scroll-fade.is-hidden {
+  opacity: 0;
 }
 
 .home-cat-scroll-fade-left {
@@ -4598,8 +4617,7 @@ table {
 }
 
 .flash-promo-copy,
-.flash-promo-marquee,
-.flash-promo-actions {
+.flash-promo-marquee {
   position: relative;
   z-index: 1;
 }
@@ -4651,23 +4669,65 @@ table {
   will-change: transform;
 }
 
-/* Rail tile: an admin-uploaded FLASH_PROMO image, nothing else. Small on
-   purpose - the rail is a glance, not a second product grid. */
-.flash-promo-ad-card {
-  flex: 0 0 128px;
-  height: 82px;
-  display: block;
+.flash-promo-product-card {
+  flex: 0 0 138px;
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  color: #0B1C3A;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
 }
 
-.flash-promo-ad-card img {
+.flash-promo-product-img {
+  height: 74px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.flash-promo-product-img img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+}
+
+.flash-promo-product-info {
+  min-width: 0;
+  padding: 0.45rem 0.55rem 0.55rem;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.flash-promo-product-info span {
+  color: var(--primary-green);
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.flash-promo-product-info strong {
+  overflow: hidden;
+  color: #0B1C3A;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flash-promo-product-info em {
+  color: #F97316;
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .flash-promo-empty {
@@ -4685,52 +4745,6 @@ table {
   padding: 0.75rem;
   font-size: 0.78rem;
   font-weight: 700;
-}
-
-.flash-promo-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.flash-promo-action {
-  min-height: 34px;
-  border: 0;
-  border-radius: 8px;
-  padding: 0.5rem 0.8rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  font-weight: 850;
-  line-height: 1;
-  cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-}
-
-.flash-promo-action:hover {
-  transform: translateY(-1px);
-}
-
-.flash-promo-action:active {
-  transform: translateY(0);
-}
-
-.flash-promo-action:focus-visible {
-  outline: 3px solid rgba(253, 230, 138, 0.9);
-  outline-offset: 2px;
-}
-
-.flash-promo-action-primary {
-  background: #F97316;
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.24);
-}
-
-.flash-promo-action-primary:hover {
-  background: #EA580C;
 }
 
 @keyframes flash-promo-scroll {
@@ -4758,7 +4772,7 @@ table {
   }
 
   .flash-home-row .flash-deals {
-    max-width: 320px;
+    max-width: none;
   }
 }
 
@@ -4776,18 +4790,13 @@ table {
     margin-inline: -12px;
   }
 
-  .flash-promo-ad-card {
-    flex-basis: 116px;
-    height: 76px;
+  .flash-promo-product-card {
+    flex-basis: 122px;
+    min-height: 118px;
   }
 
-  .flash-promo-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .flash-promo-action {
-    width: 100%;
+  .flash-promo-product-img {
+    height: 66px;
   }
 }
 
@@ -4817,7 +4826,7 @@ table {
   margin: 0;
   font-size: 19px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
   color: white;
 }
 
@@ -4871,6 +4880,295 @@ table {
   font-size: 18px;
   font-weight: 800;
   color: #fff;
+}
+
+.flash-page {
+  min-height: 60vh;
+}
+
+.flash-page-back {
+  min-height: 42px;
+  margin-bottom: 0.85rem;
+  border: 1px solid #d8dee7;
+  border-radius: 8px;
+  background: #fff;
+  color: #0B1C3A;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem;
+  font-weight: 850;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.flash-page-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  padding: 1.1rem;
+  color: #fff;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 20px),
+    linear-gradient(135deg, #063f2b 0%, #0B1C3A 100%);
+  box-shadow: 0 14px 34px rgba(6, 63, 43, 0.18);
+}
+
+.flash-page-hero-empty {
+  grid-template-columns: 1fr;
+}
+
+.flash-page-title span {
+  color: #FDE68A;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.flash-page-title h1 {
+  margin: 0.1rem 0 0.25rem;
+  color: #fff;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.05;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.flash-page-title h1 i {
+  color: #ffd21c;
+}
+
+.flash-page-title p {
+  max-width: 44rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.flash-page-countdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.flash-page-countdown .time-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  background: #fff;
+  color: #063f2b;
+  display: grid;
+  place-items: center;
+  align-content: center;
+}
+
+.flash-page-countdown .number {
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.flash-page-countdown .label {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  line-height: 1;
+  font-weight: 850;
+}
+
+.flash-page-countdown .separator {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 950;
+}
+
+.flash-page-state {
+  min-height: 210px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.65rem;
+  font-weight: 750;
+}
+
+.flash-page-state i {
+  color: var(--primary-green);
+  font-size: 1.45rem;
+}
+
+.flash-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.85rem;
+}
+
+.flash-page-card {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.flash-page-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.45);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.12);
+}
+
+.flash-page-card-media {
+  position: relative;
+  height: 168px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.flash-page-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.flash-page-discount {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  border-radius: 8px;
+  background: #F97316;
+  color: #fff;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.flash-page-card-body {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+}
+
+.flash-page-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.flash-page-card-meta span:first-child {
+  color: #F97316;
+}
+
+.flash-page-card h3 {
+  margin: 0;
+  min-height: 2.4em;
+  color: #0B1C3A;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.flash-page-price-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.flash-page-price-row strong {
+  color: var(--primary-green);
+  font-size: 1.05rem;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.flash-page-price-row span {
+  color: #94a3b8;
+  font-size: 0.76rem;
+  text-decoration: line-through;
+}
+
+.flash-page-card-btn {
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: #063f2b;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+@media (max-width: 767px) {
+  .flash-deals .countdown {
+    gap: 4px;
+  }
+
+  .flash-deals .time-box {
+    width: 44px;
+    height: 50px;
+  }
+
+  .flash-deals .time-box .number {
+    font-size: 18px;
+  }
+
+  .flash-deals .time-box .label {
+    font-size: 8.5px;
+  }
+
+  .flash-page-hero {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .flash-page-countdown {
+    justify-content: flex-start;
+    gap: 0.32rem;
+  }
+
+  .flash-page-countdown .time-box {
+    width: 54px;
+    height: 58px;
+  }
+
+  .flash-page-countdown .number {
+    font-size: 1.15rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .flash-deals {
+    padding-inline: 12px;
+  }
+
+  .flash-deals .countdown {
+    gap: 3px;
+  }
+
+  .flash-deals .time-box {
+    width: 40px;
+    height: 48px;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -5495,29 +5793,29 @@ body {
   }
 }
 
-/* --- Category rail: smaller icon circles on phones ----------------------
-   The 72px circles filled almost the whole tile. Shrink the circle and the
-   icon inside it (the <img> carries an inline width/height from
-   renderCategoryIcon, hence !important; emoji icons carry an inline
-   font-size). Desktop keeps the 72px tiles. */
+/* --- Category rail: same readable icon size on phones --------------------
+   The green All Categories target and every category icon must stay the same
+   size, so touch users are not asked to hit tiny images beside one large tile.
+   The <img> carries inline width/height from renderCategoryIcon, hence
+   !important; emoji icons carry an inline font-size. */
 @media (max-width: 767px) {
   .home-category-rail .cat-tile-btn {
-    min-width: 66px;
-    gap: 0.3rem;
+    min-width: 92px;
+    gap: 0.45rem;
   }
   .home-category-rail .cat-tile-icon {
-    width: 52px;
-    height: 52px;
-    font-size: 1.3rem;
+    width: 72px;
+    height: 72px;
+    font-size: 1.875rem;
   }
   .home-category-rail .cat-tile-icon > img {
-    width: 52px !important;
-    height: 52px !important;
+    width: 72px !important;
+    height: 72px !important;
   }
   .home-category-rail .cat-tile-icon > span {
-    font-size: 32px !important;
+    font-size: 42px !important;
   }
   .home-category-rail .cat-tile-btn > span {
-    font-size: 0.68rem;
+    font-size: 0.75rem;
   }
 }

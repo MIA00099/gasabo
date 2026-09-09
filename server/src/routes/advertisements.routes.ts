@@ -23,21 +23,18 @@ advertisementsRouter.get('/', async (_req, res) => {
   });
 });
 
-// Two placements read the storefront: HERO_SLIDER feeds the homepage hero
-// carousel, FLASH_PROMO feeds the moving image rail beside the Flash Deals
-// card. Absent means HERO_SLIDER (the admin form's default). HOMEPAGE_BANNER
-// and PROMOTIONAL_BANNER were offered once and rendered nowhere - an ad made
-// as either was accepted, stored and then invisible everywhere - so anything
-// outside this set is rejected rather than quietly kept where no one sees it.
-const AD_TYPES = ['HERO_SLIDER', 'FLASH_PROMO'] as const;
-const DEFAULT_AD_TYPE = 'HERO_SLIDER';
+// HERO_SLIDER is the only ad placement the storefront reads now. The Flash
+// Deals side rail is live product content, not an uploaded ad slot. The old
+// HOMEPAGE_BANNER, PROMOTIONAL_BANNER, and FLASH_PROMO types rendered nowhere,
+// so anything else is rejected rather than quietly kept where no one sees it.
+const AD_TYPE = 'HERO_SLIDER';
 
 advertisementsRouter.post('/', requireAuth, requirePermission('ADVERTISEMENTS'), async (req, res) => {
   const { title, type, imageUrl, targetUrl, startDate, endDate } = req.body || {};
   if (!title || !imageUrl) return res.status(400).json({ error: 'Banner title and image are required.' });
-  const adType = type || DEFAULT_AD_TYPE;
-  if (!AD_TYPES.includes(adType)) {
-    return res.status(400).json({ error: `Unsupported ad type "${type}". Supported types: ${AD_TYPES.join(', ')}.` });
+  const adType = type || AD_TYPE;
+  if (adType !== AD_TYPE) {
+    return res.status(400).json({ error: `Unsupported ad type "${type}". Supported type: ${AD_TYPE}.` });
   }
 
   const ad = await prisma.advertisement.create({

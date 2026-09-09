@@ -110,11 +110,12 @@ describe('flash deals card', () => {
     expect(countdown).toBeGreaterThan(headEnd);
   });
 
-  it('still has the three labelled time boxes the clock writes into', () => {
-    // updateCountdown() looks these ids up by hand; renaming one silently
-    // freezes that digit.
-    for (const id of ['deal-hours', 'deal-mins', 'deal-secs']) {
-      expect(HOME, `#${id} missing`).toContain(`id="${id}"`);
+  it('has four labelled time boxes, including days, that the clock writes into', () => {
+    // The home card asks the shared helper for ids with the "deal-" prefix,
+    // and the clock writes through the four stable count-* classes.
+    expect(HOME).toContain("countdownBoxesHtml(t, 'deal')");
+    for (const cls of ['count-days', 'count-hours', 'count-mins', 'count-secs']) {
+      expect(HOME, `.${cls} missing`).toContain(`.${cls}`);
     }
   });
 
@@ -124,23 +125,24 @@ describe('flash deals card', () => {
 
     expect(emptyText, 'empty flash-deal message missing').toBeGreaterThan(-1);
     expect(countdownGate, 'countdown must be gated by featuredDeal').toBeGreaterThan(emptyText);
-    expect(HOME, 'clock should not run without a deal end time').toContain('if (!endsAt) return;');
+    expect(HOME, 'clock should not run without a deal end time').toContain('if (countdownScopes.length === 0) return;');
   });
 
-  it('fills the wide Flash Deals row with a moving image rail an admin fills', () => {
+  it('fills the wide Flash Deals row with moving product cards, not a separate promo-ad upload', () => {
     expect(HOME).toContain('class="flash-home-row"');
     expect(HOME).toContain('class="flash-promo-panel"');
     expect(HOME).toContain('class="flash-promo-marquee"');
-    // The rail is admin-uploaded FLASH_PROMO ads now, not live product cards.
-    expect(HOME).toContain('renderFlashPromoImages(state.banners || [])');
-    expect(HOME, 'rail tiles come from FLASH_PROMO ads').toContain("b.type === 'FLASH_PROMO'");
-    expect(HOME).toContain('class="flash-promo-ad-card"');
-    expect(HOME).toContain('id="flash-promo-post-ad-btn"');
+    expect(HOME).toContain('renderFlashProductRail(state.products || [])');
+    expect(HOME).toContain('class="flash-promo-product-card view-item-btn"');
+    expect(HOME).not.toContain('renderFlashPromoImages(state.banners || [])');
+    expect(HOME, 'FLASH_PROMO ads should not feed the storefront rail').not.toContain("b.type === 'FLASH_PROMO'");
+    expect(HOME).not.toContain('class="flash-promo-ad-card"');
+    expect(HOME).not.toContain('id="flash-promo-post-ad-btn"');
     expect(HOME).not.toContain('id="flash-promo-worker-btn"');
-    expect(HOME, 'the rail no longer renders live product cards').not.toContain('renderFlashProductCards');
+    expect(HOME).not.toContain('flash-promo-actions');
     expect(HOME).not.toContain('renderFlashPromoCards(heroAds)');
     expect(CSS).toContain('.flash-home-row');
-    expect(CSS).toContain('.flash-promo-ad-card');
+    expect(CSS).toContain('.flash-promo-product-card');
     expect(CSS).toContain('animation: flash-promo-scroll');
     expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
   });
@@ -155,8 +157,15 @@ describe('flash deals card', () => {
     expect(flashSection, 'Flash Deals must come before Featured & Trending').toBeLessThan(spotlightSection);
   });
 
-  it('keeps the Flash panel CTA focused on posting ads', () => {
-    expect(HOME).toContain('pathForRoute(ROUTE_POST_AD)');
+  it('opens Flash Deals as its own page instead of a modal or posting CTA', () => {
+    expect(HOME).toContain('href="${pathForRoute(ROUTE_FLASH_DEALS)}"');
+    expect(HOME).toContain('pathForRoute(ROUTE_FLASH_DEALS)');
+    expect(HOME).toContain('export function renderFlashDealsPage');
+    expect(HOME).toContain('id="flash-page-back-btn"');
+    expect(HOME).toContain('class="flash-page-grid"');
+    expect(HOME).not.toContain('id="flash-deals-modal"');
+    expect(HOME).not.toContain('openModal');
+    expect(HOME).not.toContain('pathForRoute(ROUTE_POST_AD)');
     expect(HOME).not.toContain('pathForRoute(ROUTE_PRODUCTS)');
     expect(HOME).not.toContain('JOBS_CATEGORY_PATTERN');
     expect(HOME).not.toContain('flash-promo-post-ad-btn" href="#"');

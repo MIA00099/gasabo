@@ -14,6 +14,7 @@ import {
   ROUTE_PRODUCT,
   ROUTE_PRODUCTS,
   ROUTE_STORES,
+  ROUTE_FLASH_DEALS,
   ROUTE_HELP_CENTER,
   ROUTE_FAQS,
   ROUTE_ABOUT,
@@ -264,6 +265,8 @@ class StateEngine {
     } else if (route.kind === ROUTE_STORES) {
       this.data.activePortal = 'marketplace';
       patchUI({ marketplaceTab: 'stores' });
+    } else if (route.kind === ROUTE_FLASH_DEALS) {
+      this.data.activePortal = 'marketplace';
     } else if (
       route.kind === ROUTE_HELP_CENTER ||
       route.kind === ROUTE_FAQS ||
@@ -863,7 +866,7 @@ class StateEngine {
     });
   }
 
-  // The homepage flash card and its "View all deals" modal. Active flash
+  // The homepage flash card and the standalone Flash Deals page. Active flash
   // deals are ACTIVE products with a future end time; the server filters by
   // that deadline, so an expired one simply stops coming back.
   async loadFlashDeals() {
@@ -1203,13 +1206,12 @@ class StateEngine {
     });
   }
 
-  // `type` is HERO_SLIDER (homepage hero carousel) or FLASH_PROMO (the moving
-  // image rail beside the Flash Deals card); omitted, the server defaults it to
-  // HERO_SLIDER. The retired HOMEPAGE_BANNER / PROMOTIONAL_BANNER types the old
-  // admin form offered still render nowhere and the server rejects them.
-  async createBanner(title, imageUrl, { targetUrl = null, type } = {}) {
+  // The admin ads section now creates homepage hero slides only. The Flash
+  // Deals side rail is fed by live products, so separate flash-promo images
+  // would be invisible and the server rejects them.
+  async createBanner(title, imageUrl, { targetUrl = null } = {}) {
     return this._run('banners', async () => {
-      const { banner } = await api.post('/advertisements', { title, imageUrl, targetUrl, type });
+      const { banner } = await api.post('/advertisements', { title, imageUrl, targetUrl });
       // Re-fetch rather than hand-append: the list endpoint reshapes each
       // record (id/title/subtitle/image/status) differently from what POST
       // returns (the raw Advertisement row), so appending the raw response

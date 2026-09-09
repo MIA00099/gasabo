@@ -263,16 +263,12 @@ export function renderMarketplaceAdmin(container) {
             </table>
           </div>
         ` : `
-          <!-- BANNERS MANAGEMENT - two placements: Hero Slide (homepage hero
-               carousel) and Flash Rail Image (the moving strip beside the
-               homepage Flash Deals card). The card's subtitle shows which one
-               each ad feeds. -->
+          <!-- BANNERS MANAGEMENT - Hero Slide feeds the homepage carousel.
+               The Flash Deals side rail now shows live products, so there is
+               no separate flash-promo ad placement to manage here. -->
           <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 1rem;">
             <button id="add-hero-slide-btn" class="btn btn-primary btn-sm">
-              ➕ Hero Slide
-            </button>
-            <button id="add-flash-rail-btn" class="btn btn-primary btn-sm">
-              ➕ Flash Rail Image
+              Add Hero Slide
             </button>
           </div>
 
@@ -429,21 +425,13 @@ export function renderMarketplaceAdmin(container) {
       });
     });
 
-    // Two entry points, one modal. Each uploads a real image (Supabase in
-    // production) and creates the ad for its placement - the storefront reads
-    // HERO_SLIDER and FLASH_PROMO, nothing else.
+    // Upload a real image (Supabase in production) and create the hero slide
+    // the public homepage carousel reads.
     container.querySelector('#add-hero-slide-btn')?.addEventListener('click', (e) => {
       promptBannerCreate(e.currentTarget, async ({ title, targetUrl, file }) => {
         const imageUrl = await stateEngine.uploadImage(file);
-        await stateEngine.createBanner(title, imageUrl, { targetUrl, type: 'HERO_SLIDER' });
-      }, { placement: 'hero' });
-    });
-
-    container.querySelector('#add-flash-rail-btn')?.addEventListener('click', (e) => {
-      promptBannerCreate(e.currentTarget, async ({ title, targetUrl, file }) => {
-        const imageUrl = await stateEngine.uploadImage(file);
-        await stateEngine.createBanner(title, imageUrl, { targetUrl, type: 'FLASH_PROMO' });
-      }, { placement: 'flash' });
+        await stateEngine.createBanner(title, imageUrl, { targetUrl });
+      });
     });
 
     container.querySelectorAll('.del-banner-btn').forEach(btn => {
@@ -785,18 +773,15 @@ function promptFlashDealEnd(returnFocusTo, onPick) {
  * through the real /uploads flow (Supabase in production) rather than being a
  * pasted link that might rot.
  *
- * There is no type picker inside the modal: the caller fixes the placement
- * (`hero` or `flash`) via its own button, and this only adjusts the copy so
- * the admin knows where the image will show. Homepage Banner and Promotional
- * Banner - which saved fine and then rendered nowhere - are gone for good.
+ * There is no type picker inside the modal: every banner created here is a
+ * homepage hero slide. Homepage Banner, Promotional Banner, and Flash Rail
+ * Image all rendered nowhere after the storefront changed, so the admin no
+ * longer offers them.
  */
-function promptBannerCreate(returnFocusTo, onSubmit, { placement = 'hero' } = {}) {
-  const isFlash = placement === 'flash';
-  const heading = isFlash ? '🖼️ Add Flash Rail Image' : '🖼️ Add Hero Slide';
-  const blurb = isFlash
-    ? 'This image scrolls in the moving rail beside the homepage <strong>Flash Deals</strong> card.'
-    : 'This image goes on the <strong>homepage hero carousel</strong>.';
-  const modalLabel = isFlash ? 'Add flash rail image' : 'Add hero slide';
+function promptBannerCreate(returnFocusTo, onSubmit) {
+  const heading = 'Add Hero Slide';
+  const blurb = 'This image goes on the <strong>homepage hero carousel</strong>.';
+  const modalLabel = 'Add hero slide';
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.style.cssText =

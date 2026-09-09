@@ -152,10 +152,13 @@ describe('the homepage category rail', () => {
 
   it('adds visible controls for scrolling the long category strip', () => {
     expect(SRC).toContain('id="home-category-rail"');
-    expect(SRC).toContain('home-cat-scroll-btn-left');
+    expect(SRC).toContain('home-cat-scroll-btn-left is-hidden');
     expect(SRC).toContain('home-cat-scroll-btn-right');
     expect(SRC).toContain('data-target="home-category-rail"');
+    expect(SRC).toContain('syncHomeCategoryScrollButtons(container)');
+    expect(SRC).not.toContain('mt-[-15px]');
     expect(CSS).toContain('.home-category-rail-shell');
+    expect(CSS).toContain('.home-cat-scroll-btn.is-hidden');
     expect(CSS).toContain('.home-cat-scroll-fade-right');
   });
 });
@@ -179,11 +182,13 @@ describe('spotlight and category sections do not duplicate listings', () => {
     );
     expect(SECTIONS_SRC).toContain('featuredDeal: visibleFlashDeals[0] || null,');
 
-    const modalStart = SRC.indexOf('<!-- Countdown Products Grid -->');
-    const modalEnd = SRC.indexOf('<div class="mt-6 pt-4 border-t border-gray-100', modalStart);
-    const modal = SRC.slice(modalStart, modalEnd);
-    expect(modal).toContain('visibleFlashDeals.length === 0');
-    expect(modal).toContain('visibleFlashDeals.map((deal)');
+    const pageStart = SRC.indexOf('export function renderFlashDealsPage');
+    const pageEnd = SRC.indexOf('function escapeHtml', pageStart);
+    const page = SRC.slice(pageStart, pageEnd);
+    expect(page).toContain('visibleFlashDeals.length === 0');
+    expect(page).toContain('visibleFlashDeals.map((deal)');
+    expect(page).toContain('class="flash-page-grid"');
+    expect(SRC).not.toContain('id="flash-deals-modal"');
   });
 
   it('keeps a sane ceiling on the catch-all grid below the sections', () => {

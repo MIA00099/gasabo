@@ -42,14 +42,6 @@ describe('POST /api/advertisements', () => {
     expect(res.body.banner.type).toBe('HERO_SLIDER');
   });
 
-  it('lets an admin create a Flash Promo rail image', async () => {
-    const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
-      title: 'Rail Image', type: 'FLASH_PROMO', imageUrl: '/rail.png', targetUrl: 'https://example.com/deal',
-    });
-    expect(res.status).toBe(201);
-    expect(res.body.banner.type).toBe('FLASH_PROMO');
-  });
-
   it('requires a title and an image', async () => {
     const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({ type: 'HERO_SLIDER' });
     expect(res.status).toBe(400);
@@ -65,9 +57,9 @@ describe('POST /api/advertisements', () => {
   });
 
   it('refuses the retired banner types instead of storing an invisible ad', async () => {
-    // HOMEPAGE_BANNER and PROMOTIONAL_BANNER used to be accepted here and
-    // rendered nowhere, so an admin got a saved ad that never appeared.
-    for (const type of ['HOMEPAGE_BANNER', 'PROMOTIONAL_BANNER']) {
+    // These used to be accepted here and rendered nowhere, so an admin got a
+    // saved ad that never appeared.
+    for (const type of ['HOMEPAGE_BANNER', 'PROMOTIONAL_BANNER', 'FLASH_PROMO']) {
       const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
         title: 'Retired type', type, imageUrl: '/z.png',
       });

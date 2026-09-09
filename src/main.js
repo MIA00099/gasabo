@@ -5,7 +5,7 @@
 import './styles/main.css';
 import { stateEngine } from './store/stateEngine.js';
 import { getTranslation } from './store/i18n.js';
-import { renderMarketplaceView, cleanupFlashClock, cleanupHeroSlider } from './modules/marketplace/MarketplaceView.js';
+import { renderMarketplaceView, renderFlashDealsPage, cleanupFlashClock, cleanupHeroSlider } from './modules/marketplace/MarketplaceView.js';
 import {
   renderHelpCenterPage, renderFaqPage,
   renderAboutPage, renderTermsPage, renderPrivacyPage,
@@ -25,7 +25,7 @@ import { getMarketplaceFooterHtml, bindMarketplaceFooterEvents } from './compone
 import { openCategoryDropdown } from './components/dropdownMenu.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
-  ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_HELP_CENTER, ROUTE_FAQS,
+  ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_FLASH_DEALS, ROUTE_HELP_CENTER, ROUTE_FAQS,
   ROUTE_ABOUT, ROUTE_TERMS, ROUTE_PRIVACY, ROUTE_CONTACT,
 } from './store/router.js';
 // No-op in a browser; configures the status bar / splash / Back button when
@@ -595,6 +595,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="text-sm text-gray-500">It may have been sold or removed.</p>
           </div>
         `;
+      } else if (state.route.kind === ROUTE_FLASH_DEALS) {
+        cleanupFlashClock();
+        cleanupHeroSlider();
+        cleanupProductDetailPage();
+        renderFlashDealsPage(appElement, { onBack: handleGoHome });
+        appendMarketplaceFooter();
       } else if (SUPPORT_PAGE_RENDERERS[state.route.kind]) {
         cleanupFlashClock();
         cleanupHeroSlider();

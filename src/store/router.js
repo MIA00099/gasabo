@@ -11,6 +11,7 @@
  *   stores.html         ->  /stores            verified seller directory
  *   post-ad.html        ->  /post-ad           post an ad
  *   auth.html           ->  /auth              login + sign up
+ *   flash-deals.html    ->  /flash-deals       active timed deals only
  *   help-center.html    ->  /help-center       buying/selling safety help
  *   faq.html            ->  /faqs              frequently asked questions
  *   about.html          ->  /about             about Kigali Market
@@ -30,6 +31,7 @@ export const ROUTE_PRODUCTS = 'products';
 export const ROUTE_STORES = 'stores';
 export const ROUTE_POST_AD = 'post-ad';
 export const ROUTE_AUTH = 'auth';
+export const ROUTE_FLASH_DEALS = 'flash-deals';
 export const ROUTE_HELP_CENTER = 'help-center';
 export const ROUTE_FAQS = 'faqs';
 export const ROUTE_ABOUT = 'about';
@@ -47,6 +49,7 @@ const FLAT_ROUTES = {
   '/stores': ROUTE_STORES,
   '/post-ad': ROUTE_POST_AD,
   '/auth': ROUTE_AUTH,
+  '/flash-deals': ROUTE_FLASH_DEALS,
   '/help-center': ROUTE_HELP_CENTER,
   '/faqs': ROUTE_FAQS,
   '/about': ROUTE_ABOUT,

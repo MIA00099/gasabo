@@ -1,6 +1,6 @@
 import { stateEngine } from '../../store/stateEngine.js';
 import { getTranslation } from '../../store/i18n.js';
-import { pushPath, pathForListing, pathForRoute, ROUTE_POST_AD, ROUTE_PRODUCT } from '../../store/router.js';
+import { pushPath, pathForListing, pathForRoute, ROUTE_FLASH_DEALS, ROUTE_HOME, ROUTE_PRODUCT } from '../../store/router.js';
 import { renderSellerPortal } from './SellerPortal.js';
 import { renderStoresPage } from './StoresPage.js';
 import { renderProductsPage } from './ProductsPage.js';
@@ -126,47 +126,46 @@ const SKELETON_TILES = Array.from({ length: 5 }, () => `
   </div>
 `).join('');
 
-// One image tile in the Flash Deals rail. These are ads an admin uploaded
-// (Admin -> Marketplace -> Ad Banners -> "Flash Rail Image"), not products, so
-// the tile is the image alone - wrapped in its link when the ad carries one.
-// `duplicate` marks the second copy the CSS scroll needs; it is hidden from
-// assistive tech and taken out of the tab order so the same ad is not
-// announced or focused twice.
-function flashPromoImageHtml(ad, duplicate = false) {
-  const attrs = duplicate ? ' aria-hidden="true" tabindex="-1"' : '';
-  const img = `<img src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}" loading="lazy">`;
-  return ad.targetUrl
-    ? `<a href="${escapeHtml(ad.targetUrl)}" class="flash-promo-ad-card"${attrs}>${img}</a>`
-    : `<span class="flash-promo-ad-card"${attrs}>${img}</span>`;
+function flashProductRailCardHtml(product, duplicate = false) {
+  const attrs = duplicate ? ' aria-hidden="true" tabindex="-1"' : ' role="button" tabindex="0"';
+  const image = (product.images && product.images[0]) || '';
+  const price = Number(product.price) || 0;
+  const label = product.isFeatured ? 'Featured' : product.isTrending ? 'Trending' : 'Product';
+
+  return `
+    <div class="flash-promo-product-card view-item-btn" data-id="${escapeHtml(product.id)}"${attrs}>
+      <div class="flash-promo-product-img">
+        ${image
+          ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(product.title)}" loading="lazy">`
+          : '<i class="fa-solid fa-image"></i>'}
+      </div>
+      <div class="flash-promo-product-info">
+        <span>${label}</span>
+        <strong>${escapeHtml(product.title)}</strong>
+        <em>RWF ${price.toLocaleString()}</em>
+      </div>
+    </div>
+  `;
 }
 
-// The moving rail beside the Flash Deals card. Fed entirely by FLASH_PROMO
-// ads an admin uploaded - no ads, no rail (a short prompt shows in its place),
-// the same rule the hero slider follows. The list is padded to at least four
-// and then rendered twice: the CSS animation translates the track by -50%, so
-// it needs two identical halves to loop seamlessly.
-function renderFlashPromoImages(banners = []) {
-  const now = Date.now();
-  const promo = (banners || []).filter(
-    (b) => b && b.type === 'FLASH_PROMO' && b.status === 'ACTIVE'
-      && b.image && (!b.endDate || new Date(b.endDate).getTime() > now),
-  );
+function renderFlashProductRail(products = []) {
+  const railProducts = (products || []).filter((product) => product && product.id).slice(0, 10);
 
-  if (promo.length === 0) {
+  if (railProducts.length === 0) {
     return `
       <div class="flash-promo-empty">
-        <i class="fa-solid fa-image"></i>
-        <span>Promo images added in the admin appear here.</span>
+        <i class="fa-solid fa-box-open"></i>
+        <span>Products will appear here when listings load.</span>
       </div>
     `;
   }
 
-  const padded = promo.length >= 4
-    ? promo
-    : Array.from({ length: 4 }, (_, i) => promo[i % promo.length]);
+  const padded = railProducts.length >= 4
+    ? railProducts
+    : Array.from({ length: 4 }, (_, i) => railProducts[i % railProducts.length]);
 
-  return padded.map((ad) => flashPromoImageHtml(ad)).join('') +
-    padded.map((ad) => flashPromoImageHtml(ad, true)).join('');
+  return padded.map((product) => flashProductRailCardHtml(product)).join('') +
+    padded.map((product) => flashProductRailCardHtml(product, true)).join('');
 }
 
 let flashClockTimer = null;
@@ -247,68 +246,138 @@ function startHeroSlider(container) {
   scheduleRotation();
 }
 
+function flashCountdownParts(endsAt) {
+  const remaining = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+
+  return {
+    remaining,
+    days: Math.floor(remaining / 86400),
+    hours: Math.floor((remaining % 86400) / 3600),
+    mins: Math.floor((remaining % 3600) / 60),
+    secs: remaining % 60,
+  };
+}
+
+function twoDigits(value) {
+  return String(value).padStart(2, '0');
+}
+
+function countdownBoxesHtml(t, idPrefix = '') {
+  const attr = (part) => (idPrefix ? ` id="${idPrefix}-${part}"` : '');
+
+  return `
+    <div class="time-box">
+      <div class="number count-days"${attr('days')}>00</div>
+      <div class="label">${t('ui_days')}</div>
+    </div>
+
+    <div class="separator">:</div>
+
+    <div class="time-box">
+      <div class="number count-hours"${attr('hours')}>00</div>
+      <div class="label">${t('ui_hours')}</div>
+    </div>
+
+    <div class="separator">:</div>
+
+    <div class="time-box">
+      <div class="number count-mins"${attr('mins')}>00</div>
+      <div class="label">${t('ui_mins')}</div>
+    </div>
+
+    <div class="separator">:</div>
+
+    <div class="time-box">
+      <div class="number count-secs"${attr('secs')}>00</div>
+      <div class="label">${t('ui_secs')}</div>
+    </div>
+  `;
+}
+
+function writeCountdown(scope, parts) {
+  [
+    ['.count-days', parts.days],
+    ['.count-hours', parts.hours],
+    ['.count-mins', parts.mins],
+    ['.count-secs', parts.secs],
+  ].forEach(([selector, value]) => {
+    scope.querySelectorAll(selector).forEach((el) => {
+      el.textContent = twoDigits(value);
+    });
+  });
+
+  scope.querySelectorAll('.flash-countdown-inline').forEach((el) => {
+    el.textContent = `${twoDigits(parts.days)}d ${twoDigits(parts.hours)}h ${twoDigits(parts.mins)}m ${twoDigits(parts.secs)}s`;
+  });
+}
+
 function startFlashClock(container) {
   cleanupFlashClock();
 
-  // Real deadline, not a made-up loop. The card carries the featured deal's
-  // end time as an epoch-ms attribute; every tick shows the true remaining
-  // time, so all viewers see the same finish and it stops at zero instead of
-  // resetting to 9999 the way the placeholder used to.
-  const card = container.querySelector('#flash-deals-card');
-  const endsAt = card ? Number(card.getAttribute('data-flash-ends-at')) : 0;
-  if (!endsAt) return;
+  // Real deadlines, not a made-up loop. Any element carrying
+  // data-flash-ends-at owns its own countdown, so the home card and the full
+  // Flash Deals page can show different products ending at different moments.
+  const countdownScopes = [...container.querySelectorAll('[data-flash-ends-at]')]
+    .map((el) => ({ el, endsAt: Number(el.getAttribute('data-flash-ends-at')) }))
+    .filter(({ endsAt }) => Number.isFinite(endsAt) && endsAt > 0);
 
-  const initialRemainingMs = endsAt ? endsAt - Date.now() : 0;
+  if (countdownScopes.length === 0) return;
+
+  const liveOnMount = new Set(
+    countdownScopes
+      .filter(({ endsAt }) => endsAt > Date.now())
+      .map(({ endsAt }) => endsAt),
+  );
 
   const updateCountdown = () => {
-    const remainingMs = endsAt ? endsAt - Date.now() : 0;
-    const remaining = Math.max(0, Math.floor(remainingMs / 1000));
+    let refreshDeals = false;
 
-    // The moment a live deal hits zero, refresh the list once so the expired
-    // one drops off and the next deal (if any) takes the card.
-    if (endsAt && remaining === 0 && initialRemainingMs > 0 && !reloadedFlashDealKeys.has(endsAt)) {
-      reloadedFlashDealKeys.add(endsAt);
+    countdownScopes.forEach(({ el, endsAt }) => {
+      const parts = flashCountdownParts(endsAt);
+      writeCountdown(el, parts);
+
+      // The moment a live deal hits zero, refresh once so the expired one
+      // drops off and the next deal, if any, takes its place.
+      if (parts.remaining === 0 && liveOnMount.has(endsAt) && !reloadedFlashDealKeys.has(endsAt)) {
+        reloadedFlashDealKeys.add(endsAt);
+        refreshDeals = true;
+      }
+    });
+
+    if (refreshDeals) {
       stateEngine.loadFlashDeals().catch(() => {});
     }
-
-    const hrs = Math.floor(remaining / 3600);
-    const mins = Math.floor((remaining % 3600) / 60);
-    const secs = remaining % 60;
-
-    const hStr = String(hrs).padStart(2, '0');
-    const mStr = String(mins).padStart(2, '0');
-    const sStr = String(secs).padStart(2, '0');
-
-    // Banner Digits
-    const dealHrs = container.querySelector('#deal-hours');
-    const dealMins = container.querySelector('#deal-mins');
-    const dealSecs = container.querySelector('#deal-secs');
-    if (dealHrs) dealHrs.textContent = hStr;
-    if (dealMins) dealMins.textContent = mStr;
-    if (dealSecs) dealSecs.textContent = sStr;
-
-    // Modal Digits
-    const modalHrs = container.querySelector('#modal-timer-hours');
-    const modalMins = container.querySelector('#modal-timer-mins');
-    const modalSecs = container.querySelector('#modal-timer-secs');
-    if (modalHrs) modalHrs.textContent = hStr;
-    if (modalMins) modalMins.textContent = mStr;
-    if (modalSecs) modalSecs.textContent = sStr;
-
-    // Each modal item counts to its own deal's end time, not the featured
-    // card's - the "View all deals" list holds several deals ending at
-    // different moments.
-    container.querySelectorAll('.modal-item-countdown').forEach((el) => {
-      const itemEndsAt = Number(el.getAttribute('data-flash-ends-at'));
-      const left = Math.max(0, Math.floor((itemEndsAt - Date.now()) / 1000));
-      el.textContent = [Math.floor(left / 3600), Math.floor((left % 3600) / 60), left % 60]
-        .map((n) => String(n).padStart(2, '0'))
-        .join(':');
-    });
   };
 
   updateCountdown();
   flashClockTimer = setInterval(updateCountdown, 1000);
+}
+
+function syncHomeCategoryScrollButtons(container) {
+  const rail = container.querySelector('#home-category-rail');
+  const shell = container.querySelector('.home-category-rail-shell');
+  const left = container.querySelector('.home-cat-scroll-btn-left');
+  const right = container.querySelector('.home-cat-scroll-btn-right');
+  const leftFade = container.querySelector('.home-cat-scroll-fade-left');
+  const rightFade = container.querySelector('.home-cat-scroll-fade-right');
+
+  if (!rail || !left || !right) return;
+
+  const update = () => {
+    const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
+    const atStart = rail.scrollLeft <= 12;
+    const atEnd = rail.scrollLeft >= maxScroll - 12;
+
+    left.classList.toggle('is-hidden', atStart);
+    right.classList.toggle('is-hidden', atEnd || maxScroll <= 2);
+    leftFade?.classList.toggle('is-hidden', atStart);
+    rightFade?.classList.toggle('is-hidden', atEnd || maxScroll <= 2);
+    shell?.classList.toggle('is-at-start', atStart);
+    shell?.classList.toggle('is-at-end', atEnd || maxScroll <= 2);
+  };
+
+  rail.addEventListener('scroll', update, { passive: true });
+  window.requestAnimationFrame(update);
 }
 
 export function renderMarketplaceView(container) {
@@ -346,7 +415,7 @@ export function renderMarketplaceView(container) {
       (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
     );
     const dotCount = heroAds.length;
-    const flashPromoImages = renderFlashPromoImages(state.banners || []);
+    const flashProductCards = renderFlashProductRail(state.products || []);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {
@@ -498,12 +567,12 @@ export function renderMarketplaceView(container) {
               filtered on the literal id 'cat_vehicles', which does not exist -
               real ids are uuids - so "Cars" reliably showed nothing at all.
             -->
-            <section class="compact-container px-3 sm:px-4 lg:px-6 mt-[-15px] relative z-20 shrink-0">
-                <div class="home-category-rail-shell">
-                  <button type="button" class="section-scroll-btn home-cat-scroll-btn home-cat-scroll-btn-left" data-target="home-category-rail" data-dir="-1" aria-label="Scroll categories left">
+            <section class="compact-container px-3 sm:px-4 lg:px-6 mt-4 relative z-20 shrink-0">
+                <div class="home-category-rail-shell is-at-start">
+                  <button type="button" class="section-scroll-btn home-cat-scroll-btn home-cat-scroll-btn-left is-hidden" data-target="home-category-rail" data-dir="-1" aria-label="Scroll categories left">
                     <i class="fa-solid fa-chevron-left"></i>
                   </button>
-                  <div class="home-cat-scroll-fade home-cat-scroll-fade-left" aria-hidden="true"></div>
+                  <div class="home-cat-scroll-fade home-cat-scroll-fade-left is-hidden" aria-hidden="true"></div>
                   <div id="home-category-rail" class="home-category-rail flex justify-between items-center bg-white rounded-2xl shadow-md p-2 overflow-x-auto no-scrollbar gap-1 border border-gray-100">
 
                     <div class="${CATEGORY_TILE_CLASS} ${filters.selectedCategory === 'all' || !filters.selectedCategory ? 'opacity-100' : 'opacity-80'}" data-cat="all">
@@ -543,10 +612,8 @@ export function renderMarketplaceView(container) {
 
             <!-- Flash Deals - the delivered markup, class for class. Two
                  adjustments so it works inside the app: the countdown keeps
-                 the ids the existing clock drives (it also feeds the modal),
-                 and the "View all deals" anchor has its click prevented,
-                 since href="#" would otherwise push a hash the router strips
-                 straight back off.
+                 the ids the clock drives, and the "View all deals" anchor
+                 points at the standalone Flash Deals page.
 
                  Flash Deals remains independent from Featured / Trending:
                  an admin setting a countdown should still make the deal
@@ -557,18 +624,18 @@ export function renderMarketplaceView(container) {
                  page, so it leads rather than sitting mid-scroll. -->
             <section class="compact-container px-3 sm:px-4 lg:px-6 mt-2 shrink-0">
               <div class="flash-home-row">
-                <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card ${featuredDeal ? 'cursor-pointer hover:opacity-95' : 'flash-deals-empty'} transition"
+                <section id="flash-deals-card" class="flash-deals rounded-2xl shadow-card cursor-pointer ${featuredDeal ? 'hover:opacity-95' : 'flash-deals-empty'} transition" role="button" tabindex="0"
                   ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>
 
                   <div class="flash-head">
                     <h2>${t('ui_flash_deals')} <span>&#9889;</span></h2>
-                    ${featuredDeal ? `<a href="#" class="view-deals" id="open-flash-deals-btn" role="button">${t('ui_view_all_deals')}</a>` : ''}
+                    <a href="${pathForRoute(ROUTE_FLASH_DEALS)}" class="view-deals" id="open-flash-deals-btn">${t('ui_view_all_deals')}</a>
                   </div>
 
                   ${featuredDeal ? `
                     <!-- The real product the deal is on: an admin picks the
                          listing and the end time, and the card shows both. -->
-                    <div class="flash-product view-item-btn" data-id="${escapeHtml(featuredDeal.id)}" role="button" tabindex="0">
+                    <div class="flash-product" data-id="${escapeHtml(featuredDeal.id)}">
                       <div class="flash-product-img">
                         <img src="${escapeHtml((featuredDeal.images && featuredDeal.images[0]) || '')}" alt="${escapeHtml(featuredDeal.title)}" loading="lazy">
                       </div>
@@ -583,47 +650,21 @@ export function renderMarketplaceView(container) {
 
                   ${featuredDeal ? `
                   <div class="countdown" aria-label="Flash deal countdown">
-
-                    <div class="time-box">
-                      <div class="number" id="deal-hours">00</div>
-                      <div class="label">${t('ui_hours')}</div>
-                    </div>
-
-                    <div class="separator">:</div>
-
-                    <div class="time-box">
-                      <div class="number" id="deal-mins">00</div>
-                      <div class="label">${t('ui_mins')}</div>
-                    </div>
-
-                    <div class="separator">:</div>
-
-                    <div class="time-box">
-                      <div class="number" id="deal-secs">00</div>
-                      <div class="label">${t('ui_secs')}</div>
-                    </div>
-
+                    ${countdownBoxesHtml(t, 'deal')}
                   </div>
                   ` : ''}
 
                 </section>
-                <aside class="flash-promo-panel" aria-label="Kigali Market promotions">
+                <aside class="flash-promo-panel" aria-label="Live Kigali Market products">
                   <div class="flash-promo-copy">
-                    <span class="flash-promo-eyebrow">Sponsored</span>
-                    <h3>Partner promotions</h3>
+                    <span class="flash-promo-eyebrow">Live Products</span>
+                    <h3>Products moving now</h3>
                   </div>
 
-                  <div class="flash-promo-marquee" aria-label="Sponsored images">
+                  <div class="flash-promo-marquee" aria-label="Live product highlights">
                     <div class="flash-promo-track">
-                      ${flashPromoImages}
+                      ${flashProductCards}
                     </div>
-                  </div>
-
-                  <div class="flash-promo-actions">
-                    <button type="button" id="flash-promo-post-ad-btn" class="flash-promo-action flash-promo-action-primary">
-                      <i class="fa-solid fa-plus"></i>
-                      <span>Post an Ad</span>
-                    </button>
                   </div>
                 </aside>
               </div>
@@ -736,86 +777,11 @@ export function renderMarketplaceView(container) {
                `;
              })() : ''}
       </div>
-
-      <!-- FLASH DEALS COUNTDOWN MODAL -->
-      <div id="flash-deals-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto">
-
-          <button id="close-flash-deals-btn" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center transition">
-            <i class="fa-solid fa-xmark text-base"></i>
-          </button>
-
-          <!-- Modal Header -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-6">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="bg-yellow-400 text-brand-dark font-black text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <i class="fa-solid fa-bolt"></i> LIMITED TIME SALE
-                </span>
-                <span class="text-xs text-red-600 font-bold flex items-center gap-1 animate-pulse">
-                  <i class="fa-solid fa-fire"></i> Ending Soon!
-                </span>
-              </div>
-              <h3 class="text-2xl font-black text-gray-900 mt-1">Live Countdown Flash Deals</h3>
-              <p class="text-xs text-gray-500">Grab these top-discounted products before the countdown timer runs out!</p>
-            </div>
-
-            <!-- Live Timer Badge in Modal -->
-            <div class="bg-brand-green text-white p-3 rounded-2xl flex items-center gap-3 shadow-md shrink-0">
-              <span class="text-xs font-bold uppercase tracking-wider text-green-200">Deals Expire In:</span>
-              <div class="flex items-center gap-1.5 font-mono text-sm font-black">
-                <span class="bg-white text-brand-dark px-2 py-1 rounded" id="modal-timer-hours">02</span>:
-                <span class="bg-white text-brand-dark px-2 py-1 rounded" id="modal-timer-mins">45</span>:
-                <span class="bg-white text-brand-dark px-2 py-1 rounded" id="modal-timer-secs">30</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Countdown Products Grid -->
-          ${visibleFlashDeals.length === 0 ? `
-            <p class="text-center text-gray-500 text-sm py-10">${t('ui_flash_none')}</p>
-          ` : `
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            ${visibleFlashDeals.map((deal) => {
-              const was = Number(deal.originalPrice) || 0;
-              const pct = was > deal.price ? Math.round((1 - deal.price / was) * 100) : 0;
-              return `
-              <div class="bg-white border-2 border-brand-orange/30 rounded-2xl p-4 relative flex flex-col justify-between hover:shadow-lg transition cursor-pointer group view-item-btn" data-id="${escapeHtml(deal.id)}">
-                ${pct ? `<span class="absolute top-3 left-3 bg-brand-orange text-white text-xs font-black px-2 py-0.5 rounded-lg z-10">-${pct}% OFF</span>` : ''}
-                <span class="absolute top-3 right-3 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                  <i class="fa-solid fa-clock"></i> <span class="modal-item-countdown" data-flash-ends-at="${new Date(deal.flashDealEndsAt).getTime()}">00:00:00</span>
-                </span>
-                <div class="h-32 flex items-center justify-center my-3 bg-gray-50 rounded-xl overflow-hidden">
-                  <img src="${escapeHtml((deal.images && deal.images[0]) || '')}" alt="${escapeHtml(deal.title)}" loading="lazy" class="max-h-full w-auto object-contain group-hover:scale-110 transition transform">
-                </div>
-                <div>
-                  <h4 class="font-bold text-sm text-gray-900 mb-1 line-clamp-2">${escapeHtml(deal.title)}</h4>
-                  <div class="flex items-baseline gap-2 mb-3">
-                    <span class="text-lg font-black text-brand-green">RWF ${Number(deal.price).toLocaleString()}</span>
-                    ${was > deal.price ? `<span class="text-xs text-gray-400 line-through">RWF ${was.toLocaleString()}</span>` : ''}
-                  </div>
-                  <button class="w-full bg-brand-green text-white font-bold py-2 rounded-xl text-xs hover:bg-green-800 transition shadow">
-                    ${t('ui_view_deal')} <i class="fa-solid fa-arrow-right ml-1"></i>
-                  </button>
-                </div>
-              </div>
-              `;
-            }).join('')}
-          </div>
-          `}
-
-          <div class="mt-6 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <span class="text-xs text-gray-500 font-medium"><i class="fa-solid fa-circle-info text-brand-green"></i> Prices revert to regular price when countdown expires</span>
-            <button id="modal-view-catalog-btn" class="bg-brand-dark text-white font-bold px-6 py-2.5 rounded-xl text-xs hover:bg-gray-800 transition shadow">
-              View All Products Catalog <i class="fa-solid fa-arrow-right ml-1"></i>
-            </button>
-          </div>
-        </div>
-      </div>
     `;
 
     startFlashClock(container);
     startHeroSlider(container);
+    syncHomeCategoryScrollButtons(container);
 
     // Event Bindings
     // Submitting the hero search does what the header search does: put the
@@ -906,28 +872,23 @@ export function renderMarketplaceView(container) {
       });
     });
 
-    // Flash Deals Modal triggers
-    const modal = container.querySelector('#flash-deals-modal');
-    const openModal = () => modal?.classList.remove('hidden');
-    const closeModal = () => modal?.classList.add('hidden');
+    // Flash Deals opens a real page now, with a return button and only the
+    // active timed deals on it.
+    const openFlashDealsPage = (e) => {
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
+      pushPath(pathForRoute(ROUTE_FLASH_DEALS));
+      stateEngine.setRoute({ kind: ROUTE_FLASH_DEALS, id: null });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-    container.querySelector('#flash-deals-card')?.addEventListener('click', openModal);
+    container.querySelector('#flash-deals-card')?.addEventListener('click', openFlashDealsPage);
+    container.querySelector('#flash-deals-card')?.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      openFlashDealsPage(e);
+    });
     container.querySelector('#open-flash-deals-btn')?.addEventListener('click', (e) => {
-      // href="#" comes from the delivered markup.
-      e.preventDefault();
-      e.stopPropagation();
-      openModal();
-    });
-    container.querySelector('#close-flash-deals-btn')?.addEventListener('click', closeModal);
-    container.querySelector('#modal-view-catalog-btn')?.addEventListener('click', () => {
-      closeModal();
-      stateEngine.setUI({ marketplaceTab: 'catalog' });
-    });
-
-    container.querySelector('#flash-promo-post-ad-btn')?.addEventListener('click', () => {
-      stateEngine.setUI({ authIntent: '', sellerDashboardTab: 'new_product', productAdType: 'product' });
-      pushPath(pathForRoute(ROUTE_POST_AD));
-      stateEngine.setRoute({ kind: ROUTE_POST_AD, id: null });
+      openFlashDealsPage(e);
     });
 
     container.querySelectorAll('.view-item-btn').forEach((btn) => {
@@ -970,6 +931,123 @@ export function renderMarketplaceView(container) {
   }
 
   render();
+}
+
+function flashDealPageCardHtml(deal, t) {
+  const was = Number(deal.originalPrice) || 0;
+  const price = Number(deal.price) || 0;
+  const pct = was > price ? Math.round((1 - price / was) * 100) : 0;
+  const endsAt = new Date(deal.flashDealEndsAt).getTime();
+  const image = (deal.images && deal.images[0]) || '';
+
+  return `
+    <article class="flash-page-card view-item-btn" data-id="${escapeHtml(deal.id)}" data-flash-ends-at="${endsAt}" role="button" tabindex="0">
+      <div class="flash-page-card-media">
+        ${pct ? `<span class="flash-page-discount">-${pct}%</span>` : ''}
+        ${image
+          ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(deal.title)}" loading="lazy">`
+          : '<i class="fa-solid fa-image"></i>'}
+      </div>
+      <div class="flash-page-card-body">
+        <div class="flash-page-card-meta">
+          <span><i class="fa-solid fa-bolt"></i> Flash Deal</span>
+          <span class="flash-countdown-inline">00d 00h 00m 00s</span>
+        </div>
+        <h3>${escapeHtml(deal.title)}</h3>
+        <div class="flash-page-price-row">
+          <strong>RWF ${price.toLocaleString()}</strong>
+          ${was > price ? `<span>RWF ${was.toLocaleString()}</span>` : ''}
+        </div>
+        <button type="button" class="flash-page-card-btn">
+          ${t('ui_view_deal')} <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </article>
+  `;
+}
+
+export function renderFlashDealsPage(container, handlers = {}) {
+  const state = stateEngine.getState();
+  const currentLang = state.currentLang || 'en';
+  const t = (key) => getTranslation(currentLang, key);
+  const attempted = state.loading.flashDeals !== undefined;
+  const loading = !!state.loading.flashDeals || !attempted;
+  const visibleFlashDeals = Array.isArray(state.flashDeals) ? state.flashDeals : [];
+  const featuredDeal = visibleFlashDeals[0] || null;
+
+  cleanupHeroSlider();
+
+  if (!attempted) {
+    stateEngine.loadFlashDeals().catch(() => {});
+  }
+
+  container.innerHTML = `
+    <main class="flash-page compact-container px-3 sm:px-4 lg:px-6 py-5">
+      <button type="button" id="flash-page-back-btn" class="flash-page-back">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Return</span>
+      </button>
+
+      <section class="flash-page-hero ${featuredDeal ? '' : 'flash-page-hero-empty'}" ${featuredDeal ? `data-flash-ends-at="${new Date(featuredDeal.flashDealEndsAt).getTime()}"` : ''}>
+        <div class="flash-page-title">
+          <span>Limited Time Sale</span>
+          <h1>${t('ui_flash_deals')} <i class="fa-solid fa-bolt"></i></h1>
+          <p>Only active flash deals are shown here. When the countdown ends, the deal leaves this page.</p>
+        </div>
+
+        ${featuredDeal ? `
+          <div class="flash-page-countdown" aria-label="Main flash deal countdown">
+            ${countdownBoxesHtml(t)}
+          </div>
+        ` : ''}
+      </section>
+
+      ${loading ? `
+        <section class="flash-page-state">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span>${t('ui_loading_items')}</span>
+        </section>
+      ` : visibleFlashDeals.length === 0 ? `
+        <section class="flash-page-state">
+          <i class="fa-solid fa-bolt"></i>
+          <span>${t('ui_flash_none')}</span>
+        </section>
+      ` : `
+        <section class="flash-page-grid" aria-label="Active flash deals">
+          ${visibleFlashDeals.map((deal) => flashDealPageCardHtml(deal, t)).join('')}
+        </section>
+      `}
+    </main>
+  `;
+
+  startFlashClock(container);
+
+  container.querySelector('#flash-page-back-btn')?.addEventListener('click', () => {
+    if (typeof handlers.onBack === 'function') {
+      handlers.onBack();
+      return;
+    }
+
+    pushPath(pathForRoute(ROUTE_HOME));
+    stateEngine.setRoute({ kind: ROUTE_HOME, id: null });
+    stateEngine.setUI({ marketplaceTab: 'products' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  container.querySelectorAll('.view-item-btn').forEach((btn) => {
+    const openProduct = () => {
+      const id = btn.dataset.id;
+      pushPath(pathForListing(ROUTE_PRODUCT, id));
+      stateEngine.setRoute({ kind: ROUTE_PRODUCT, id });
+    };
+
+    btn.addEventListener('click', openProduct);
+    btn.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      openProduct();
+    });
+  });
 }
 
 function escapeHtml(str) {

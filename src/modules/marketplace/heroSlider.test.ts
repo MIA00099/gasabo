@@ -83,11 +83,11 @@ describe('hero slider', () => {
     expect(activeRule).not.toContain('translateX');
   });
 
-  it('renders admin hero ads as full-frame cover slides like the reference hero', () => {
-    // The reference HTML treats the ad image as the hero image itself: the
-    // slider fills the available panel and the image covers that full curved
-    // frame. It must not shrink into a centered poster with empty space around
-    // it.
+  it('resizes admin hero ads into the full frame without CSS cropping', () => {
+    // The hero keeps the reference panel shape, but seller/admin ads often
+    // include prices, phone numbers, and text. The sharp foreground image is
+    // stretched into the slot so no CSS object-fit crop hides ad content; the
+    // blurred copy behind it still fills the curved frame for the hero look.
     expect(SLIDER, 'ad slides must be cover-slides').toMatch(/class="slide cover-slide/);
     expect(SLIDER, 'blurred backdrop image').toContain('class="slide-bg"');
     expect(SLIDER, 'sharp foreground image').toContain('class="slide-fg"');
@@ -103,14 +103,15 @@ describe('hero slider', () => {
 
     expect(sliderRule, 'hero slider should fill the right hero panel').toContain('height: 100%');
     expect(sliderRule, 'hero slider should not shrink into a banner strip').not.toContain('aspect-ratio');
-    expect(fgRule, 'the sharp uploaded ad must cover the whole slider frame').toContain('object-fit: cover');
+    expect(fgRule, 'the sharp uploaded ad is resized into the slot without object-fit cropping').toContain('object-fit: fill');
+    expect(fgRule, 'the sharp uploaded ad should not be scaled past the frame').toContain('transform: none');
     expect(bgRule, 'the blurred copy fills the curved panel behind it').toContain('object-fit: cover');
     expect(bgRule, 'the blurred copy must stay visible').not.toContain('display: none');
     expect(linkRule, 'foreground ad frame must not add poster padding').not.toContain('padding:');
     expect(linkRule, 'foreground ad frame clips to the slider bounds').toContain('overflow: hidden');
   });
 
-  it('keeps the reference-style opacity and scale motion on active hero ads', () => {
+  it('keeps the reference timing while the real ad image stays unscaled', () => {
     const sliderRule = CSS.match(/\n\.slider-container \{([\s\S]*?)\n\}/)?.[1] || '';
     const slideStart = CSS.indexOf('.slide {');
     const slideRule = CSS.slice(slideStart, CSS.indexOf('.slide.active', slideStart));
@@ -120,9 +121,10 @@ describe('hero slider', () => {
     expect(sliderRule, '5% of the reference 18s loop is a 0.9s fade phase').toContain('--hero-fade-ms: 900ms');
     expect(slideRule).toContain('transition: opacity var(--hero-fade-ms)');
     expect(CSS).toContain('@keyframes heroAdBackdropMove');
-    expect(CSS).toContain('@keyframes heroAdImageMove');
     expect(CSS).toContain('.slide.active .slide-bg');
     expect(CSS).toContain('.slide.active .slide-fg');
+    expect(CSS).toContain('animation: heroAdBackdropMove var(--hero-slide-ms) ease both');
+    expect(CSS).toContain('animation: none');
     expect(CSS).toContain('15%');
     expect(CSS).toContain('90%');
     expect(CSS).toContain('transform: scale(1.08)');

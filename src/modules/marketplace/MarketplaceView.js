@@ -214,7 +214,8 @@ function startHeroSlider(container) {
 
   // Auto-advance through the admin's hero ads. Held back so it never feels
   // like a page refresh:
-  //   - a slow 6s step, with the existing 0.22s opacity crossfade,
+  //   - the same 6s-per-slide step used by kigaliiiiiii.html
+  //     (three reference slides make an 18s loop),
   //   - paused while the pointer is over the panel or a dot has keyboard
   //     focus, and while the tab is in the background,
   //   - off entirely for visitors who ask for reduced motion (the dots still

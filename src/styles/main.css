@@ -3992,6 +3992,9 @@ table {
    the vertical centre); each ad photo fills it edge to edge (object-fit:
    cover) and drifts in with a slow ken-burns zoom. --- */
 .slider-container {
+    --hero-slide-ms: 6000ms;
+    --hero-reference-loop-ms: 18000ms;
+    --hero-fade-ms: 900ms;
     position: absolute;
     top: 0;
     right: 0;
@@ -4038,7 +4041,7 @@ table {
     opacity: 0;
     visibility: hidden;
     transform: none;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
+    transition: opacity var(--hero-fade-ms) ease, visibility 0s linear var(--hero-fade-ms);
     z-index: 1;
     pointer-events: none;
 }
@@ -4048,7 +4051,7 @@ table {
     visibility: visible;
     z-index: 2;
     transform: none;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
+    transition: opacity var(--hero-fade-ms) ease, visibility 0s linear 0s;
     pointer-events: auto;
 }
 
@@ -4089,6 +4092,7 @@ table {
     object-position: center center;
     display: block;
     filter: none;
+    transform: scale(1.08);
 }
 
 .slide.cover-slide .slide-bg {
@@ -4101,34 +4105,50 @@ table {
     object-position: center center;
     display: block;
     filter: blur(26px) brightness(0.72) saturate(1.08);
-    transform: scale(1.14);
+    transform: scale(1.08);
 }
 
 .slide.active .slide-bg {
-    animation: heroAdBackdropMove 6s ease-out both;
+    animation: heroAdBackdropMove var(--hero-slide-ms) ease both;
 }
 
 .slide.active .slide-fg {
-    animation: heroAdImageMove 6s ease-out both;
+    animation: heroAdImageMove var(--hero-slide-ms) ease both;
 }
 
 @keyframes heroAdBackdropMove {
     0% {
-        transform: scale(1.18);
+        transform: scale(1.08);
+    }
+
+    15% {
+        transform: scale(1);
+    }
+
+    90% {
+        transform: scale(1.05);
     }
 
     100% {
-        transform: scale(1.1);
+        transform: scale(1.08);
     }
 }
 
 @keyframes heroAdImageMove {
     0% {
-        transform: scale(1.02);
+        transform: scale(1.08);
+    }
+
+    15% {
+        transform: scale(1);
+    }
+
+    90% {
+        transform: scale(1.05);
     }
 
     100% {
-        transform: scale(1);
+        transform: scale(1.08);
     }
 }
 

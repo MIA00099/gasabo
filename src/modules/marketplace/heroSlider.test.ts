@@ -111,10 +111,22 @@ describe('hero slider', () => {
   });
 
   it('keeps the reference-style opacity and scale motion on active hero ads', () => {
+    const sliderRule = CSS.match(/\n\.slider-container \{([\s\S]*?)\n\}/)?.[1] || '';
+    const slideStart = CSS.indexOf('.slide {');
+    const slideRule = CSS.slice(slideStart, CSS.indexOf('.slide.active', slideStart));
+
+    expect(sliderRule, 'same 6s stagger as the reference slides').toContain('--hero-slide-ms: 6000ms');
+    expect(sliderRule, 'same 18s loop as the three-slide reference HTML').toContain('--hero-reference-loop-ms: 18000ms');
+    expect(sliderRule, '5% of the reference 18s loop is a 0.9s fade phase').toContain('--hero-fade-ms: 900ms');
+    expect(slideRule).toContain('transition: opacity var(--hero-fade-ms)');
     expect(CSS).toContain('@keyframes heroAdBackdropMove');
     expect(CSS).toContain('@keyframes heroAdImageMove');
     expect(CSS).toContain('.slide.active .slide-bg');
     expect(CSS).toContain('.slide.active .slide-fg');
+    expect(CSS).toContain('15%');
+    expect(CSS).toContain('90%');
+    expect(CSS).toContain('transform: scale(1.08)');
+    expect(CSS).toContain('transform: scale(1.05)');
   });
 });
 

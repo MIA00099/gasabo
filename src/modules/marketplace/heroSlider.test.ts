@@ -119,6 +119,18 @@ describe('flash deals card', () => {
     }
   });
 
+  it('spreads the countdown boxes across the Flash Deals card instead of bunching them in the middle', () => {
+    const countdownStart = CSS.indexOf('.flash-deals .countdown {');
+    const countdownRule = CSS.slice(countdownStart, CSS.indexOf('}', countdownStart));
+    const boxStart = CSS.indexOf('.flash-deals .time-box {');
+    const boxRule = CSS.slice(boxStart, CSS.indexOf('}', boxStart));
+
+    expect(countdownRule).toContain('display: grid');
+    expect(countdownRule).toContain('grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr)');
+    expect(countdownRule).toContain('width: 100%');
+    expect(boxRule).toContain('width: 100%');
+  });
+
   it('only renders the countdown boxes when a real flash deal exists', () => {
     const emptyText = HOME.indexOf('<p class="flash-empty">');
     const countdownGate = HOME.indexOf('${featuredDeal ? `\n                  <div class="countdown"');

@@ -4844,16 +4844,18 @@ table {
 }
 
 .flash-deals .countdown {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 8px;
   margin-top: auto;
+  width: 100%;
 }
 
 .flash-deals .time-box {
-  width: 46px;
-  height: 50px;
+  width: 100%;
+  min-width: 0;
+  height: 56px;
   background: #fff;
   border-radius: 8px;
   display: flex;
@@ -4864,9 +4866,10 @@ table {
 
 .flash-deals .time-box .number {
   color: #063f2b;
-  font-size: 19px;
-  line-height: 19px;
+  font-size: 22px;
+  line-height: 22px;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .flash-deals .time-box .label {
@@ -4880,6 +4883,7 @@ table {
   font-size: 18px;
   font-weight: 800;
   color: #fff;
+  justify-self: center;
 }
 
 .flash-page {
@@ -5120,20 +5124,19 @@ table {
 
 @media (max-width: 767px) {
   .flash-deals .countdown {
-    gap: 4px;
+    gap: 6px;
   }
 
   .flash-deals .time-box {
-    width: 44px;
-    height: 50px;
+    height: 60px;
   }
 
   .flash-deals .time-box .number {
-    font-size: 18px;
+    font-size: 23px;
   }
 
   .flash-deals .time-box .label {
-    font-size: 8.5px;
+    font-size: 9px;
   }
 
   .flash-page-hero {
@@ -5162,12 +5165,15 @@ table {
   }
 
   .flash-deals .countdown {
-    gap: 3px;
+    gap: 5px;
   }
 
   .flash-deals .time-box {
-    width: 40px;
-    height: 48px;
+    height: 56px;
+  }
+
+  .flash-deals .time-box .number {
+    font-size: 20px;
   }
 }
 

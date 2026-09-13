@@ -182,6 +182,33 @@ describe('GET /robots.txt', () => {
   });
 });
 
+describe('Security and fallback status headers', () => {
+  it('sends the HSTS preload policy on normal responses', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.status).toBe(200);
+    expect(res.headers['strict-transport-security']).toBe('max-age=31536000; includeSubDomains; preload');
+  });
+
+  it.skipIf(!HAS_DIST)('serves known SPA routes as normal pages', async () => {
+    const res = await request(app).get('/flash-deals');
+    expect(res.status).toBe(200);
+    expect(res.headers['x-robots-tag']).toBeUndefined();
+  });
+
+  it.skipIf(!HAS_DIST)('returns a hard 404 for unknown frontend paths', async () => {
+    const res = await request(app).get('/this-page-should-not-exist');
+    expect(res.status).toBe(404);
+    expect(res.headers['x-robots-tag']).toBe('noindex');
+    expect(res.text).toContain('id="app"');
+  });
+
+  it('does not turn missing static assets into the SPA shell', async () => {
+    const res = await request(app).get('/assets/no-such-file.js');
+    expect(res.status).toBe(404);
+    expect(res.text).not.toContain('id="app"');
+  });
+});
+
 describe('Listing pages', () => {
   it('404s a product URL that does not resolve', async () => {
     // Must be a hard 404. Answering 200 with the generic shell creates a
@@ -316,6 +343,14 @@ describe.skipIf(!HAS_DIST)('the built homepage shell', () => {
   // measured on the rendered text (entities collapsed), since that is what a
   // search engine truncates on.
   const decode = (s: string) => s.replace(/&amp;/g, '&').replace(/&[a-z]+;/g, ' ');
+  const bodyText = (html: string) => decode(
+    html
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
 
   it('keeps the title short enough not to be truncated', () => {
     const title = decode(shell.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '');
@@ -327,6 +362,18 @@ describe.skipIf(!HAS_DIST)('the built homepage shell', () => {
     const desc = decode(shell.match(/<meta name="description" content="([^"]*)"/i)?.[1] ?? '');
     expect(desc.length, `description is ${desc.length} chars`).toBeGreaterThanOrEqual(110);
     expect(desc.length, `description is ${desc.length} chars`).toBeLessThanOrEqual(170);
+  });
+
+  it('keeps enough crawlable body copy for the homepage topic', () => {
+    const body = shell.match(/<body[\s\S]*?<\/body>/i)?.[0] ?? shell;
+    const text = bodyText(body);
+    const words = text.match(/[A-Za-z0-9]+(?:['-][A-Za-z0-9]+)?/g) || [];
+
+    expect(words.length, `homepage shell has ${words.length} words`).toBeGreaterThanOrEqual(180);
+    expect(text.toLowerCase()).toContain('electronics');
+    expect(text.toLowerCase()).toContain('vehicles');
+    expect(text.toLowerCase()).toContain('real estate');
+    expect((text.match(/Kigali Market/gi) || []).length).toBeLessThanOrEqual(8);
   });
 
   it('has exactly one crawlable H1 (outside <noscript>)', () => {

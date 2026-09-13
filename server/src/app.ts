@@ -25,6 +25,15 @@ import { env } from './config/env.js';
 
 export const app = express();
 
+app.disable('x-powered-by');
+
+app.use((_req, res, next) => {
+  res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 const corsOrigins = env.CORS_ORIGIN
   ? env.CORS_ORIGIN.split(',').map((origin) => origin.trim().replace(/\/+$/, '')).filter(Boolean)
   : env.NODE_ENV === 'production'
@@ -98,11 +107,45 @@ app.use(seoRouter);
 // frontend and never asks this Express process for a non-API route, and
 // dist/ won't even exist yet before the first `npm run build`.
 const distDir = path.resolve('dist');
+
+const SPA_ROUTES = new Set([
+  '/',
+  '/products',
+  '/stores',
+  '/post-ad',
+  '/auth',
+  '/flash-deals',
+  '/help-center',
+  '/faqs',
+  '/about',
+  '/terms',
+  '/privacy',
+  '/contact',
+]);
+const LISTING_ROUTE = /^\/(?:product|property)\/[A-Za-z0-9_-]{1,64}\/?$/;
+
+function isKnownSpaPath(requestPath: string): boolean {
+  const clean = requestPath.replace(/\/+$/, '') || '/';
+  return SPA_ROUTES.has(clean) || LISTING_ROUTE.test(clean);
+}
+
+function looksLikeStaticAsset(requestPath: string): boolean {
+  return requestPath.startsWith('/uploads') || requestPath.startsWith('/assets') || path.extname(requestPath) !== '';
+}
+
 app.use(express.static(distDir));
 app.get('*', (req, res, next) => {
-  // Anything under /uploads is real user content, not a frontend route -
-  // let it 404 normally instead of masquerading as index.html.
-  if (req.path.startsWith('/uploads')) return next();
+  // Static-looking misses are real missing files, not frontend routes - let
+  // Express return a normal 404 instead of masquerading as index.html.
+  if (looksLikeStaticAsset(req.path)) return next();
+
+  if (!isKnownSpaPath(req.path) && res.statusCode < 400) {
+    res.status(404);
+  }
+  if (res.statusCode >= 400) {
+    res.set('X-Robots-Tag', 'noindex');
+  }
+
   res.sendFile(path.join(distDir, 'index.html'), (err) => {
     if (err) next(err);
   });

@@ -302,6 +302,7 @@ function renderInquiriesSection(state) {
 // image section repaints itself on upload, the rest of the form is untouched
 // so typed values elsewhere in the form are never lost.
 function openAddPropertyModal(propertyToEdit = null) {
+  const isEditing = !!propertyToEdit;
   const districts = stateEngine.getState().districts;
   let imageMode = 'upload'; // 'upload' | 'url'
   let imageUrls = Array.isArray(propertyToEdit?.images)

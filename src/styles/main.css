@@ -4004,7 +4004,7 @@ table {
     background: #0B1E39;
     padding: 0;
     z-index: 10;
-    clip-path: ellipse(100% 100% at 100% 50%);
+    clip-path: ellipse(115% 100% at 100% 50%);
     isolation: isolate;
 }
 

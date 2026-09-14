@@ -1209,13 +1209,19 @@ class StateEngine {
   // The admin ads section now creates homepage hero slides only. The Flash
   // Deals side rail is fed by live products, so separate flash-promo images
   // would be invisible and the server rejects them.
-  async createBanner(title, imageUrl, { targetUrl = null } = {}) {
+  async createBanner(title, imageUrl, { targetUrl = null, display = null } = {}) {
     return this._run('banners', async () => {
-      const { banner } = await api.post('/advertisements', { title, imageUrl, targetUrl });
-      // Re-fetch rather than hand-append: the list endpoint reshapes each
-      // record (id/title/subtitle/image/status) differently from what POST
-      // returns (the raw Advertisement row), so appending the raw response
-      // directly would render inconsistently with the rest of the list.
+      const { banner } = await api.post('/advertisements', { title, imageUrl, targetUrl, display });
+      // Re-fetch rather than hand-append: this keeps ordering and server-side
+      // defaults consistent with the public list endpoint.
+      await this.loadBanners();
+      return banner;
+    });
+  }
+
+  async updateBannerDisplay(bannerId, display) {
+    return this._run('banners', async () => {
+      const { banner } = await api.patch(`/advertisements/${bannerId}/display`, { display });
       await this.loadBanners();
       return banner;
     });

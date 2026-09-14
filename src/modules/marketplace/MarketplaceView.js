@@ -14,6 +14,66 @@ import { getHomeProductSections, isSpotlightProduct } from './homeProductSection
 // "View all" button below the grid is for.
 const HOME_MAX_MORE = 15;
 
+const HERO_IMAGE_FITS = new Set(['fill', 'cover', 'contain']);
+const HERO_IMAGE_POSITIONS = new Set([
+  'center center',
+  'left center',
+  'right center',
+  'center top',
+  'center bottom',
+  'left top',
+  'right top',
+  'left bottom',
+  'right bottom',
+]);
+const HERO_IMAGE_DEFAULT_MODE = { fit: 'fill', position: 'center center', scale: 1, x: 0, y: 0 };
+
+function clampHeroNumber(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+function normalizeHeroImageMode(value, fallback = HERO_IMAGE_DEFAULT_MODE) {
+  const raw = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    fit: typeof raw.fit === 'string' && HERO_IMAGE_FITS.has(raw.fit) ? raw.fit : fallback.fit,
+    position: typeof raw.position === 'string' && HERO_IMAGE_POSITIONS.has(raw.position) ? raw.position : fallback.position,
+    scale: clampHeroNumber(raw.scale, 0.75, 1.35, fallback.scale),
+    x: clampHeroNumber(raw.x, -30, 30, fallback.x),
+    y: clampHeroNumber(raw.y, -30, 30, fallback.y),
+  };
+}
+
+function normalizeHeroImageDisplay(display) {
+  const raw = display && typeof display === 'object' && !Array.isArray(display) ? display : {};
+  if (raw.desktop === undefined && raw.mobile === undefined) {
+    const mode = normalizeHeroImageMode(raw);
+    return { desktop: mode, mobile: mode };
+  }
+
+  const desktop = normalizeHeroImageMode(raw.desktop);
+  const mobile = normalizeHeroImageMode(raw.mobile, desktop);
+  return { desktop, mobile };
+}
+
+function heroAdImageStyle(ad) {
+  const display = normalizeHeroImageDisplay(ad?.display);
+  const { desktop, mobile } = display;
+  return [
+    `--hero-fit:${desktop.fit}`,
+    `--hero-position:${desktop.position}`,
+    `--hero-scale:${desktop.scale}`,
+    `--hero-x:${desktop.x}%`,
+    `--hero-y:${desktop.y}%`,
+    `--hero-mobile-fit:${mobile.fit}`,
+    `--hero-mobile-position:${mobile.position}`,
+    `--hero-mobile-scale:${mobile.scale}`,
+    `--hero-mobile-x:${mobile.x}%`,
+    `--hero-mobile-y:${mobile.y}%`,
+  ].join(';');
+}
+
 function groupProductsBySection(products, categories) {
   if (!Array.isArray(products) || products.length === 0) return [];
 
@@ -527,7 +587,7 @@ export function renderMarketplaceView(container) {
                                ad carries a target. -->
                           <div class="slide cover-slide ${i === 0 ? 'active' : ''}" data-slide="${i}">
                             ${ad.targetUrl ? `<a href="${escapeHtml(ad.targetUrl)}" class="hero-ad-link">` : '<div class="hero-ad-link">'}
-                            <img class="slide-fg" src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}">
+                            <img class="slide-fg" src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}" style="${heroAdImageStyle(ad)}">
                             ${ad.targetUrl ? `</a>` : '</div>'}
                           </div>
                         `).join('')}

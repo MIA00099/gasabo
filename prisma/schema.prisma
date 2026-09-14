@@ -156,6 +156,7 @@ model Advertisement {
   type      String // "HERO_SLIDER" - the only type; see advertisements.routes.ts
   imageUrl  String
   targetUrl String?
+  imageDisplay Json?
   startDate DateTime
   endDate   DateTime
   status    String   @default("SCHEDULED") // "SCHEDULED" | "ACTIVE" | "EXPIRED"

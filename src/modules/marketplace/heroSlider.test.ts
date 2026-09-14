@@ -43,6 +43,8 @@ describe('hero slider', () => {
   it('renders one slide per hero ad', () => {
     expect(SLIDER, 'slides must map over heroAds').toMatch(/\$\{heroAds\.map\(\(ad, i\) =>/);
     expect(SLIDER, 'ad image comes from the ad record').toContain('escapeHtml(ad.image)');
+    expect(SLIDER, 'ad image gets per-slide display variables').toContain('style="${heroAdImageStyle(ad)}"');
+    expect(HOME, 'hero display settings must be normalized before becoming CSS variables').toContain('function normalizeHeroImageDisplay');
   });
 
   it('generates one dot per ad, so every slide stays reachable', () => {
@@ -83,7 +85,7 @@ describe('hero slider', () => {
     expect(activeRule).not.toContain('translateX');
   });
 
-  it('fills the curved hero panel with the admin ad image itself', () => {
+  it('fills the curved hero panel with the configurable admin ad image itself', () => {
     // The hero keeps the reference panel shape, but the uploaded ad should be
     // the visible hero artwork. No separate blurred copy should appear around
     // it, and the image/link frame must run edge to edge inside the curve.
@@ -111,9 +113,11 @@ describe('hero slider', () => {
     expect(sliderRule, 'hero slider should not shrink into a banner strip').not.toContain('aspect-ratio');
     expect(responsiveHeroRule, 'tablet portrait should stack into a full-width hero image panel').toContain('width: 100%');
     expect(responsiveHeroRule, 'phone/tablet panel height should respond to screen width').toContain('height: clamp(220px, 56vw, 420px)');
-    expect(fgRule, 'the uploaded ad fills the curved hero panel').toContain('object-fit: fill');
-    expect(fgRule, 'the sharp uploaded ad should not be scaled past the frame').toContain('transform: none');
-    expect(mobileFgRule, 'phone/tablet uploaded ads must use the same full-panel fit').toContain('object-fit: fill');
+    expect(fgRule, 'the uploaded ad defaults to the current full-panel fit').toContain('object-fit: var(--hero-fit, fill)');
+    expect(fgRule, 'each uploaded ad can choose its own position').toContain('object-position: var(--hero-position, center center)');
+    expect(fgRule, 'each uploaded ad can be nudged without changing the hero curve').toContain('transform: translate(var(--hero-x, 0%), var(--hero-y, 0%)) scale(var(--hero-scale, 1))');
+    expect(mobileFgRule, 'phone/tablet uploaded ads can use their own fit while falling back to desktop').toContain('object-fit: var(--hero-mobile-fit, var(--hero-fit, fill))');
+    expect(mobileFgRule, 'phone/tablet uploaded ads can be nudged independently').toContain('transform: translate(var(--hero-mobile-x, var(--hero-x, 0%)), var(--hero-mobile-y, var(--hero-y, 0%))) scale(var(--hero-mobile-scale, var(--hero-scale, 1)))');
     expect(CSS, 'hero slider should not keep a blurred image layer').not.toContain('.slide.cover-slide .slide-bg');
     expect(beforeRule, 'hero slider should not keep the old glow over the ad image').toContain('display: none');
     expect(afterRule, 'hero slider should not keep the old dark overlay over the ad image').toContain('display: none');
@@ -122,7 +126,7 @@ describe('hero slider', () => {
     expect(linkRule, 'foreground ad frame clips to the slider bounds').toContain('overflow: hidden');
   });
 
-  it('keeps the reference timing while the real ad image stays unscaled', () => {
+  it('keeps the reference timing while ad image fitting stays per-slide', () => {
     const sliderRule = CSS.match(/\n\.slider-container \{([\s\S]*?)\n\}/)?.[1] || '';
     const slideStart = CSS.indexOf('.slide {');
     const slideRule = CSS.slice(slideStart, CSS.indexOf('.slide.active', slideStart));
@@ -131,6 +135,8 @@ describe('hero slider', () => {
     expect(sliderRule, 'same 18s loop as the three-slide reference HTML').toContain('--hero-reference-loop-ms: 18000ms');
     expect(sliderRule, '5% of the reference 18s loop is a 0.9s fade phase').toContain('--hero-fade-ms: 900ms');
     expect(slideRule).toContain('transition: opacity var(--hero-fade-ms)');
+    expect(HOME).toContain('--hero-fit:${desktop.fit}');
+    expect(HOME).toContain('--hero-mobile-fit:${mobile.fit}');
     expect(CSS).toContain('.slide.active .slide-fg');
     expect(CSS).toContain('animation: none');
     expect(CSS).not.toContain('heroAdBackdropMove');

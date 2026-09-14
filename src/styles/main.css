@@ -4072,11 +4072,12 @@ table {
     height: 100%;
     max-width: 100%;
     max-height: 100%;
-    object-fit: fill;
-    object-position: center center;
+    object-fit: var(--hero-fit, fill);
+    object-position: var(--hero-position, center center);
     display: block;
     filter: none;
-    transform: none;
+    transform: translate(var(--hero-x, 0%), var(--hero-y, 0%)) scale(var(--hero-scale, 1));
+    transform-origin: center center;
 }
 
 .slide.active .slide-fg {
@@ -4201,11 +4202,13 @@ table {
         height: 100%;
         max-width: 100%;
         max-height: 100%;
-        object-fit: fill;
-        object-position: center center;
+        object-fit: var(--hero-mobile-fit, var(--hero-fit, fill));
+        object-position: var(--hero-mobile-position, var(--hero-position, center center));
         border-radius: 0;
         display: block;
         filter: none;
+        transform: translate(var(--hero-mobile-x, var(--hero-x, 0%)), var(--hero-mobile-y, var(--hero-y, 0%))) scale(var(--hero-mobile-scale, var(--hero-scale, 1)));
+        transform-origin: center center;
     }
 
     .hero-section-wrapper .hero-ad-link {

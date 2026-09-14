@@ -40,6 +40,8 @@ describe('POST /api/advertisements', () => {
     });
     expect(res.status).toBe(201);
     expect(res.body.banner.type).toBe('HERO_SLIDER');
+    expect(res.body.banner.display.desktop.fit).toBe('fill');
+    expect(res.body.banner.display.mobile.fit).toBe('fill');
   });
 
   it('requires a title and an image', async () => {
@@ -54,6 +56,36 @@ describe('POST /api/advertisements', () => {
     });
     expect(res.status).toBe(201);
     expect(res.body.banner.type).toBe('HERO_SLIDER');
+  });
+
+  it('stores per-device hero image display settings', async () => {
+    const display = {
+      desktop: { fit: 'cover', position: 'left top', scale: 1.12, x: -8, y: 5 },
+      mobile: { fit: 'contain', position: 'center bottom', scale: 0.94, x: 4, y: -6 },
+    };
+    const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
+      title: 'Custom fit', imageUrl: '/custom.png', display,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.banner.display).toEqual(display);
+  });
+
+  it('sanitizes invalid display settings back into the safe range', async () => {
+    const res = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
+      title: 'Bad fit',
+      imageUrl: '/bad.png',
+      display: { desktop: { fit: 'stretchy', position: 'there', scale: 99, x: -99, y: 'nope' } },
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.banner.display.desktop).toEqual({
+      fit: 'fill',
+      position: 'center center',
+      scale: 1.35,
+      x: -30,
+      y: 0,
+    });
   });
 
   it('refuses the retired banner types instead of storing an invisible ad', async () => {
@@ -80,6 +112,39 @@ describe('POST /api/advertisements', () => {
   });
 });
 
+describe('PATCH /api/advertisements/:id/display', () => {
+  it('lets an admin tune a saved hero image without replacing it', async () => {
+    const created = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
+      title: 'Needs tuning', imageUrl: '/needs-tuning.png',
+    });
+    const display = {
+      desktop: { fit: 'contain', position: 'right center', scale: 1, x: 6, y: 0 },
+      mobile: { fit: 'cover', position: 'center top', scale: 1.08, x: 0, y: -4 },
+    };
+
+    const res = await request(app)
+      .patch(`/api/advertisements/${created.body.banner.id}/display`)
+      .set(auth(adminToken))
+      .send({ display });
+
+    expect(res.status).toBe(200);
+    expect(res.body.banner.image).toBe('/needs-tuning.png');
+    expect(res.body.banner.display).toEqual(display);
+  });
+
+  it('refuses a seller (no ADVERTISEMENTS permission)', async () => {
+    const created = await request(app).post('/api/advertisements').set(auth(adminToken)).send({
+      title: 'Seller cannot tune', imageUrl: '/seller-no.png',
+    });
+    const res = await request(app)
+      .patch(`/api/advertisements/${created.body.banner.id}/display`)
+      .set(auth(sellerToken))
+      .send({ display: { desktop: { fit: 'contain' } } });
+
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('GET /api/advertisements', () => {
   it('returns type and targetUrl, which the homepage slider needs', async () => {
     await request(app).post('/api/advertisements').set(auth(adminToken)).send({
@@ -94,6 +159,7 @@ describe('GET /api/advertisements', () => {
     expect(hero.type).toBe('HERO_SLIDER');
     expect(hero.targetUrl).toBe('https://kigalimarket.com/');
     expect(hero.image).toBe('/y.png');
+    expect(hero.display.desktop.fit).toBe('fill');
   });
 
   it('is public - no auth needed, since the homepage reads it', async () => {

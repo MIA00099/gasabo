@@ -278,21 +278,30 @@ export function renderMarketplaceAdmin(container) {
             </div>
           ` : `
             <div class="grid-2">
-              ${state.banners.map(b => `
+              ${state.banners.map(b => {
+                const display = normalizeHeroDisplay(b.display);
+                return `
                 <div class="glass-card" style="padding: 1.5rem;">
                   <div style="height: 140px; border-radius: var(--radius-sm); overflow: hidden; background: #000; margin-bottom: 1rem;">
-                    <img src="${b.image}" alt="${escapeHtml(b.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="${escapeHtml(b.image)}" alt="${escapeHtml(b.title)}" style="${heroDisplayPreviewStyle(display)}">
                   </div>
                   <h4 style="color: #0F172A; margin-bottom: 0.25rem;">${escapeHtml(b.title)}</h4>
                   <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;">${escapeHtml(b.subtitle)}</p>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="badge badge-active">${b.status}</span>
-                    <button class="btn btn-sm btn-danger del-banner-btn" data-id="${b.id}">
-                      Delete
-                    </button>
+                  <p style="font-size: 0.76rem; color: #64748B; margin: -0.35rem 0 1rem;">${escapeHtml(heroDisplaySummary(display))}</p>
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <span class="badge badge-active">${escapeHtml(b.status)}</span>
+                    <div style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                      <button class="btn btn-sm btn-secondary edit-banner-display-btn" data-id="${b.id}">
+                        Image Display
+                      </button>
+                      <button class="btn btn-sm btn-danger del-banner-btn" data-id="${b.id}">
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
           `}
         `}
@@ -428,9 +437,16 @@ export function renderMarketplaceAdmin(container) {
     // Upload a real image (Supabase in production) and create the hero slide
     // the public homepage carousel reads.
     container.querySelector('#add-hero-slide-btn')?.addEventListener('click', (e) => {
-      promptBannerCreate(e.currentTarget, async ({ title, targetUrl, file }) => {
+      promptBannerCreate(e.currentTarget, async ({ title, targetUrl, file, display }) => {
         const imageUrl = await stateEngine.uploadImage(file);
-        await stateEngine.createBanner(title, imageUrl, { targetUrl });
+        await stateEngine.createBanner(title, imageUrl, { targetUrl, display });
+      });
+    });
+
+    container.querySelectorAll('.edit-banner-display-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const banner = stateEngine.getState().banners.find((b) => b.id === btn.dataset.id);
+        if (banner) promptBannerDisplayEdit(btn, banner);
       });
     });
 
@@ -457,6 +473,155 @@ function escapeHtml(str) {
   return str.replace(/[&<>"']/g, function(m) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
   });
+}
+
+const HERO_DISPLAY_FITS = [
+  ['fill', 'Fill'],
+  ['cover', 'Cover'],
+  ['contain', 'Contain'],
+];
+
+const HERO_DISPLAY_POSITIONS = [
+  ['center center', 'Center'],
+  ['left center', 'Left'],
+  ['right center', 'Right'],
+  ['center top', 'Top'],
+  ['center bottom', 'Bottom'],
+  ['left top', 'Top left'],
+  ['right top', 'Top right'],
+  ['left bottom', 'Bottom left'],
+  ['right bottom', 'Bottom right'],
+];
+
+const HERO_DISPLAY_DEFAULT_MODE = { fit: 'fill', position: 'center center', scale: 1, x: 0, y: 0 };
+
+function clampHeroDisplayNumber(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+function normalizeHeroDisplayMode(value, fallback = HERO_DISPLAY_DEFAULT_MODE) {
+  const raw = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const fitValues = new Set(HERO_DISPLAY_FITS.map(([value]) => value));
+  const positionValues = new Set(HERO_DISPLAY_POSITIONS.map(([value]) => value));
+
+  return {
+    fit: typeof raw.fit === 'string' && fitValues.has(raw.fit) ? raw.fit : fallback.fit,
+    position: typeof raw.position === 'string' && positionValues.has(raw.position) ? raw.position : fallback.position,
+    scale: clampHeroDisplayNumber(raw.scale, 0.75, 1.35, fallback.scale),
+    x: clampHeroDisplayNumber(raw.x, -30, 30, fallback.x),
+    y: clampHeroDisplayNumber(raw.y, -30, 30, fallback.y),
+  };
+}
+
+function normalizeHeroDisplay(display) {
+  const raw = display && typeof display === 'object' && !Array.isArray(display) ? display : {};
+  if (raw.desktop === undefined && raw.mobile === undefined) {
+    const mode = normalizeHeroDisplayMode(raw);
+    return { desktop: { ...mode }, mobile: { ...mode } };
+  }
+
+  const desktop = normalizeHeroDisplayMode(raw.desktop);
+  const mobile = normalizeHeroDisplayMode(raw.mobile, desktop);
+  return { desktop, mobile };
+}
+
+function heroDisplayPreviewStyle(display, mode = 'desktop') {
+  const settings = normalizeHeroDisplay(display);
+  const view = settings[mode] || settings.desktop;
+  return [
+    'width:100%',
+    'height:100%',
+    'max-width:100%',
+    'max-height:100%',
+    `object-fit:${view.fit}`,
+    `object-position:${view.position}`,
+    `transform:translate(${view.x}%, ${view.y}%) scale(${view.scale})`,
+    'transform-origin:center center',
+    'display:block',
+  ].join(';');
+}
+
+function heroDisplayOptionHtml(options, selected) {
+  return options.map(([value, label]) => `
+    <option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>
+  `).join('');
+}
+
+function heroDisplayControlsHtml(display) {
+  const settings = normalizeHeroDisplay(display);
+  const labels = { desktop: 'Desktop', mobile: 'Phone / tablet' };
+
+  return ['desktop', 'mobile'].map((mode) => {
+    const view = settings[mode];
+    return `
+      <fieldset style="border:1px solid #E2E8F0; border-radius:12px; padding:0.85rem; min-width:0;">
+        <legend style="padding:0 0.35rem; font-size:0.78rem; color:#0F172A; font-weight:800;">${labels[mode]}</legend>
+        <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.6rem; margin-bottom:0.65rem;">
+          <label style="display:block; font-size:0.75rem; font-weight:700; color:#334155;">
+            Fit
+            <select data-hero-mode="${mode}" data-hero-key="fit"
+              style="display:block; width:100%; margin-top:0.25rem; padding:0.45rem 0.55rem; border:1px solid #CBD5E1; border-radius:9px; font-size:0.82rem; background:#fff;">
+              ${heroDisplayOptionHtml(HERO_DISPLAY_FITS, view.fit)}
+            </select>
+          </label>
+          <label style="display:block; font-size:0.75rem; font-weight:700; color:#334155;">
+            Position
+            <select data-hero-mode="${mode}" data-hero-key="position"
+              style="display:block; width:100%; margin-top:0.25rem; padding:0.45rem 0.55rem; border:1px solid #CBD5E1; border-radius:9px; font-size:0.82rem; background:#fff;">
+              ${heroDisplayOptionHtml(HERO_DISPLAY_POSITIONS, view.position)}
+            </select>
+          </label>
+        </div>
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#334155; margin-bottom:0.45rem;">
+          Scale <span data-hero-value="${mode}-scale" style="float:right; color:#64748B;">${Math.round(view.scale * 100)}%</span>
+          <input type="range" min="0.75" max="1.35" step="0.01" value="${view.scale}" data-hero-mode="${mode}" data-hero-key="scale"
+            style="display:block; width:100%; margin-top:0.3rem;">
+        </label>
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#334155; margin-bottom:0.45rem;">
+          Move X <span data-hero-value="${mode}-x" style="float:right; color:#64748B;">${view.x}%</span>
+          <input type="range" min="-30" max="30" step="1" value="${view.x}" data-hero-mode="${mode}" data-hero-key="x"
+            style="display:block; width:100%; margin-top:0.3rem;">
+        </label>
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#334155;">
+          Move Y <span data-hero-value="${mode}-y" style="float:right; color:#64748B;">${view.y}%</span>
+          <input type="range" min="-30" max="30" step="1" value="${view.y}" data-hero-mode="${mode}" data-hero-key="y"
+            style="display:block; width:100%; margin-top:0.3rem;">
+        </label>
+      </fieldset>
+    `;
+  }).join('');
+}
+
+function updateHeroDisplayValueLabel(overlay, mode, key, value) {
+  const label = overlay.querySelector(`[data-hero-value="${mode}-${key}"]`);
+  if (!label) return;
+  label.textContent = key === 'scale' ? `${Math.round(Number(value) * 100)}%` : `${Number(value)}%`;
+}
+
+function bindHeroDisplayControls(overlay, current) {
+  overlay.querySelectorAll('[data-hero-mode][data-hero-key]').forEach((control) => {
+    const update = () => {
+      const { heroMode: mode, heroKey: key } = control.dataset;
+      current.display = normalizeHeroDisplay(current.display);
+      current.display[mode][key] = key === 'fit' || key === 'position' ? control.value : Number(control.value);
+      current.display = normalizeHeroDisplay(current.display);
+      updateHeroDisplayValueLabel(overlay, mode, key, current.display[mode][key]);
+
+      overlay.querySelectorAll('[data-hero-preview-img]').forEach((img) => {
+        img.style.cssText = heroDisplayPreviewStyle(current.display, img.dataset.heroPreviewImg || 'desktop');
+      });
+    };
+    control.addEventListener(control.tagName === 'SELECT' ? 'change' : 'input', update);
+  });
+}
+
+function heroDisplaySummary(display) {
+  const settings = normalizeHeroDisplay(display);
+  const desktop = settings.desktop;
+  const mobile = settings.mobile;
+  return `Desktop: ${desktop.fit}, ${desktop.position}, ${Math.round(desktop.scale * 100)}%. Phone/tablet: ${mobile.fit}, ${mobile.position}, ${Math.round(mobile.scale * 100)}%.`;
 }
 
 // The category-creation flow used two chained window.prompt() calls, the
@@ -767,7 +932,7 @@ function promptFlashDealEnd(returnFocusTo, onPick) {
 }
 
 /**
- * Create an ad: title, image upload, optional link.
+ * Create an ad: title, image upload, optional link, and display settings.
  *
  * Replaces two prompt() boxes that could only paste a URL. The image goes
  * through the real /uploads flow (Supabase in production) rather than being a
@@ -795,7 +960,7 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
 
   function paint() {
     overlay.innerHTML = `
-      <div class="glass-card" style="max-width:460px; width:100%; padding:1.5rem; max-height:90vh; overflow:auto;" role="document">
+      <div class="glass-card" style="max-width:720px; width:100%; padding:1.5rem; max-height:90vh; overflow:auto;" role="document">
         <h3 style="color:#0F172A; margin-bottom:0.25rem;">${heading}</h3>
         <p style="font-size:0.85rem; color:#64748B; margin-bottom:1rem;">
           ${blurb}
@@ -812,7 +977,15 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
         <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:0.3rem;">Image</label>
         <input id="ban-file" type="file" accept="image/*"
           style="width:100%; font-size:0.85rem; margin-bottom:0.6rem;">
-        ${previewUrl ? `<img src="${previewUrl}" alt="" style="width:100%; max-height:160px; object-fit:contain; border-radius:10px; background:#0f172a; margin-bottom:0.6rem;">` : ''}
+        ${previewUrl ? `
+          <div style="height:170px; border-radius:12px; overflow:hidden; background:#0B1E39; margin-bottom:0.85rem;">
+            <img data-hero-preview-img="desktop" src="${previewUrl}" alt="" style="${heroDisplayPreviewStyle(current.display, 'desktop')}">
+          </div>
+        ` : ''}
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:0.75rem; margin-bottom:0.75rem;">
+          ${heroDisplayControlsHtml(current.display)}
+        </div>
 
         ${error ? `<p style="color:#DC2626; font-size:0.8rem; margin:0.25rem 0 0.5rem;">${error}</p>` : ''}
 
@@ -830,6 +1003,7 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
 
     overlay.querySelector('#ban-title').addEventListener('input', (e) => { current.title = e.target.value; });
     overlay.querySelector('#ban-target').addEventListener('input', (e) => { current.target = e.target.value; });
+    bindHeroDisplayControls(overlay, current);
     overlay.querySelector('#ban-file').addEventListener('change', (e) => {
       file = e.target.files && e.target.files[0];
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -842,7 +1016,7 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
       if (!file) { error = 'Choose an image.'; paint(); return; }
       busy = true; error = ''; paint();
       try {
-        await onSubmit({ title: current.title.trim(), targetUrl: current.target.trim() || null, file });
+        await onSubmit({ title: current.title.trim(), targetUrl: current.target.trim() || null, file, display: normalizeHeroDisplay(current.display) });
       } catch (err) {
         busy = false;
         error = err?.message || 'Upload failed. Please try again.';
@@ -853,7 +1027,7 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
     });
   }
 
-  const current = { title: '', target: '' };
+  const current = { title: '', target: '', display: normalizeHeroDisplay() };
 
   document.body.appendChild(overlay);
   paint();
@@ -863,4 +1037,73 @@ function promptBannerCreate(returnFocusTo, onSubmit) {
     onClose: () => { if (previewUrl) URL.revokeObjectURL(previewUrl); },
   }));
   overlay.querySelector('#ban-title')?.focus();
+}
+
+function promptBannerDisplayEdit(returnFocusTo, banner) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText =
+    'position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:12000; display:flex; align-items:center; justify-content:center; padding:1rem;';
+
+  let close = () => {};
+  let error = '';
+  let busy = false;
+  const current = { display: normalizeHeroDisplay(banner.display) };
+
+  function paint() {
+    overlay.innerHTML = `
+      <div class="glass-card" style="max-width:720px; width:100%; padding:1.5rem; max-height:90vh; overflow:auto;" role="document">
+        <h3 style="color:#0F172A; margin-bottom:0.25rem;">Adjust Hero Image</h3>
+        <p style="font-size:0.85rem; color:#64748B; margin-bottom:1rem;">
+          ${escapeHtml(banner.title)} keeps the same hero curve; these controls only change how this image sits inside it.
+        </p>
+
+        <div style="height:200px; border-radius:12px; overflow:hidden; background:#0B1E39; margin-bottom:0.85rem;">
+          <img data-hero-preview-img="desktop" src="${escapeHtml(banner.image)}" alt="" style="${heroDisplayPreviewStyle(current.display, 'desktop')}">
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:0.75rem; margin-bottom:0.75rem;">
+          ${heroDisplayControlsHtml(current.display)}
+        </div>
+
+        ${error ? `<p style="color:#DC2626; font-size:0.8rem; margin:0.25rem 0 0.5rem;">${error}</p>` : ''}
+
+        <div style="display:flex; gap:0.5rem; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-top:0.75rem;">
+          <button id="hero-display-reset" class="btn btn-sm" style="background:#F8FAFC; color:#475569; border:1px solid #E2E8F0;" ${busy ? 'disabled' : ''}>Reset to fill</button>
+          <div style="display:flex; gap:0.5rem;">
+            <button id="hero-display-cancel" class="btn btn-sm" style="background:#F1F5F9; color:#475569;" ${busy ? 'disabled' : ''}>Cancel</button>
+            <button id="hero-display-save" class="btn btn-sm" style="background:var(--primary); color:#fff;" ${busy ? 'disabled' : ''}>
+              ${busy ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </div>`;
+
+    bindHeroDisplayControls(overlay, current);
+    overlay.querySelector('#hero-display-reset')?.addEventListener('click', () => {
+      current.display = normalizeHeroDisplay();
+      paint();
+    });
+    overlay.querySelector('#hero-display-cancel')?.addEventListener('click', () => close());
+    overlay.querySelector('#hero-display-save')?.addEventListener('click', async () => {
+      busy = true; error = ''; paint();
+      try {
+        await stateEngine.updateBannerDisplay(banner.id, normalizeHeroDisplay(current.display));
+      } catch (err) {
+        busy = false;
+        error = err?.message || 'Could not save image display settings.';
+        paint();
+        return;
+      }
+      close();
+    });
+  }
+
+  document.body.appendChild(overlay);
+  paint();
+  ({ close } = makeAccessibleModal(overlay, {
+    label: 'Adjust hero image display',
+    returnFocusTo,
+  }));
+  overlay.querySelector('#hero-display-save')?.focus();
 }

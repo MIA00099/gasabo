@@ -78,15 +78,15 @@ describe('hero slider', () => {
     const slideRule = CSS.slice(slideStart, CSS.indexOf('.slide img', slideStart));
     const activeStart = CSS.indexOf('.slide.active {');
     const activeRule = CSS.slice(activeStart, CSS.indexOf('.slide.cover-slide', activeStart));
-    expect(slideRule).toMatch(/transition:\s*[\s\S]*opacity var\(--hero-fade-ms\)/);
+    expect(slideRule).toContain('transition: opacity');
     expect(slideRule).not.toContain('translateX');
     expect(activeRule).not.toContain('translateX');
   });
 
-  it('keeps the admin ad image safely inside the curved hero panel', () => {
+  it('fills the curved hero panel with the admin ad image itself', () => {
     // The hero keeps the reference panel shape, but the uploaded ad should be
     // the visible hero artwork. No separate blurred copy should appear around
-    // it, and the image must keep its proportions inside the curve.
+    // it, and the image/link frame must run edge to edge inside the curve.
     expect(SLIDER, 'ad slides must be cover-slides').toMatch(/class="slide cover-slide/);
     expect(SLIDER, 'blurred backdrop image should not be rendered').not.toContain('class="slide-bg"');
     expect(SLIDER, 'visible uploaded image').toContain('class="slide-fg"');
@@ -98,12 +98,8 @@ describe('hero slider', () => {
     const responsiveHeroRule = CSS.slice(responsiveHeroStart, responsiveHeroStart + 4000);
     const fgStart = CSS.indexOf('.slide.cover-slide .slide-fg {');
     const fgRule = CSS.slice(fgStart, CSS.indexOf('}', fgStart));
-    const slideStart = CSS.indexOf('.slide {');
-    const slideRule = CSS.slice(slideStart, CSS.indexOf('.slide.active', slideStart));
     const mobileFgStart = CSS.indexOf('.hero-section-wrapper .slide.cover-slide .slide-fg {');
     const mobileFgRule = CSS.slice(mobileFgStart, CSS.indexOf('}', mobileFgStart));
-    const mobileSlideStart = CSS.indexOf('.hero-section-wrapper .slide {');
-    const mobileSlideRule = CSS.slice(mobileSlideStart, CSS.indexOf('.hero-section-wrapper .slide img', mobileSlideStart));
     const linkStart = CSS.indexOf('.hero-ad-link {');
     const linkRule = CSS.slice(linkStart, CSS.indexOf('}', linkStart));
     const beforeStart = CSS.indexOf('#heroSlider::before {');
@@ -115,17 +111,14 @@ describe('hero slider', () => {
     expect(sliderRule, 'hero slider should not shrink into a banner strip').not.toContain('aspect-ratio');
     expect(responsiveHeroRule, 'tablet portrait should stack into a full-width hero image panel').toContain('width: 100%');
     expect(responsiveHeroRule, 'phone/tablet panel height should respond to screen width').toContain('height: clamp(220px, 56vw, 420px)');
-    expect(slideRule, 'desktop curve needs a left safe area for the image').toContain('padding: 8px 8px 8px 7%');
-    expect(slideRule, 'safe area should center the image frame').toContain('justify-content: center');
-    expect(fgRule, 'the uploaded ad should keep its proportions instead of cropping').toContain('object-fit: contain');
+    expect(fgRule, 'the uploaded ad fills the curved hero panel').toContain('object-fit: fill');
     expect(fgRule, 'the sharp uploaded ad should not be scaled past the frame').toContain('transform: none');
-    expect(mobileSlideRule, 'phone/tablet curve still needs padding so the image is not clipped').toContain('padding: 8px');
-    expect(mobileFgRule, 'phone/tablet uploaded ads must keep their proportions').toContain('object-fit: contain');
+    expect(mobileFgRule, 'phone/tablet uploaded ads must use the same full-panel fit').toContain('object-fit: fill');
     expect(CSS, 'hero slider should not keep a blurred image layer').not.toContain('.slide.cover-slide .slide-bg');
     expect(beforeRule, 'hero slider should not keep the old glow over the ad image').toContain('display: none');
     expect(afterRule, 'hero slider should not keep the old dark overlay over the ad image').toContain('display: none');
-    expect(linkRule, 'foreground ad frame must fill the safe content area').toContain('width: 100%');
-    expect(linkRule, 'foreground ad frame must fill the safe content area').toContain('height: 100%');
+    expect(linkRule, 'foreground ad frame must fill the curved hero mask').toContain('inset: 0');
+    expect(linkRule, 'foreground ad frame must not add poster padding').not.toContain('padding:');
     expect(linkRule, 'foreground ad frame clips to the slider bounds').toContain('overflow: hidden');
   });
 
@@ -137,7 +130,7 @@ describe('hero slider', () => {
     expect(sliderRule, 'same 6s stagger as the reference slides').toContain('--hero-slide-ms: 6000ms');
     expect(sliderRule, 'same 18s loop as the three-slide reference HTML').toContain('--hero-reference-loop-ms: 18000ms');
     expect(sliderRule, '5% of the reference 18s loop is a 0.9s fade phase').toContain('--hero-fade-ms: 900ms');
-    expect(slideRule).toMatch(/transition:\s*[\s\S]*opacity var\(--hero-fade-ms\)/);
+    expect(slideRule).toContain('transition: opacity var(--hero-fade-ms)');
     expect(CSS).toContain('.slide.active .slide-fg');
     expect(CSS).toContain('animation: none');
     expect(CSS).not.toContain('heroAdBackdropMove');

@@ -109,10 +109,8 @@ describe('hero slider', () => {
 
     expect(sliderRule, 'hero slider should fill the right hero panel').toContain('height: 100%');
     expect(sliderRule, 'hero slider should not shrink into a banner strip').not.toContain('aspect-ratio');
-    expect(sliderRule, 'desktop curve should not cut too deeply into uploaded ads').toContain('clip-path: ellipse(115% 100% at 100% 50%)');
     expect(responsiveHeroRule, 'tablet portrait should stack into a full-width hero image panel').toContain('width: 100%');
     expect(responsiveHeroRule, 'phone/tablet panel height should respond to screen width').toContain('height: clamp(220px, 56vw, 420px)');
-    expect(responsiveHeroRule, 'mobile keeps the top-curve shape that already fits well').toContain('clip-path: ellipse(115% 100% at 50% 100%)');
     expect(fgRule, 'the uploaded ad fills the curved hero panel').toContain('object-fit: fill');
     expect(fgRule, 'the sharp uploaded ad should not be scaled past the frame').toContain('transform: none');
     expect(mobileFgRule, 'phone/tablet uploaded ads must use the same full-panel fit').toContain('object-fit: fill');

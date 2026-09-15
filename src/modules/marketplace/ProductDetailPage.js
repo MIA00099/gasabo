@@ -101,9 +101,9 @@ function bindImageLightboxGestures(frame, openLightbox) {
 // without this the page renders complete, then a whole section appears
 // underneath it a moment later and pushes the footer down.
 const RELATED_SKELETON = Array.from({ length: 5 }, () => `
-  <div class="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
-    <div class="bg-gray-100 h-48 animate-pulse"></div>
-    <div class="p-4 space-y-3">
+  <div class="product-detail-related-card bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+    <div class="product-detail-related-image bg-gray-100 h-48 animate-pulse"></div>
+    <div class="product-detail-related-body p-4 space-y-3">
       <div class="h-3 bg-gray-100 rounded animate-pulse"></div>
       <div class="h-3 bg-gray-100 rounded w-2/3 animate-pulse"></div>
       <div class="h-4 bg-gray-100 rounded w-1/2 animate-pulse"></div>
@@ -118,15 +118,15 @@ function relatedCard(p) {
   const stars = starsHtml(p.rating);
 
   return `
-    <div class="related-card bg-white rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl transition transform hover:scale-105 border border-gray-100"
+    <div class="product-detail-related-card related-card bg-white rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl transition transform hover:scale-105 border border-gray-100"
       data-id="${p.id}" role="button" tabindex="0">
-      <div class="relative w-full h-48 sm:h-52 bg-gray-100 flex items-center justify-center overflow-hidden">
+      <div class="product-detail-related-image relative w-full h-48 sm:h-52 bg-gray-100 flex items-center justify-center overflow-hidden">
         ${p.images && p.images[0]
           ? `<img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition transform">`
           : '<i class="fa-solid fa-image text-4xl text-gray-300"></i>'}
         ${hasDiscount ? `<span class="absolute top-3 right-3 bg-brand-green text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-sm">-${pct}%</span>` : ''}
       </div>
-      <div class="p-4">
+      <div class="product-detail-related-body p-4">
         <h3 class="font-bold text-gray-900 mb-2 line-clamp-2 text-sm">${escapeHtml(p.title)}</h3>
         <p class="text-brand-green font-black text-lg mb-2">${p.currency} ${p.price.toLocaleString()}</p>
         ${stars ? `
@@ -183,23 +183,23 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   const relatedLoading = !relatedReady;
 
   container.innerHTML = `
-    <div id="view-product" class="py-4 bg-brand-light min-h-screen">
-      <div class="compact-container">
+    <div id="view-product" class="product-detail-page py-4 bg-brand-light min-h-screen">
+      <div class="product-detail-container compact-container">
 
         <button type="button" id="detail-back"
-          class="mb-3 text-xs font-semibold text-gray-600 hover:text-brand-green flex items-center gap-1.5">
+          class="product-detail-back mb-3 text-xs font-semibold text-gray-600 hover:text-brand-green flex items-center gap-1.5">
           <i class="fa-solid fa-arrow-left"></i> Back
         </button>
 
         <!-- ====== PRODUCT DETAIL SECTION ====== -->
-        <div class="bg-white rounded-3xl shadow-md border border-gray-100 p-5 mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="product-detail-main-card bg-white rounded-3xl shadow-md border border-gray-100 p-5 mb-6">
+          <div class="product-detail-grid grid grid-cols-1 md:grid-cols-2 gap-8">
 
             <!-- LEFT: PRODUCT IMAGE GALLERY -->
-            <div>
-              <div class="bg-gray-100 rounded-2xl h-80 sm:h-96 md:h-[440px] flex items-center justify-center relative overflow-hidden mb-3 group shadow-md border border-gray-100 cursor-zoom-in">
+            <div class="product-detail-gallery">
+              <div class="product-detail-gallery-frame bg-gray-100 rounded-2xl h-80 sm:h-96 md:h-[440px] flex items-center justify-center relative overflow-hidden mb-3 group shadow-md border border-gray-100 cursor-zoom-in">
                 <img id="detail-main-img" src="${images[activeImageIndex]}" alt="${escapeHtml(product.title)}"
-                  class="w-full h-full object-cover relative z-10 transition duration-300 group-hover:scale-105">
+                  class="product-detail-main-img w-full h-full object-cover relative z-10 transition duration-300 group-hover:scale-105">
 
                 ${hasDiscount ? `
                   <div class="absolute top-4 right-4 bg-brand-orange text-white px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">-${pct}%</div>
@@ -239,7 +239,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
               </div>
 
               ${images.length > 1 ? `
-                <div class="flex items-center gap-2">
+                <div class="product-detail-thumbs-row flex items-center gap-2">
                   <!-- Arrows scroll the strip rather than changing the main
                        image: with more than four photos the later thumbnails
                        are off-screen and were unreachable without a trackpad
@@ -250,9 +250,9 @@ export function renderProductDetailPage(container, product, handlers = {}) {
                     <i class="fa-solid fa-chevron-left text-[10px]"></i>
                   </button>
 
-                  <div id="detail-thumb-strip" class="flex gap-3 items-center overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0 py-1">
+                  <div id="detail-thumb-strip" class="product-detail-thumb-strip flex gap-3 items-center overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0 py-1">
                     ${images.map((img, i) => `
-                      <button type="button" class="detail-thumb shrink-0 relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition ${i === activeImageIndex ? 'border-2 border-brand-green' : 'border-2 border-gray-300 opacity-60 hover:opacity-100'}"
+                      <button type="button" class="product-detail-thumb detail-thumb shrink-0 relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition ${i === activeImageIndex ? 'border-2 border-brand-green' : 'border-2 border-gray-300 opacity-60 hover:opacity-100'}"
                         data-src="${img}" data-index="${i}"
                         aria-label="Show photo ${i + 1} of ${images.length}" aria-pressed="${i === activeImageIndex}">
                         <img src="${img}" alt="" class="w-full h-full object-cover">
@@ -271,14 +271,14 @@ export function renderProductDetailPage(container, product, handlers = {}) {
 
 
             <!-- RIGHT: PRODUCT DETAILS -->
-            <div class="flex flex-col justify-start">
-              <h1 class="text-2xl md:text-3xl font-black text-brand-dark mb-3 leading-tight">
+            <div class="product-detail-info flex flex-col justify-start">
+              <h1 class="product-detail-title text-2xl md:text-3xl font-black text-brand-dark mb-3 leading-tight">
                 ${escapeHtml(product.title)}
               </h1>
 
-              <div class="mb-4 pb-4 border-b border-gray-200">
-                <div class="flex items-center gap-3 mb-2 flex-wrap">
-                  <span class="text-3xl md:text-4xl font-black text-brand-green">${escapeHtml(product.currency)} ${product.price.toLocaleString()}</span>
+              <div class="product-detail-price-block mb-4 pb-4 border-b border-gray-200">
+                <div class="product-detail-price-row flex items-center gap-3 mb-2 flex-wrap">
+                  <span class="product-detail-price text-3xl md:text-4xl font-black text-brand-green">${escapeHtml(product.currency)} ${product.price.toLocaleString()}</span>
                   ${hasDiscount ? `<span class="text-lg text-gray-400 line-through font-semibold">${escapeHtml(product.currency)} ${was.toLocaleString()}</span>` : ''}
                 </div>
                 ${stars ? `
@@ -290,7 +290,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
                 ` : ''}
               </div>
 
-              <div class="mb-4 space-y-2 text-sm">
+              <div class="product-detail-meta mb-4 space-y-2 text-sm">
                 <div class="flex justify-between items-center">
                   <span class="text-gray-600 font-semibold">Condition:</span>
                   <span class="font-bold text-gray-900">${escapeHtml(product.condition || '-')}</span>
@@ -308,15 +308,15 @@ export function renderProductDetailPage(container, product, handlers = {}) {
               </div>
 
               ${product.description ? `
-                <p class="text-sm text-gray-600 leading-relaxed bg-gray-50 border border-gray-100 rounded-2xl p-3 mb-4">
+                <p class="product-detail-desc text-sm text-gray-600 leading-relaxed bg-gray-50 border border-gray-100 rounded-2xl p-3 mb-4">
                   ${escapeHtml(product.description)}
                 </p>
               ` : ''}
 
               <!-- SELLER INFO CARD -->
-              <div class="bg-gradient-to-r from-brand-green/5 to-brand-orange/5 border border-brand-green rounded-2xl p-3 mb-4">
+              <div class="product-detail-seller-card bg-gradient-to-r from-brand-green/5 to-brand-orange/5 border border-brand-green rounded-2xl p-3 mb-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 bg-white rounded-xl border-2 border-brand-green flex items-center justify-center shadow-sm shrink-0">
+                  <div class="product-detail-seller-icon w-12 h-12 bg-white rounded-xl border-2 border-brand-green flex items-center justify-center shadow-sm shrink-0">
                     <i class="fa-solid fa-shop text-brand-green text-xl"></i>
                   </div>
                   <div class="min-w-0">
@@ -334,7 +334,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
               </div>
 
               <!-- ACTION BUTTONS -->
-              <div class="space-y-2 mt-auto">
+              <div class="product-detail-actions space-y-2 mt-auto">
                 <div class="grid grid-cols-2 gap-3">
                   <a href="tel:${(product.sellerPhone || '').replace(/[^0-9+]/g, '')}"
                     class="bg-brand-green text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-green-800 transition shadow-md">
@@ -365,19 +365,19 @@ export function renderProductDetailPage(container, product, handlers = {}) {
 
         <!-- ====== RELATED PRODUCTS SECTION ====== -->
         ${related.length || relatedLoading ? `
-          <div class="bg-white rounded-3xl shadow-md border border-gray-100 p-8">
-            <div class="mb-8">
-              <h2 class="text-2xl md:text-4xl font-black text-brand-dark mb-2">
+          <div class="product-detail-related-section bg-white rounded-3xl shadow-md border border-gray-100 p-8">
+            <div class="product-detail-related-head mb-8">
+              <h2 class="product-detail-related-title text-2xl md:text-4xl font-black text-brand-dark mb-2">
                 More ${escapeHtml(product.category || 'Marketplace')} Products
               </h2>
-              <p class="text-gray-600 text-base md:text-lg">Similar listings in the same category</p>
+              <p class="product-detail-related-subtitle text-gray-600 text-base md:text-lg">Similar listings in the same category</p>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            <div class="product-detail-related-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
               ${relatedLoading ? RELATED_SKELETON : related.map(relatedCard).join('')}
             </div>
 
-            ${relatedLoading ? '' : `<div class="text-center mt-10">
+            ${relatedLoading ? '' : `<div class="product-detail-related-cta text-center mt-10">
               <button type="button" id="detail-view-all"
                 class="bg-brand-dark text-white font-bold text-base md:text-lg px-10 py-4 rounded-2xl hover:bg-gray-800 transition shadow-lg transform hover:scale-105">
                 View All ${escapeHtml(product.category || 'Marketplace')} Products

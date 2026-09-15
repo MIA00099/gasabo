@@ -107,6 +107,242 @@ body {
   }
 }
 
+/* Product details: desktop gets a viewport-aware preview of related products.
+   The page still scrolls normally; this only trims the main listing card enough
+   that the next section is discoverable at scrollY=0. */
+@media (min-width: 1024px) {
+  .product-detail-page {
+    --product-detail-header-offset: 176px;
+    --product-detail-preview-space: clamp(118px, 16dvh, 190px);
+    --product-detail-main-budget: calc(100dvh - var(--product-detail-header-offset) - var(--product-detail-preview-space));
+    padding-block: clamp(0.45rem, 1.1dvh, 1rem) !important;
+  }
+
+  .product-detail-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .product-detail-back {
+    margin-bottom: clamp(0.35rem, 0.8dvh, 0.75rem) !important;
+    min-height: 1.25rem;
+  }
+
+  .product-detail-main-card {
+    padding: clamp(0.85rem, 1.65dvh, 1.25rem) !important;
+    margin-bottom: clamp(0.55rem, 1.2dvh, 1rem) !important;
+    border-radius: clamp(1rem, 2vw, 1.5rem) !important;
+  }
+
+  .product-detail-grid {
+    align-items: start;
+    gap: clamp(1rem, 2.1vw, 2rem) !important;
+  }
+
+  .product-detail-gallery-frame {
+    height: clamp(260px, calc(var(--product-detail-main-budget) - 96px), 430px) !important;
+    margin-bottom: clamp(0.45rem, 0.9dvh, 0.75rem) !important;
+    border-radius: 1rem !important;
+  }
+
+  .product-detail-main-img {
+    object-fit: cover;
+  }
+
+  .product-detail-thumb-strip {
+    gap: clamp(0.45rem, 0.8vw, 0.75rem) !important;
+    padding-block: 0.15rem !important;
+  }
+
+  .product-detail-thumb {
+    width: clamp(54px, 5.2dvh, 74px) !important;
+    height: clamp(54px, 5.2dvh, 74px) !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .product-detail-title {
+    font-size: clamp(1.55rem, 2.1vw, 2.25rem) !important;
+    line-height: 1.05 !important;
+    margin-bottom: clamp(0.35rem, 0.85dvh, 0.75rem) !important;
+  }
+
+  .product-detail-price-block {
+    margin-bottom: clamp(0.6rem, 1.15dvh, 1rem) !important;
+    padding-bottom: clamp(0.6rem, 1.15dvh, 1rem) !important;
+  }
+
+  .product-detail-price-row {
+    gap: 0.75rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .product-detail-price {
+    font-size: clamp(2rem, 3.2vw, 3rem) !important;
+    line-height: 1 !important;
+  }
+
+  .product-detail-meta {
+    gap: 0.35rem !important;
+    margin-bottom: clamp(0.6rem, 1.15dvh, 1rem) !important;
+  }
+
+  .product-detail-meta > div {
+    min-height: 1.25rem;
+  }
+
+  .product-detail-desc {
+    line-height: 1.45 !important;
+    padding: clamp(0.65rem, 1.1dvh, 0.9rem) !important;
+    margin-bottom: clamp(0.6rem, 1.1dvh, 1rem) !important;
+  }
+
+  .product-detail-seller-card {
+    padding: clamp(0.65rem, 1.15dvh, 0.95rem) !important;
+    margin-bottom: clamp(0.65rem, 1.15dvh, 0.95rem) !important;
+    border-radius: 1rem !important;
+  }
+
+  .product-detail-seller-icon {
+    width: clamp(42px, 5dvh, 50px) !important;
+    height: clamp(42px, 5dvh, 50px) !important;
+    border-radius: 0.8rem !important;
+  }
+
+  .product-detail-actions {
+    gap: 0.55rem !important;
+    margin-top: clamp(0.2rem, 0.65dvh, 0.5rem) !important;
+  }
+
+  .product-detail-actions > .grid {
+    gap: clamp(0.5rem, 0.8vw, 0.75rem) !important;
+  }
+
+  .product-detail-actions a,
+  .product-detail-actions button {
+    min-height: clamp(40px, 5.7dvh, 50px);
+    padding-block: clamp(0.5rem, 0.9dvh, 0.75rem) !important;
+    border-radius: 0.85rem !important;
+    font-size: clamp(0.875rem, 1.1vw, 1rem) !important;
+  }
+
+  .product-detail-related-section {
+    padding: clamp(0.9rem, 1.9dvh, 1.5rem) !important;
+    border-radius: clamp(1rem, 2vw, 1.5rem) !important;
+  }
+
+  .product-detail-related-head {
+    margin-bottom: clamp(0.65rem, 1.35dvh, 1.15rem) !important;
+  }
+
+  .product-detail-related-title {
+    font-size: clamp(1.45rem, 2.2vw, 2.35rem) !important;
+    line-height: 1.08 !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .product-detail-related-subtitle {
+    font-size: clamp(0.88rem, 1vw, 1rem) !important;
+    line-height: 1.35;
+  }
+
+  .product-detail-related-grid {
+    gap: clamp(0.85rem, 1.45vw, 1.5rem) !important;
+  }
+
+  .product-detail-related-image {
+    height: clamp(118px, 18dvh, 210px) !important;
+  }
+
+  .product-detail-related-body {
+    padding: clamp(0.7rem, 1.1dvh, 1rem) !important;
+  }
+
+  .product-detail-related-body h3,
+  .product-detail-related-body p {
+    margin-bottom: 0.35rem !important;
+  }
+
+  .product-detail-related-cta {
+    margin-top: clamp(1rem, 2dvh, 2.5rem) !important;
+  }
+
+  .product-detail-related-cta button {
+    padding-block: clamp(0.75rem, 1.4dvh, 1rem) !important;
+    border-radius: 1rem !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 820px) {
+  .product-detail-page {
+    --product-detail-preview-space: clamp(126px, 17dvh, 160px);
+    padding-block: 0.45rem !important;
+  }
+
+  .product-detail-main-card {
+    padding: 0.8rem !important;
+    margin-bottom: 0.55rem !important;
+  }
+
+  .product-detail-grid {
+    gap: 1rem !important;
+  }
+
+  .product-detail-gallery-frame {
+    height: clamp(250px, calc(var(--product-detail-main-budget) - 84px), 330px) !important;
+  }
+
+  .product-detail-thumb {
+    width: 54px !important;
+    height: 54px !important;
+  }
+
+  .product-detail-title {
+    font-size: clamp(1.35rem, 2vw, 1.9rem) !important;
+  }
+
+  .product-detail-price {
+    font-size: clamp(1.85rem, 3vw, 2.55rem) !important;
+  }
+
+  .product-detail-price-block {
+    margin-bottom: 0.5rem !important;
+    padding-bottom: 0.55rem !important;
+  }
+
+  .product-detail-meta {
+    gap: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .product-detail-desc {
+    padding: 0.55rem 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .product-detail-seller-card {
+    padding: 0.6rem 0.75rem !important;
+    margin-bottom: 0.6rem !important;
+  }
+
+  .product-detail-actions a,
+  .product-detail-actions button {
+    min-height: 40px;
+    padding-block: 0.5rem !important;
+  }
+
+  .product-detail-related-section {
+    padding: 0.85rem 1rem !important;
+  }
+
+  .product-detail-related-head {
+    margin-bottom: 0.6rem !important;
+  }
+
+  .product-detail-related-image {
+    height: clamp(104px, 16dvh, 140px) !important;
+  }
+}
+
 /* The header (announcement strip + logo row + category nav) stays pinned to the
    top as the page scrolls, so the search, categories and Post an Ad are always
    one tap away instead of scrolling off. The document is the scroll container,

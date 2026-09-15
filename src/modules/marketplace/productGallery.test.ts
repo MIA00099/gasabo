@@ -20,6 +20,14 @@ vi.mock('../../api/client.js', () => ({
   setSessionExpiredHandler: vi.fn(),
 }));
 
+const { openImageLightbox } = vi.hoisted(() => ({
+  openImageLightbox: vi.fn(),
+}));
+
+vi.mock('../../components/imageLightbox.js', () => ({
+  openImageLightbox,
+}));
+
 // jsdom does not implement scrollIntoView, which selectImage calls.
 (window.HTMLElement.prototype as any).scrollIntoView = vi.fn();
 
@@ -40,6 +48,7 @@ beforeEach(async () => {
   ({ stateEngine } = await import('../../store/stateEngine.js'));
   ({ api: { get: apiGet } } = await import('../../api/client.js') as any);
   apiGet.mockClear();
+  openImageLightbox.mockClear();
   document.body.innerHTML = '';
   container = document.createElement('div');
   document.body.appendChild(container);
@@ -49,6 +58,13 @@ const likeFetchCount = () =>
   apiGet.mock.calls.filter((c: any[]) => /\/like\b/.test(String(c[0]))).length;
 
 const mainSrc = () => container.querySelector('#detail-main-img')!.getAttribute('src');
+
+const touchEvent = (type: string, touches: any[], changedTouches = touches) => {
+  const event = new Event(type, { bubbles: true, cancelable: true }) as any;
+  Object.defineProperty(event, 'touches', { value: touches });
+  Object.defineProperty(event, 'changedTouches', { value: changedTouches });
+  return event;
+};
 
 describe('product gallery selection survives re-renders', () => {
   it('starts on the first photo', () => {
@@ -107,5 +123,38 @@ describe('product gallery selection survives re-renders', () => {
 
     renderProductDetailPage(container, makeProduct('p2')); // different listing
     expect(mainSrc()).toBe('/photo-a.jpg');
+  });
+
+  it('opens the current photo in the lightbox on double click', () => {
+    renderProductDetailPage(container, makeProduct('p1'));
+    (container.querySelector('.detail-thumb[data-index="2"]') as HTMLElement).click();
+
+    container.querySelector('#detail-main-img')!.dispatchEvent(new MouseEvent('dblclick', {
+      bubbles: true,
+      cancelable: true,
+    }));
+
+    expect(openImageLightbox).toHaveBeenCalledWith(IMGS, 'Test Monitor', {
+      startIndex: 2,
+      returnFocusTo: '#detail-zoom-btn',
+    });
+  });
+
+  it('opens the current photo in the lightbox on double tap', () => {
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValueOnce(1000).mockReturnValueOnce(1200);
+    renderProductDetailPage(container, makeProduct('p1'));
+
+    const img = container.querySelector('#detail-main-img')!;
+    img.dispatchEvent(touchEvent('touchstart', [{ clientX: 24, clientY: 32 }]));
+    img.dispatchEvent(touchEvent('touchend', [], [{ clientX: 24, clientY: 32 }]));
+    img.dispatchEvent(touchEvent('touchstart', [{ clientX: 24, clientY: 32 }]));
+    img.dispatchEvent(touchEvent('touchend', [], [{ clientX: 24, clientY: 32 }]));
+
+    expect(openImageLightbox).toHaveBeenCalledWith(IMGS, 'Test Monitor', {
+      startIndex: 0,
+      returnFocusTo: '#detail-zoom-btn',
+    });
+    now.mockRestore();
   });
 });

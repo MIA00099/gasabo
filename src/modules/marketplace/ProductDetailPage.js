@@ -49,6 +49,54 @@ function whatsappHref(product) {
   return `https://wa.me/${phone}?text=${msg}`;
 }
 
+function bindImageLightboxGestures(frame, openLightbox) {
+  if (!frame) return;
+  let lastTapAt = 0;
+  let startX = 0;
+  let startY = 0;
+  let moved = false;
+
+  const isInteractive = (target) => target?.closest?.('button, a, input, select, textarea, label');
+
+  frame.addEventListener('dblclick', (e) => {
+    if (isInteractive(e.target)) return;
+    e.preventDefault();
+    openLightbox();
+  });
+
+  frame.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1 || isInteractive(e.target)) {
+      lastTapAt = 0;
+      return;
+    }
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    moved = false;
+  }, { passive: true });
+
+  frame.addEventListener('touchmove', (e) => {
+    if (e.touches.length !== 1) return;
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dx > 12 || dy > 12) moved = true;
+  }, { passive: true });
+
+  frame.addEventListener('touchend', (e) => {
+    if (isInteractive(e.target) || moved) {
+      lastTapAt = 0;
+      return;
+    }
+    const now = Date.now();
+    if (now - lastTapAt > 0 && now - lastTapAt < 340) {
+      if (e.cancelable) e.preventDefault();
+      lastTapAt = 0;
+      openLightbox();
+      return;
+    }
+    lastTapAt = now;
+  }, { passive: false });
+}
+
 // Grey blocks, no text. The row is fetched separately from the listing, so
 // without this the page renders complete, then a whole section appears
 // underneath it a moment later and pushes the footer down.
@@ -149,7 +197,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
 
             <!-- LEFT: PRODUCT IMAGE GALLERY -->
             <div>
-              <div class="bg-gray-100 rounded-2xl h-80 sm:h-96 md:h-[440px] flex items-center justify-center relative overflow-hidden mb-3 group shadow-md border border-gray-100">
+              <div class="bg-gray-100 rounded-2xl h-80 sm:h-96 md:h-[440px] flex items-center justify-center relative overflow-hidden mb-3 group shadow-md border border-gray-100 cursor-zoom-in">
                 <img id="detail-main-img" src="${images[activeImageIndex]}" alt="${escapeHtml(product.title)}"
                   class="w-full h-full object-cover relative z-10 transition duration-300 group-hover:scale-105">
 
@@ -473,12 +521,14 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   window.addEventListener('resize', syncArrows);
   cleanupDetailResizeListener = () => window.removeEventListener('resize', syncArrows);
 
-  container.querySelector('#detail-zoom-btn')?.addEventListener('click', () => {
+  const openCurrentImageLightbox = () => {
     openImageLightbox(images, product.title, {
       startIndex: activeIndex,
       returnFocusTo: '#detail-zoom-btn',
     });
-  });
+  };
+  bindImageLightboxGestures(frame, openCurrentImageLightbox);
+  container.querySelector('#detail-zoom-btn')?.addEventListener('click', openCurrentImageLightbox);
 
   // ---- Share --------------------------------------------------------------
   container.querySelector('#detail-share-btn')?.addEventListener('click', () => {

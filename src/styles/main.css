@@ -4687,9 +4687,10 @@ table {
   /* 48s (was 30s) is a calm reading pace rather than a rush. The rail loops
      continuously and is NOT paused on hover or tap: on a touch screen a tap
      counts as :hover and stuck the marquee until you tapped elsewhere. Links
-     inside stay clickable while it moves. (prefers-reduced-motion still stops
-     it - see the media query below.) */
+     inside stay clickable while it moves. */
   animation: flash-promo-scroll 48s linear infinite;
+  animation-play-state: running;
+  backface-visibility: hidden;
   will-change: transform;
 }
 
@@ -4786,7 +4787,11 @@ table {
 
 @media (prefers-reduced-motion: reduce) {
   .flash-promo-track {
-    animation: none;
+    animation-name: flash-promo-scroll !important;
+    animation-duration: 48s !important;
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
+    animation-play-state: running !important;
   }
 }
 

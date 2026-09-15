@@ -476,7 +476,10 @@ export function renderMarketplaceView(container) {
       (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
     );
     const dotCount = heroAds.length;
-    const flashProductCards = renderFlashProductRail(state.products || []);
+    const liveProducts = Array.isArray(state.productCatalogCache) && state.productCatalogCache.length
+      ? state.productCatalogCache
+      : state.products;
+    const flashProductCards = renderFlashProductRail(liveProducts || []);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {

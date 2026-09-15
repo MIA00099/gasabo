@@ -11,6 +11,74 @@ function escapeHtml(str) {
   ));
 }
 
+function normalizeProductFilters(filters = {}) {
+  const category = filters.category ?? filters.selectedCategory ?? 'all';
+  const district = filters.district ?? filters.selectedDistrict ?? 'all';
+  const search = filters.search ?? filters.searchQuery ?? '';
+  return {
+    category: category || 'all',
+    district: district || 'all',
+    search: String(search || '').trim(),
+  };
+}
+
+function productFilterKey(filters = {}) {
+  return JSON.stringify(normalizeProductFilters(filters));
+}
+
+function categoryNameForProduct(product, categories = []) {
+  if (product?.category && typeof product.category === 'object' && product.category.name) {
+    return product.category.name;
+  }
+  if (typeof product?.category === 'string') return product.category;
+  const cat = categories.find((c) => c.id === product?.categoryId);
+  return cat?.name || '';
+}
+
+function productMatchesActiveFilters(product, filters, categories = []) {
+  const normalized = normalizeProductFilters(filters);
+  const category = normalized.category;
+
+  if (category && category !== 'all') {
+    const activeCategory = categories.find((c) => c.id === category);
+    const productCategory = categoryNameForProduct(product, categories);
+    const sameCategoryId = product.categoryId === category;
+    const sameCategoryName = activeCategory &&
+      formatCategoryName(productCategory).toLowerCase() === formatCategoryName(activeCategory.name).toLowerCase();
+    if (!sameCategoryId && !sameCategoryName) return false;
+  }
+
+  if (normalized.district && normalized.district !== 'all' && product.district !== normalized.district) {
+    return false;
+  }
+
+  if (normalized.search) {
+    const haystack = [
+      product.title,
+      product.description,
+      product.district,
+      product.condition,
+      categoryNameForProduct(product, categories),
+    ].filter(Boolean).join(' ').toLowerCase();
+    const terms = normalized.search.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.every((term) => haystack.includes(term))) return false;
+  }
+
+  return true;
+}
+
+function visibleProductsForFilters(state, filters) {
+  const requestedKey = productFilterKey(filters);
+  const catalogCache = Array.isArray(state.productCatalogCache) && state.productCatalogCache.length
+    ? state.productCatalogCache
+    : null;
+  const source = state.productsFilterKey === requestedKey || !catalogCache
+    ? state.products || []
+    : catalogCache;
+
+  return source.filter((product) => productMatchesActiveFilters(product, filters, state.categories || []));
+}
+
 
 function productCard(prod) {
   const was = Number(prod.originalPrice) || 0;
@@ -76,7 +144,7 @@ export function renderProductsPage(container) {
     const heading = activeCat ? formatCategoryName(activeCat.name) : isJobsView ? 'Jobs' : 'All Categories';
     const jobsNotice = state.ui.jobsNotice || '';
 
-    const items = [...state.products].sort((a, b) => {
+    const items = visibleProductsForFilters(state, filters).sort((a, b) => {
       if (sort === 'price_asc') return a.price - b.price;
       if (sort === 'price_desc') return b.price - a.price;
       return new Date(b.postedDate) - new Date(a.postedDate);
@@ -260,7 +328,10 @@ export function renderProductsPage(container) {
         e.stopPropagation();
         e.preventDefault();
         const id = btn.dataset.id;
-        const prod = (stateEngine.getState().products || []).find((p) => p.id === id);
+        const latest = stateEngine.getState();
+        const prod = items.find((p) => p.id === id) ||
+          (latest.products || []).find((p) => p.id === id) ||
+          (latest.productCatalogCache || []).find((p) => p.id === id);
         if (!prod) return;
         openShareModal({
           title: prod.title,

@@ -71,6 +71,28 @@ function guestUser() {
   return { id: null, name: 'Guest', email: '', role: 'guest', phone: '', district: '', permissions: {} };
 }
 
+function normalizeProductFilters(filters = {}) {
+  const category = filters.category ?? filters.selectedCategory ?? 'all';
+  const district = filters.district ?? filters.selectedDistrict ?? 'all';
+  const search = filters.search ?? filters.searchQuery ?? '';
+  return {
+    category: category || 'all',
+    district: district || 'all',
+    search: String(search || '').trim(),
+  };
+}
+
+function productFilterKey(filters = {}) {
+  return JSON.stringify(normalizeProductFilters(filters));
+}
+
+function isAllProductFilter(filters = {}) {
+  const normalized = normalizeProductFilters(filters);
+  return (!normalized.category || normalized.category === 'all') &&
+    (!normalized.district || normalized.district === 'all') &&
+    !normalized.search;
+}
+
 /**
  * The state a signed-out browser starts with.
  *
@@ -92,6 +114,8 @@ function initialData({ currentUser, currentLang, route }) {
     currentUser,
     districts: DISTRICTS,
     products: [],
+    productCatalogCache: [],
+    productsFilterKey: productFilterKey(),
     flashDeals: [],
     myProducts: [],
     pendingProducts: [],
@@ -657,10 +681,12 @@ class StateEngine {
     }
 
     try {
+      const productFilters = normalizeProductFilters(filters);
+      const nextProductsKey = productFilterKey(productFilters);
       const params = new URLSearchParams();
-      if (filters.category && filters.category !== 'all') params.set('category', filters.category);
-      if (filters.district && filters.district !== 'all') params.set('district', filters.district);
-      if (filters.search) params.set('search', filters.search);
+      if (productFilters.category && productFilters.category !== 'all') params.set('category', productFilters.category);
+      if (productFilters.district && productFilters.district !== 'all') params.set('district', productFilters.district);
+      if (productFilters.search) params.set('search', productFilters.search);
       const qs = params.toString();
 
       const promises = [
@@ -688,8 +714,17 @@ class StateEngine {
 
       if (needProducts && prodsRes.status === 'fulfilled' && prodsRes.value?.products) {
         const next = prodsRes.value.products;
-        if (!force || !sameJson(this.data.products, next)) {
+        const productsChanged = !sameJson(this.data.products, next);
+        const filterChanged = this.data.productsFilterKey !== nextProductsKey;
+        if (isAllProductFilter(productFilters) && !sameJson(this.data.productCatalogCache, next)) {
+          this.data.productCatalogCache = next;
+        }
+        if (!force || productsChanged || filterChanged) {
           this.data.products = next;
+          this.data.productsFilterKey = nextProductsKey;
+          if (isAllProductFilter(productFilters)) {
+            this.data.productCatalogCache = next;
+          }
           if (force) changed = true;
         }
       }
@@ -728,16 +763,18 @@ class StateEngine {
 
   async loadProducts(filters = {}) {
     return this._run('products', async () => {
+      const normalized = normalizeProductFilters(filters);
       const params = new URLSearchParams();
-      const category = filters.category ?? filters.selectedCategory;
-      const district = filters.district ?? filters.selectedDistrict;
-      const search = filters.search ?? filters.searchQuery;
-      if (category && category !== 'all') params.set('category', category);
-      if (district && district !== 'all') params.set('district', district);
-      if (search) params.set('search', search);
+      if (normalized.category && normalized.category !== 'all') params.set('category', normalized.category);
+      if (normalized.district && normalized.district !== 'all') params.set('district', normalized.district);
+      if (normalized.search) params.set('search', normalized.search);
       const qs = params.toString();
       const { products } = await api.get(`/products${qs ? `?${qs}` : ''}`);
       this.data.products = products;
+      this.data.productsFilterKey = productFilterKey(normalized);
+      if (isAllProductFilter(normalized)) {
+        this.data.productCatalogCache = products;
+      }
       this.notify();
       return products;
     });

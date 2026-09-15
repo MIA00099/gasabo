@@ -194,7 +194,8 @@ describe('flash deals card', () => {
     expect(HOME).toContain('class="flash-home-row"');
     expect(HOME).toContain('class="flash-promo-panel"');
     expect(HOME).toContain('class="flash-promo-marquee"');
-    expect(HOME).toContain('renderFlashProductRail(state.products || [])');
+    expect(HOME).toContain('state.productCatalogCache');
+    expect(HOME).toContain('renderFlashProductRail(liveProducts || [])');
     expect(HOME).toContain('class="flash-promo-product-card view-item-btn"');
     expect(HOME).not.toContain('renderFlashPromoImages(state.banners || [])');
     expect(HOME, 'FLASH_PROMO ads should not feed the storefront rail').not.toContain("b.type === 'FLASH_PROMO'");
@@ -206,6 +207,8 @@ describe('flash deals card', () => {
     expect(CSS).toContain('.flash-home-row');
     expect(CSS).toContain('.flash-promo-product-card');
     expect(CSS).toContain('animation: flash-promo-scroll');
+    expect(CSS).toContain('animation-play-state: running');
+    expect(CSS).toContain('animation-iteration-count: infinite !important');
     expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
   });
 

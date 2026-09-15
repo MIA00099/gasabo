@@ -100,10 +100,10 @@ describe('product gallery selection survives re-renders', () => {
   });
 
   it('does not re-fetch like state once it is known (no render loop)', () => {
-    // loadLikeState() calls notify(), which re-renders the whole page. When the
-    // fetch ran on every render it re-triggered itself endlessly - the page
-    // re-fetched /like and rebuilt roughly once a second for as long as it was
-    // open. It must fetch at most once per listing.
+    // The first render asks the server for this visitor's like state. When that
+    // fetch used to force a full notify, a careless render path could re-trigger
+    // it forever - the page re-fetched /like and rebuilt roughly once a second
+    // for as long as it was open. It must fetch at most once per listing.
     renderProductDetailPage(container, makeProduct('p1'));
     expect(likeFetchCount()).toBe(1);
 

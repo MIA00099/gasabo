@@ -68,6 +68,8 @@ describe('products page realtime filters', () => {
   beforeEach(() => {
     loadProducts.mockReset();
     loadCategories.mockReset();
+    loadProducts.mockResolvedValue([]);
+    loadCategories.mockResolvedValue([]);
     document.body.innerHTML = '';
   });
 
@@ -102,5 +104,20 @@ describe('products page realtime filters', () => {
 
     expect(container.textContent).toContain('Fresh phone');
     expect(container.textContent).toContain('Office sofa');
+  });
+
+  it('refreshes category clicks in the background after the immediate cached paint', async () => {
+    state = baseState();
+    const { renderProductsPage } = await import('./ProductsPage.js');
+    const container = document.createElement('div');
+
+    renderProductsPage(container);
+    (container.querySelector('.products-cat[data-cat="cat-furniture"]') as HTMLElement).click();
+
+    expect(loadProducts).toHaveBeenCalledWith({
+      search: '',
+      category: 'cat-furniture',
+      district: 'all',
+    }, { background: true });
   });
 });

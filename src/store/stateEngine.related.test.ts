@@ -2,11 +2,10 @@
  * Regression: the related-products loader must not recurse when it is called
  * from inside a render.
  *
- * stateEngine._run() flips its loading flag and calls notify() BEFORE it
- * awaits anything. ProductDetailPage calls loadRelatedProducts() from inside
- * its render function. So the first call notifies synchronously, the notify
- * re-enters render, render calls the loader again, and without an in-flight
- * guard that recurses until the stack blows - firing a fetch at every level.
+ * ProductDetailPage calls loadRelatedProducts() from inside its render
+ * function. A loader notification can re-enter render while the request is
+ * still pending. Without an in-flight guard, render calls the loader again,
+ * firing a fetch at every level.
  *
  * The user-visible symptom is subtle rather than a crash banner: the row
  * renders its skeleton cards and stays there forever, because the recursion

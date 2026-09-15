@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
       marketplaceFilters: { ...filters, selectedCategory: match.id },
     });
     stateEngine.setPortal('marketplace');
-    stateEngine.loadProducts({ category: match.id }).catch(() => {});
+    stateEngine.loadProducts({ category: match.id }, { background: true }).catch(() => {});
     return true;
   }
 
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
       marketplaceFilters: { ...filters, searchQuery: '', selectedCategory: 'all', selectedDistrict: 'all' },
     });
     stateEngine.setPortal('marketplace');
-    stateEngine.loadProducts({}).catch(() => {});
+    stateEngine.loadProducts({}, { background: true }).catch(() => {});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
             marketplaceFilters: { ...filters, selectedCategory: id },
           });
           stateEngine.setPortal('marketplace');
-          stateEngine.loadProducts({ category: id === 'all' ? undefined : id }).catch(() => {});
+          stateEngine.loadProducts({ category: id === 'all' ? undefined : id }, { background: true }).catch(() => {});
         },
         goRealEstate: () => {
           pushHome();
@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const filters = stateEngine.getState().ui.marketplaceFilters || {};
           stateEngine.setUI({ marketplaceTab: 'catalog', marketplaceFilters: { ...filters, selectedCategory: vehicles ? vehicles.id : 'all' } });
           stateEngine.setPortal('marketplace');
-          stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }).catch(() => {});
+          stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }, { background: true }).catch(() => {});
         },
         goRealEstateCategory: () => {
           pushPath(pathForRoute(ROUTE_PRODUCTS));
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
             marketplaceFilters: { ...filters, selectedCategory: re ? re.id : 'all' },
           });
           stateEngine.setPortal('marketplace');
-          stateEngine.loadProducts({ category: re ? re.id : undefined }).catch(() => {});
+          stateEngine.loadProducts({ category: re ? re.id : undefined }, { background: true }).catch(() => {});
         },
         goSignup: goAccountOrSignup,
         goServices: () => {
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
               marketplaceFilters: { ...filters, selectedCategory: 'all', searchQuery: 'Services' },
             });
             stateEngine.setPortal('marketplace');
-            stateEngine.loadProducts({ search: 'Services' }).catch(() => {});
+            stateEngine.loadProducts({ search: 'Services' }, { background: true }).catch(() => {});
           }
         },
         goJobs: () => {
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
               marketplaceFilters: { ...filters, selectedCategory: 'all', searchQuery: 'Jobs' },
             });
             stateEngine.setPortal('marketplace');
-            stateEngine.loadProducts({ search: 'Jobs' }).catch(() => {});
+            stateEngine.loadProducts({ search: 'Jobs' }, { background: true }).catch(() => {});
           }
         },
         openMore: async (anchor, { forceAllNavLinks = false } = {}) => {
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const filters = stateEngine.getState().ui.marketplaceFilters || {};
                 stateEngine.setUI({ marketplaceTab: 'catalog', marketplaceFilters: { ...filters, selectedCategory: vehicles ? vehicles.id : 'all' } });
                 stateEngine.setPortal('marketplace');
-                stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }).catch(() => {});
+                stateEngine.loadProducts({ category: vehicles ? vehicles.id : undefined }, { background: true }).catch(() => {});
                 return;
               }
               if (id === '__realestate') {
@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   marketplaceFilters: { ...filters, selectedCategory: re ? re.id : 'all' },
                 });
                 stateEngine.setPortal('marketplace');
-                stateEngine.loadProducts({ category: re ? re.id : undefined }).catch(() => {});
+                stateEngine.loadProducts({ category: re ? re.id : undefined }, { background: true }).catch(() => {});
                 return;
               }
               if (id === '__services') {
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     marketplaceFilters: { ...filters, selectedCategory: 'all', searchQuery: 'Services' },
                   });
                   stateEngine.setPortal('marketplace');
-                  stateEngine.loadProducts({ search: 'Services' }).catch(() => {});
+                  stateEngine.loadProducts({ search: 'Services' }, { background: true }).catch(() => {});
                 }
                 return;
               }
@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     marketplaceFilters: { ...filters, selectedCategory: 'all', searchQuery: 'Jobs' },
                   });
                   stateEngine.setPortal('marketplace');
-                  stateEngine.loadProducts({ search: 'Jobs' }).catch(() => {});
+                  stateEngine.loadProducts({ search: 'Jobs' }, { background: true }).catch(() => {});
                 }
                 return;
               }
@@ -466,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 marketplaceFilters: { ...filters, selectedCategory: id },
               });
               stateEngine.setPortal('marketplace');
-              stateEngine.loadProducts({ category: id === 'all' ? undefined : id }).catch(() => {});
+              stateEngine.loadProducts({ category: id === 'all' ? undefined : id }, { background: true }).catch(() => {});
             },
           });
         },
@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 category: id === 'all' ? undefined : id,
                 search: filters.searchQuery || undefined,
                 district: filters.selectedDistrict,
-              }).catch(() => {});
+              }, { background: true }).catch(() => {});
             },
           });
         },
@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
             marketplaceTab: 'catalog',
             marketplaceFilters: { ...filters, searchQuery: 'vehicles', selectedCategory: 'all' },
           });
-          stateEngine.loadProducts({ search: 'vehicles' }).catch(() => {});
+          stateEngine.loadProducts({ search: 'vehicles' }, { background: true }).catch(() => {});
           stateEngine.setPortal('marketplace');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
@@ -582,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
               marketplaceTab: 'catalog',
               marketplaceFilters: { ...filters, selectedCategory: categoryId || 'all' },
             });
-            stateEngine.loadProducts({ category: categoryId }).catch(() => {});
+            stateEngine.loadProducts({ category: categoryId }, { background: true }).catch(() => {});
             pushPath(pathForRoute(ROUTE_PRODUCTS));
             stateEngine.setRoute({ kind: ROUTE_PRODUCTS, id: null });
           },

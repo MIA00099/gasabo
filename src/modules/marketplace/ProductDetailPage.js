@@ -174,7 +174,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   // of whatever the last grid returned. state.products is empty on a shared
   // link or a search result, which is where a related row earns its keep.
   if (state.relatedProductsFor !== product.id) {
-    stateEngine.loadRelatedProducts(product.id).catch(() => {});
+    stateEngine.loadRelatedProducts(product.id, { background: true }).catch(() => {});
   }
   const relatedReady = state.relatedProductsFor === product.id;
   const related = (relatedReady ? state.relatedProducts : [])
@@ -569,8 +569,9 @@ export function renderProductDetailPage(container, product, handlers = {}) {
     } else {
       // First time for this listing: ask the server whether THIS visitor already
       // liked it, so a heart they filled last week is still filled on return.
-      // Once it lands it populates state.likes, so the branch above takes over.
-      stateEngine.loadLikeState(product.id).then(paintLike).catch(() => {});
+      // Once it lands it populates state.likes. Paint this button directly so
+      // the full detail page does not rebuild just because the heart arrived.
+      stateEngine.loadLikeState(product.id, { notify: false }).then(paintLike).catch(() => {});
     }
 
     likeBtn.addEventListener('click', () => {

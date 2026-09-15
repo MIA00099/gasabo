@@ -93,6 +93,63 @@ function isAllProductFilter(filters = {}) {
     !normalized.search;
 }
 
+function comparableCategoryName(name) {
+  const normalized = String(name || '').trim().replace(/\s+/g, ' ');
+  if (/^real[\s_-]?estate$/i.test(normalized)) return 'real estate';
+  return normalized.toLowerCase();
+}
+
+function categoryNameForProduct(product, categories = []) {
+  if (product?.category && typeof product.category === 'object' && product.category.name) {
+    return product.category.name;
+  }
+  if (typeof product?.category === 'string') return product.category;
+  const cat = categories.find((c) => c.id === product?.categoryId);
+  return cat?.name || '';
+}
+
+function productMatchesFilters(product, filters, categories = []) {
+  const normalized = normalizeProductFilters(filters);
+  if (normalized.category && normalized.category !== 'all') {
+    const activeCategory = categories.find((c) => c.id === normalized.category);
+    const productCategory = categoryNameForProduct(product, categories);
+    const sameCategoryId = product.categoryId === normalized.category;
+    const sameCategoryName = activeCategory &&
+      comparableCategoryName(productCategory) === comparableCategoryName(activeCategory.name);
+    if (!sameCategoryId && !sameCategoryName) return false;
+  }
+
+  if (normalized.district && normalized.district !== 'all' && product.district !== normalized.district) {
+    return false;
+  }
+
+  if (normalized.search) {
+    const haystack = [
+      product.title,
+      product.description,
+      product.district,
+      product.condition,
+      categoryNameForProduct(product, categories),
+    ].filter(Boolean).join(' ').toLowerCase();
+    const terms = normalized.search.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.every((term) => haystack.includes(term))) return false;
+  }
+
+  return true;
+}
+
+function visibleProductsForFilters(data, filters) {
+  const normalized = normalizeProductFilters(filters);
+  const requestedKey = productFilterKey(normalized);
+  const catalogCache = Array.isArray(data.productCatalogCache) && data.productCatalogCache.length
+    ? data.productCatalogCache
+    : null;
+  const source = data.productsFilterKey === requestedKey || !catalogCache
+    ? data.products || []
+    : catalogCache;
+  return source.filter((product) => productMatchesFilters(product, normalized, data.categories || []));
+}
+
 /**
  * The state a signed-out browser starts with.
  *
@@ -349,11 +406,17 @@ class StateEngine {
   }
 
   // Whether this visitor already liked a listing, and how many likes it has.
-  async loadLikeState(productId) {
+  async loadLikeState(productId, { notify = true } = {}) {
+    const before = this.data.likes?.[productId];
     const { liked, likeCount } = await api.get(`/products/${productId}/like`);
-    this.data.likes = { ...this.data.likes, [productId]: { liked, likeCount } };
-    this.notify();
-    return { liked, likeCount };
+    if (!notify && this.data.likes?.[productId] !== before) {
+      return this.data.likes[productId];
+    }
+    const next = { liked, likeCount };
+    const current = this.data.likes?.[productId];
+    this.data.likes = { ...this.data.likes, [productId]: next };
+    if (notify && !sameJson(current, next)) this.notify();
+    return next;
   }
 
   // Deliberately not wrapped in _run: a heart that greys the whole page out
@@ -391,30 +454,44 @@ class StateEngine {
   // this.data.products, which only ever holds the last grid fetch. On a
   // shared link or a search result nothing has fetched a grid, so the
   // in-memory filter had nothing to match and the row vanished.
-  async loadRelatedProducts(productId) {
+  async loadRelatedProducts(productId, { background = false } = {}) {
     if (!productId) return this.data.relatedProducts;
     if (this.data.relatedProductsFor === productId) return this.data.relatedProducts;
 
     // In-flight guard, and it is load-bearing rather than an optimisation.
-    // _run() flips its loading flag and calls notify() BEFORE it awaits, and
-    // this loader is called from render(). Without this the notify re-enters
-    // render synchronously, which calls this again, which notifies again -
-    // recursion until the stack blows, with a fetch fired at every level.
-    // The visible symptom is a related row stuck on its skeletons forever,
-    // because relatedProductsFor is never reached.
+    // This loader is called from render(). A notification while the request is
+    // pending can re-enter render and ask for the same listing again, so keep
+    // one request per product until it resolves.
     if (this._relatedInFlight === productId) return this.data.relatedProducts;
     this._relatedInFlight = productId;
 
+    if (!background) {
+      this.data.loading = { ...this.data.loading, relatedProducts: true };
+      this.data.error = null;
+      this.notify();
+    }
+
     try {
-      return await this._run('relatedProducts', async () => {
-        const { products } = await api.get(`/products/${encodeURIComponent(productId)}/related`);
-        // The reader may have moved on while this was in flight.
-        if (this.data.route.id !== productId) return this.data.relatedProducts;
-        this.data.relatedProducts = products;
-        this.data.relatedProductsFor = productId;
-        this.notify();
-        return products;
-      });
+      const { products } = await api.get(`/products/${encodeURIComponent(productId)}/related`);
+      // The reader may have moved on while this was in flight.
+      if (this.data.route.id !== productId) return this.data.relatedProducts;
+
+      const productsChanged = !sameJson(this.data.relatedProducts, products);
+      const listingChanged = this.data.relatedProductsFor !== productId;
+      this.data.relatedProducts = products;
+      this.data.relatedProductsFor = productId;
+      if (!background) {
+        this.data.loading = { ...this.data.loading, relatedProducts: false };
+      }
+      if (!background || productsChanged || listingChanged) this.notify();
+      return products;
+    } catch (e) {
+      this.data.error = e.message || 'Something went wrong. Please try again.';
+      if (!background) {
+        this.data.loading = { ...this.data.loading, relatedProducts: false };
+      }
+      this.notify();
+      throw e;
     } finally {
       this._relatedInFlight = null;
     }
@@ -434,25 +511,44 @@ class StateEngine {
         return alreadyLoaded;
       }
 
-      return this._run('routeListing', async () => {
-        try {
-          const { product } = await api.get(`/products/${encodeURIComponent(route.id)}`);
-          // A slower earlier request must not overwrite a newer route.
-          if (this.data.route.id !== route.id) return null;
-          this.data.routeListing = product;
-          this.data.routeListingMissing = false;
-          this.notify();
-          return product;
-        } catch (e) {
-          if (this.data.route.id !== route.id) return null;
-          this.data.routeListing = null;
-          // Removed, expired, or never existed - the view shows a "listing
-          // unavailable" state rather than an empty modal.
-          this.data.routeListingMissing = true;
+      const routeListingRequest = Symbol('routeListing');
+      this._routeListingInFlight = routeListingRequest;
+      this.data.loading = { ...this.data.loading, routeListing: true };
+      this.data.error = null;
+      this.notify();
+
+      const finishRouteListingLoad = () => {
+        if (this._routeListingInFlight !== routeListingRequest) return false;
+        this._routeListingInFlight = null;
+        this.data.loading = { ...this.data.loading, routeListing: false };
+        return true;
+      };
+
+      try {
+        const { product } = await api.get(`/products/${encodeURIComponent(route.id)}`);
+        if (!finishRouteListingLoad()) return null;
+        // A slower earlier request must not overwrite a newer route.
+        if (this.data.route.id !== route.id) {
           this.notify();
           return null;
         }
-      });
+        this.data.routeListing = product;
+        this.data.routeListingMissing = false;
+        this.notify();
+        return product;
+      } catch (e) {
+        if (!finishRouteListingLoad()) return null;
+        if (this.data.route.id !== route.id) {
+          this.notify();
+          return null;
+        }
+        this.data.routeListing = null;
+        // Removed, expired, or never existed - the view shows a "listing
+        // unavailable" state rather than an empty modal.
+        this.data.routeListingMissing = true;
+        this.notify();
+        return null;
+      }
     }
 
     const properties = this.data.realEstate?.properties || [];
@@ -761,23 +857,45 @@ class StateEngine {
     }
   }
 
-  async loadProducts(filters = {}) {
-    return this._run('products', async () => {
-      const normalized = normalizeProductFilters(filters);
-      const params = new URLSearchParams();
-      if (normalized.category && normalized.category !== 'all') params.set('category', normalized.category);
-      if (normalized.district && normalized.district !== 'all') params.set('district', normalized.district);
-      if (normalized.search) params.set('search', normalized.search);
-      const qs = params.toString();
+  async loadProducts(filters = {}, { background = false } = {}) {
+    const normalized = normalizeProductFilters(filters);
+    const nextFilterKey = productFilterKey(normalized);
+    const params = new URLSearchParams();
+    if (normalized.category && normalized.category !== 'all') params.set('category', normalized.category);
+    if (normalized.district && normalized.district !== 'all') params.set('district', normalized.district);
+    if (normalized.search) params.set('search', normalized.search);
+    const qs = params.toString();
+    const visibleBefore = background ? visibleProductsForFilters(this.data, normalized) : null;
+
+    if (!background) {
+      this.data.loading = { ...this.data.loading, products: true };
+      this.data.error = null;
+      this.notify();
+    }
+
+    try {
       const { products } = await api.get(`/products${qs ? `?${qs}` : ''}`);
+      const catalogChanged = isAllProductFilter(normalized) && !sameJson(this.data.productCatalogCache, products);
+
       this.data.products = products;
-      this.data.productsFilterKey = productFilterKey(normalized);
+      this.data.productsFilterKey = nextFilterKey;
       if (isAllProductFilter(normalized)) {
         this.data.productCatalogCache = products;
       }
-      this.notify();
+      if (!background) {
+        this.data.loading = { ...this.data.loading, products: false };
+      }
+      const visibleChanged = background && !sameJson(visibleBefore, visibleProductsForFilters(this.data, normalized));
+      if (!background || visibleChanged || catalogChanged) this.notify();
       return products;
-    });
+    } catch (e) {
+      this.data.error = e.message || 'Something went wrong. Please try again.';
+      if (!background) {
+        this.data.loading = { ...this.data.loading, products: false };
+      }
+      this.notify();
+      throw e;
+    }
   }
 
   async loadMyProducts() {

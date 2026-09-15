@@ -861,7 +861,7 @@ export function renderMarketplaceView(container) {
         search: query || undefined,
         category: current.selectedCategory,
         district: current.selectedDistrict,
-      }).catch(() => {});
+      }, { background: true }).catch(() => {});
     });
 
     // The chevron on this chip promises a menu; it used to just open the
@@ -883,7 +883,7 @@ export function renderMarketplaceView(container) {
             category: id === 'all' ? undefined : id,
             search: filters.searchQuery || undefined,
             district: filters.selectedDistrict,
-          }).catch(() => {});
+          }, { background: true }).catch(() => {});
         },
       });
     });
@@ -928,7 +928,7 @@ export function renderMarketplaceView(container) {
           category: cat === 'all' ? undefined : cat,
           search: filters.searchQuery || undefined,
           district: filters.selectedDistrict,
-        }).catch(() => {});
+        }, { background: true }).catch(() => {});
       });
     });
 

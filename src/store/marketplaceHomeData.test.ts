@@ -188,3 +188,85 @@ describe('forced refresh with unchanged data', () => {
     expect(renders).toBe(2);
   });
 });
+
+describe('background product refresh', () => {
+  const electronics = { id: 'c1', name: 'Electronics' };
+  const phone = {
+    id: 'phone',
+    title: 'Phone',
+    description: '',
+    categoryId: 'c1',
+    district: 'Gasabo',
+    condition: 'new',
+    postedDate: '2026-01-01T00:00:00.000Z',
+  };
+  const sofa = {
+    id: 'sofa',
+    title: 'Sofa',
+    description: '',
+    categoryId: 'c2',
+    district: 'Gasabo',
+    condition: 'used',
+    postedDate: '2026-01-02T00:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    stateEngine.data.loading = { products: false, categories: false };
+    stateEngine.data.categories = [electronics, { id: 'c2', name: 'Furniture' }];
+    stateEngine.data.products = [phone, sofa];
+    stateEngine.data.productCatalogCache = [phone, sofa];
+    stateEngine.data.productsFilterKey = JSON.stringify({ category: 'all', district: 'all', search: '' });
+  });
+
+  it('keeps the current page steady while fetching a selected category', async () => {
+    apiGet.mockResolvedValueOnce({ products: [phone] });
+    const seenLoading: boolean[] = [];
+    stateEngine.subscribe(() => { seenLoading.push(stateEngine.data.loading.products === true); });
+
+    await stateEngine.loadProducts({ category: 'c1' }, { background: true });
+    await flush();
+
+    expect(seenLoading).not.toContain(true);
+  });
+
+  it('does not render when the cached category view already matches the server', async () => {
+    apiGet.mockResolvedValueOnce({ products: [phone] });
+    let renders = 0;
+    stateEngine.subscribe(() => { renders += 1; });
+
+    await stateEngine.loadProducts({ category: 'c1' }, { background: true });
+    await flush();
+
+    expect(renders).toBe(0);
+    expect(stateEngine.data.products).toEqual([phone]);
+    expect(stateEngine.data.productsFilterKey).toBe(JSON.stringify({ category: 'c1', district: 'all', search: '' }));
+  });
+
+  it('renders once when live category data differs from the cached view', async () => {
+    const charger = { ...phone, id: 'charger', title: 'Fast Charger' };
+    apiGet.mockResolvedValueOnce({ products: [phone, charger] });
+    let renders = 0;
+    stateEngine.subscribe(() => { renders += 1; });
+
+    await stateEngine.loadProducts({ category: 'c1' }, { background: true });
+    await flush();
+
+    expect(renders).toBe(1);
+    expect(stateEngine.data.products).toEqual([phone, charger]);
+  });
+});
+
+describe('quiet like-state refresh', () => {
+  it('does not overwrite a newer optimistic like state', async () => {
+    apiGet.mockResolvedValueOnce({ liked: false, likeCount: 2 });
+    const pending = stateEngine.loadLikeState('p1', { notify: false });
+    const optimistic = { liked: true, likeCount: 3 };
+    stateEngine.data.likes = { p1: optimistic };
+
+    const result = await pending;
+    await flush();
+
+    expect(result).toBe(optimistic);
+    expect(stateEngine.data.likes.p1).toBe(optimistic);
+  });
+});

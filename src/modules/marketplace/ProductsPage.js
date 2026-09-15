@@ -286,7 +286,7 @@ export function renderProductsPage(container) {
           search: filters.searchQuery,
           category: cat === 'all' ? undefined : cat,
           district: filters.selectedDistrict,
-        }).catch(() => {});
+        }, { background: true }).catch(() => {});
       });
     });
 

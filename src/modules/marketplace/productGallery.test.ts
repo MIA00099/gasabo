@@ -141,13 +141,13 @@ describe('product gallery selection survives re-renders', () => {
   });
 
   it('opens the current photo in the lightbox on double tap', () => {
-    const now = vi.spyOn(Date, 'now');
-    now.mockReturnValueOnce(1000).mockReturnValueOnce(1200);
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1000);
     renderProductDetailPage(container, makeProduct('p1'));
 
     const img = container.querySelector('#detail-main-img')!;
     img.dispatchEvent(touchEvent('touchstart', [{ clientX: 24, clientY: 32 }]));
     img.dispatchEvent(touchEvent('touchend', [], [{ clientX: 24, clientY: 32 }]));
+    now.mockReturnValue(1200);
     img.dispatchEvent(touchEvent('touchstart', [{ clientX: 24, clientY: 32 }]));
     img.dispatchEvent(touchEvent('touchend', [], [{ clientX: 24, clientY: 32 }]));
 

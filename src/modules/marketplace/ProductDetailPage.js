@@ -367,22 +367,23 @@ export function renderProductDetailPage(container, product, handlers = {}) {
         ${related.length || relatedLoading ? `
           <div class="product-detail-related-section bg-white rounded-3xl shadow-md border border-gray-100 p-8">
             <div class="product-detail-related-head mb-8">
-              <h2 class="product-detail-related-title text-2xl md:text-4xl font-black text-brand-dark mb-2">
-                More ${escapeHtml(product.category || 'Marketplace')} Products
-              </h2>
-              <p class="product-detail-related-subtitle text-gray-600 text-base md:text-lg">Similar listings in the same category</p>
+              <div>
+                <h2 class="product-detail-related-title text-2xl md:text-4xl font-black text-brand-dark mb-2">
+                  More ${escapeHtml(product.category || 'Marketplace')} Products
+                </h2>
+                <p class="product-detail-related-subtitle text-gray-600 text-base md:text-lg">Similar listings in the same category</p>
+              </div>
+              ${relatedLoading ? '' : `
+                <button type="button" id="detail-view-all"
+                  class="product-detail-view-all text-brand-green font-bold text-xs hover:underline inline-flex items-center gap-1">
+                  View All <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              `}
             </div>
 
             <div class="product-detail-related-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
               ${relatedLoading ? RELATED_SKELETON : related.map(relatedCard).join('')}
             </div>
-
-            ${relatedLoading ? '' : `<div class="product-detail-related-cta text-center mt-10">
-              <button type="button" id="detail-view-all"
-                class="bg-brand-dark text-white font-bold text-base md:text-lg px-10 py-4 rounded-2xl hover:bg-gray-800 transition shadow-lg transform hover:scale-105">
-                View All ${escapeHtml(product.category || 'Marketplace')} Products
-              </button>
-            </div>`}
           </div>
         ` : ''}
 

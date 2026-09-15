@@ -14,6 +14,7 @@ describe('product detail desktop viewport layout', () => {
       'product-detail-seller-card',
       'product-detail-actions',
       'product-detail-related-section',
+      'product-detail-view-all',
       'product-detail-related-grid',
     ]) {
       expect(DETAIL, `${cls} missing`).toContain(cls);
@@ -25,8 +26,17 @@ describe('product detail desktop viewport layout', () => {
     expect(CSS).toContain('--product-detail-main-budget: calc(100dvh');
     expect(CSS).toContain('--product-detail-preview-space: clamp(');
     expect(CSS).toContain('.product-detail-gallery-frame');
-    expect(CSS).toContain('height: clamp(260px, calc(var(--product-detail-main-budget) - 96px), 430px) !important');
+    expect(CSS).toContain('height: clamp(270px, calc(var(--product-detail-main-budget) - 126px), 320px) !important');
     expect(CSS).toContain('@media (min-width: 1024px) and (max-height: 820px)');
+  });
+
+  it('matches the reference desktop shape with one-row actions and a heading view-all control', () => {
+    expect(CSS).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
+    expect(CSS).toContain('display: contents !important');
+    expect(CSS).toContain('border-radius: 17px 17px 0 0 !important');
+    expect(CSS).toContain('height: clamp(92px, 12dvh, 105px) !important');
+    expect(DETAIL).toContain('View All <i class="fa-solid fa-arrow-right');
+    expect(DETAIL).not.toContain('View All ${escapeHtml(product.category ||');
   });
 
   it('keeps normal document scrolling instead of nesting a scroll area inside the product card', () => {

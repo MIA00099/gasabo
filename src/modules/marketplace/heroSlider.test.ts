@@ -210,6 +210,9 @@ describe('flash deals card', () => {
     expect(CSS).toContain('animation: flash-promo-scroll');
     expect(CSS).toContain('animation-play-state: running');
     expect(CSS).toContain('animation-iteration-count: infinite !important');
+    expect(CSS).toContain('-webkit-backface-visibility: hidden');
+    expect(CSS).toContain('-webkit-transform: translate3d(0, 0, 0)');
+    expect(CSS).toContain('-webkit-touch-callout: none');
     expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
   });
 

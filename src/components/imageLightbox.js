@@ -33,11 +33,16 @@ export function openImageLightbox(images, title, { startIndex = 0, returnFocusTo
 
   let idx = Math.min(Math.max(startIndex, 0), list.length - 1);
   let close = () => {};
+  let wheelLocked = false;
+  let startX = 0;
+  let startY = 0;
+  let trackingTouch = false;
 
   const overlay = document.createElement('div');
   overlay.style.cssText =
     'position: fixed; inset: 0; background: rgba(2,6,23,0.88); z-index: 9999; ' +
-    'display: flex; align-items: center; justify-content: center; padding: 2rem;';
+    'display: flex; align-items: center; justify-content: center; padding: 2rem; ' +
+    'touch-action: none; overscroll-behavior: contain;';
 
   function paint() {
     overlay.innerHTML = `
@@ -67,12 +72,14 @@ export function openImageLightbox(images, title, { startIndex = 0, returnFocusTo
     overlay.querySelector('#lightbox-next-btn')?.addEventListener('click', () => step(1));
   }
 
-  function step(delta) {
+  function step(delta, { restoreButtonFocus = true } = {}) {
     idx = (idx + delta + list.length) % list.length;
     paint();
     // paint() rebuilds the buttons, so focus has to be put back on the one
     // that was just used or a keyboard user is dropped to the top each press.
-    overlay.querySelector(delta < 0 ? '#lightbox-prev-btn' : '#lightbox-next-btn')?.focus();
+    if (restoreButtonFocus) {
+      overlay.querySelector(delta < 0 ? '#lightbox-prev-btn' : '#lightbox-next-btn')?.focus();
+    }
   }
 
   function onKey(e) {
@@ -81,7 +88,50 @@ export function openImageLightbox(images, title, { startIndex = 0, returnFocusTo
     else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
   }
 
+  function onWheel(e) {
+    if (list.length < 2) return;
+    const primaryDelta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(primaryDelta) < 24 || wheelLocked) return;
+    e.preventDefault();
+    wheelLocked = true;
+    step(primaryDelta > 0 ? 1 : -1, { restoreButtonFocus: false });
+    window.setTimeout(() => { wheelLocked = false; }, 320);
+  }
+
+  function onTouchStart(e) {
+    if (list.length < 2 || e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    trackingTouch = true;
+  }
+
+  function onTouchMove(e) {
+    if (!trackingTouch || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 12 && e.cancelable) {
+      e.preventDefault();
+    }
+  }
+
+  function onTouchEnd(e) {
+    if (!trackingTouch) return;
+    trackingTouch = false;
+    const touch = e.changedTouches?.[0];
+    if (!touch) return;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dx) < 34 || Math.abs(dx) < Math.abs(dy)) return;
+    if (e.cancelable) e.preventDefault();
+    step(dx < 0 ? 1 : -1, { restoreButtonFocus: false });
+  }
+
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('wheel', onWheel, { passive: false });
+  overlay.addEventListener('touchstart', onTouchStart, { passive: true });
+  overlay.addEventListener('touchmove', onTouchMove, { passive: false });
+  overlay.addEventListener('touchend', onTouchEnd, { passive: false });
+  document.body.style.overflow = 'hidden';
   document.body.appendChild(overlay);
   paint();
 

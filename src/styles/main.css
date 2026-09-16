@@ -4946,6 +4946,7 @@ table {
 .flash-promo-marquee {
   margin-inline: -14px;
   overflow: hidden;
+  contain: paint;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
 }
@@ -4963,6 +4964,8 @@ table {
   animation: flash-promo-scroll 48s linear infinite;
   animation-play-state: running;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translate3d(0, 0, 0);
   will-change: transform;
 }
 
@@ -4978,6 +4981,9 @@ table {
   color: #0B1C3A;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
   cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .flash-promo-product-img {

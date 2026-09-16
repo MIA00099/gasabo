@@ -125,11 +125,11 @@ describe('product gallery selection survives re-renders', () => {
     expect(mainSrc()).toBe('/photo-a.jpg');
   });
 
-  it('opens the current photo in the lightbox on double click', () => {
+  it('opens the current photo in the lightbox on one click', () => {
     renderProductDetailPage(container, makeProduct('p1'));
     (container.querySelector('.detail-thumb[data-index="2"]') as HTMLElement).click();
 
-    container.querySelector('#detail-main-img')!.dispatchEvent(new MouseEvent('dblclick', {
+    container.querySelector('#detail-main-img')!.dispatchEvent(new MouseEvent('click', {
       bubbles: true,
       cancelable: true,
     }));
@@ -140,14 +140,10 @@ describe('product gallery selection survives re-renders', () => {
     });
   });
 
-  it('opens the current photo in the lightbox on double tap', () => {
-    const now = vi.spyOn(Date, 'now').mockReturnValue(1000);
+  it('opens the current photo in the lightbox on one tap', () => {
     renderProductDetailPage(container, makeProduct('p1'));
 
     const img = container.querySelector('#detail-main-img')!;
-    img.dispatchEvent(touchEvent('touchstart', [{ clientX: 24, clientY: 32 }]));
-    img.dispatchEvent(touchEvent('touchend', [], [{ clientX: 24, clientY: 32 }]));
-    now.mockReturnValue(1200);
     img.dispatchEvent(touchEvent('touchstart', [{ clientX: 24, clientY: 32 }]));
     img.dispatchEvent(touchEvent('touchend', [], [{ clientX: 24, clientY: 32 }]));
 
@@ -155,6 +151,17 @@ describe('product gallery selection survives re-renders', () => {
       startIndex: 0,
       returnFocusTo: '#detail-zoom-btn',
     });
-    now.mockRestore();
+  });
+
+  it('does not open the lightbox when the image gesture is a swipe', () => {
+    renderProductDetailPage(container, makeProduct('p1'));
+
+    const img = container.querySelector('#detail-main-img')!;
+    img.dispatchEvent(touchEvent('touchstart', [{ clientX: 220, clientY: 32 }]));
+    img.dispatchEvent(touchEvent('touchmove', [{ clientX: 120, clientY: 36 }]));
+    img.dispatchEvent(touchEvent('touchend', [], [{ clientX: 110, clientY: 36 }]));
+
+    expect(openImageLightbox).not.toHaveBeenCalled();
+    expect(mainSrc()).toBe('/photo-b.jpg');
   });
 });

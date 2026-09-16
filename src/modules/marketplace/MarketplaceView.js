@@ -1000,6 +1000,7 @@ export function renderMarketplaceView(container) {
         const id = btn.dataset.id;
         pushPath(pathForListing(ROUTE_PRODUCT, id));
         stateEngine.setRoute({ kind: ROUTE_PRODUCT, id });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     });
 
@@ -1149,6 +1150,7 @@ export function renderFlashDealsPage(container, handlers = {}) {
       const id = btn.dataset.id;
       pushPath(pathForListing(ROUTE_PRODUCT, id));
       stateEngine.setRoute({ kind: ROUTE_PRODUCT, id });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     btn.addEventListener('click', openProduct);

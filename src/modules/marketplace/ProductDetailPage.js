@@ -52,14 +52,18 @@ function whatsappHref(product) {
 
 function bindImageLightboxGestures(frame, openLightbox) {
   if (!frame) return;
-  let lastTapAt = 0;
   let startX = 0;
   let startY = 0;
   let moved = false;
+  let ignoreNextClick = false;
 
   const isInteractive = (target) => target?.closest?.('button, a, input, select, textarea, label');
 
-  frame.addEventListener('dblclick', (e) => {
+  frame.addEventListener('click', (e) => {
+    if (ignoreNextClick) {
+      ignoreNextClick = false;
+      return;
+    }
     if (isInteractive(e.target)) return;
     e.preventDefault();
     openLightbox();
@@ -67,7 +71,6 @@ function bindImageLightboxGestures(frame, openLightbox) {
 
   frame.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1 || isInteractive(e.target)) {
-      lastTapAt = 0;
       return;
     }
     startX = e.touches[0].clientX;
@@ -83,18 +86,10 @@ function bindImageLightboxGestures(frame, openLightbox) {
   }, { passive: true });
 
   frame.addEventListener('touchend', (e) => {
-    if (isInteractive(e.target) || moved) {
-      lastTapAt = 0;
-      return;
-    }
-    const now = Date.now();
-    if (now - lastTapAt > 0 && now - lastTapAt < 340) {
-      if (e.cancelable) e.preventDefault();
-      lastTapAt = 0;
-      openLightbox();
-      return;
-    }
-    lastTapAt = now;
+    if (isInteractive(e.target) || moved) return;
+    if (e.cancelable) e.preventDefault();
+    ignoreNextClick = true;
+    openLightbox();
   }, { passive: false });
 }
 

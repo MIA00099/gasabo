@@ -260,6 +260,7 @@ export function renderStoresPage(container) {
         const id = item.dataset.id;
         pushPath(pathForListing(ROUTE_PRODUCT, id));
         stateEngine.setRoute({ kind: ROUTE_PRODUCT, id });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     });
   }

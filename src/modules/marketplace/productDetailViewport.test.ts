@@ -23,6 +23,7 @@ describe('product detail desktop viewport layout', () => {
 
   it('uses viewport-aware desktop sizing so related products begin in the first viewport', () => {
     expect(CSS).toContain('@media (min-width: 1024px)');
+    expect(CSS).toContain('@supports not (height: 100dvh)');
     expect(CSS).toContain('--product-detail-main-budget: calc(100vh');
     expect(CSS).toContain('--product-detail-main-budget: calc(100dvh');
     expect(CSS).toContain('--product-detail-preview-space: clamp(150px, 18vh');

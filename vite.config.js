@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  build: {
+    // Keep Safari/WebKit-specific CSS instead of letting the minifier assume a
+    // modern-only target. iOS Chrome/Edge use WebKit too, so this covers them.
+    cssTarget: 'safari13',
+  },
   server: {
     host: true, // listen on 0.0.0.0 so other devices on the same LAN can reach the dev server
     // Honour a PORT from the environment when one is set (tooling that assigns

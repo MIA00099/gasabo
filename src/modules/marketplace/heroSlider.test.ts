@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs';
 
 const HOME = readFileSync('src/modules/marketplace/MarketplaceView.js', 'utf8');
 const CSS = readFileSync('src/styles/main.css', 'utf8');
+const VITE_CONFIG = readFileSync('vite.config.js', 'utf8');
 
 // The slider markup only - so a product card image elsewhere in the file
 // cannot satisfy or break these.
@@ -207,6 +208,7 @@ describe('flash deals card', () => {
     expect(HOME).not.toContain('renderFlashPromoCards(heroAds)');
     expect(CSS).toContain('.flash-home-row');
     expect(CSS).toContain('.flash-promo-product-card');
+    expect(VITE_CONFIG).toContain("cssTarget: 'safari13'");
     expect(CSS).toContain('animation: flash-promo-scroll');
     expect(CSS).toContain('animation-play-state: running');
     expect(CSS).toContain('animation-iteration-count: infinite !important');

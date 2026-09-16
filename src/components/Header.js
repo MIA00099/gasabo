@@ -103,7 +103,7 @@ export function renderHeaderHtml(ctx) {
                 ? 'font-bold bg-white/15'
                 : 'opacity-80 hover:opacity-100 hover:bg-white/10'
             }" data-lang="${l.code}" ${l.code === currentLang ? 'aria-current="true"' : ''}>
-              <img src="https://flagcdn.com/w20/${l.flag}.png" alt="" class="w-4 h-3 rounded-sm">
+              <img src="https://flagcdn.com/w20/${l.flag}.png" alt="" width="20" height="15" decoding="async" class="w-4 h-3 rounded-sm">
               <span>${escapeHtml(l.label)}</span>
             </button>
           `).join('')}
@@ -127,7 +127,7 @@ export function renderHeaderHtml(ctx) {
              size the header actually uses. -->
         <div class="flex items-center gap-2 cursor-pointer" id="nav-brand-home" role="button" tabindex="0"
           aria-label="${isRealEstate ? 'Gasabo Real Estate - home' : 'Kigali Market - home'}">
-          <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo-kigali-market.jpg'}" alt=""
+          <img src="${isRealEstate ? '/real-estate-logo.png' : '/logo-kigali-market.jpg'}" alt="" width="44" height="44" decoding="async"
             class="h-9 md:h-11 w-auto object-contain shrink-0 ${isRealEstate ? '' : 'rounded-lg'}">
           <div class="leading-none flex items-center">
             <h1 class="text-lg md:text-xl font-black tracking-tight whitespace-nowrap flex items-center">
@@ -145,7 +145,7 @@ export function renderHeaderHtml(ctx) {
           <button type="button" id="nav-gasabo-brand"
             class="flex items-center gap-1.5 md:gap-2 shrink-0 hover:bg-gray-100 px-2.5 py-1 rounded-full border border-blue-100 bg-blue-50/60 transition cursor-pointer group"
             aria-label="Gasabo Real Estate">
-            <img src="/real-estate-logo.png" alt=""
+            <img src="/real-estate-logo.png" alt="" width="28" height="28" decoding="async"
               class="h-6 md:h-7 w-auto object-contain shrink-0">
             <span class="text-xs md:text-sm font-black tracking-tight text-[#1D4ED8] group-hover:underline whitespace-nowrap">
               <span class="sm:hidden">Gasabo</span><span class="hidden sm:inline">Gasabo Real Estate</span>

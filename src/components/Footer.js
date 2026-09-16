@@ -16,7 +16,7 @@ export function getLargeFooterHtml(currentLang = 'en') {
         <!-- Column 1: Gasabo Real Estate Brand Block -->
         <div class="footer-col brand-col">
           <div class="footer-brand-title cursor-pointer" id="foot-brand-home" role="button" tabindex="0" title="Gasabo Real Estate" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
-            <img src="/real-estate-logo.png" alt="Gasabo Real Estate" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; background: #fff;">
+            <img src="/real-estate-logo.png" alt="Gasabo Real Estate" width="40" height="40" decoding="async" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; background: #fff;">
             <span style="font-weight: 800; font-size: 1.25rem; color: #ffffff;">Gasabo Real Estate</span>
           </div>
           <p class="footer-brand-desc" style="color: #D0E1ED; font-size: 0.92rem; line-height: 1.6; max-width: 32ch;">
@@ -115,7 +115,7 @@ export function getMarketplaceFooterHtml() {
 
         <div class="footer-col brand-col">
           <div class="footer-brand-title cursor-pointer" id="mfoot-brand-home" role="button" tabindex="0" title="Kigali Market home" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
-            <img src="/logo-kigali-market.jpg" alt="Kigali Market" style="height: 40px; width: 40px; border-radius: 10px; object-fit: cover;">
+            <img src="/logo-kigali-market.jpg" alt="Kigali Market" width="40" height="40" decoding="async" style="height: 40px; width: 40px; border-radius: 10px; object-fit: cover;">
             <span style="font-weight: 800; font-size: 1.25rem; color: #ffffff;">KIGALI MARKET</span>
           </div>
           <p class="footer-brand-desc" style="color: #D0E1ED; font-size: 0.92rem; line-height: 1.6; max-width: 34ch;">
@@ -271,7 +271,7 @@ export function initSlimStickyFooter(handlers = {}) {
     <div class="slim-sticky-inner">
       <!-- Brand -->
       <div class="sticky-item sticky-brand cursor-pointer" id="sticky-brand-action" title="Back to Kigali Market Home">
-        <img src="/logo-kigali-market.jpg" alt="Logo" class="sticky-brand-logo">
+        <img src="/logo-kigali-market.jpg" alt="Logo" width="28" height="28" decoding="async" class="sticky-brand-logo">
         <span class="sticky-brand-text">KIGALI MARKET</span>
       </div>
 

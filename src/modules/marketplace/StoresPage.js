@@ -4,6 +4,7 @@
  */
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
+import { IMAGE_WIDTHS, responsiveImageAttrs } from '../../utils/imageDelivery.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -189,7 +190,14 @@ export function renderStoresPage(container) {
                         <div>
                           <div class="relative w-full h-40 bg-gray-100 overflow-hidden flex items-center justify-center">
                             ${p.image
-                              ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.title)}" class="w-full h-full object-cover group-hover:scale-105 transition transform">`
+                              ? `<img ${responsiveImageAttrs(p.image, {
+                                alt: p.title,
+                                className: 'w-full h-full object-cover group-hover:scale-105 transition transform',
+                                widths: IMAGE_WIDTHS.card,
+                                sizes: '(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 25vw',
+                                width: 320,
+                                height: 200,
+                              })}>`
                               : '<i class="fa-solid fa-image text-2xl text-gray-300"></i>'}
                           </div>
                           <div class="p-2.5">

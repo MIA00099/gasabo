@@ -3905,6 +3905,10 @@ th.tbl-actions-col {
   align-items: center;
   justify-content: center;
   background-image: url('/rolling-hills-bg.png');
+  background-image: image-set(
+    url('/rolling-hills-bg.webp') type('image/webp') 1x,
+    url('/rolling-hills-bg.png') type('image/png') 1x
+  );
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;

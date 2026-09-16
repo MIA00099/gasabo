@@ -11,6 +11,7 @@ import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pushHome, pathForListing, ROUTE_PROPERTY, ROUTE_HOME } from '../../store/router.js';
 import { makeAccessibleModal } from '../../components/modalA11y.js';
 import { openShareModal, showShareToast } from '../../components/ShareModal.js';
+import { IMAGE_WIDTHS, applyResponsiveImageSource, responsiveImageAttrs } from '../../utils/imageDelivery.js';
 
 // Mockup's own brand palette (Gasabo Real Estate's tailwind.config), kept
 // as its own identity separate from the marketplace's green/gold/flag-blue
@@ -60,7 +61,7 @@ function gasaboFooterHtml(contact) {
         <!-- Column 1: Gasabo Real Estate Brand Block -->
         <div>
           <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
-            <img src="/real-estate-logo.png" alt="Gasabo Real Estate" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; background: #fff;">
+            <img src="/real-estate-logo.png" alt="Gasabo Real Estate" width="40" height="40" decoding="async" style="height: 40px; width: 40px; border-radius: 50%; object-fit: contain; background: #fff;">
             <span style="font-weight: 800; font-size: 1.25rem; color: #ffffff;">Gasabo Real Estate</span>
           </div>
           <p style="color: #D0E1ED; font-size: 0.92rem; line-height: 1.6; max-width: 32ch;">
@@ -291,7 +292,7 @@ export function renderRealEstateView(container) {
 
             <!-- BRAND -->
             <a href="#" class="brand" id="re-logo-home">
-              <img src="/real-estate-logo.png" alt="Gasabo Logo">
+              <img src="/real-estate-logo.png" alt="Gasabo Logo" width="40" height="40" decoding="async">
               <span class="brand-name">
                 Gasabo Real Estate
               </span>
@@ -582,7 +583,19 @@ function renderHomeView(reData, properties) {
     <!-- HERO SECTION -->
     <section style="position: relative; overflow: hidden; background: ${RE_DARK};">
       <div style="position: absolute; inset: 0;">
-        <img src="${escapeHtml(reData.hero.bgImage)}" alt="Gasabo Real Estate" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.55;">
+        <img ${responsiveImageAttrs(reData.hero.bgImage, {
+          alt: 'Gasabo Real Estate',
+          style: 'width: 100%; height: 100%; object-fit: cover; opacity: 0.55;',
+          widths: IMAGE_WIDTHS.hero,
+          sizes: '100vw',
+          width: 1600,
+          height: 900,
+          loading: 'eager',
+          decoding: 'async',
+          fetchPriority: 'high',
+          fallbackWidth: 1280,
+          quality: 78,
+        })}>
         <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,23,42,0.96), ${RE_BLUE}CC);"></div>
       </div>
 
@@ -776,7 +789,14 @@ function renderPropertyGrid(list) {
             aria-label="View details for ${escapeHtml(prop.title)}, ${escapeHtml(prop.location)}, ${escapeHtml(prop.price)}"
             style="background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.25s ease;">
             <div style="position: relative; height: 220px; overflow: hidden;">
-              <img src="${escapeHtml(prop.image)}" alt="${escapeHtml(prop.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+              <img ${responsiveImageAttrs(prop.image, {
+                alt: prop.title,
+                style: 'width: 100%; height: 100%; object-fit: cover;',
+                widths: IMAGE_WIDTHS.card,
+                sizes: '(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw',
+                width: 420,
+                height: 260,
+              })}>
               <span style="position: absolute; top: 14px; left: 14px; background: ${badge.bg}; color: ${badge.color}; font-size: 0.7rem; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">
                 ${badge.label}
               </span>
@@ -878,7 +898,7 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
       <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
         <a href="/" id="re-detail-logo-home" title="Gasabo Real Estate home page" aria-label="Gasabo Real Estate home page"
           style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; text-decoration: none;">
-          <img src="/real-estate-logo.png" alt="Gasabo Real Estate"
+          <img src="/real-estate-logo.png" alt="Gasabo Real Estate" width="38" height="38" decoding="async"
             style="height: 38px; width: 38px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid #E2E8F0;">
           <span style="font-weight: 800; color: #0F172A; font-size: 0.82rem; line-height: 1.1; white-space: nowrap;">Home Page</span>
         </a>
@@ -907,7 +927,19 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
 
       <!-- HERO IMAGE SHOWCASE (UNCROPPED DARK SHOWCASE) -->
       <div id="re-gallery-frame" style="position: relative; width: 100%; max-height: 65vh; min-height: 340px; background: #0B132B; display: flex; align-items: center; justify-content: center; overflow: hidden; user-select: none;">
-        <img id="re-gallery-main" src="${escapeHtml(galleryImages[0])}" alt="${escapeHtml(prop.title)}" style="max-width: 100%; max-height: 65vh; object-fit: contain; width: auto; height: auto; display: block; margin: auto;">
+        <img id="re-gallery-main" ${responsiveImageAttrs(galleryImages[0], {
+          alt: prop.title,
+          style: 'max-width: 100%; max-height: 65vh; object-fit: contain; width: auto; height: auto; display: block; margin: auto;',
+          widths: IMAGE_WIDTHS.detail,
+          sizes: '100vw',
+          width: 1280,
+          height: 900,
+          loading: 'eager',
+          decoding: 'sync',
+          fetchPriority: 'high',
+          fallbackWidth: 960,
+          quality: 78,
+        })}>
 
         ${galleryImages.length > 1 ? `
           <!-- Left/Right Navigation Arrows -->
@@ -937,7 +969,14 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
             ${galleryImages.map((u, i) => `
               <button type="button" class="re-gallery-thumb" data-index="${i}" aria-label="View photo ${i + 1} of ${galleryImages.length}"
                 style="width: 72px; height: 72px; border-radius: 12px; overflow: hidden; border: 3px solid ${i === 0 ? RE_GREEN : 'transparent'}; padding: 0; cursor: pointer; background: #0B132B; flex-shrink: 0; transition: all 0.2s ease;">
-                <img src="${escapeHtml(u)}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                <img ${responsiveImageAttrs(u, {
+                  alt: '',
+                  style: 'width: 100%; height: 100%; object-fit: cover;',
+                  widths: IMAGE_WIDTHS.tiny,
+                  sizes: '72px',
+                  width: 96,
+                  height: 96,
+                })}>
               </button>
             `).join('')}
           </div>
@@ -1075,7 +1114,14 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
                     aria-label="View details for ${escapeHtml(rel.title)}, ${escapeHtml(rel.location)}, ${escapeHtml(rel.price)}"
                     style="background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 14px rgba(15,23,42,0.04);">
                     <div style="position: relative; height: 190px; overflow: hidden; background: #0F172A;">
-                      <img src="${escapeHtml(rel.image)}" alt="${escapeHtml(rel.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                      <img ${responsiveImageAttrs(rel.image, {
+                        alt: rel.title,
+                        style: 'width: 100%; height: 100%; object-fit: cover;',
+                        widths: IMAGE_WIDTHS.related,
+                        sizes: '(max-width: 767px) 100vw, 260px',
+                        width: 360,
+                        height: 220,
+                      })}>
                       <span style="position: absolute; top: 12px; left: 12px; background: ${relBadge.bg}; color: ${relBadge.color}; font-size: 0.68rem; font-weight: 800; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase;">
                         ${relBadge.label}
                       </span>
@@ -1132,7 +1178,19 @@ export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   function setPhoto(i) {
     if (i < 0 || i >= galleryImages.length) return;
     activeIndex = i;
-    if (galleryMain) galleryMain.src = galleryImages[i];
+    if (galleryMain) {
+      applyResponsiveImageSource(galleryMain, galleryImages[i], {
+        widths: IMAGE_WIDTHS.detail,
+        sizes: '100vw',
+        width: 1280,
+        height: 900,
+        loading: 'eager',
+        decoding: 'sync',
+        fetchPriority: 'high',
+        fallbackWidth: 960,
+        quality: 78,
+      });
+    }
     if (counterEl) counterEl.textContent = `📷 ${i + 1} / ${galleryImages.length} Photos`;
 
     thumbs.forEach((t, n) => {

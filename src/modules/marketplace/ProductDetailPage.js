@@ -21,6 +21,7 @@ import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, ROUTE_PRODUCT } from '../../store/router.js';
 import { openImageLightbox } from '../../components/imageLightbox.js';
 import { openShareModal } from '../../components/ShareModal.js';
+import { IMAGE_WIDTHS, applyResponsiveImageSource, responsiveImageAttrs } from '../../utils/imageDelivery.js';
 
 let cleanupDetailResizeListener = null;
 
@@ -122,7 +123,14 @@ function relatedCard(p) {
       data-id="${p.id}" role="button" tabindex="0">
       <div class="product-detail-related-image relative w-full h-48 sm:h-52 bg-gray-100 flex items-center justify-center overflow-hidden">
         ${p.images && p.images[0]
-          ? `<img src="${p.images[0]}" alt="${escapeHtml(p.title)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition transform">`
+          ? `<img ${responsiveImageAttrs(p.images[0], {
+              alt: p.title,
+              className: 'w-full h-full object-cover group-hover:scale-105 transition transform',
+              widths: IMAGE_WIDTHS.related,
+              sizes: '(max-width: 767px) 50vw, 220px',
+              width: 320,
+              height: 220,
+            })}>`
           : '<i class="fa-solid fa-image text-4xl text-gray-300"></i>'}
         ${hasDiscount ? `<span class="absolute top-3 right-3 bg-brand-green text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-sm">-${pct}%</span>` : ''}
       </div>
@@ -198,8 +206,19 @@ export function renderProductDetailPage(container, product, handlers = {}) {
             <!-- LEFT: PRODUCT IMAGE GALLERY -->
             <div class="product-detail-gallery">
               <div class="product-detail-gallery-frame bg-gray-100 rounded-2xl h-80 sm:h-96 md:h-[440px] flex items-center justify-center relative overflow-hidden mb-3 group shadow-md border border-gray-100 cursor-zoom-in">
-                <img id="detail-main-img" src="${images[activeImageIndex]}" alt="${escapeHtml(product.title)}"
-                  class="product-detail-main-img w-full h-full object-cover relative z-10 transition duration-300 group-hover:scale-105">
+                <img id="detail-main-img" ${responsiveImageAttrs(images[activeImageIndex], {
+                  alt: product.title,
+                  className: 'product-detail-main-img w-full h-full object-cover relative z-10 transition duration-300 group-hover:scale-105',
+                  widths: IMAGE_WIDTHS.detail,
+                  sizes: '(max-width: 767px) 100vw, 50vw',
+                  width: 960,
+                  height: 720,
+                  loading: 'eager',
+                  decoding: 'sync',
+                  fetchPriority: 'high',
+                  fallbackWidth: 960,
+                  quality: 78,
+                })}>
 
                 ${hasDiscount ? `
                   <div class="absolute top-4 right-4 bg-brand-orange text-white px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">-${pct}%</div>
@@ -255,7 +274,14 @@ export function renderProductDetailPage(container, product, handlers = {}) {
                       <button type="button" class="product-detail-thumb detail-thumb shrink-0 relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition ${i === activeImageIndex ? 'border-2 border-brand-green' : 'border-2 border-gray-300 opacity-60 hover:opacity-100'}"
                         data-src="${img}" data-index="${i}"
                         aria-label="Show photo ${i + 1} of ${images.length}" aria-pressed="${i === activeImageIndex}">
-                        <img src="${img}" alt="" class="w-full h-full object-cover">
+                        <img ${responsiveImageAttrs(img, {
+                          alt: '',
+                          className: 'w-full h-full object-cover',
+                          widths: IMAGE_WIDTHS.tiny,
+                          sizes: '80px',
+                          width: 96,
+                          height: 96,
+                        })}>
                       </button>
                     `).join('')}
                   </div>
@@ -402,7 +428,17 @@ export function renderProductDetailPage(container, product, handlers = {}) {
     if (i < 0 || i >= images.length) return;
     activeIndex = i;
     galleryIndex = i; // remember it, so a re-render keeps this photo
-    if (mainImg) mainImg.src = images[i];
+    applyResponsiveImageSource(mainImg, images[i], {
+      widths: IMAGE_WIDTHS.detail,
+      sizes: '(max-width: 767px) 100vw, 50vw',
+      width: 960,
+      height: 720,
+      loading: 'eager',
+      decoding: 'sync',
+      fetchPriority: 'high',
+      fallbackWidth: 960,
+      quality: 78,
+    });
 
     thumbs.forEach((t, n) => {
       const on = n === i;

@@ -1,4 +1,5 @@
 import { makeAccessibleModal } from './modalA11y.js';
+import { IMAGE_WIDTHS, responsiveImageAttrs } from '../utils/imageDelivery.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -183,7 +184,14 @@ export function openShareModal(options = {}, onClose, returnFocusTo) {
       <!-- Item Preview Card -->
       <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3 mb-5 flex items-center gap-3">
         ${image ? `
-          <img src="${escapeHtml(image)}" alt="" class="w-14 h-14 rounded-xl object-cover border border-gray-200 shrink-0 bg-white">
+          <img ${responsiveImageAttrs(image, {
+            alt: '',
+            className: 'w-14 h-14 rounded-xl object-cover border border-gray-200 shrink-0 bg-white',
+            widths: IMAGE_WIDTHS.tiny,
+            sizes: '56px',
+            width: 56,
+            height: 56,
+          })}>
         ` : `
           <div class="w-14 h-14 rounded-xl bg-gray-200 text-gray-400 flex items-center justify-center text-xl shrink-0">
             <i class="fa-solid fa-link"></i>

@@ -6,6 +6,7 @@ import { renderStoresPage } from './StoresPage.js';
 import { renderProductsPage } from './ProductsPage.js';
 import { renderCategoryIcon, formatCategoryName } from '../../utils/categoryIcon.js';
 import { starsHtml } from '../../utils/stars.js';
+import { IMAGE_WIDTHS, hydrateResponsiveImage, responsiveImageAttrs } from '../../utils/imageDelivery.js';
 import { openCategoryDropdown } from '../../components/dropdownMenu.js';
 import { openShareModal } from '../../components/ShareModal.js';
 import { getHomeProductSections, isSpotlightProduct } from './homeProductSections.js';
@@ -129,6 +130,7 @@ function productCardHtml(prod) {
   const was = Number(prod.originalPrice) || 0;
   const hasDiscount = was > prod.price;
   const pct = hasDiscount ? Math.round((1 - prod.price / was) * 100) : 20;
+  const image = (prod.images && prod.images[0]) || '';
 
   return `
     <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col view-item-btn" data-id="${prod.id}">
@@ -139,8 +141,14 @@ function productCardHtml(prod) {
                 ${prod.isFeatured ? '⭐ Featured' : '🔥 Trending'}
               </div>
             ` : ''}
-            <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
-              class="w-full h-full object-cover group-hover:scale-105 transition transform">
+            <img ${responsiveImageAttrs(image, {
+              alt: prod.title,
+              className: 'w-full h-full object-cover group-hover:scale-105 transition transform',
+              widths: IMAGE_WIDTHS.card,
+              sizes: '(max-width: 640px) 50vw, (max-width: 1024px) 176px, 192px',
+              width: 384,
+              height: 240,
+            })}>
         </div>
         <div class="p-2.5 flex-1 flex flex-col justify-between">
             <div class="flex items-start justify-between gap-1 mb-0.5">
@@ -196,7 +204,13 @@ function flashProductRailCardHtml(product, duplicate = false) {
     <div class="flash-promo-product-card view-item-btn" data-id="${escapeHtml(product.id)}"${attrs}>
       <div class="flash-promo-product-img">
         ${image
-          ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(product.title)}" loading="lazy">`
+          ? `<img ${responsiveImageAttrs(image, {
+              alt: product.title,
+              widths: IMAGE_WIDTHS.tiny,
+              sizes: '130px',
+              width: 160,
+              height: 96,
+            })}>`
           : '<i class="fa-solid fa-image"></i>'}
       </div>
       <div class="flash-promo-product-info">
@@ -263,14 +277,24 @@ function startHeroSlider(container) {
 
   let current = Math.max(0, slides.findIndex((s) => s.classList.contains('active')));
 
+  function hydrateSlide(index) {
+    const slide = slides[(index + slides.length) % slides.length];
+    hydrateResponsiveImage(slide?.querySelector('img[data-src]'));
+  }
+
   function show(index) {
     current = (index + slides.length) % slides.length;
+    hydrateSlide(current);
+    hydrateSlide(current + 1);
     slides.forEach((s, i) => s.classList.toggle('active', i === current));
     dots.forEach((d, i) => {
       d.classList.toggle('active', i === current);
       d.setAttribute('aria-selected', String(i === current));
     });
   }
+
+  hydrateSlide(current);
+  hydrateSlide(current + 1);
 
   // Auto-advance through the admin's hero ads. Held back so it never feels
   // like a page refresh:
@@ -590,7 +614,21 @@ export function renderMarketplaceView(container) {
                                ad carries a target. -->
                           <div class="slide cover-slide ${i === 0 ? 'active' : ''}" data-slide="${i}">
                             ${ad.targetUrl ? `<a href="${escapeHtml(ad.targetUrl)}" class="hero-ad-link">` : '<div class="hero-ad-link">'}
-                            <img class="slide-fg" src="${escapeHtml(ad.image)}" alt="${escapeHtml(ad.title || 'Promotion')}" style="${heroAdImageStyle(ad)}">
+                            <img ${responsiveImageAttrs(ad.image, {
+                              alt: ad.title || 'Promotion',
+                              className: 'slide-fg',
+                              style: heroAdImageStyle(ad),
+                              widths: IMAGE_WIDTHS.hero,
+                              sizes: '(max-width: 1023px) 100vw, 52vw',
+                              width: 1600,
+                              height: 900,
+                              loading: i === 0 ? 'eager' : 'lazy',
+                              decoding: i === 0 ? 'sync' : 'async',
+                              fetchPriority: i === 0 ? 'high' : 'low',
+                              fallbackWidth: i === 0 ? 1280 : 960,
+                              quality: 78,
+                              defer: i > 1,
+                            })}>
                             ${ad.targetUrl ? `</a>` : '</div>'}
                           </div>
                         `).join('')}
@@ -697,7 +735,13 @@ export function renderMarketplaceView(container) {
                          listing and the end time, and the card shows both. -->
                     <div class="flash-product" data-id="${escapeHtml(featuredDeal.id)}">
                       <div class="flash-product-img">
-                        <img src="${escapeHtml((featuredDeal.images && featuredDeal.images[0]) || '')}" alt="${escapeHtml(featuredDeal.title)}" loading="lazy">
+                        <img ${responsiveImageAttrs((featuredDeal.images && featuredDeal.images[0]) || '', {
+                          alt: featuredDeal.title,
+                          widths: IMAGE_WIDTHS.tiny,
+                          sizes: '64px',
+                          width: 96,
+                          height: 96,
+                        })}>
                       </div>
                       <div class="flash-product-info">
                         <h3>${escapeHtml(featuredDeal.title)}</h3>
@@ -1005,7 +1049,13 @@ function flashDealPageCardHtml(deal, t) {
       <div class="flash-page-card-media">
         ${pct ? `<span class="flash-page-discount">-${pct}%</span>` : ''}
         ${image
-          ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(deal.title)}" loading="lazy">`
+          ? `<img ${responsiveImageAttrs(image, {
+              alt: deal.title,
+              widths: IMAGE_WIDTHS.card,
+              sizes: '(max-width: 767px) 50vw, 260px',
+              width: 360,
+              height: 240,
+            })}>`
           : '<i class="fa-solid fa-image"></i>'}
       </div>
       <div class="flash-page-card-body">

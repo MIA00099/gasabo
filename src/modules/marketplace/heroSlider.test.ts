@@ -42,8 +42,9 @@ describe('hero slider', () => {
 
   it('renders one slide per hero ad', () => {
     expect(SLIDER, 'slides must map over heroAds').toMatch(/\$\{heroAds\.map\(\(ad, i\) =>/);
-    expect(SLIDER, 'ad image comes from the ad record').toContain('escapeHtml(ad.image)');
-    expect(SLIDER, 'ad image gets per-slide display variables').toContain('style="${heroAdImageStyle(ad)}"');
+    expect(SLIDER, 'ad image comes from the ad record').toContain('responsiveImageAttrs(ad.image');
+    expect(SLIDER, 'ad image gets per-slide display variables').toContain('style: heroAdImageStyle(ad)');
+    expect(SLIDER, 'hero images use responsive optimized variants').toContain('widths: IMAGE_WIDTHS.hero');
     expect(HOME, 'hero display settings must be normalized before becoming CSS variables').toContain('function normalizeHeroImageDisplay');
   });
 
@@ -91,7 +92,7 @@ describe('hero slider', () => {
     // it, and the image/link frame must run edge to edge inside the curve.
     expect(SLIDER, 'ad slides must be cover-slides').toMatch(/class="slide cover-slide/);
     expect(SLIDER, 'blurred backdrop image should not be rendered').not.toContain('class="slide-bg"');
-    expect(SLIDER, 'visible uploaded image').toContain('class="slide-fg"');
+    expect(SLIDER, 'visible uploaded image').toContain("className: 'slide-fg'");
     expect(SLIDER, 'linked ads need a real frame around the uploaded image').toContain('class="hero-ad-link"');
 
     const sliderRule = CSS.match(/\n\.slider-container \{([\s\S]*?)\n\}/)?.[1] || '';

@@ -1,5 +1,6 @@
 import { makeAccessibleModal } from '../../components/modalA11y.js';
 import { openShareModal } from '../../components/ShareModal.js';
+import { IMAGE_WIDTHS, applyResponsiveImageSource, responsiveImageAttrs } from '../../utils/imageDelivery.js';
 
 /**
  * Product Detail Modal Component - Ported from delivered mockup product-detail.html.
@@ -37,7 +38,19 @@ export function renderProductDetailModal(product, onClose, returnFocusTo) {
           <!-- MAIN IMAGE - LARGE & VISIBLE -->
           <div class="bg-gradient-to-br from-[#0b1c11] to-[#052614] rounded-2xl h-64 md:h-72 flex items-center justify-center relative overflow-hidden mb-3 group cursor-zoom-in shadow-lg">
             <div class="absolute inset-0 bg-gradient-to-tr from-[#052614] to-[#1a4d2e] opacity-70"></div>
-            <img id="main-prod-img" src="${images[0]}" alt="${escapeHtml(product.title)}" class="h-3/4 object-contain relative z-10 drop-shadow-2xl">
+            <img id="main-prod-img" ${responsiveImageAttrs(images[0], {
+              alt: product.title,
+              className: 'h-3/4 object-contain relative z-10 drop-shadow-2xl',
+              widths: IMAGE_WIDTHS.detail,
+              sizes: '(max-width: 767px) 100vw, 50vw',
+              width: 720,
+              height: 540,
+              loading: 'eager',
+              decoding: 'sync',
+              fetchPriority: 'high',
+              fallbackWidth: 768,
+              quality: 78,
+            })}>
 
             <div class="absolute top-4 right-4 bg-brand-orange text-white px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">
               -${pctOff}%
@@ -53,7 +66,14 @@ export function renderProductDetailModal(product, onClose, returnFocusTo) {
             ${images.map((img, idx) => `
               <button type="button" class="thumb-img-btn relative w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 ${idx === 0 ? 'border-brand-green' : 'border-gray-300'} bg-[#0b1c11] flex items-center justify-center cursor-pointer shadow-md hover:shadow-lg transition shrink-0" data-src="${img}">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#052614] to-[#124b2b] opacity-70"></div>
-                <img src="${img}" alt="Thumbnail ${idx + 1}" class="h-3/4 object-contain relative z-10">
+                <img ${responsiveImageAttrs(img, {
+                  alt: `Thumbnail ${idx + 1}`,
+                  className: 'h-3/4 object-contain relative z-10',
+                  widths: IMAGE_WIDTHS.tiny,
+                  sizes: '64px',
+                  width: 96,
+                  height: 96,
+                })}>
               </button>
             `).join('')}
           </div>
@@ -166,7 +186,17 @@ export function renderProductDetailModal(product, onClose, returnFocusTo) {
   function setModalImg(i) {
     if (i < 0 || i >= images.length) return;
     activeModalIdx = i;
-    mainImg.src = images[i];
+    applyResponsiveImageSource(mainImg, images[i], {
+      widths: IMAGE_WIDTHS.detail,
+      sizes: '(max-width: 767px) 100vw, 50vw',
+      width: 720,
+      height: 540,
+      loading: 'eager',
+      decoding: 'sync',
+      fetchPriority: 'high',
+      fallbackWidth: 768,
+      quality: 78,
+    });
     thumbs.forEach((t, n) => {
       if (n === i) {
         t.classList.replace('border-gray-300', 'border-brand-green');

@@ -3,6 +3,7 @@ import { renderCategoryIcon, formatCategoryName } from '../../utils/categoryIcon
 import { stateEngine } from '../../store/stateEngine.js';
 import { pushPath, pathForListing, pathForRoute, ROUTE_POST_AD, ROUTE_PRODUCT } from '../../store/router.js';
 import { openShareModal } from '../../components/ShareModal.js';
+import { IMAGE_WIDTHS, responsiveImageAttrs } from '../../utils/imageDelivery.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -85,6 +86,7 @@ function productCard(prod) {
   const hasDiscount = was > prod.price;
   const pct = hasDiscount ? Math.round((1 - prod.price / was) * 100) : 20;
   const stars = starsHtml(prod.rating);
+  const image = (prod.images && prod.images[0]) || '';
 
   return `
     <div class="products-card bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 relative group flex flex-col justify-between"
@@ -93,8 +95,14 @@ function productCard(prod) {
       <div class="products-card-media relative w-full h-48 sm:h-52 bg-gray-100 overflow-hidden flex items-center justify-center">
         ${hasDiscount ? `<div class="absolute top-3 left-3 bg-brand-orange text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-10 shadow-sm">-${pct}%</div>` : ''}
         ${prod.isFeatured || prod.isTrending ? `<div class="absolute top-3 right-3 z-10 ${prod.isFeatured ? 'bg-amber-400 text-amber-900' : 'bg-brand-green text-white'} text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">${prod.isFeatured ? '⭐ Featured' : '🔥 Trending'}</div>` : ''}
-        <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" loading="lazy"
-          class="w-full h-full object-cover group-hover:scale-105 transition transform">
+        <img ${responsiveImageAttrs(image, {
+          alt: prod.title,
+          className: 'w-full h-full object-cover group-hover:scale-105 transition transform',
+          widths: IMAGE_WIDTHS.card,
+          sizes: '(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 260px',
+          width: 360,
+          height: 240,
+        })}>
       </div>
       
       <div class="p-3 flex-1 flex flex-col justify-between">

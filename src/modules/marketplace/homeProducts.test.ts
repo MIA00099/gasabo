@@ -54,9 +54,11 @@ describe('the product tile is written once', () => {
     expect(fn, 'the shared tile must carry .view-item-btn').toContain('view-item-btn');
   });
 
-  it('lazy-loads the images, since they start below the fold', () => {
+  it('uses responsive lazy-loaded images, since they start below the fold', () => {
     const fn = SRC.slice(SRC.indexOf('function productCardHtml'), SRC.indexOf('// Grey circles'));
-    expect(fn).toContain('loading="lazy"');
+    expect(fn).toContain('responsiveImageAttrs(image');
+    expect(fn).toContain('widths: IMAGE_WIDTHS.card');
+    expect(SRC).toContain("import { IMAGE_WIDTHS, hydrateResponsiveImage, responsiveImageAttrs }");
   });
 
   it('does not render a fake discount badge when there is no real previous price', () => {

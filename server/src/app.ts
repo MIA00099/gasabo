@@ -18,6 +18,7 @@ import { auditRouter } from './routes/audit.routes.js';
 import { advertisementsRouter } from './routes/advertisements.routes.js';
 import { rbacRouter } from './routes/rbac.routes.js';
 import { uploadsRouter } from './routes/uploads.routes.js';
+import { imagesRouter } from './routes/images.routes.js';
 import { notificationsRouter } from './routes/notifications.routes.js';
 import { contactRouter } from './routes/contact.routes.js';
 import { seoRouter } from './seo/routes.js';
@@ -67,7 +68,10 @@ app.use(express.json());
 
 // Serves files saved by uploadsRouter (POST /api/uploads) - e.g. a saved
 // file at server/uploads/169..-abc.jpg becomes reachable at /uploads/169..-abc.jpg.
-app.use('/uploads', express.static(path.resolve('server', 'uploads')));
+app.use('/uploads', express.static(path.resolve('server', 'uploads'), {
+  maxAge: '1y',
+  immutable: true,
+}));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -82,6 +86,7 @@ app.use('/api/approvals', approvalsRouter);
 app.use('/api/audit-logs', auditRouter);
 app.use('/api/advertisements', advertisementsRouter);
 app.use('/api/rbac', rbacRouter);
+app.use('/api/images', imagesRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/contact', contactRouter);
@@ -133,7 +138,15 @@ function looksLikeStaticAsset(requestPath: string): boolean {
   return requestPath.startsWith('/uploads') || requestPath.startsWith('/assets') || path.extname(requestPath) !== '';
 }
 
-app.use(express.static(distDir));
+app.use(express.static(distDir, {
+  setHeaders(res, filePath) {
+    if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return;
+    }
+    res.setHeader('Cache-Control', 'no-cache');
+  },
+}));
 app.get('*', (req, res, next) => {
   // Static-looking misses are real missing files, not frontend routes - let
   // Express return a normal 404 instead of masquerading as index.html.

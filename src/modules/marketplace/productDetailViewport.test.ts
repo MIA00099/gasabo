@@ -23,7 +23,9 @@ describe('product detail desktop viewport layout', () => {
 
   it('uses viewport-aware desktop sizing so related products begin in the first viewport', () => {
     expect(CSS).toContain('@media (min-width: 1024px)');
+    expect(CSS).toContain('--product-detail-main-budget: calc(100vh');
     expect(CSS).toContain('--product-detail-main-budget: calc(100dvh');
+    expect(CSS).toContain('--product-detail-preview-space: clamp(150px, 18vh');
     expect(CSS).toContain('--product-detail-preview-space: clamp(');
     expect(CSS).toContain('.product-detail-gallery-frame');
     expect(CSS).toContain('height: clamp(270px, calc(var(--product-detail-main-budget) - 126px), 320px) !important');
@@ -34,6 +36,7 @@ describe('product detail desktop viewport layout', () => {
     expect(CSS).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
     expect(CSS).toContain('display: contents !important');
     expect(CSS).toContain('border-radius: 17px 17px 0 0 !important');
+    expect(CSS).toContain('height: clamp(92px, 12vh, 105px) !important');
     expect(CSS).toContain('height: clamp(92px, 12dvh, 105px) !important');
     expect(DETAIL).toContain('View All <i class="fa-solid fa-arrow-right');
     expect(DETAIL).not.toContain('View All ${escapeHtml(product.category ||');

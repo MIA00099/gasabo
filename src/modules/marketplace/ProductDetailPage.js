@@ -24,12 +24,14 @@ import { openShareModal } from '../../components/ShareModal.js';
 import { IMAGE_WIDTHS, applyResponsiveImageSource, responsiveImageAttrs } from '../../utils/imageDelivery.js';
 
 let cleanupDetailResizeListener = null;
+let lastTopResetProductId = null;
 
-export function cleanupProductDetailPage() {
+export function cleanupProductDetailPage({ preserveTopGuard = false } = {}) {
   if (cleanupDetailResizeListener) {
     cleanupDetailResizeListener();
     cleanupDetailResizeListener = null;
   }
+  if (!preserveTopGuard) lastTopResetProductId = null;
 }
 
 function escapeHtml(str) {
@@ -155,6 +157,23 @@ function relatedCard(p) {
 // reset only when a genuinely different listing is opened.
 let galleryIndex = 0;
 let galleryProductId = null;
+
+function forceProductPageTop(productId) {
+  if (lastTopResetProductId === productId) return;
+  lastTopResetProductId = productId;
+
+  const scrollTopNow = () => {
+    const root = document.scrollingElement || document.documentElement;
+    if (root) root.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  };
+
+  scrollTopNow();
+  window.requestAnimationFrame?.(scrollTopNow);
+  window.setTimeout(scrollTopNow, 0);
+}
 
 export function renderProductDetailPage(container, product, handlers = {}) {
   const state = stateEngine.getState();
@@ -412,6 +431,8 @@ export function renderProductDetailPage(container, product, handlers = {}) {
     </div>
   `;
 
+  forceProductPageTop(product.id);
+
   // ---- Gallery -----------------------------------------------------------
   const mainImg = container.querySelector('#detail-main-img');
   const strip = container.querySelector('#detail-thumb-strip');
@@ -549,7 +570,7 @@ export function renderProductDetailPage(container, product, handlers = {}) {
     const img = t.querySelector('img');
     if (img && !img.complete) img.addEventListener('load', syncArrows, { once: true });
   });
-  cleanupProductDetailPage();
+  cleanupProductDetailPage({ preserveTopGuard: true });
   window.addEventListener('resize', syncArrows);
   cleanupDetailResizeListener = () => window.removeEventListener('resize', syncArrows);
 

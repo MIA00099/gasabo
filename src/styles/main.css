@@ -5046,6 +5046,15 @@ table {
   mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
 }
 
+@supports (-webkit-touch-callout: none) {
+  .flash-promo-marquee {
+    margin-inline: 0;
+    contain: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
 .flash-promo-track {
   display: flex;
   width: max-content;

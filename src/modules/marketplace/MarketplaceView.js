@@ -181,6 +181,7 @@ function productCardHtml(prod) {
 const CATEGORY_TILE_CLASS = 'flex flex-col items-center gap-2 flex-1 min-w-[92px] px-2 py-1.5 cursor-pointer group cat-tile-btn';
 const CATEGORY_ICON_FRAME_CLASS = 'cat-tile-icon w-[72px] h-[72px] rounded-full flex items-center justify-center overflow-hidden shrink-0 transition transform group-hover:scale-105';
 const CATEGORY_ICON_SIZE = 72;
+const FLASH_RAIL_MIN_ITEMS = 8;
 
 // Grey circles, no labels. Deliberately not category-shaped placeholder
 // objects: the previous version of this strip rendered invented names
@@ -234,9 +235,9 @@ function renderFlashProductRail(products = []) {
     `;
   }
 
-  const padded = railProducts.length >= 4
+  const padded = railProducts.length >= FLASH_RAIL_MIN_ITEMS
     ? railProducts
-    : Array.from({ length: 4 }, (_, i) => railProducts[i % railProducts.length]);
+    : Array.from({ length: FLASH_RAIL_MIN_ITEMS }, (_, i) => railProducts[i % railProducts.length]);
 
   return padded.map((product) => flashProductRailCardHtml(product)).join('') +
     padded.map((product) => flashProductRailCardHtml(product, true)).join('');

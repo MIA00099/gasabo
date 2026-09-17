@@ -38,17 +38,19 @@ const makeProduct = (id: string) => ({
 });
 
 let renderProductDetailPage: any;
+let cleanupProductDetailPage: any;
 let stateEngine: any;
 let apiGet: any;
 let container: HTMLElement;
 
 beforeEach(async () => {
   vi.resetModules(); // fresh module state (the remembered gallery index) per test
-  ({ renderProductDetailPage } = await import('./ProductDetailPage.js'));
+  ({ renderProductDetailPage, cleanupProductDetailPage } = await import('./ProductDetailPage.js'));
   ({ stateEngine } = await import('../../store/stateEngine.js'));
   ({ api: { get: apiGet } } = await import('../../api/client.js') as any);
   apiGet.mockClear();
   openImageLightbox.mockClear();
+  window.scrollTo = vi.fn() as any;
   document.body.innerHTML = '';
   container = document.createElement('div');
   document.body.appendChild(container);
@@ -123,6 +125,28 @@ describe('product gallery selection survives re-renders', () => {
 
     renderProductDetailPage(container, makeProduct('p2')); // different listing
     expect(mainSrc()).toBe('/photo-a.jpg');
+  });
+
+  it('forces the page to the top only when a new product opens', () => {
+    renderProductDetailPage(container, makeProduct('p1'));
+    const firstOpenScrolls = (window.scrollTo as any).mock.calls.length;
+    expect(firstOpenScrolls).toBeGreaterThan(0);
+
+    renderProductDetailPage(container, makeProduct('p1'));
+    expect((window.scrollTo as any).mock.calls.length).toBe(firstOpenScrolls);
+
+    renderProductDetailPage(container, makeProduct('p2'));
+    expect((window.scrollTo as any).mock.calls.length).toBeGreaterThan(firstOpenScrolls);
+  });
+
+  it('allows the same product to force top again after the product page is left', () => {
+    renderProductDetailPage(container, makeProduct('p1'));
+    const firstOpenScrolls = (window.scrollTo as any).mock.calls.length;
+
+    cleanupProductDetailPage();
+    renderProductDetailPage(container, makeProduct('p1'));
+
+    expect((window.scrollTo as any).mock.calls.length).toBeGreaterThan(firstOpenScrolls);
   });
 
   it('opens the current photo in the lightbox on one click', () => {

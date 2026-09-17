@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Same reason as the clock: this view is about to be replaced, and the
     // slider's interval would keep firing against slides that no longer exist.
     cleanupHeroSlider();
-    cleanupProductDetailPage();
+    cleanupProductDetailPage({ preserveTopGuard: state.route.kind === ROUTE_PRODUCT });
 
     // Header Mount
     const headerMount = document.getElementById('header-mount');

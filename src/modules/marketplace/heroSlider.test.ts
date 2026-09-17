@@ -198,6 +198,7 @@ describe('flash deals card', () => {
     expect(HOME).toContain('class="flash-promo-marquee"');
     expect(HOME).toContain('state.productCatalogCache');
     expect(HOME).toContain('FLASH_RAIL_MIN_ITEMS = 8');
+    expect(HOME).toContain('slice(0, FLASH_RAIL_MIN_ITEMS)');
     expect(HOME).toContain('renderFlashProductRail(liveProducts || [])');
     expect(HOME).toContain('class="flash-promo-product-card view-item-btn"');
     expect(HOME).not.toContain('renderFlashPromoImages(state.banners || [])');
@@ -219,6 +220,7 @@ describe('flash deals card', () => {
     expect(CSS).toContain('@supports (-webkit-touch-callout: none)');
     expect(CSS).toContain('contain: none');
     expect(CSS).toContain('-webkit-mask-image: none');
+    expect(CSS).toContain('animation-timing-function: steps(8, end)');
     expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
   });
 

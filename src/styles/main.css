@@ -5073,6 +5073,12 @@ table {
   will-change: transform;
 }
 
+@supports (-webkit-touch-callout: none) {
+  .flash-promo-track {
+    animation-timing-function: steps(8, end);
+  }
+}
+
 .flash-promo-product-card {
   flex: 0 0 138px;
   min-height: 128px;

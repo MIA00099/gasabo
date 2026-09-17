@@ -224,7 +224,7 @@ function flashProductRailCardHtml(product, duplicate = false) {
 }
 
 function renderFlashProductRail(products = []) {
-  const railProducts = (products || []).filter((product) => product && product.id).slice(0, 10);
+  const railProducts = (products || []).filter((product) => product && product.id).slice(0, FLASH_RAIL_MIN_ITEMS);
 
   if (railProducts.length === 0) {
     return `

@@ -220,7 +220,12 @@ describe('flash deals card', () => {
     expect(CSS).toContain('@supports (-webkit-touch-callout: none)');
     expect(CSS).toContain('contain: none');
     expect(CSS).toContain('-webkit-mask-image: none');
-    expect(CSS).toContain('animation-timing-function: steps(8, end)');
+    expect(CSS).toContain('grid-template-columns: repeat(5, minmax(0, 1fr))');
+    expect(CSS).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
+    expect(CSS).toContain('animation: none');
+    expect(CSS).toContain('-webkit-transform: none');
+    expect(CSS).toContain('transform: none');
+    expect(CSS).toContain('.flash-promo-product-card[aria-hidden="true"]');
     expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
   });
 

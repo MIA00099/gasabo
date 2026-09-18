@@ -5075,7 +5075,34 @@ table {
 
 @supports (-webkit-touch-callout: none) {
   .flash-promo-track {
-    animation-timing-function: steps(8, end);
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    animation: none;
+    -webkit-transform: none;
+    transform: none;
+  }
+
+  .flash-promo-product-card {
+    min-width: 0;
+    flex: none;
+  }
+
+  .flash-promo-product-card[aria-hidden="true"],
+  .flash-promo-product-card:nth-of-type(n+6) {
+    display: none;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 767px) {
+    .flash-promo-track {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .flash-promo-product-card:nth-of-type(n+5) {
+      display: none;
+    }
   }
 }
 

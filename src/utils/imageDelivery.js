@@ -1,6 +1,8 @@
 import { API_BASE } from '../api/client.js';
 
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+const AUTO_EAGER_IMAGE_COUNT = 6;
+let renderedImageCount = 0;
 const OPTIMIZABLE_EXT = /\.(?:jpe?g|png|webp)(?:[?#].*)?$/i;
 
 export const IMAGE_WIDTHS = Object.freeze({
@@ -67,6 +69,14 @@ export function responsiveImageAttrs(src, {
   defer = false,
 } = {}) {
   const source = String(src || '');
+  // The first visible product images are usually above the fold. Native lazy
+  // loading can delay them until after layout/scroll heuristics, which makes a
+  // fast page feel unfinished. Eager-load only this small initial budget;
+  // everything after it remains lazy so bandwidth and memory stay bounded.
+  const isInitialViewportImage = loading === 'lazy' && !defer && renderedImageCount < AUTO_EAGER_IMAGE_COUNT;
+  if (!defer) renderedImageCount += 1;
+  const effectiveLoading = isInitialViewportImage ? 'eager' : loading;
+  const effectiveFetchPriority = isInitialViewportImage && !fetchPriority ? 'high' : fetchPriority;
   const candidates = normalizedWidths(widths);
   const canOptimize = canOptimizeImage(source) && candidates.length > 0;
   const fallback = fallbackWidth || candidates[Math.max(0, Math.floor(candidates.length / 2))] || width || 640;
@@ -87,9 +97,9 @@ export function responsiveImageAttrs(src, {
     `alt="${escapeAttr(alt)}"`,
     width ? `width="${Math.round(Number(width))}"` : '',
     height ? `height="${Math.round(Number(height))}"` : '',
-    loading ? `loading="${escapeAttr(loading)}"` : '',
+    effectiveLoading ? `loading="${escapeAttr(effectiveLoading)}"` : '',
     decoding ? `decoding="${escapeAttr(decoding)}"` : '',
-    fetchPriority ? `fetchpriority="${escapeAttr(fetchPriority)}"` : '',
+    effectiveFetchPriority ? `fetchpriority="${escapeAttr(effectiveFetchPriority)}"` : '',
     className ? `class="${escapeAttr(className)}"` : '',
     style ? `style="${escapeAttr(style)}"` : '',
   ].filter(Boolean);

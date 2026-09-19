@@ -40,30 +40,34 @@ export function openImageLightbox(images, title, { startIndex = 0, returnFocusTo
 
   const overlay = document.createElement('div');
   overlay.style.cssText =
-    'position: fixed; inset: 0; background: rgba(2,6,23,0.88); z-index: 9999; ' +
-    'display: flex; align-items: center; justify-content: center; padding: 2rem; ' +
-    'touch-action: none; overscroll-behavior: contain;';
+    'position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; ' +
+    'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
+    'padding: 12px; touch-action: none; overscroll-behavior: contain;';
 
   function paint() {
     overlay.innerHTML = `
-      <div style="position: relative; max-width: min(92vw, 900px); max-height: 90vh; display: flex; flex-direction: column; align-items: center; gap: 0.85rem;">
-        <button type="button" data-modal-close id="lightbox-close-btn" title="Close" aria-label="Close image viewer"
-          style="position: absolute; top: -46px; right: 0; background: rgba(255,255,255,0.12); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 1.1rem; cursor: pointer;">&#10005;</button>
+      <button type="button" data-modal-close id="lightbox-close-btn" title="Close" aria-label="Close image viewer"
+        style="position: fixed; top: 16px; right: 16px; z-index: 10000; background: rgba(0, 0, 0, 0.6); color: #fff; border: 1px solid rgba(255,255,255,0.25); width: 44px; height: 44px; border-radius: 50%; font-size: 1.25rem; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px);">✕</button>
 
+      ${list.length > 1 ? `
+        <button type="button" id="lightbox-prev-btn" aria-label="Previous photo"
+          style="position: fixed; left: 16px; top: 50%; transform: translateY(-50%); z-index: 10000; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.25); width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">&lsaquo;</button>
+        <button type="button" id="lightbox-next-btn" aria-label="Next photo"
+          style="position: fixed; right: 16px; top: 50%; transform: translateY(-50%); z-index: 10000; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.25); width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">&rsaquo;</button>
+      ` : ''}
+
+      <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0;">
         <img src="${escapeHtml(list[idx])}" alt="${escapeHtml(title)}${list.length > 1 ? ` - photo ${idx + 1} of ${list.length}` : ''}"
-          style="max-width: 100%; max-height: 75vh; border-radius: 12px; object-fit: contain; background: #0F172A; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+          style="width: auto; height: auto; max-width: 98vw; max-height: calc(100vh - 90px); object-fit: contain; filter: drop-shadow(0 12px 40px rgba(0,0,0,0.8));">
 
-        <div style="color: #fff; font-weight: 700; font-size: 0.95rem; text-align: center;">${escapeHtml(title)}</div>
-
-        ${list.length > 1 ? `
-          <div style="display: flex; align-items: center; gap: 1rem; color: #fff; font-size: 0.85rem;">
-            <button type="button" id="lightbox-prev-btn" aria-label="Previous photo"
-              style="background: rgba(255,255,255,0.12); color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1.1rem;">&lsaquo;</button>
-            <span aria-live="polite">${idx + 1} / ${list.length}</span>
-            <button type="button" id="lightbox-next-btn" aria-label="Next photo"
-              style="background: rgba(255,255,255,0.12); color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1.1rem;">&rsaquo;</button>
-          </div>
-        ` : ''}
+        <div style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; color: #fff; text-align: center; max-width: 90vw; pointer-events: none;">
+          <div style="font-weight: 700; font-size: 0.95rem; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">${escapeHtml(title)}</div>
+          ${list.length > 1 ? `
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.85); text-shadow: 0 2px 6px rgba(0,0,0,0.9); font-weight: 600;">
+              <span aria-live="polite">${idx + 1} / ${list.length}</span>
+            </div>
+          ` : ''}
+        </div>
       </div>
     `;
 

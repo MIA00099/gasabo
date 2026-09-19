@@ -212,20 +212,13 @@ describe('flash deals card', () => {
     expect(CSS).toContain('.flash-promo-product-card');
     expect(VITE_CONFIG).toContain("cssTarget: 'safari13'");
     expect(CSS).toContain('animation: flash-promo-scroll');
+    expect(CSS).toContain('-webkit-animation: flash-promo-scroll');
     expect(CSS).toContain('animation-play-state: running');
     expect(CSS).toContain('animation-iteration-count: infinite !important');
     expect(CSS).toContain('-webkit-backface-visibility: hidden');
     expect(CSS).toContain('-webkit-transform: translate3d(0, 0, 0)');
-    expect(CSS).toContain('-webkit-touch-callout: none');
-    expect(CSS).toContain('@supports (-webkit-touch-callout: none)');
-    expect(CSS).toContain('contain: none');
-    expect(CSS).toContain('-webkit-mask-image: none');
-    expect(CSS).toContain('grid-template-columns: repeat(5, minmax(0, 1fr))');
-    expect(CSS).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
-    expect(CSS).toContain('animation: none');
-    expect(CSS).toContain('-webkit-transform: none');
-    expect(CSS).toContain('transform: none');
-    expect(CSS).toContain('.flash-promo-product-card[aria-hidden="true"]');
+    expect(CSS).toContain('@-webkit-keyframes flash-promo-scroll');
+    expect(CSS).toContain('@keyframes flash-promo-scroll');
     expect(CSS).toContain('@media (prefers-reduced-motion: reduce)');
   });
 

@@ -5041,18 +5041,8 @@ table {
 .flash-promo-marquee {
   margin-inline: -14px;
   overflow: hidden;
-  contain: paint;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
-}
-
-@supports (-webkit-touch-callout: none) {
-  .flash-promo-marquee {
-    margin-inline: 0;
-    contain: none;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
 }
 
 .flash-promo-track {
@@ -5066,44 +5056,13 @@ table {
      counts as :hover and stuck the marquee until you tapped elsewhere. Links
      inside stay clickable while it moves. */
   animation: flash-promo-scroll 48s linear infinite;
+  -webkit-animation: flash-promo-scroll 48s linear infinite;
   animation-play-state: running;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
   will-change: transform;
-}
-
-@supports (-webkit-touch-callout: none) {
-  .flash-promo-track {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    animation: none;
-    -webkit-transform: none;
-    transform: none;
-  }
-
-  .flash-promo-product-card {
-    min-width: 0;
-    flex: none;
-  }
-
-  .flash-promo-product-card[aria-hidden="true"],
-  .flash-promo-product-card:nth-of-type(n+6) {
-    display: none;
-  }
-}
-
-@supports (-webkit-touch-callout: none) {
-  @media (max-width: 767px) {
-    .flash-promo-track {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .flash-promo-product-card:nth-of-type(n+5) {
-      display: none;
-    }
-  }
 }
 
 .flash-promo-product-card {
@@ -5121,6 +5080,8 @@ table {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .flash-promo-product-img {
@@ -5187,15 +5148,24 @@ table {
   font-weight: 700;
 }
 
-@keyframes flash-promo-scroll {
+@-webkit-keyframes flash-promo-scroll {
   from {
+    -webkit-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
   }
   to {
-    /* The track is the promo list rendered twice. A plain -50% lands half a
-       flex `gap` (0.5rem) short of where the second copy begins, so every
-       loop jumped ~4px - the "it speeds up when it ends" flick. Travel the
-       extra half-gap so copy 2 sits exactly where copy 1 started: seamless. */
+    -webkit-transform: translate3d(calc(-50% - 0.25rem), 0, 0);
+    transform: translate3d(calc(-50% - 0.25rem), 0, 0);
+  }
+}
+
+@keyframes flash-promo-scroll {
+  from {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    -webkit-transform: translate3d(calc(-50% - 0.25rem), 0, 0);
     transform: translate3d(calc(-50% - 0.25rem), 0, 0);
   }
 }

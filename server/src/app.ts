@@ -64,7 +64,25 @@ app.use(cors({
     return callback(null, false);
   },
 }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+
+// Public read endpoints are safe to cache briefly at browsers/CDNs. Keep
+// authenticated/admin traffic private so permissions and account changes are
+// never served from a stale shared cache.
+app.use('/api', (req, res, next) => {
+  const isPublicRead = req.method === 'GET' && !req.headers.authorization && (
+    req.path.startsWith('/products') ||
+    req.path.startsWith('/categories') ||
+    req.path.startsWith('/advertisements') ||
+    req.path.startsWith('/realestate')
+  );
+  if (isPublicRead) {
+    res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=300');
+  } else {
+    res.setHeader('Cache-Control', 'no-store');
+  }
+  next();
+});
 
 // Serves files saved by uploadsRouter (POST /api/uploads) - e.g. a saved
 // file at server/uploads/169..-abc.jpg becomes reachable at /uploads/169..-abc.jpg.

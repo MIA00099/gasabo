@@ -57,6 +57,11 @@ const WITH_LIKES = { _count: { select: { likes: true } } } as const;
 // GET /api/products - public listing with optional filters
 productsRouter.get('/', async (req, res) => {
   const { category, district, search } = req.query as Record<string, string | undefined>;
+  // Bound public catalog responses. This prevents one request from loading the
+  // entire marketplace into Node memory as inventory grows, while preserving
+  // today's UI (the homepage only needs a small product set).
+  const rawLimit = Number(req.query.limit);
+  const limit = Number.isFinite(rawLimit) ? Math.min(100, Math.max(1, Math.floor(rawLimit))) : 60;
 
   const products = await prisma.product.findMany({
     where: {
@@ -99,6 +104,7 @@ productsRouter.get('/', async (req, res) => {
     // before, they were saved but the catalog ignored them, so marking a listing
     // featured had no visible effect.
     orderBy: [{ isFeatured: 'desc' }, { isTrending: 'desc' }, { createdAt: 'desc' }],
+    take: limit,
   });
 
   res.json({ products: products.map(serializeProduct) });

@@ -4496,7 +4496,7 @@ table {
         justify-content: flex-start;
         height: auto;
         min-height: 0;
-        border-radius: 0 0 0 32px;
+        border-radius: 0;
         padding: 16px 0 0;
         overflow: hidden;
     }

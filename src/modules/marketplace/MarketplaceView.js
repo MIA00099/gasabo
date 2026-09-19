@@ -182,6 +182,7 @@ const CATEGORY_TILE_CLASS = 'flex flex-col items-center gap-2 flex-1 min-w-[92px
 const CATEGORY_ICON_FRAME_CLASS = 'cat-tile-icon w-[72px] h-[72px] rounded-full flex items-center justify-center overflow-hidden shrink-0 transition transform group-hover:scale-105';
 const CATEGORY_ICON_SIZE = 72;
 const FLASH_RAIL_MIN_ITEMS = 8;
+const FLASH_RAIL_PAGE_SIZE = 4;
 
 // Grey circles, no labels. Deliberately not category-shaped placeholder
 // objects: the previous version of this strip rendered invented names
@@ -239,8 +240,27 @@ function renderFlashProductRail(products = []) {
     ? railProducts
     : Array.from({ length: FLASH_RAIL_MIN_ITEMS }, (_, i) => railProducts[i % railProducts.length]);
 
-  return padded.map((product) => flashProductRailCardHtml(product)).join('') +
+  const marqueeCards = padded.map((product) => flashProductRailCardHtml(product)).join('') +
     padded.map((product) => flashProductRailCardHtml(product, true)).join('');
+  const pages = [];
+  for (let i = 0; i < padded.length; i += FLASH_RAIL_PAGE_SIZE) {
+    pages.push(padded.slice(i, i + FLASH_RAIL_PAGE_SIZE));
+  }
+  const pageCount = pages.length || 1;
+  const pagedCards = [...pages, pages[0]].map((page, pageIndex) => `
+    <div class="flash-promo-page">
+      ${page.map((product) => flashProductRailCardHtml(product, pageIndex === pageCount)).join('')}
+    </div>
+  `).join('');
+
+  return `
+    <div class="flash-promo-track">
+      ${marqueeCards}
+    </div>
+    <div class="flash-promo-paged-track" style="--flash-page-count: ${pageCount}; --flash-page-duration: ${Math.max(pageCount * 6, 12)}s;">
+      ${pagedCards}
+    </div>
+  `;
 }
 
 let flashClockTimer = null;

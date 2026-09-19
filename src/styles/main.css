@@ -5051,12 +5051,12 @@ table {
   gap: 0.5rem;
   padding: 0.1rem 0;
   align-items: stretch;
-  /* 48s (was 30s) is a calm reading pace rather than a rush. The rail loops
+  /* 24s provides a smooth, normal ticker pace for moving products. The rail loops
      continuously and is NOT paused on hover or tap: on a touch screen a tap
      counts as :hover and stuck the marquee until you tapped elsewhere. Links
      inside stay clickable while it moves. */
-  animation: flash-promo-scroll 48s linear infinite;
-  -webkit-animation: flash-promo-scroll 48s linear infinite;
+  animation: flash-promo-scroll 24s linear infinite;
+  -webkit-animation: flash-promo-scroll 24s linear infinite;
   animation-play-state: running;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -5173,7 +5173,7 @@ table {
 @media (prefers-reduced-motion: reduce) {
   .flash-promo-track {
     animation-name: flash-promo-scroll !important;
-    animation-duration: 48s !important;
+    animation-duration: 24s !important;
     animation-timing-function: linear !important;
     animation-iteration-count: infinite !important;
     animation-play-state: running !important;

@@ -4310,6 +4310,8 @@ table {
     display: flex;
     align-items: center;
     isolation: isolate;
+    perspective: 1200px;
+    transform-style: preserve-3d;
 }
 
 /*
@@ -4391,18 +4393,27 @@ table {
     height: 100%;
     opacity: 0;
     visibility: hidden;
-    transform: none;
-    transition: opacity var(--hero-fade-ms) ease, visibility 0s linear var(--hero-fade-ms);
+    transform: translateX(48%) rotateY(-22deg) scale(0.88);
+    transform-origin: right center;
+    transition:
+        opacity var(--hero-fade-ms) ease,
+        transform 1200ms cubic-bezier(.22, 1, .36, 1),
+        visibility 0s linear var(--hero-fade-ms);
     z-index: 1;
     pointer-events: none;
+    backface-visibility: hidden;
+    will-change: transform, opacity;
 }
 
 .slide.active {
     opacity: 1;
     visibility: visible;
     z-index: 2;
-    transform: none;
-    transition: opacity var(--hero-fade-ms) ease, visibility 0s linear 0s;
+    transform: translateX(0) rotateY(0deg) scale(1);
+    transition:
+        opacity var(--hero-fade-ms) ease,
+        transform 1200ms cubic-bezier(.22, 1, .36, 1),
+        visibility 0s linear 0s;
     pointer-events: auto;
 }
 

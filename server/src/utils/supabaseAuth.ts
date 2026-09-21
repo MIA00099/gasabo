@@ -48,12 +48,12 @@ async function ensureSupabaseAuthUser(email: string, name: string) {
   }
 }
 
-export async function sendSellerPasswordResetLink(input: { email: string; name: string }) {
+export async function sendSellerPasswordResetLink(input: { email: string; name: string; redirectTo: string }) {
   const supabase = configuredClient();
   await ensureSupabaseAuthUser(input.email, input.name);
 
   const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
-    redirectTo: `${env.PUBLIC_SITE_URL}/reset-password`,
+    redirectTo: input.redirectTo,
   });
   if (error) throw error;
 }

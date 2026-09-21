@@ -42,6 +42,13 @@ describe('ResetPasswordView', () => {
     expect(container.querySelector('#reset-password-form')).toBeNull();
   });
 
+  it('shows Supabase expired-link errors clearly', async () => {
+    const container = await renderReset('/reset-password#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');
+
+    expect(container.textContent).toContain('Email link is invalid or has expired');
+    expect(container.querySelector('#reset-password-form')).toBeNull();
+  });
+
   it('validates matching passwords before completing the reset', async () => {
     const container = await renderReset();
 

@@ -7,6 +7,16 @@ function recoveryAccessToken() {
   return hash.get('access_token') || query.get('access_token') || '';
 }
 
+function recoveryLinkError() {
+  const hash = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+  const query = new URLSearchParams(String(window.location.search || '').replace(/^\?/, ''));
+  const description = hash.get('error_description') || query.get('error_description');
+  const code = hash.get('error_code') || query.get('error_code');
+  if (description) return description;
+  if (code === 'otp_expired') return 'Email link is invalid or has expired.';
+  return '';
+}
+
 export function renderResetPasswordView(container) {
   let newPassword = '';
   let confirmPassword = '';
@@ -15,6 +25,7 @@ export function renderResetPasswordView(container) {
   let errorMessage = '';
   let successMessage = '';
   const accessToken = recoveryAccessToken();
+  const linkError = recoveryLinkError();
 
   function captureInputs() {
     const passInput = container.querySelector('#reset-new-password');
@@ -46,7 +57,7 @@ export function renderResetPasswordView(container) {
 
           ${missingToken ? `
             <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-semibold mb-4">
-              This reset link is missing or expired. Request a new password reset email.
+              ${escapeHtml(linkError || 'This reset link is missing or expired. Request a new password reset email.')}
             </div>
             <button type="button" id="reset-signin-btn" class="w-full bg-brand-green text-white font-bold py-3 rounded-xl hover:bg-green-800 transition shadow-md text-sm">
               Back to sign in

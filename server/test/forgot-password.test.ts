@@ -58,7 +58,11 @@ beforeEach(() => {
   mocks.signInWithSupabasePassword.mockReset().mockResolvedValue(false);
 });
 
-const postForgot = (body: string | object | undefined) => request(app).post('/api/auth/forgot-password').send(body);
+function postForgot(body: string | object | undefined, headers: Record<string, string> = {}) {
+  const req = request(app).post('/api/auth/forgot-password');
+  for (const [key, value] of Object.entries(headers)) req.set(key, value);
+  return req.send(body);
+}
 
 describe('POST /api/auth/forgot-password', () => {
   it('needs no authentication - the caller is locked out', async () => {
@@ -80,7 +84,7 @@ describe('POST /api/auth/forgot-password', () => {
   });
 
   it('sends a Supabase recovery email for an active seller account', async () => {
-    const res = await postForgot({ email: sellerEmail });
+    const res = await postForgot({ email: sellerEmail }, { Host: 'www.kigalimarket.com' });
 
     expect(res.status).toBe(200);
     expect(res.body.message).toContain('password reset email has been sent');
@@ -88,6 +92,7 @@ describe('POST /api/auth/forgot-password', () => {
     expect(mocks.sendSellerPasswordResetLink).toHaveBeenCalledWith({
       email: sellerEmail,
       name: 'Forgot Seller',
+      redirectTo: 'https://www.kigalimarket.com/reset-password',
     });
   });
 

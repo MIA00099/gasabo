@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '../config/db.js';
+import { env } from '../config/env.js';
 import { signToken, requireAuth } from '../middleware/auth.js';
 import { fullPermissions, permissionsFromModuleList } from '../utils/permissions.js';
 import { logAudit } from '../utils/audit.js';
@@ -160,6 +161,28 @@ const FORGOT_PASSWORD_REPLY =
   'If that email belongs to an active seller account, a password reset email has been sent. ' +
   'Open the email link to choose a new password.';
 
+function firstHeaderValue(value: string | string[] | undefined): string {
+  return String(Array.isArray(value) ? value[0] : value || '').split(',')[0].trim();
+}
+
+function configuredPublicOrigin(): string {
+  return env.PUBLIC_SITE_URL.replace(/\/+$/, '');
+}
+
+function resetPasswordRedirectUrl(req: any): string {
+  const forwardedHost = firstHeaderValue(req.headers['x-forwarded-host']);
+  const host = (forwardedHost || firstHeaderValue(req.headers.host)).toLowerCase();
+
+  // Prefer the actual public domain that received this request. This keeps a
+  // bad environment value like http://localhost:3000 from leaking into seller
+  // reset emails on production traffic.
+  if (/^(www\.)?kigalimarket\.com(?::\d+)?$/i.test(host)) {
+    return `https://${host}/reset-password`;
+  }
+
+  return `${configuredPublicOrigin()}/reset-password`;
+}
+
 /**
  * "Forgot password?" on the sign-in screen.
  *
@@ -185,7 +208,11 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
 
   if (seller && seller.status !== 'SUSPENDED') {
     try {
-      await sendSellerPasswordResetLink({ email: seller.email, name: seller.businessName });
+      await sendSellerPasswordResetLink({
+        email: seller.email,
+        name: seller.businessName,
+        redirectTo: resetPasswordRedirectUrl(req),
+      });
       await logAudit({
         actorId: seller.id,
         actorType: 'SELLER',

@@ -61,9 +61,23 @@ const FLAT_ROUTES = {
   '/contact': ROUTE_CONTACT,
 };
 
+function isPasswordRecoveryHash(hash = '') {
+  const raw = String(hash || '').replace(/^#/, '');
+  if (!raw) return false;
+  const params = new URLSearchParams(raw);
+  return params.has('access_token') ||
+    params.get('type') === 'recovery' ||
+    params.has('error_code') ||
+    params.has('error_description');
+}
+
 /** Read the current address bar into a route descriptor. */
-export function parseLocation(pathname = window.location.pathname) {
+export function parseLocation(pathname = window.location.pathname, hash = window.location.hash) {
   const clean = pathname.replace(/\/+$/, '') || '/';
+
+  if (clean === '/' && isPasswordRecoveryHash(hash)) {
+    return { kind: ROUTE_RESET_PASSWORD, id: null };
+  }
 
   const listing = clean.match(LISTING_PATH);
   if (listing) return { kind: listing[1], id: listing[2] };

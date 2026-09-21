@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   ROUTE_ABOUT, ROUTE_AUTH, ROUTE_CONTACT, ROUTE_FAQS, ROUTE_FLASH_DEALS, ROUTE_HELP_CENTER, ROUTE_POST_AD,
-  ROUTE_PRIVACY, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_TERMS, parseLocation,
+  ROUTE_PRIVACY, ROUTE_PRODUCTS, ROUTE_RESET_PASSWORD, ROUTE_STORES, ROUTE_TERMS, parseLocation,
 } from './router.js';
 
 const g = globalThis as any;
@@ -72,6 +72,11 @@ describe('flat route adoption', () => {
     stateEngine.setRoute({ kind: ROUTE_AUTH, id: null });
 
     expect(stateEngine.getState().activePortal).toBe('login');
+  });
+
+  it('routes Supabase recovery hashes to the reset password page', () => {
+    expect(parseLocation('/', '#access_token=recovery-token&type=recovery')).toEqual({ kind: ROUTE_RESET_PASSWORD, id: null });
+    expect(parseLocation('/', '#error=access_denied&error_code=otp_expired')).toEqual({ kind: ROUTE_RESET_PASSWORD, id: null });
   });
 
   it('opens /post-ad as signup for guests and seller portal for sellers', () => {

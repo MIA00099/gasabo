@@ -280,7 +280,11 @@ rbacRouter.post('/sub-admins/:id/request-delete', requireAuth, requirePermission
   res.status(201).json({ request });
 });
 
-rbacRouter.post('/users/:id/request-permission-change', requireAuth, requirePermission('USERS'), async (req, res) => {
+// Role assignment is owned exclusively by the central Administrator. The
+// request is still only a proposal: a different account with APPROVALS
+// clearance (normally the fixed Approval Admin) must approve it before the
+// new permission set is written to the SubAdministrator row.
+rbacRouter.post('/users/:id/request-permission-change', requireAuth, requireRole('ADMINISTRATOR'), async (req, res) => {
   // Only Sub-Administrators have an editable permissions field - a full
   // Administrator's permissions are hardcoded to "everything" (see
   // fullPermissions() in utils/permissions.ts) and can't be reduced, so

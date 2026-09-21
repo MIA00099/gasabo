@@ -327,12 +327,12 @@ describe('Approval-only admins', () => {
         email: `approval-only-${suffix()}@test.local`,
         passwordHash: 'not-used',
         name: 'Approval Only Admin',
-        permissions: JSON.stringify(['APPROVALS']),
+        permissions: JSON.stringify(['APPROVALS', 'PRODUCT_APPROVAL']),
         mustChangePassword: true,
         createdById: adminId,
       },
     });
-    expect(JSON.parse(approvalAccount.permissions)).toEqual(['APPROVALS']);
+    expect(JSON.parse(approvalAccount.permissions)).toEqual(['APPROVALS', 'PRODUCT_APPROVAL']);
     expect(approvalAccount.mustChangePassword).toBe(true);
 
     const approvalOnlyToken = tokenFor({

@@ -45,13 +45,14 @@ const RBAC_USERS_REFRESH_MS = 10_000;
 
 function isApprovalOnlyUser(user) {
   const permissions = user?.permissions || {};
+  const allowedApprovalKeys = new Set(['approvals', 'product_approval']);
   return user?.role !== 'administrator' &&
     permissions.approvals === true &&
-    Object.entries(permissions).every(([key, allowed]) => key === 'approvals' ? allowed === true : allowed === false);
+    Object.entries(permissions).every(([key, allowed]) => allowedApprovalKeys.has(key) ? allowed === true : allowed === false);
 }
 
 function userRoleLabel(user) {
-  if (isApprovalOnlyUser(user)) return 'APPROVAL-ONLY ADMIN';
+  if (isApprovalOnlyUser(user)) return 'APPROVAL ADMIN';
   return String(user.role || '').replace('_', ' ').toUpperCase();
 }
 
@@ -173,7 +174,7 @@ export function renderUserRBACAdmin(container) {
                     </div>
                     ${approvalOnly ? `
                       <div style="font-size: 0.78rem; color: #047857; font-weight: 700; margin-top: 0.35rem;">
-                        Approval-only: can approve/reject Multi-Admin requests, with no other module access.
+                        Approval account: can approve/reject Multi-Admin requests and pending seller products, with no other module access.
                       </div>
                     ` : ''}
                     ${isSuspended ? `
@@ -236,7 +237,7 @@ export function renderUserRBACAdmin(container) {
                     ${u.role === 'administrator'
                       ? 'Central Administrator Permissions (full access)'
                       : approvalOnly
-                        ? 'Approval-Only Access (fixed to Multi-Admin Approvals)'
+                        ? 'Approval Access (fixed to Multi-Admin + Product Approvals)'
                         : 'Assigned Module Access Permissions - toggle to set the requested permission set'}
                   </div>
 

@@ -35,7 +35,7 @@ async function main() {
     update: {
       name: 'Approval Account',
       passwordHash,
-      permissions: JSON.stringify(['APPROVALS']),
+      permissions: JSON.stringify(['APPROVALS', 'PRODUCT_APPROVAL']),
       status: 'ACTIVE',
       mustChangePassword: true,
     },
@@ -43,7 +43,7 @@ async function main() {
       email: 'approvals@kigalimarket.com',
       passwordHash,
       name: 'Approval Account',
-      permissions: JSON.stringify(['APPROVALS']),
+      permissions: JSON.stringify(['APPROVALS', 'PRODUCT_APPROVAL']),
       mustChangePassword: true,
       createdById: admin.id,
     },

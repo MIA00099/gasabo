@@ -38,10 +38,10 @@ Seeded by `npm run db:seed`. All accounts share the password **`Kigali@2026`**.
 | Seller | `patrick.tech@kigali.rw` |
 
 The Main Administrator is the only full-access admin. The Approval Account is a
-sub-administrator with approval permissions only and must set its own password
-after the first sign-in. Log in via the header "Login" button (works for any
-account type above) or register a new seller via "Start Selling" on the
-Marketplace page.
+sub-administrator limited to approval work: Multi-Admin approvals and pending
+seller product approvals. It must set its own password after the first sign-in.
+Log in via the header "Login" button (works for any account type above) or
+register a new seller via "Start Selling" on the Marketplace page.
 
 ## Production build
 

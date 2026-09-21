@@ -149,7 +149,11 @@ export function renderUserRBACAdmin(container) {
                 r => r.targetId === u.id && r.status === 'PENDING' && r.actionType === 'CHANGE_ADMIN_PERMISSIONS'
               );
               const approvalOnly = isApprovalOnlyUser(u);
-              const canEditPermissions = u.role !== 'administrator' && !approvalOnly;
+              // Only the Main Admin owns role assignment. Other sub-admins
+              // may view the matrix, but cannot propose permission changes.
+              // The Approval Admin approves the Main Admin's request in the
+              // separate Multi-Admin Approvals workflow.
+              const canEditPermissions = isFullAdmin && u.role !== 'administrator' && !approvalOnly;
               const isSuspended = u.status === 'suspended';
               const isCurrentUser = u.id === state.currentUser?.id;
               const cardAccent = approvalOnly ? '#059669' : (u.role==='administrator' ? 'var(--accent-gold)' : '#8b5cf6');
@@ -204,11 +208,11 @@ export function renderUserRBACAdmin(container) {
                       ` : ''}
                       ${approvalOnly ? `
                         <span class="badge" style="background: #ECFDF5; color: #047857; font-weight: 800; align-self: center;">Locked to approvals</span>
-                      ` : `
+                      ` : isFullAdmin ? `
                         <button class="btn btn-sm btn-secondary req-perm-change-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
                           Request permission change
                         </button>
-                      `}
+                      ` : ''}
                       ${isFullAdmin ? `
                         <button class="btn btn-sm btn-danger del-subadmin-direct-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
                           Delete account
@@ -238,7 +242,9 @@ export function renderUserRBACAdmin(container) {
                       ? 'Central Administrator Permissions (full access)'
                       : approvalOnly
                         ? 'Approval Access (fixed to Multi-Admin + Product Approvals)'
-                        : 'Assigned Module Access Permissions - toggle to set the requested permission set'}
+                        : isFullAdmin
+                          ? 'Assigned Module Access Permissions - toggle to set the requested permission set'
+                          : 'Assigned Module Access Permissions (Main Admin manages changes)'}
                   </div>
 
                   <div class="grid-4" style="gap: 0.75rem;">

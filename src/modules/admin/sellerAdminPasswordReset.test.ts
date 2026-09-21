@@ -2,25 +2,29 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
+  const sellerFixture = () => [
+    {
+      id: 'seller-1',
+      name: 'Musanze Coffee',
+      email: 'seller@test.local',
+      phone: '+250700000001',
+      district: 'Gasabo',
+      status: 'active',
+      joinedDate: new Date('2026-01-01T00:00:00Z').toISOString(),
+      productsCount: 3,
+      passwordResetRequestedAt: null,
+    },
+  ];
+
   const state = {
     loading: { sellers: false },
     error: null,
-    sellers: [
-      {
-        id: 'seller-1',
-        name: 'Musanze Coffee',
-        email: 'seller@test.local',
-        phone: '+250700000001',
-        district: 'Gasabo',
-        status: 'active',
-        joinedDate: new Date('2026-01-01T00:00:00Z').toISOString(),
-        productsCount: 3,
-      },
-    ],
+    sellers: sellerFixture(),
   };
 
   return {
     state,
+    sellerFixture,
     loadSellers: vi.fn(),
     resetSellerPassword: vi.fn(),
     changeSellerEmail: vi.fn(),
@@ -60,9 +64,23 @@ beforeEach(() => {
   mocks.requestDeleteSeller.mockReset();
   mocks.state.loading = { sellers: false };
   mocks.state.error = null;
+  mocks.state.sellers = mocks.sellerFixture();
 });
 
 describe('seller admin password reset', () => {
+  it('highlights sellers who requested password reset help', async () => {
+    mocks.state.sellers = [{
+      ...mocks.sellerFixture()[0],
+      passwordResetRequestedAt: '2026-09-21T10:15:00.000Z',
+    }];
+
+    const container = await renderAdmin();
+
+    expect(container.querySelector('#seller-reset-request-alert')!.textContent).toContain('1 seller password reset request pending');
+    expect(container.textContent).toContain('Password reset requested');
+    expect(container.textContent).toContain('Reset password');
+  });
+
   it('shows the generated temporary password in-page after resetting a seller', async () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     let finish!: () => void;

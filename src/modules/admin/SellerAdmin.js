@@ -16,6 +16,7 @@ export function renderSellerAdmin(container) {
 
     const sellers = state.sellers;
     const loading = !!state.loading.sellers || !attempted;
+    const resetRequestCount = sellers.filter((s) => s.passwordResetRequestedAt).length;
 
     container.innerHTML = `
       <div>
@@ -27,6 +28,13 @@ export function renderSellerAdmin(container) {
             </p>
           </div>
         </div>
+
+        ${!loading && resetRequestCount > 0 ? `
+          <div id="seller-reset-request-alert" style="background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;padding:1rem 1.25rem;border-radius:12px;margin-bottom:1.5rem;">
+            <div style="font-size:0.92rem;font-weight:900;">${resetRequestCount} seller password reset request${resetRequestCount === 1 ? '' : 's'} pending</div>
+            <div style="font-size:0.8rem;margin-top:0.25rem;">Use the highlighted seller row and click Reset password to create a temporary password.</div>
+          </div>
+        ` : ''}
 
         ${state.error ? `
           <div class="adm-inline-alert">
@@ -79,6 +87,12 @@ export function renderSellerAdmin(container) {
                       <div>
                         <div style="font-weight: 600; color: #0F172A;">${escapeHtml(s.name)}</div>
                         <div style="font-size: 0.78rem; color: #64748B;">ID: ${s.id}</div>
+                        ${s.passwordResetRequestedAt ? `
+                          <div style="display:inline-flex;align-items:center;gap:0.35rem;margin-top:0.35rem;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;border-radius:9999px;padding:0.25rem 0.55rem;font-size:0.72rem;font-weight:900;">
+                            🔑 Password reset requested
+                          </div>
+                          <div style="font-size:0.72rem;color:#92400E;margin-top:0.25rem;">${escapeHtml(formatResetRequestTime(s.passwordResetRequestedAt))}</div>
+                        ` : ''}
                       </div>
                     </div>
                   </td>
@@ -246,4 +260,10 @@ function escapeHtml(str) {
   return str.replace(/[&<>"']/g, function(m) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
   });
+}
+
+function formatResetRequestTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Requested recently';
+  return `Requested ${date.toLocaleString()}`;
 }

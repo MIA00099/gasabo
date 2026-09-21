@@ -1202,7 +1202,22 @@ class StateEngine {
   }
 
   async resetSellerPassword(sellerId) {
-    return this._run('sellers', () => api.post(`/sellers/${sellerId}/reset-password`, {}));
+    return this._run('sellers', async () => {
+      const result = await api.post(`/sellers/${sellerId}/reset-password`, {});
+      const seller = this.data.sellers.find((s) => s.id === sellerId);
+      this.data.sellers = this.data.sellers.map((s) => (
+        s.id === sellerId ? { ...s, passwordResetRequestedAt: null } : s
+      ));
+      if (seller?.email) {
+        this.data.notifications = this.data.notifications.map((n) => (
+          n.type === 'PASSWORD_RESET_REQUEST' && String(n.message || '').includes(`(${seller.email})`)
+            ? { ...n, isRead: true }
+            : n
+        ));
+      }
+      this.notify();
+      return result;
+    });
   }
 
   async toggleSellerStatus(sellerId) {

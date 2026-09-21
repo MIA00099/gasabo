@@ -23,10 +23,12 @@ import request from 'supertest';
 import bcrypt from 'bcryptjs';
 import { app } from '../src/app.js';
 import { prisma } from '../src/config/db.js';
+import { signToken, type AuthUser } from '../src/middleware/auth.js';
 
 let sellerEmail: string;
 let sellerId: string;
 let adminId: string;
+let adminToken: string;
 let scopedSubAdminId: string;
 let unscopedSubAdminId: string;
 
@@ -50,6 +52,7 @@ beforeAll(async () => {
     data: { email: `forgot-admin-${stamp}@test.local`, passwordHash, name: 'Forgot Admin', role: 'ADMINISTRATOR' },
   });
   adminId = admin.id;
+  adminToken = signToken({ id: admin.id, email: admin.email, name: admin.name, role: 'ADMINISTRATOR' } as AuthUser);
 
   const scoped = await prisma.subAdministrator.create({
     data: {
@@ -75,6 +78,7 @@ beforeAll(async () => {
 });
 
 const post = (body: string | object | undefined) => request(app).post('/api/auth/forgot-password').send(body);
+const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 describe('POST /api/auth/forgot-password', () => {
   it('needs no authentication - the caller is locked out', async () => {
@@ -154,6 +158,46 @@ describe('POST /api/auth/forgot-password', () => {
 
     expect(afterFirst).toBeGreaterThan(0);
     expect(afterThree, 'repeat requests created more notifications').toBe(afterFirst);
+  });
+
+  it('surfaces the pending request inside Seller Management', async () => {
+    const email = `forgot-visible-${Date.now()}@test.local`;
+    const seller = await prisma.seller.create({
+      data: { email, passwordHash: 'x', businessName: 'Visible Reset', contactPhone: '+250 700 000 005', district: 'Gasabo' },
+    });
+
+    await post({ email });
+
+    const res = await request(app).get('/api/sellers').set(auth(adminToken));
+    expect(res.status).toBe(200);
+    const row = res.body.sellers.find((s: any) => s.id === seller.id);
+    expect(row).toBeTruthy();
+    expect(row.passwordResetRequestedAt).toEqual(expect.any(String));
+  });
+
+  it('clears the pending request when an admin resets the seller password', async () => {
+    const email = `forgot-resolved-${Date.now()}@test.local`;
+    const seller = await prisma.seller.create({
+      data: { email, passwordHash: 'x', businessName: 'Resolve Reset', contactPhone: '+250 700 000 006', district: 'Gasabo' },
+    });
+
+    await post({ email });
+
+    const reset = await request(app)
+      .post(`/api/sellers/${seller.id}/reset-password`)
+      .set(auth(adminToken))
+      .send({});
+    expect(reset.status).toBe(200);
+    expect(reset.body.tempPassword).toEqual(expect.any(String));
+
+    const unread = await prisma.notification.count({
+      where: { type: 'PASSWORD_RESET_REQUEST', isRead: false, message: { contains: email } },
+    });
+    expect(unread).toBe(0);
+
+    const sellers = await request(app).get('/api/sellers').set(auth(adminToken));
+    const row = sellers.body.sellers.find((s: any) => s.id === seller.id);
+    expect(row.passwordResetRequestedAt).toBeNull();
   });
 
   it('leaves the password alone - this only asks for a reset', async () => {

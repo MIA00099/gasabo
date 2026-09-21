@@ -96,10 +96,26 @@ sellersRouter.get('/public', async (_req, res) => {
 });
 
 sellersRouter.get('/', requireAuth, requirePermission('SELLERS'), async (_req, res) => {
-  const sellers = await prisma.seller.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: { _count: { select: { products: true } } },
-  });
+  const [sellers, resetRequests] = await Promise.all([
+    prisma.seller.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { _count: { select: { products: true } } },
+    }),
+    prisma.notification.findMany({
+      where: { type: 'PASSWORD_RESET_REQUEST', isRead: false },
+      select: { message: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ]);
+
+  const resetRequestByEmail = new Map<string, Date>();
+  for (const request of resetRequests) {
+    const match = request.message.match(/\(([^()\s@]+@[^()\s@]+)\)/);
+    if (match?.[1] && !resetRequestByEmail.has(match[1])) {
+      resetRequestByEmail.set(match[1], request.createdAt);
+    }
+  }
+
   res.json({
     sellers: sellers.map((s) => ({
       id: s.id,
@@ -110,6 +126,7 @@ sellersRouter.get('/', requireAuth, requirePermission('SELLERS'), async (_req, r
       status: s.status.toLowerCase(),
       joinedDate: s.createdAt,
       productsCount: s._count.products,
+      passwordResetRequestedAt: resetRequestByEmail.get(s.email) || null,
     })),
   });
 });
@@ -121,7 +138,17 @@ sellersRouter.post('/:id/reset-password', requireAuth, requirePermission('SELLER
   const tempPassword = generateTemporaryPassword();
   const bcrypt = await import('bcryptjs');
   const passwordHash = await bcrypt.default.hash(tempPassword, 10);
-  await prisma.seller.update({ where: { id: seller.id }, data: { passwordHash } });
+  await prisma.$transaction([
+    prisma.seller.update({ where: { id: seller.id }, data: { passwordHash } }),
+    prisma.notification.updateMany({
+      where: {
+        type: 'PASSWORD_RESET_REQUEST',
+        isRead: false,
+        message: { contains: `(${seller.email})` },
+      },
+      data: { isRead: true },
+    }),
+  ]);
 
   await logAudit({
     actorId: req.user!.id,

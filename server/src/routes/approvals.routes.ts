@@ -40,6 +40,7 @@ async function executeApprovedAction(req: {
         name: req.targetName,
         email: req.pendingEmail,
         passwordHash: req.pendingPasswordHash,
+        mustChangePassword: true,
         permissions: req.newPermissions ?? '[]',
         createdById: req.requestedById,
       },

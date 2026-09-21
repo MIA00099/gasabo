@@ -71,7 +71,7 @@ describe('Real Estate admin property modal', () => {
 
     container.querySelector<HTMLButtonElement>('#admin-add-property-btn')!.click();
 
-    expect(document.body.textContent).toContain('Add Property Listing');
+    expect(document.body.textContent).toContain('Add property listing');
     expect(document.querySelector<HTMLInputElement>('input[name="title"]')).toBeTruthy();
   });
 
@@ -80,7 +80,7 @@ describe('Real Estate admin property modal', () => {
 
     container.querySelector<HTMLButtonElement>('.edit-property-btn')!.click();
 
-    expect(document.body.textContent).toContain('Edit Property Listing');
+    expect(document.body.textContent).toContain('Edit property listing');
     expect(document.querySelector<HTMLInputElement>('input[name="title"]')!.value).toBe('home');
     expect(document.querySelector<HTMLInputElement>('input[name="price"]')!.value).toBe('20000000');
   });

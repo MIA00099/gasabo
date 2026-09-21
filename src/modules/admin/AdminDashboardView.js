@@ -9,6 +9,7 @@ import { renderApprovalWorkflowAdmin } from './ApprovalWorkflowAdmin.js';
 import { renderUserRBACAdmin } from './UserRBACAdmin.js';
 import { renderSecurityAuditAdmin } from './SecurityAuditAdmin.js';
 import { renderContactMessagesAdmin } from './ContactMessagesAdmin.js';
+import { showAdminForm, showAdminToast } from './adminDialog.js';
 
 export function renderAdminDashboardView(container) {
   const state = stateEngine.getState();
@@ -18,6 +19,10 @@ export function renderAdminDashboardView(container) {
   // Sub-Administrator session before rendering anything sensitive.
   if (!stateEngine.isAdmin()) {
     renderAdminLoginGate(container);
+    return;
+  }
+  if (state.currentUser?.mustChangePassword) {
+    renderAdminPasswordChangeGate(container);
     return;
   }
 
@@ -97,7 +102,8 @@ export function renderAdminDashboardView(container) {
 
             <div style="display: flex; flex-direction: column; gap: 0.35rem;">
               <button class="adm-side-btn ${activeTab==='approvals'?'active':''}" data-tab="approvals">
-                <span>🛡️ Multi-Admin Approvals</span>
+                <span class="adm-side-icon">AP</span>
+                <span>Multi-Admin Approvals</span>
                 ${pendingReqs.length > 0 ? `
                   <span style="background: #dc2626; color: #ffffff; position: absolute; right: 12px; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${pendingReqs.length}</span>
                 ` : ''}
@@ -105,7 +111,8 @@ export function renderAdminDashboardView(container) {
 
               ${tabAccess.marketplace ? `
                 <button class="adm-side-btn ${activeTab==='marketplace'?'active':''}" data-tab="marketplace">
-                  <span>🛒 Marketplace Management</span>
+                  <span class="adm-side-icon">MK</span>
+                  <span>Marketplace Management</span>
                   ${pendingProductsCount > 0 ? `
                     <span style="background: #dc2626; color: #ffffff; position: absolute; right: 12px; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${pendingProductsCount}</span>
                   ` : ''}
@@ -114,19 +121,22 @@ export function renderAdminDashboardView(container) {
 
               ${tabAccess.sellers ? `
                 <button class="adm-side-btn ${activeTab==='sellers'?'active':''}" data-tab="sellers">
-                  <span>👥 Sellers Directory</span>
+                  <span class="adm-side-icon">SE</span>
+                  <span>Sellers Directory</span>
                 </button>
               ` : ''}
 
               ${tabAccess.realestate ? `
                 <button class="adm-side-btn ${activeTab==='realestate'?'active':''}" data-tab="realestate">
-                  <span>🏢 Real Estate CMS</span>
+                  <span class="adm-side-icon">RE</span>
+                  <span>Real Estate CMS</span>
                 </button>
               ` : ''}
 
               ${tabAccess.contact ? `
                 <button class="adm-side-btn ${activeTab==='contact'?'active':''}" data-tab="contact">
-                  <span>📨 Contact Messages</span>
+                  <span class="adm-side-icon">IN</span>
+                  <span>Contact Messages</span>
                   ${newContactCount > 0 ? `
                     <span style="background: #dc2626; color: #ffffff; position: absolute; right: 12px; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 9999px;">${newContactCount}</span>
                   ` : ''}
@@ -135,13 +145,15 @@ export function renderAdminDashboardView(container) {
 
               ${tabAccess.rbac ? `
                 <button class="adm-side-btn ${activeTab==='rbac'?'active':''}" data-tab="rbac">
-                  <span>🔐 User RBAC & Roles</span>
+                  <span class="adm-side-icon">RB</span>
+                  <span>User RBAC & Roles</span>
                 </button>
               ` : ''}
 
               ${tabAccess.audit ? `
                 <button class="adm-side-btn ${activeTab==='audit'?'active':''}" data-tab="audit">
-                  <span>📜 Audit Logs & Backups</span>
+                  <span class="adm-side-icon">AU</span>
+                  <span>Audit Logs & Backups</span>
                 </button>
               ` : ''}
             </div>
@@ -150,7 +162,10 @@ export function renderAdminDashboardView(container) {
           <div class="adm-sidebar-footer" style="padding: 1rem 0.5rem 0 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: #64748B;">
             <div style="font-weight: 700; color: #ffffff; margin-bottom: 2px;">${escapeHtml(currentUser.name)}</div>
             <div style="text-transform: uppercase; font-size: 10px; font-weight: 800; color: #4ADE80;">● ${currentUser.role.replace('_', ' ')}</div>
-            <button id="adm-logout-btn" style="margin-top: 0.75rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #ffffff; padding: 6px 0; border-radius: 9999px; font-size: 11px; font-weight: 700; cursor: pointer;">
+            <button id="adm-change-password-btn" style="margin-top: 0.75rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #ffffff; padding: 6px 0; border-radius: 9999px; font-size: 11px; font-weight: 700; cursor: pointer;">
+              Change password
+            </button>
+            <button id="adm-logout-btn" style="margin-top: 0.45rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #ffffff; padding: 6px 0; border-radius: 9999px; font-size: 11px; font-weight: 700; cursor: pointer;">
               ↪ Log Out
             </button>
           </div>
@@ -233,6 +248,10 @@ export function renderAdminDashboardView(container) {
       });
     });
 
+    container.querySelector('#adm-change-password-btn')?.addEventListener('click', () => {
+      openAdminSelfPasswordDialog();
+    });
+
     container.querySelector('#adm-logout-btn')?.addEventListener('click', () => {
       stateEngine.logout();
       stateEngine.setPortal('marketplace');
@@ -250,6 +269,155 @@ export function renderAdminDashboardView(container) {
   }
 
   render();
+}
+
+async function openAdminSelfPasswordDialog() {
+  const data = await showAdminForm({
+    title: 'Change password',
+    message: 'Update the password for the signed-in admin account.',
+    submitLabel: 'Save password',
+    fields: [
+      { name: 'currentPassword', label: 'Current password', type: 'password', required: true, autocomplete: 'current-password' },
+      { name: 'newPassword', label: 'New password', type: 'password', required: true, minLength: 6, autocomplete: 'new-password' },
+      { name: 'confirmPassword', label: 'Confirm new password', type: 'password', required: true, minLength: 6, autocomplete: 'new-password' },
+    ],
+  });
+  if (!data) return;
+  if (data.newPassword.length < 6) {
+    showAdminToast({ title: 'Password not changed', message: 'New password must be at least 6 characters.', tone: 'danger' });
+    return;
+  }
+  if (data.newPassword !== data.confirmPassword) {
+    showAdminToast({ title: 'Password not changed', message: 'New passwords do not match.', tone: 'danger' });
+    return;
+  }
+
+  try {
+    await stateEngine.changePassword(data.currentPassword, data.newPassword);
+    showAdminToast({ title: 'Password updated', message: 'Use the new password next time you sign in.' });
+  } catch (err) {
+    showAdminToast({ title: 'Password not changed', message: err.message || 'Please check the current password and try again.', tone: 'danger' });
+  }
+}
+
+function renderAdminPasswordChangeGate(container) {
+  let formData = { currentPassword: '', newPassword: '', confirmPassword: '' };
+  let message = '';
+  let tone = 'danger';
+
+  function captureInputs() {
+    const current = container.querySelector('#adm-force-current-password');
+    const next = container.querySelector('#adm-force-new-password');
+    const confirm = container.querySelector('#adm-force-confirm-password');
+    if (current) formData.currentPassword = current.value;
+    if (next) formData.newPassword = next.value;
+    if (confirm) formData.confirmPassword = confirm.value;
+  }
+
+  function update() {
+    const state = stateEngine.getState();
+    const saving = !!state.loading.accountForm;
+    container.innerHTML = `
+      <div class="glass-login-viewport">
+        <div class="glass-login-card">
+          <div class="glass-login-header">
+            <h1 class="glass-login-title">Set your password</h1>
+            <p class="glass-login-subtitle">
+              This admin account is using a temporary password. Create your own password before entering the control panel.
+            </p>
+          </div>
+
+          ${message ? `
+            <div style="background: ${tone === 'success' ? 'rgba(22,163,74,0.25)' : 'rgba(220,38,38,0.25)'}; border: 1px solid ${tone === 'success' ? 'rgba(74,222,128,0.6)' : 'rgba(248,113,113,0.6)'}; color: #ffffff; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
+              ${escapeHtml(message)}
+            </div>
+          ` : ''}
+
+          <form id="admin-force-password-form" autocomplete="off">
+            <div class="glass-input-group">
+              <input
+                type="password"
+                id="adm-force-current-password"
+                class="glass-input-field"
+                placeholder="Temporary password"
+                value="${escapeHtml(formData.currentPassword)}"
+                autocomplete="current-password"
+                required
+              />
+            </div>
+
+            <div class="glass-input-group">
+              <input
+                type="password"
+                id="adm-force-new-password"
+                class="glass-input-field"
+                placeholder="New password"
+                value="${escapeHtml(formData.newPassword)}"
+                autocomplete="new-password"
+                minlength="6"
+                required
+              />
+            </div>
+
+            <div class="glass-input-group">
+              <input
+                type="password"
+                id="adm-force-confirm-password"
+                class="glass-input-field"
+                placeholder="Confirm new password"
+                value="${escapeHtml(formData.confirmPassword)}"
+                autocomplete="new-password"
+                minlength="6"
+                required
+              />
+            </div>
+
+            <button type="submit" class="glass-btn-primary" ${saving ? 'disabled' : ''}>
+              ${saving ? 'Saving...' : 'Save password'}
+            </button>
+            <button type="button" id="adm-force-logout-btn" style="margin-top:0.75rem;width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#ffffff;padding:0.85rem;border-radius:14px;font-weight:800;cursor:pointer;">
+              Log out
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    container.querySelector('#adm-force-logout-btn')?.addEventListener('click', () => {
+      stateEngine.logout();
+      stateEngine.setPortal('marketplace');
+    });
+
+    container.querySelector('#admin-force-password-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      captureInputs();
+      if (formData.newPassword.length < 6) {
+        message = 'New password must be at least 6 characters.';
+        tone = 'danger';
+        update();
+        return;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        message = 'New passwords do not match.';
+        tone = 'danger';
+        update();
+        return;
+      }
+      try {
+        await stateEngine.changePassword(formData.currentPassword, formData.newPassword);
+        message = 'Password saved. Opening the admin panel...';
+        tone = 'success';
+        formData = { currentPassword: '', newPassword: '', confirmPassword: '' };
+        update();
+      } catch (err) {
+        message = err.message || 'Could not update your password.';
+        tone = 'danger';
+        update();
+      }
+    });
+  }
+
+  update();
 }
 
 function renderAdminLoginGate(container) {
@@ -281,7 +449,8 @@ function renderAdminLoginGate(container) {
 
           ${errorMessage ? `
             <div style="background: rgba(220,38,38,0.25); border: 1px solid rgba(248,113,113,0.6); color: #ffffff; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
-              ⚠️ ${escapeHtml(errorMessage)}
+              <strong style="display:block;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.15rem;">Sign-in error</strong>
+              ${escapeHtml(errorMessage)}
             </div>
           ` : ''}
 

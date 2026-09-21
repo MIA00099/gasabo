@@ -5,6 +5,7 @@ import { stateEngine } from '../../store/stateEngine.js';
 import { makeAccessibleModal } from '../../components/modalA11y.js';
 import { renderCategoryIcon } from '../../utils/categoryIcon.js';
 import { openImageLightbox } from '../../components/imageLightbox.js';
+import { showAdminConfirm, showAdminForm, showAdminToast } from './adminDialog.js';
 
 export function renderMarketplaceAdmin(container) {
   function render() {
@@ -45,41 +46,42 @@ export function renderMarketplaceAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="adm-module-header">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.3rem;">🛒 Marketplace Management</h2>
-            <p style="color: #64748B; font-size: 0.9rem;">
+            <h2 class="adm-module-title">Marketplace management</h2>
+            <p class="adm-module-copy">
               Manage product listings, categories, homepage promotional banners, and featuring controls.
             </p>
           </div>
 
-          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0; flex-wrap: wrap;">
+          <div class="adm-segmented">
             ${tabPerms.pending ? `
               <button id="mkt-adm-pending" class="btn btn-sm" style="color:${activeTab==='pending'?'#fff':'#64748B'}; background:${activeTab==='pending'?'#D97706':'transparent'}; position: relative;">
-                🕒 Pending Approval (${state.pendingProducts.length})
+                Pending approval (${state.pendingProducts.length})
               </button>
             ` : ''}
             ${tabPerms.products ? `
               <button id="mkt-adm-products" class="btn btn-sm" style="color:${activeTab==='products'?'#fff':'#64748B'}; background:${activeTab==='products'?'var(--primary)':'transparent'};">
-                📦 Products (${state.products.length})
+                Products (${state.products.length})
               </button>
             ` : ''}
             ${tabPerms.categories ? `
               <button id="mkt-adm-categories" class="btn btn-sm" style="color:${activeTab==='categories'?'#fff':'#64748B'}; background:${activeTab==='categories'?'var(--primary)':'transparent'};">
-                📁 Categories (${state.categories.length})
+                Categories (${state.categories.length})
               </button>
             ` : ''}
             ${tabPerms.banners ? `
               <button id="mkt-adm-banners" class="btn btn-sm" style="color:${activeTab==='banners'?'#fff':'#64748B'}; background:${activeTab==='banners'?'var(--primary)':'transparent'};">
-                🖼️ Ad Banners (${state.banners.length})
+                Ad banners (${state.banners.length})
               </button>
             ` : ''}
           </div>
         </div>
 
         ${state.error ? `
-          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
-            ⚠️ ${escapeHtml(state.error)}
+          <div class="adm-inline-alert">
+            <strong>Marketplace error</strong>
+            ${escapeHtml(state.error)}
           </div>
         ` : ''}
 
@@ -88,8 +90,9 @@ export function renderMarketplaceAdmin(container) {
                admin acts on them here (see products.routes.ts POST / which
                creates every listing as PENDING now, not ACTIVE). -->
           ${state.pendingProducts.length === 0 ? `
-            <div style="text-align: center; padding: 3rem; background: #F8FAFC; border-radius: var(--radius-md); border: 1px dashed #E2E8F0; color: #64748B;">
-              ✅ No listings awaiting review right now.
+            <div class="adm-empty-state">
+              <strong>Approval queue is clear</strong>
+              No listings are awaiting review right now.
             </div>
           ` : `
             <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -103,7 +106,7 @@ export function renderMarketplaceAdmin(container) {
                         <div>
                           <h4 style="color: #0F172A; font-size: 1.05rem;">${escapeHtml(prod.title)}</h4>
                           <div style="font-size: 0.85rem; color: #64748B;">
-                            👤 ${escapeHtml(prod.sellerName)} • 📁 ${escapeHtml(prod.category || 'General')} • 📍 ${escapeHtml(prod.district)}
+                            ${escapeHtml(prod.sellerName)} · ${escapeHtml(prod.category || 'General')} · ${escapeHtml(prod.district)}
                           </div>
                         </div>
                         <strong style="color: var(--primary); font-size: 1.15rem; white-space: nowrap;">${prod.price.toLocaleString()} RWF</strong>
@@ -120,13 +123,13 @@ export function renderMarketplaceAdmin(container) {
 
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; justify-content: center; flex-shrink: 0;">
                       <button class="btn btn-sm view-prod-image-btn" data-id="${prod.id}" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">
-                        🔍 View Image${prod.images.length > 1 ? `s (${prod.images.length})` : ''}
+                        View image${prod.images.length > 1 ? `s (${prod.images.length})` : ''}
                       </button>
                       <button class="btn btn-sm approve-prod-btn" data-id="${prod.id}" data-title="${escapeHtml(prod.title)}" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">
-                        ✅ Approve
+                        Approve
                       </button>
                       <button class="btn btn-sm reject-prod-btn" data-id="${prod.id}" data-title="${escapeHtml(prod.title)}" style="background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;">
-                        ❌ Reject
+                        Reject
                       </button>
                     </div>
                   </div>
@@ -172,10 +175,10 @@ export function renderMarketplaceAdmin(container) {
                     <td>
                       <div style="display: flex; gap: 4px;">
                         <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isFeatured" style="background:${prod.isFeatured?'var(--accent-gold-light)':'#F1F5F9'}; color:${prod.isFeatured?'var(--accent-gold)':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
-                          ⭐ Featured
+                          Featured
                         </button>
                         <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isTrending" style="background:${prod.isTrending?'var(--primary-light)':'#F1F5F9'}; color:${prod.isTrending?'var(--primary)':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
-                          🔥 Trending
+                          Trending
                         </button>
                         <!-- Flash Deal: sets the homepage countdown for this
                              product. Highlighted while the deal is live. -->
@@ -183,7 +186,7 @@ export function renderMarketplaceAdmin(container) {
                           data-active="${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ? '1' : ''}"
                           data-ends="${prod.flashDealEndsAt || ''}"
                           style="background:${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ?'#FEF3C7':'#F1F5F9'}; color:${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ?'#B45309':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
-                          ⚡ ${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ? 'Deal ✓' : 'Flash Deal'}
+                          ${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ? 'Deal active' : 'Flash deal'}
                         </button>
                       </div>
                       <div style="display: flex; gap: 4px; align-items: center; margin-top: 4px;">
@@ -201,7 +204,7 @@ export function renderMarketplaceAdmin(container) {
                         <span style="font-size: 0.7rem; color: #64748B;">
                           ${prod.rating ? Number(prod.rating).toFixed(1) : 'unrated'}
                         </span>
-                        ${prod.likeCount ? `<span style="font-size: 0.7rem; color: #64748B; margin-left: 6px;" title="Buyer likes">❤ ${prod.likeCount}</span>` : ''}
+                        ${prod.likeCount ? `<span style="font-size: 0.7rem; color: #64748B; margin-left: 6px;" title="Buyer likes">Likes ${prod.likeCount}</span>` : ''}
                       </div>
                     </td>
                     <td class="tbl-actions-col">
@@ -220,7 +223,7 @@ export function renderMarketplaceAdmin(container) {
           <!-- CATEGORY MANAGEMENT -->
           <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
             <button id="add-cat-btn" class="btn btn-primary btn-sm">
-              ➕ Add New Category
+              Add category
             </button>
           </div>
 
@@ -254,7 +257,7 @@ export function renderMarketplaceAdmin(container) {
                         Change Icon
                       </button>
                       <button class="btn btn-sm btn-danger req-del-cat-btn" data-id="${cat.id}" title="Requires approval from another Administrator before it takes effect">
-                        🔒 Delete Category
+                        Request deletion
                       </button>
                     </td>
                   </tr>
@@ -323,20 +326,40 @@ export function renderMarketplaceAdmin(container) {
 
     container.querySelectorAll('.approve-prod-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm(`Approve "${btn.dataset.title}"? It will go live on the marketplace immediately for 6 months.`)) return;
+        const confirmed = await showAdminConfirm({
+          title: `Approve ${btn.dataset.title}`,
+          message: 'This listing will go live on the marketplace immediately for 6 months.',
+          confirmLabel: 'Approve listing',
+          tone: 'warning',
+        });
+        if (!confirmed) return;
         try {
           await stateEngine.approveProduct(btn.dataset.id);
-        } catch (err) { /* handled via state.error */ }
+          showAdminToast({ title: 'Listing approved', message: `${btn.dataset.title} is now live.` });
+        } catch (err) {
+          showAdminToast({ title: 'Approval failed', message: err.message || 'Please try again.', tone: 'danger' });
+        }
       });
     });
 
     container.querySelectorAll('.reject-prod-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const reason = prompt(`Why is "${btn.dataset.title}" being rejected? (shown to the seller)`);
-        if (!reason) return;
+        const data = await showAdminForm({
+          title: `Reject ${btn.dataset.title}`,
+          message: 'This reason is shown to the seller, so keep it clear and specific.',
+          submitLabel: 'Reject listing',
+          tone: 'danger',
+          fields: [
+            { name: 'reason', label: 'Rejection reason', type: 'textarea', rows: 4, required: true, placeholder: 'Explain what the seller must fix' },
+          ],
+        });
+        if (!data) return;
         try {
-          await stateEngine.rejectProduct(btn.dataset.id, reason);
-        } catch (err) { /* handled via state.error */ }
+          await stateEngine.rejectProduct(btn.dataset.id, data.reason);
+          showAdminToast({ title: 'Listing rejected', message: `${btn.dataset.title} was returned to the seller.`, tone: 'warning' });
+        } catch (err) {
+          showAdminToast({ title: 'Rejection failed', message: err.message || 'Please try again.', tone: 'danger' });
+        }
       });
     });
 
@@ -369,34 +392,61 @@ export function renderMarketplaceAdmin(container) {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         if (btn.dataset.active) {
+          const confirmed = await showAdminConfirm({
+            title: 'Clear Flash Deal',
+            message: 'This product will be removed from the active Flash Deals countdown.',
+            confirmLabel: 'Clear deal',
+            tone: 'warning',
+          });
+          if (!confirmed) return;
           try {
             await stateEngine.setProductFlashDeal(id, null);
-            alert('Flash Deal cleared.');
-          } catch (err) { alert(err.message || 'Could not clear the Flash Deal.'); }
+            showAdminToast({ title: 'Flash Deal cleared', tone: 'warning' });
+          } catch (err) {
+            showAdminToast({ title: 'Could not clear Flash Deal', message: err.message || 'Please try again.', tone: 'danger' });
+          }
           return;
         }
         promptFlashDealEnd(btn, async (isoEndsAt) => {
           await stateEngine.setProductFlashDeal(id, isoEndsAt);
+          showAdminToast({ title: 'Flash Deal scheduled', message: 'The homepage countdown will use this product while the deal is active.' });
         });
       });
     });
 
     container.querySelectorAll('.del-prod-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to delete this product?')) {
-          try {
-            await stateEngine.deleteProduct(btn.dataset.id);
-          } catch (err) { /* handled via state.error */ }
+        const confirmed = await showAdminConfirm({
+          title: 'Delete product',
+          message: 'This removes the product from the marketplace records.',
+          confirmLabel: 'Delete product',
+          tone: 'danger',
+        });
+        if (!confirmed) return;
+        try {
+          await stateEngine.deleteProduct(btn.dataset.id);
+          showAdminToast({ title: 'Product deleted', tone: 'warning' });
+        } catch (err) {
+          showAdminToast({ title: 'Delete failed', message: err.message || 'Please try again.', tone: 'danger' });
         }
       });
     });
 
     container.querySelectorAll('.req-del-cat-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
+        const confirmed = await showAdminConfirm({
+          title: 'Request category deletion',
+          message: 'This creates a critical approval request. The category is not removed until a different approver authorizes it.',
+          confirmLabel: 'Create request',
+          tone: 'danger',
+        });
+        if (!confirmed) return;
         try {
           await stateEngine.requestDeleteCategory(btn.dataset.id);
-          alert('Created Critical Approval Request for Category Deletion. A second Administrator must approve this request before deletion.');
-        } catch (err) { /* handled via state.error */ }
+          showAdminToast({ title: 'Category deletion requested', message: 'A second approver must authorize this action.', tone: 'warning' });
+        } catch (err) {
+          showAdminToast({ title: 'Request failed', message: err.message || 'Please try again.', tone: 'danger' });
+        }
       });
     });
 
@@ -424,12 +474,20 @@ export function renderMarketplaceAdmin(container) {
     container.querySelectorAll('.rename-cat-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const current = btn.dataset.name;
-        const name = (window.prompt('Rename category:', current) || '').trim();
-        if (!name || name === current) return;
+        const data = await showAdminForm({
+          title: 'Rename category',
+          message: 'Category names appear on the public navigation and listing filters.',
+          submitLabel: 'Rename category',
+          fields: [
+            { name: 'name', label: 'Category name', value: current, required: true },
+          ],
+        });
+        if (!data || data.name === current) return;
         try {
-          await stateEngine.renameCategory(btn.dataset.id, name);
+          await stateEngine.renameCategory(btn.dataset.id, data.name);
+          showAdminToast({ title: 'Category renamed', message: `${current} is now ${data.name}.` });
         } catch (err) {
-          alert(err?.message || 'Could not rename the category.');
+          showAdminToast({ title: 'Could not rename category', message: err?.message || 'Please try again.', tone: 'danger' });
         }
       });
     });
@@ -452,10 +510,18 @@ export function renderMarketplaceAdmin(container) {
 
     container.querySelectorAll('.del-banner-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to delete this promotional banner?')) {
-          try {
-            await stateEngine.deleteBanner(btn.dataset.id);
-          } catch (err) { /* handled via state.error */ }
+        const confirmed = await showAdminConfirm({
+          title: 'Delete promotional banner',
+          message: 'This removes the banner from homepage rotation.',
+          confirmLabel: 'Delete banner',
+          tone: 'danger',
+        });
+        if (!confirmed) return;
+        try {
+          await stateEngine.deleteBanner(btn.dataset.id);
+          showAdminToast({ title: 'Banner deleted', tone: 'warning' });
+        } catch (err) {
+          showAdminToast({ title: 'Delete failed', message: err.message || 'Please try again.', tone: 'danger' });
         }
       });
     });
@@ -872,7 +938,7 @@ function promptFlashDealEnd(returnFocusTo, onPick) {
   function paint() {
     overlay.innerHTML = `
       <div class="glass-card" style="max-width:420px; width:100%; padding:1.5rem;" role="document">
-        <h3 style="color:#0F172A; margin-bottom:0.25rem;">⚡ Set Flash Deal</h3>
+        <h3 style="color:#0F172A; margin-bottom:0.25rem;">Set flash deal</h3>
         <p style="font-size:0.85rem; color:#64748B; margin-bottom:1rem;">
           The homepage flash card will count down to this time and drop the deal when it passes.
         </p>

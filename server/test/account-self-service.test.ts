@@ -16,6 +16,9 @@ import { signToken, type AuthUser } from '../src/middleware/auth.js';
 const auth = (t: string) => ({ Authorization: `Bearer ${t}` });
 
 let adminToken: string;
+let adminId: string;
+let subAdminToken: string;
+let subAdminId: string;
 let sellerToken: string;
 let sellerId: string;
 let catId: string;
@@ -25,7 +28,21 @@ beforeAll(async () => {
   const admin = await prisma.administrator.create({
     data: { email: `acc-admin-${Date.now()}@t.local`, passwordHash, name: 'Acc Admin', role: 'ADMINISTRATOR' },
   });
+  adminId = admin.id;
   adminToken = signToken({ id: admin.id, email: admin.email, name: admin.name, role: 'ADMINISTRATOR' } as AuthUser);
+
+  const subAdmin = await prisma.subAdministrator.create({
+    data: {
+      email: `acc-sub-${Date.now()}@t.local`,
+      passwordHash,
+      name: 'Approval Account',
+      permissions: JSON.stringify(['APPROVALS']),
+      mustChangePassword: true,
+      createdById: admin.id,
+    },
+  });
+  subAdminId = subAdmin.id;
+  subAdminToken = signToken({ id: subAdmin.id, email: subAdmin.email, name: subAdmin.name, role: 'SUB_ADMINISTRATOR' } as AuthUser);
 
   const seller = await prisma.seller.create({
     data: { email: `acc-seller-${Date.now()}@t.local`, passwordHash, businessName: 'Old Shop', contactPhone: '+250700000001', district: 'Gasabo' },
@@ -54,10 +71,11 @@ describe('PATCH /api/categories/:id (rename)', () => {
   });
 
   it('allows fixing only the capitalisation of its own name', async () => {
-    await request(app).patch(`/api/categories/${catId}`).set(auth(adminToken)).send({ name: 'gadgets' });
-    const res = await request(app).patch(`/api/categories/${catId}`).set(auth(adminToken)).send({ name: 'Gadgets' });
+    const uniqueName = `case-only-${Date.now()}`;
+    await request(app).patch(`/api/categories/${catId}`).set(auth(adminToken)).send({ name: uniqueName });
+    const res = await request(app).patch(`/api/categories/${catId}`).set(auth(adminToken)).send({ name: uniqueName.toUpperCase() });
     expect(res.status).toBe(200);
-    expect(res.body.category.name).toBe('Gadgets');
+    expect(res.body.category.name).toBe(uniqueName.toUpperCase());
   });
 
   it('requires authentication', async () => {
@@ -84,6 +102,25 @@ describe('POST /api/auth/change-password', () => {
   it('rejects a new password identical to the current one', async () => {
     const res = await request(app).post('/api/auth/change-password').set(auth(sellerToken)).send({ currentPassword: 'BrandNew1', newPassword: 'BrandNew1' });
     expect(res.status).toBe(400);
+  });
+
+  it('lets the main administrator change their own password', async () => {
+    const res = await request(app).post('/api/auth/change-password').set(auth(adminToken)).send({ currentPassword: 'OldPass1', newPassword: 'AdminNew1' });
+    expect(res.status).toBe(200);
+
+    const stored = await prisma.administrator.findUnique({ where: { id: adminId } });
+    expect(await bcrypt.compare('AdminNew1', stored!.passwordHash)).toBe(true);
+    expect(await bcrypt.compare('OldPass1', stored!.passwordHash)).toBe(false);
+  });
+
+  it('lets the approval sub-admin change their own password and clears the temporary-password gate', async () => {
+    const res = await request(app).post('/api/auth/change-password').set(auth(subAdminToken)).send({ currentPassword: 'OldPass1', newPassword: 'ApprovalNew1' });
+    expect(res.status).toBe(200);
+
+    const stored = await prisma.subAdministrator.findUnique({ where: { id: subAdminId } });
+    expect(await bcrypt.compare('ApprovalNew1', stored!.passwordHash)).toBe(true);
+    expect(await bcrypt.compare('OldPass1', stored!.passwordHash)).toBe(false);
+    expect(stored?.mustChangePassword).toBe(false);
   });
 });
 

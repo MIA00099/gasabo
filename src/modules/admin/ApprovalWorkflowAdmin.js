@@ -2,6 +2,7 @@
  * UNIFIED ADMIN PANEL - Multi-Admin Approval Authorization Queue (Enterprise SaaS Grade)
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { showAdminConfirm, showAdminForm, showAdminToast } from './adminDialog.js';
 
 // Module scope, not a render() local - this panel gets fully rebuilt on every
 // stateEngine notify (any state change anywhere re-renders whichever admin
@@ -44,38 +45,39 @@ export function renderApprovalWorkflowAdmin(container) {
               </span>
             </div>
             <p class="adm-caption" style="font-size: 13px; color: #64748b; max-width: 820px; line-height: 1.45;">
-              Sensitive platform operations (e.g., deleting seller accounts, deleting categories, changing RBAC permissions) require explicit dual-authorization from a second administrator before execution.
+              Sensitive platform operations (e.g., deleting seller accounts, deleting categories, changing RBAC permissions) require explicit dual-authorization from a different administrator or approval-only admin before execution.
             </p>
           </div>
         </div>
 
         ${state.error ? `
-          <div style="background: #fff5f5; border: 1px solid #fecaca; color: #991b1b; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
-            ⚠️ ${escapeHtml(state.error)}
+          <div class="adm-inline-alert">
+            <strong>Workflow error</strong>
+            ${escapeHtml(state.error)}
           </div>
         ` : ''}
 
         <!-- CRITICAL SECURITY ALERT BANNER -->
         <div style="background: #fff5f5; border: 1px solid #fed7d7; border-left: 4px solid #ef4444; padding: 0.9rem 1.1rem; border-radius: 14px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.85rem;">
-          <div style="font-size: 1.35rem;">🚨</div>
+          <div class="adm-side-icon" style="background:#fee2e2;color:#dc2626;border-color:#fecaca;">HI</div>
           <div>
             <div style="font-weight: 800; font-size: 13px; color: #991b1b; margin-bottom: 1px;">
-              Dual-Administrator Security Policy Active
+              Dual-Authorization Security Policy Active
             </div>
             <div style="font-size: 12px; color: #7f1d1d;">
-              High-risk actions are locked in a pending state until confirmed by a secondary administrator with Full Administrator clearance.
+              High-risk actions stay pending until confirmed by a different account with Multi-Admin Approvals clearance.
             </div>
           </div>
         </div>
 
         <!-- SUB-TAB SWITCHER: Pending Requests vs Approval History - two
              separate views instead of stacking both on one long page. -->
-        <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0; margin-bottom: 1.25rem; width: fit-content;">
+        <div class="adm-segmented" style="margin-bottom: 1.25rem; width: fit-content;">
           <button id="approval-tab-pending" class="btn btn-sm" style="color:${subTab==='pending'?'#fff':'#64748B'}; background:${subTab==='pending'?'var(--primary)':'transparent'};">
-            🕒 Pending (${pendingRequests.length})
+            Pending (${pendingRequests.length})
           </button>
           <button id="approval-tab-history" class="btn btn-sm" style="color:${subTab==='history'?'#fff':'#64748B'}; background:${subTab==='history'?'var(--primary)':'transparent'};">
-            📜 History (${recentActivity.length})
+            History (${recentActivity.length})
           </button>
         </div>
 
@@ -85,9 +87,8 @@ export function renderApprovalWorkflowAdmin(container) {
           ${loading ? `
             <div style="text-align: center; padding: 2rem; color: #64748b;">Loading approval requests...</div>
           ` : pendingRequests.length === 0 ? `
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 2.25rem 1.5rem; text-align: center;">
-              <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">✅</div>
-              <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 0.3rem;">Authorization Queue Clear</h3>
+            <div class="adm-empty-state">
+              <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 0.3rem;">Authorization queue clear</h3>
               <p class="adm-caption">There are currently no high-risk administrative operations awaiting secondary approval.</p>
             </div>
           ` : pendingRequests.map(req => {
@@ -100,7 +101,7 @@ export function renderApprovalWorkflowAdmin(container) {
 
               <!-- SUMMARY ROW: always visible, everything needed to act in one glance -->
               <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; flex-wrap: wrap;">
-                <span class="adm-badge-risk" style="flex-shrink: 0;">⚠️ ${escapeHtml(req.riskLevel)}</span>
+                <span class="adm-badge-risk" style="flex-shrink: 0;">${escapeHtml(req.riskLevel)}</span>
 
                 <div style="min-width: 0; flex: 1;">
                   <div style="font-size: 14px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -117,10 +118,10 @@ export function renderApprovalWorkflowAdmin(container) {
 
                 <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
                   <button class="reject-req-btn" data-id="${req.id}" style="height: 32px; padding: 0 14px; border-radius: 9999px; font-weight: 800; font-size: 12px; background: #dc2626; border: none; color: #ffffff; cursor: pointer;">
-                    ❌ Reject
+                    Reject
                   </button>
                   <button class="approve-req-btn" data-id="${req.id}" style="height: 32px; padding: 0 16px; border-radius: 9999px; font-weight: 800; font-size: 12px; background: #059669; border: none; color: #ffffff; cursor: pointer;">
-                    ✓ Approve
+                    Approve
                   </button>
                 </div>
               </div>
@@ -147,8 +148,8 @@ export function renderApprovalWorkflowAdmin(container) {
                   </div>
                   <div>
                     <div class="adm-caption" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 0.3rem; font-size: 10px;">Reason / Justification</div>
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.6rem 0.9rem; border-radius: 12px; font-size: 12px; color: #334155; line-height: 1.5;">
-                      💬 "${escapeHtml(req.reason)}"
+                    <div class="adm-note-box">
+                      "${escapeHtml(req.reason)}"
                     </div>
                   </div>
                 </div>
@@ -187,7 +188,7 @@ export function renderApprovalWorkflowAdmin(container) {
                     <td style="color: #334155;">${escapeHtml(req.requestedByName)}</td>
                     <td style="color: #64748b; font-size: 12px;">${new Date(req.createdAt).toLocaleString()}</td>
                     <td>
-                      ${req.status === 'APPROVED' ? `<span class="adm-badge-success">✓ AUTHORIZED</span>` : `<span class="adm-badge-risk">❌ REJECTED</span>`}
+                      ${req.status === 'APPROVED' ? `<span class="adm-badge-success">AUTHORIZED</span>` : `<span class="adm-badge-risk">REJECTED</span>`}
                     </td>
                   </tr>
                 `).join('')}
@@ -217,13 +218,20 @@ export function renderApprovalWorkflowAdmin(container) {
       btn.addEventListener('click', async () => {
         const reqId = btn.dataset.id;
         const req = requests.find(r => r.id === reqId);
-        if (confirm(`Authorize execution of action "${formatActionTitle(req?.actionType)}"? This action will be executed immediately.`)) {
-          try {
-            await stateEngine.approveRequest(reqId);
-            alert('Action authorized and executed successfully! Audit log entry recorded.');
-          } catch (err) {
-            render();
-          }
+        const confirmed = await showAdminConfirm({
+          title: `Authorize ${formatActionTitle(req?.actionType)}`,
+          message: 'This action will execute immediately and create an audit log entry.',
+          detail: req ? `Target: ${req.targetName}. Requested by ${req.requestedByName}.` : '',
+          confirmLabel: 'Authorize action',
+          tone: 'warning',
+        });
+        if (!confirmed) return;
+        try {
+          await stateEngine.approveRequest(reqId);
+          showAdminToast({ title: 'Action authorized', message: 'The request was executed and recorded in the audit log.' });
+        } catch (err) {
+          showAdminToast({ title: 'Authorization failed', message: err.message || 'Please try again.', tone: 'danger' });
+          render();
         }
       });
     });
@@ -232,13 +240,22 @@ export function renderApprovalWorkflowAdmin(container) {
       btn.addEventListener('click', async () => {
         const reqId = btn.dataset.id;
         const req = requests.find(r => r.id === reqId);
-        if (confirm(`Reject authorization request "${formatActionTitle(req?.actionType)}"?`)) {
-          try {
-            await stateEngine.rejectRequest(reqId);
-            alert('Authorization request rejected.');
-          } catch (err) {
-            render();
-          }
+        const data = await showAdminForm({
+          title: `Reject ${formatActionTitle(req?.actionType)}`,
+          message: 'Rejecting keeps the requested operation from executing. Add a short note so the requester knows why.',
+          submitLabel: 'Reject request',
+          tone: 'danger',
+          fields: [
+            { name: 'note', label: 'Decision note', type: 'textarea', rows: 4, placeholder: 'Reason for rejection', required: false },
+          ],
+        });
+        if (!data) return;
+        try {
+          await stateEngine.rejectRequest(reqId, data.note || '');
+          showAdminToast({ title: 'Request rejected', message: 'The requester can review the decision in approval history.', tone: 'warning' });
+        } catch (err) {
+          showAdminToast({ title: 'Rejection failed', message: err.message || 'Please try again.', tone: 'danger' });
+          render();
         }
       });
     });

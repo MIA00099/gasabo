@@ -21,14 +21,30 @@ async function main() {
     },
   });
 
+  // Legacy mistake: approval account briefly existed as a full Administrator.
+  // Login checks Administrator before SubAdministrator, so this duplicate must
+  // not survive beside the fixed approval-only sub-admin row below.
+  await prisma.administrator.deleteMany({ where: { email: 'approvals@kigalimarket.com' } });
+
+  // Legacy development sub-admin from the old seed. The platform now keeps one
+  // central Administrator and a narrow approval account instead.
+  await prisma.subAdministrator.deleteMany({ where: { email: 'divine@kigalimarket.com' } });
+
   await prisma.subAdministrator.upsert({
-    where: { email: 'divine@kigalimarket.com' },
-    update: {},
-    create: {
-      email: 'divine@kigalimarket.com',
+    where: { email: 'approvals@kigalimarket.com' },
+    update: {
+      name: 'Approval Account',
       passwordHash,
-      name: 'Divine Mutoni',
-      permissions: JSON.stringify(['PRODUCTS', 'SELLERS', 'CATEGORIES']),
+      permissions: JSON.stringify(['APPROVALS']),
+      status: 'ACTIVE',
+      mustChangePassword: true,
+    },
+    create: {
+      email: 'approvals@kigalimarket.com',
+      passwordHash,
+      name: 'Approval Account',
+      permissions: JSON.stringify(['APPROVALS']),
+      mustChangePassword: true,
       createdById: admin.id,
     },
   });
@@ -158,7 +174,7 @@ async function main() {
 
   console.log(`Seed complete. Dev login password for all seeded accounts: ${DEV_PASSWORD}`);
   console.log('Admin login:', admin.email);
-  console.log('Sub-admin login: divine@kigalimarket.com');
+  console.log('Approval account login: approvals@kigalimarket.com');
   console.log('Seller logins:', sellerSeeds.map((s) => s.email).join(', '));
 }
 

@@ -88,12 +88,19 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
 
   const subAdmin = await prisma.subAdministrator.findUnique({ where: { email } });
   if (subAdmin && (await bcrypt.compare(password, subAdmin.passwordHash))) {
+    if (subAdmin.status === 'SUSPENDED') {
+      return res.status(403).json({ error: 'This administrator account has been deactivated. Contact the main administrator.' });
+    }
     await prisma.subAdministrator.update({ where: { id: subAdmin.id }, data: { lastLoginAt: new Date() } });
     const authUser = { id: subAdmin.id, email: subAdmin.email, name: subAdmin.name, role: 'SUB_ADMINISTRATOR' as const };
     await logAudit({ actorId: subAdmin.id, actorType: 'SUB_ADMINISTRATOR', actorName: subAdmin.name, action: 'LOGIN_SUCCESS', module: 'Security & Auth', details: `${subAdmin.name} authenticated.` });
     return res.json({
       token: signToken(authUser),
-      user: { ...authUser, permissions: permissionsFromModuleList(JSON.parse(subAdmin.permissions || '[]')) },
+      user: {
+        ...authUser,
+        mustChangePassword: subAdmin.mustChangePassword,
+        permissions: permissionsFromModuleList(JSON.parse(subAdmin.permissions || '[]')),
+      },
     });
   }
 
@@ -216,7 +223,7 @@ authRouter.get('/me', requireAuth, async (req, res) => {
 
   if (claim.role === 'SUB_ADMINISTRATOR') {
     const subAdmin = await prisma.subAdministrator.findUnique({ where: { id: claim.id } });
-    if (!subAdmin) return gone();
+    if (!subAdmin || subAdmin.status === 'SUSPENDED') return gone();
     let modules: string[] = [];
     try {
       modules = JSON.parse(subAdmin.permissions || '[]');
@@ -229,6 +236,7 @@ authRouter.get('/me', requireAuth, async (req, res) => {
         email: subAdmin.email,
         name: subAdmin.name,
         role: 'SUB_ADMINISTRATOR',
+        mustChangePassword: subAdmin.mustChangePassword,
         permissions: permissionsFromModuleList(modules),
       },
     });
@@ -286,6 +294,9 @@ authRouter.post('/change-password', requireAuth, async (req, res) => {
 
   const account = await model.findUnique({ where: { id: claim.id } });
   if (!account) return res.status(401).json({ error: 'This session is no longer valid. Please sign in again.' });
+  if ('status' in account && account.status === 'SUSPENDED') {
+    return res.status(401).json({ error: 'This session is no longer valid. Please sign in again.' });
+  }
 
   if (!(await bcrypt.compare(currentPassword, account.passwordHash))) {
     return res.status(400).json({ error: 'Your current password is incorrect.' });
@@ -294,7 +305,13 @@ authRouter.post('/change-password', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'The new password must be different from your current one.' });
   }
 
-  await model.update({ where: { id: account.id }, data: { passwordHash: await bcrypt.hash(newPassword, 10) } });
+  await model.update({
+    where: { id: account.id },
+    data: {
+      passwordHash: await bcrypt.hash(newPassword, 10),
+      ...(claim.role === 'SUB_ADMINISTRATOR' ? { mustChangePassword: false } : {}),
+    },
+  });
 
   await logAudit({
     actorId: claim.id,

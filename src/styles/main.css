@@ -524,7 +524,7 @@ body {
    --------------------------------------------------------------------------- */
 
 /* Visible only to assistive technology. Used to name values that are obvious
-   sighted (a 📍 pin before a district, a 👤 before a seller) but silent or
+   sighted (a pin before a district, a seller icon before a seller) but silent or
    meaningless when read aloud. */
 .sr-only {
   position: absolute;
@@ -3653,7 +3653,7 @@ th.tbl-actions-col {
 .adm-side-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.72rem;
   width: 100%;
   padding: 0.7rem 1rem;
   border-radius: 9999px;
@@ -3668,6 +3668,22 @@ th.tbl-actions-col {
   text-align: left;
 }
 
+.adm-side-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.07);
+  color: #cbd5e1;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
 .adm-side-btn:hover {
   color: #ffffff;
   background: rgba(255,255,255,0.06);
@@ -3678,6 +3694,12 @@ th.tbl-actions-col {
   background: var(--primary);
   font-weight: 700;
   box-shadow: 0 4px 14px rgba(0, 61, 165, 0.4);
+}
+
+.adm-side-btn.active .adm-side-icon {
+  background: rgba(255,255,255,0.18);
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.18);
 }
 
 .adm-side-btn.active .action-count-badge,
@@ -3771,6 +3793,129 @@ th.tbl-actions-col {
   font-weight: 500;
 }
 
+.adm-module-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.adm-module-title {
+  color: #0f172a;
+  font-size: 1.28rem;
+  line-height: 1.18;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.adm-module-copy {
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 68ch;
+  margin-top: 0.24rem;
+}
+
+.adm-toolbar {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.adm-segmented {
+  display: flex;
+  gap: 0.35rem;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.adm-empty-state {
+  text-align: center;
+  padding: 2.8rem 1.4rem;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-radius: var(--radius-md);
+  border: 1px dashed #dbe3ef;
+  color: #64748b;
+}
+
+.adm-empty-state strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.96rem;
+  margin-bottom: 0.22rem;
+}
+
+.adm-inline-alert {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-weight: 650;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.adm-inline-alert strong {
+  display: block;
+  color: #7f1d1d;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.18rem;
+}
+
+.adm-contact-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #64748b;
+}
+
+.adm-contact-line::before {
+  content: '';
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: #94a3b8;
+  flex-shrink: 0;
+}
+
+.adm-perm-state {
+  min-width: 2.4rem;
+  text-align: center;
+  border-radius: 999px;
+  padding: 0.16rem 0.48rem;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.adm-perm-state.is-on {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.adm-note-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.5;
+}
+
 .adm-badge-risk {
   display: inline-flex;
   align-items: center;
@@ -3829,6 +3974,347 @@ th.tbl-actions-col {
   background: #dcfce7;
   color: #16a34a;
   border: 1px solid #bbf7d0;
+}
+
+/* Admin command dialogs/toasts replace browser-native prompt/confirm/alert.
+   These are intentionally compact and operational: high contrast, clear
+   destructive states, keyboard focus, and no decorative filler. */
+.adm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(0, 61, 165, 0.18), transparent 34rem),
+    rgba(15, 23, 42, 0.54);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  animation: admBackdropIn 0.18s ease;
+}
+
+.adm-dialog-backdrop.is-leaving {
+  animation: admBackdropOut 0.16s ease forwards;
+}
+
+.adm-dialog {
+  width: min(560px, 100%);
+  max-height: min(86vh, 720px);
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f172a;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-radius: 22px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255,255,255,0.9);
+  position: relative;
+  animation: admDialogIn 0.2s cubic-bezier(.2,.8,.2,1);
+}
+
+.adm-dialog-topline {
+  height: 4px;
+  background: var(--primary);
+}
+
+.adm-dialog-danger .adm-dialog-topline { background: #dc2626; }
+.adm-dialog-warning .adm-dialog-topline { background: #d97706; }
+
+.adm-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.45rem 1.55rem 0;
+}
+
+.adm-dialog-kicker {
+  font-size: 0.68rem;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.48rem;
+}
+
+.adm-dialog-title {
+  font-size: 1.2rem;
+  line-height: 1.2;
+  font-weight: 850;
+  color: #0f172a;
+  text-wrap: balance;
+}
+
+.adm-dialog-message {
+  margin: 0;
+  padding: 0.85rem 1.55rem 0;
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  max-width: 64ch;
+}
+
+.adm-dialog-note {
+  margin: 1rem 1.55rem 0;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 0.8rem 0.95rem;
+  color: #334155;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.adm-dialog-danger .adm-dialog-note {
+  border-color: #fecaca;
+  background: #fff5f5;
+  color: #7f1d1d;
+}
+
+.adm-dialog-form {
+  padding: 1rem 1.55rem 0;
+}
+
+.adm-dialog-fields {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.adm-dialog-field {
+  display: grid;
+  gap: 0.42rem;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
+.adm-dialog-field input,
+.adm-dialog-field textarea {
+  width: 100%;
+  border: 1.5px solid #dbe3ef;
+  border-radius: 13px;
+  background: #f8fafc;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.72rem 0.85rem;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.adm-dialog-field textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.5;
+}
+
+.adm-dialog-field input:focus,
+.adm-dialog-field textarea:focus {
+  background: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(0, 61, 165, 0.12);
+}
+
+.adm-dialog-help {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 560;
+  line-height: 1.45;
+}
+
+.adm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 1.25rem 1.55rem 1.45rem;
+}
+
+.adm-dialog-btn {
+  min-height: 42px;
+  border-radius: 13px;
+  border: 1px solid transparent;
+  padding: 0 1rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.adm-dialog-btn:hover { transform: translateY(-1px); }
+.adm-dialog-btn:active { transform: translateY(0) scale(0.99); }
+.adm-dialog-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 61, 165, 0.16);
+}
+
+.adm-dialog-btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(0, 61, 165, 0.2);
+}
+
+.adm-dialog-btn-danger {
+  background: #dc2626;
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.22);
+}
+
+.adm-dialog-btn-warning {
+  background: #d97706;
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(217, 119, 6, 0.22);
+}
+
+.adm-dialog-btn-ghost,
+.adm-dialog-btn-soft {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+.adm-dialog-password {
+  margin: 1rem 1.55rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: #0f172a;
+  border-radius: 16px;
+  padding: 0.7rem;
+}
+
+.adm-dialog-password code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  padding: 0 0.35rem;
+}
+
+.adm-toast-stack {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 90;
+  display: grid;
+  gap: 0.75rem;
+  width: min(390px, calc(100vw - 2rem));
+}
+
+.adm-toast {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 0.75rem;
+  align-items: start;
+  background: rgba(255,255,255,0.96);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0.9rem 0.9rem 0.9rem 0.75rem;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+  animation: admToastIn 0.2s cubic-bezier(.2,.8,.2,1);
+}
+
+.adm-toast.is-leaving {
+  animation: admToastOut 0.18s ease forwards;
+}
+
+.adm-toast-mark {
+  width: 8px;
+  min-height: 100%;
+  border-radius: 99px;
+  background: #16a34a;
+}
+
+.adm-toast-warning .adm-toast-mark { background: #d97706; }
+.adm-toast-danger .adm-toast-mark { background: #dc2626; }
+
+.adm-toast-title {
+  font-size: 0.9rem;
+  font-weight: 850;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.adm-toast-message {
+  margin-top: 0.18rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.adm-toast-close {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 9px;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+@keyframes admBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes admBackdropOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes admDialogIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes admToastIn {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes admToastOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(18px); }
+}
+
+@media (max-width: 560px) {
+  .adm-dialog-backdrop {
+    align-items: flex-end;
+    padding: 0.75rem;
+  }
+
+  .adm-dialog {
+    border-radius: 20px;
+    max-height: 88vh;
+  }
+
+  .adm-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .adm-dialog-actions .adm-dialog-btn-primary,
+  .adm-dialog-actions .adm-dialog-btn-danger,
+  .adm-dialog-actions .adm-dialog-btn-warning {
+    order: -1;
+  }
+
+  .adm-dialog-password {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .adm-toast-stack {
+    right: 1rem;
+    bottom: 1rem;
+  }
 }
 
 .adm-timeline-step {

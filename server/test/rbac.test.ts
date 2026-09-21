@@ -15,6 +15,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
+import bcrypt from 'bcryptjs';
 import { app } from '../src/app.js';
 import { prisma } from '../src/config/db.js';
 import { signToken, type AuthUser } from '../src/middleware/auth.js';
@@ -27,6 +28,7 @@ function tokenFor(user: AuthUser): string {
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 let adminToken: string;
+let adminId: string;
 let approverToken: string;
 let approverId: string;
 let plainSubAdminToken: string;
@@ -107,6 +109,7 @@ beforeAll(async () => {
       name: 'Full Administrator',
     },
   });
+  adminId = admin.id;
   adminToken = tokenFor({
     id: admin.id,
     email: admin.email,
@@ -294,6 +297,228 @@ describe('Ordinary module permissions still let Administrators through', () => {
     // The approver holds PRODUCT_APPROVAL only, so SELLERS must be refused.
     const res = await request(app).get('/api/sellers').set(auth(approverToken));
     expect(res.status).toBe(403);
+  });
+});
+
+describe('Approval-only admins', () => {
+  it('does not create another full Administrator through the old endpoint', async () => {
+    const res = await request(app)
+      .post('/api/rbac/administrators')
+      .set(auth(adminToken))
+      .send({ name: 'Second Full Admin', email: `full-admin-${suffix()}@test.local`, password: 'full-admin-secret' });
+
+    expect(res.status).toBe(410);
+    expect(res.body.error).toMatch(/fixed approval account/i);
+  });
+
+  it('does not create extra approval accounts through the API', async () => {
+    const res = await request(app)
+      .post('/api/rbac/approval-admins')
+      .set(auth(adminToken))
+      .send({ name: 'Extra Approver', email: `approval-only-${suffix()}@test.local`, password: 'approval-secret' });
+
+    expect(res.status).toBe(410);
+    expect(res.body.error).toMatch(/exactly one approval account/i);
+  });
+
+  it('keeps the fixed approval account scoped without full Administrator access', async () => {
+    const approvalAccount = await prisma.subAdministrator.create({
+      data: {
+        email: `approval-only-${suffix()}@test.local`,
+        passwordHash: 'not-used',
+        name: 'Approval Only Admin',
+        permissions: JSON.stringify(['APPROVALS']),
+        mustChangePassword: true,
+        createdById: adminId,
+      },
+    });
+    expect(JSON.parse(approvalAccount.permissions)).toEqual(['APPROVALS']);
+    expect(approvalAccount.mustChangePassword).toBe(true);
+
+    const approvalOnlyToken = tokenFor({
+      id: approvalAccount.id,
+      email: approvalAccount.email,
+      name: approvalAccount.name,
+      role: 'SUB_ADMINISTRATOR',
+    });
+
+    const approvals = await request(app).get('/api/approvals').set(auth(approvalOnlyToken));
+    expect(approvals.status).toBe(200);
+
+    const sellers = await request(app).get('/api/sellers').set(auth(approvalOnlyToken));
+    expect(sellers.status).toBe(403);
+  });
+
+  it('does not let an ordinary sub-administrator create approval-only admins', async () => {
+    const res = await request(app)
+      .post('/api/rbac/approval-admins')
+      .set(auth(plainSubAdminToken))
+      .send({ name: 'Blocked Approver', email: `blocked-approver-${suffix()}@test.local`, password: 'approval-secret' });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('lets only the full Administrator reset sub-admin passwords', async () => {
+    const target = await prisma.subAdministrator.create({
+      data: {
+        email: `reset-target-${suffix()}@test.local`,
+        passwordHash: 'not-used',
+        name: 'Reset Target',
+        permissions: JSON.stringify(['SELLERS']),
+        createdById: adminId,
+      },
+    });
+    const userManager = await prisma.subAdministrator.create({
+      data: {
+        email: `user-manager-${suffix()}@test.local`,
+        passwordHash: 'not-used',
+        name: 'User Manager Sub-Admin',
+        permissions: JSON.stringify(['USERS']),
+        createdById: adminId,
+      },
+    });
+    const userManagerToken = tokenFor({
+      id: userManager.id,
+      email: userManager.email,
+      name: userManager.name,
+      role: 'SUB_ADMINISTRATOR',
+    });
+
+    const denied = await request(app)
+      .post(`/api/rbac/sub-admins/${target.id}/reset-password`)
+      .set(auth(userManagerToken));
+    expect(denied.status).toBe(403);
+
+    const reset = await request(app)
+      .post(`/api/rbac/sub-admins/${target.id}/reset-password`)
+      .set(auth(adminToken));
+    expect(reset.status).toBe(200);
+    expect(reset.body.tempPassword).toEqual(expect.any(String));
+
+    const resetTarget = await prisma.subAdministrator.findUniqueOrThrow({ where: { id: target.id } });
+    expect(resetTarget.mustChangePassword).toBe(true);
+
+    const loginWithTemp = await request(app)
+      .post('/api/auth/login')
+      .send({ email: target.email, password: reset.body.tempPassword });
+    expect(loginWithTemp.status).toBe(200);
+    expect(loginWithTemp.body.user.mustChangePassword).toBe(true);
+
+    const blockedByTemporaryPassword = await request(app)
+      .get('/api/sellers')
+      .set(auth(loginWithTemp.body.token));
+    expect(blockedByTemporaryPassword.status).toBe(403);
+
+    const ownerChange = await request(app)
+      .post('/api/auth/change-password')
+      .set(auth(loginWithTemp.body.token))
+      .send({ currentPassword: reset.body.tempPassword, newPassword: 'owner-owned-secret' });
+    expect(ownerChange.status).toBe(200);
+
+    const changedTarget = await prisma.subAdministrator.findUniqueOrThrow({ where: { id: target.id } });
+    expect(changedTarget.mustChangePassword).toBe(false);
+
+    const allowedAfterOwnerChange = await request(app)
+      .get('/api/sellers')
+      .set(auth(loginWithTemp.body.token));
+    expect(allowedAfterOwnerChange.status).toBe(200);
+  });
+
+  it('lets only the full Administrator deactivate and reactivate sub-admin accounts', async () => {
+    const password = 'target-secret';
+    const target = await prisma.subAdministrator.create({
+      data: {
+        email: `status-target-${suffix()}@test.local`,
+        passwordHash: await bcrypt.hash(password, 10),
+        name: 'Status Target',
+        permissions: JSON.stringify(['SELLERS']),
+        createdById: adminId,
+      },
+    });
+    const targetToken = tokenFor({
+      id: target.id,
+      email: target.email,
+      name: target.name,
+      role: 'SUB_ADMINISTRATOR',
+    });
+
+    expect((await request(app).get('/api/sellers').set(auth(targetToken))).status).toBe(200);
+
+    const denied = await request(app)
+      .post(`/api/rbac/sub-admins/${target.id}/toggle-status`)
+      .set(auth(targetToken));
+    expect(denied.status).toBe(403);
+
+    const suspended = await request(app)
+      .post(`/api/rbac/sub-admins/${target.id}/toggle-status`)
+      .set(auth(adminToken));
+    expect(suspended.status).toBe(200);
+    expect(suspended.body.status).toBe('suspended');
+
+    expect((await request(app).get('/api/auth/me').set(auth(targetToken))).status).toBe(401);
+    expect((await request(app).get('/api/sellers').set(auth(targetToken))).status).toBe(403);
+
+    const passwordChangeBlocked = await request(app)
+      .post('/api/auth/change-password')
+      .set(auth(targetToken))
+      .send({ currentPassword: password, newPassword: 'new-target-secret' });
+    expect(passwordChangeBlocked.status).toBe(401);
+
+    const loginBlocked = await request(app)
+      .post('/api/auth/login')
+      .send({ email: target.email, password });
+    expect(loginBlocked.status).toBe(403);
+
+    const active = await request(app)
+      .post(`/api/rbac/sub-admins/${target.id}/toggle-status`)
+      .set(auth(adminToken));
+    expect(active.status).toBe(200);
+    expect(active.body.status).toBe('active');
+
+    const loginRestored = await request(app)
+      .post('/api/auth/login')
+      .send({ email: target.email, password });
+    expect(loginRestored.status).toBe(200);
+  });
+
+  it('lets only the full Administrator delete sub-admin and approval-only accounts directly', async () => {
+    const target = await prisma.subAdministrator.create({
+      data: {
+        email: `delete-target-${suffix()}@test.local`,
+        passwordHash: 'not-used',
+        name: 'Delete Target',
+        permissions: JSON.stringify(['APPROVALS']),
+        createdById: adminId,
+      },
+    });
+    const userManager = await prisma.subAdministrator.create({
+      data: {
+        email: `delete-user-manager-${suffix()}@test.local`,
+        passwordHash: 'not-used',
+        name: 'Delete User Manager',
+        permissions: JSON.stringify(['USERS']),
+        createdById: adminId,
+      },
+    });
+    const userManagerToken = tokenFor({
+      id: userManager.id,
+      email: userManager.email,
+      name: userManager.name,
+      role: 'SUB_ADMINISTRATOR',
+    });
+
+    const denied = await request(app)
+      .delete(`/api/rbac/sub-admins/${target.id}`)
+      .set(auth(userManagerToken));
+    expect(denied.status).toBe(403);
+    expect(await prisma.subAdministrator.findUnique({ where: { id: target.id } })).not.toBeNull();
+
+    const deleted = await request(app)
+      .delete(`/api/rbac/sub-admins/${target.id}`)
+      .set(auth(adminToken));
+    expect(deleted.status).toBe(200);
+    expect(deleted.body.deletedId).toBe(target.id);
+    expect(await prisma.subAdministrator.findUnique({ where: { id: target.id } })).toBeNull();
   });
 });
 

@@ -2,6 +2,7 @@
  * UNIFIED ADMIN PANEL - Seller Management Module
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { showAdminConfirm, showAdminForm, showAdminToast } from './adminDialog.js';
 
 let resettingSellerId = null;
 let passwordResetResult = null;
@@ -18,18 +19,19 @@ export function renderSellerAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="adm-module-header">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.3rem;">👥 Registered Sellers Management</h2>
-            <p style="color: #64748B; font-size: 0.9rem;">
+            <h2 class="adm-module-title">Registered sellers</h2>
+            <p class="adm-module-copy">
               Manage verified Rwandan sellers, suspend accounts, reset credentials, and review activity logs. Deleting sellers requires multi-admin approval.
             </p>
           </div>
         </div>
 
         ${state.error ? `
-          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
-            ⚠️ ${escapeHtml(state.error)}
+          <div class="adm-inline-alert">
+            <strong>Seller management error</strong>
+            ${escapeHtml(state.error)}
           </div>
         ` : ''}
 
@@ -81,8 +83,8 @@ export function renderSellerAdmin(container) {
                     </div>
                   </td>
                   <td>
-                    <div style="font-size: 0.85rem; color: #0F172A;">📞 ${escapeHtml(s.phone || '-')}</div>
-                    <div style="font-size: 0.78rem; color: #64748B;">✉️ ${escapeHtml(s.email)}</div>
+                    <div style="font-size: 0.85rem; color: #0F172A;">${escapeHtml(s.phone || '-')}</div>
+                    <div style="font-size: 0.78rem; color: #64748B;">${escapeHtml(s.email)}</div>
                   </td>
                   <td>${escapeHtml(s.district || '-')}</td>
                   <td><strong style="color: var(--primary);">${s.productsCount} Products</strong></td>
@@ -95,16 +97,16 @@ export function renderSellerAdmin(container) {
                   <td class="tbl-actions-col">
                     <div class="adm-action-group">
                       <button class="btn btn-sm btn-secondary reset-pass-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" ${resettingSellerId === s.id ? 'disabled' : ''}>
-                        ${resettingSellerId === s.id ? 'Resetting...' : '🔑 Reset Pass'}
+                        ${resettingSellerId === s.id ? 'Resetting...' : 'Reset password'}
                       </button>
                       <button class="btn btn-sm btn-secondary change-email-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-email="${escapeHtml(s.email)}">
-                        ✉️ Change Email
+                        Change email
                       </button>
                       <button class="btn btn-sm toggle-status-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" style="background:${s.status==='active'?'#FEF3C7':'#DCFCE7'}; color:${s.status==='active'?'#92400E':'#166534'}; border:1px solid ${s.status==='active'?'#FDE68A':'#BBF7D0'};">
-                        ${s.status==='active' ? '⏸ Suspend' : '▶ Reactivate'}
+                        ${s.status==='active' ? 'Suspend' : 'Reactivate'}
                       </button>
                       <button class="btn btn-sm btn-danger del-seller-req-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" title="Requires approval from another Administrator before it takes effect">
-                        🔒 Request Deletion
+                        Request deletion
                       </button>
                     </div>
                   </td>
@@ -158,12 +160,20 @@ export function renderSellerAdmin(container) {
 
     container.querySelectorAll('.change-email-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const newEmail = prompt(`Enter new email address for ${btn.dataset.name}:`, btn.dataset.email);
-        if (!newEmail || newEmail === btn.dataset.email) return;
+        const data = await showAdminForm({
+          title: `Change seller email for ${btn.dataset.name}`,
+          message: 'This updates the seller login email and is recorded in the audit log.',
+          submitLabel: 'Update email',
+          fields: [
+            { name: 'email', label: 'New email address', type: 'email', value: btn.dataset.email, required: true, autocomplete: 'email' },
+          ],
+        });
+        if (!data || data.email === btn.dataset.email) return;
         try {
-          await stateEngine.changeSellerEmail(btn.dataset.id, newEmail);
-          alert(`Email updated for ${btn.dataset.name}.`);
+          await stateEngine.changeSellerEmail(btn.dataset.id, data.email);
+          showAdminToast({ title: 'Seller email updated', message: `${btn.dataset.name} now signs in with ${data.email}.` });
         } catch (err) {
+          showAdminToast({ title: 'Email update failed', message: err.message || 'Please try again.', tone: 'danger' });
           render();
         }
       });
@@ -172,10 +182,23 @@ export function renderSellerAdmin(container) {
     container.querySelectorAll('.toggle-status-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const suspending = btn.textContent.includes('Suspend');
-        if (!confirm(`${suspending ? 'Suspend' : 'Reactivate'} ${btn.dataset.name}? ${suspending ? 'They will not be able to log in until reactivated.' : 'They will be able to log in again immediately.'}`)) return;
+        const confirmed = await showAdminConfirm({
+          title: `${suspending ? 'Suspend' : 'Reactivate'} ${btn.dataset.name}`,
+          message: suspending ? 'The seller will not be able to log in until reactivated.' : 'The seller will be able to log in again immediately.',
+          detail: suspending ? 'Use this when an account needs to be paused quickly without deleting marketplace records.' : 'Confirm the seller is cleared to return before reactivating.',
+          confirmLabel: suspending ? 'Suspend seller' : 'Reactivate seller',
+          tone: suspending ? 'warning' : 'default',
+        });
+        if (!confirmed) return;
         try {
           await stateEngine.toggleSellerStatus(btn.dataset.id);
+          showAdminToast({
+            title: suspending ? 'Seller suspended' : 'Seller reactivated',
+            message: `${btn.dataset.name} ${suspending ? 'cannot sign in now.' : 'can sign in again.'}`,
+            tone: suspending ? 'warning' : 'success',
+          });
         } catch (err) {
+          showAdminToast({ title: 'Status change failed', message: err.message || 'Please try again.', tone: 'danger' });
           render();
         }
       });
@@ -183,11 +206,32 @@ export function renderSellerAdmin(container) {
 
     container.querySelectorAll('.del-seller-req-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const reason = prompt(`Enter reason for deleting seller account (${btn.dataset.name}):`) || 'Account deletion initiated by administrator.';
+        const data = await showAdminForm({
+          title: `Request deletion of ${btn.dataset.name}`,
+          message: 'Seller deletion requires secondary approval before anything is removed.',
+          submitLabel: 'Submit deletion request',
+          tone: 'danger',
+          fields: [
+            {
+              name: 'reason',
+              label: 'Reason for deletion',
+              type: 'textarea',
+              value: 'Account deletion initiated by administrator.',
+              required: true,
+              rows: 4,
+            },
+          ],
+        });
+        if (!data) return;
         try {
-          await stateEngine.requestDeleteSeller(btn.dataset.id, reason);
-          alert(`Critical Approval Request created to delete seller ${btn.dataset.name}. Another Administrator must review and approve this action before deletion occurs.`);
+          await stateEngine.requestDeleteSeller(btn.dataset.id, data.reason);
+          showAdminToast({
+            title: 'Deletion request submitted',
+            message: `${btn.dataset.name} remains active until secondary approval is complete.`,
+            tone: 'warning',
+          });
         } catch (err) {
+          showAdminToast({ title: 'Deletion request failed', message: err.message || 'Please try again.', tone: 'danger' });
           render();
         }
       });

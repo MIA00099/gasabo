@@ -57,7 +57,7 @@ export async function hasModulePermission(user: AuthUser, moduleKey: string): Pr
   if (user.role === 'ADMINISTRATOR') return true;
   if (user.role !== 'SUB_ADMINISTRATOR') return false;
   const subAdmin = await prisma.subAdministrator.findUnique({ where: { id: user.id } });
-  if (!subAdmin) return false;
+  if (!subAdmin || subAdmin.status === 'SUSPENDED' || subAdmin.mustChangePassword) return false;
   try {
     const permissions: string[] = JSON.parse(subAdmin.permissions || '[]');
     return permissions.includes(moduleKey);
@@ -90,7 +90,7 @@ export function requirePermission(moduleKey: string) {
 export async function hasExclusiveSubAdminPermission(user: AuthUser, moduleKey: string): Promise<boolean> {
   if (user.role !== 'SUB_ADMINISTRATOR') return false;
   const subAdmin = await prisma.subAdministrator.findUnique({ where: { id: user.id } });
-  if (!subAdmin) return false;
+  if (!subAdmin || subAdmin.status === 'SUSPENDED' || subAdmin.mustChangePassword) return false;
   try {
     const permissions: string[] = JSON.parse(subAdmin.permissions || '[]');
     return permissions.includes(moduleKey);

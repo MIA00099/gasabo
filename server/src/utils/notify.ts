@@ -36,7 +36,7 @@ export async function notifyAdminsWithModulePermission(
 ) {
   const [admins, subAdmins] = await Promise.all([
     opts.excludeFullAdmins ? Promise.resolve([]) : prisma.administrator.findMany({ select: { id: true } }),
-    prisma.subAdministrator.findMany({ select: { id: true, permissions: true } }),
+    prisma.subAdministrator.findMany({ where: { status: 'ACTIVE' }, select: { id: true, permissions: true } }),
   ]);
 
   const eligibleSubAdminIds = subAdmins

@@ -34,17 +34,19 @@ model Administrator {
 
 // 2. SubAdministrator Model
 model SubAdministrator {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  passwordHash String
-  name         String
-  role         String        @default("SUB_ADMINISTRATOR")
-  permissions  String // JSON array of assigned module permissions, e.g. ["PRODUCTS","SELLERS"]
-  createdById  String
-  createdBy    Administrator @relation("AdminCreatedSubAdmin", fields: [createdById], references: [id])
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  lastLoginAt  DateTime?
+  id                 String        @id @default(uuid())
+  email              String        @unique
+  passwordHash       String
+  mustChangePassword Boolean       @default(false)
+  name               String
+  role               String        @default("SUB_ADMINISTRATOR")
+  permissions        String // JSON array of assigned module permissions, e.g. ["PRODUCTS","SELLERS"]
+  status             String        @default("ACTIVE") // "ACTIVE" | "SUSPENDED"
+  createdById        String
+  createdBy          Administrator @relation("AdminCreatedSubAdmin", fields: [createdById], references: [id])
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  lastLoginAt        DateTime?
 }
 
 // 3. PlatformUser Model (Distinct from Seller)

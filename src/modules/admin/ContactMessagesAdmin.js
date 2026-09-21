@@ -5,6 +5,7 @@
  * REPORTS permission (server enforces the same - see contact.routes.ts).
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { showAdminConfirm, showAdminToast } from './adminDialog.js';
 
 const STATUS_TABS = [
   ['all', 'All'],
@@ -33,14 +34,14 @@ export function renderContactMessagesAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="adm-module-header">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.3rem;">📨 Contact Messages</h2>
-            <p style="color: #64748B; font-size: 0.9rem;">
+            <h2 class="adm-module-title">Contact messages</h2>
+            <p class="adm-module-copy">
               Messages sent through the public Contact Us form. ${newCount} unread.
             </p>
           </div>
-          <div style="display: flex; gap: 0.5rem; background: #F1F5F9; padding: 4px; border-radius: 12px; border: 1px solid #E2E8F0; flex-wrap: wrap;">
+          <div class="adm-segmented">
             ${STATUS_TABS.map(([key, label]) => `
               <button class="btn btn-sm contact-filter-btn" data-filter="${key}"
                 style="color:${filter === key ? '#fff' : '#64748B'}; background:${filter === key ? 'var(--primary)' : 'transparent'};">
@@ -51,16 +52,18 @@ export function renderContactMessagesAdmin(container) {
         </div>
 
         ${state.error ? `
-          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
-            ⚠️ ${escapeHtml(state.error)}
+          <div class="adm-inline-alert">
+            <strong>Inbox error</strong>
+            ${escapeHtml(state.error)}
           </div>
         ` : ''}
 
         ${loading ? `
           <div style="text-align: center; padding: 3rem; color: #64748B;">Loading messages…</div>
         ` : messages.length === 0 ? `
-          <div style="text-align: center; padding: 3rem; background: #F8FAFC; border-radius: var(--radius-md); border: 1px dashed #E2E8F0; color: #64748B;">
-            ${filter === 'all' ? 'No contact messages yet.' : `No ${filter.toLowerCase()} messages.`}
+          <div class="adm-empty-state">
+            <strong>${filter === 'all' ? 'No contact messages yet' : `No ${filter.toLowerCase()} messages`}</strong>
+            New public contact messages will appear here.
           </div>
         ` : `
           <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -73,9 +76,9 @@ export function renderContactMessagesAdmin(container) {
                       <span class="badge" style="${STATUS_BADGE[m.status] || STATUS_BADGE.READ} font-size: 0.7rem;">${escapeHtml(m.status)}</span>
                     </div>
                     <div style="font-size: 0.83rem; color: #64748B; margin-top: 0.25rem;">
-                      👤 ${escapeHtml(m.name)} &nbsp;•&nbsp;
+                      ${escapeHtml(m.name)} &nbsp;•&nbsp;
                       <a href="mailto:${escapeHtml(m.email)}" style="color: var(--primary); font-weight: 600;">${escapeHtml(m.email)}</a>
-                      ${m.phone ? ` &nbsp;•&nbsp; 📞 ${escapeHtml(m.phone)}` : ''}
+                      ${m.phone ? ` &nbsp;•&nbsp; ${escapeHtml(m.phone)}` : ''}
                     </div>
                   </div>
                   <div style="font-size: 0.76rem; color: #94A3B8; white-space: nowrap;">
@@ -113,10 +116,19 @@ export function renderContactMessagesAdmin(container) {
 
     container.querySelectorAll('.contact-delete-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Delete this contact message permanently?')) return;
+        const confirmed = await showAdminConfirm({
+          title: 'Delete contact message',
+          message: 'This removes the message from the admin inbox permanently.',
+          confirmLabel: 'Delete message',
+          tone: 'danger',
+        });
+        if (!confirmed) return;
         try {
           await stateEngine.deleteContactMessage(btn.dataset.id);
-        } catch { /* state.error already set */ }
+          showAdminToast({ title: 'Contact message deleted', tone: 'warning' });
+        } catch (err) {
+          showAdminToast({ title: 'Delete failed', message: err.message || 'Please try again.', tone: 'danger' });
+        }
       });
     });
   }

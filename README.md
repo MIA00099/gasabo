@@ -31,14 +31,17 @@ Seeded by `npm run db:seed`. All accounts share the password **`Kigali@2026`**.
 
 | Role | Email |
 |---|---|
-| Administrator | `admin@kigalimarket.com` |
-| Sub-Administrator | `divine@kigalimarket.com` |
+| Main Administrator | `admin@kigalimarket.com` |
+| Approval Account | `approvals@kigalimarket.com` |
 | Seller | `eric.m@rwandaagri.rw` |
 | Seller | `uwase.mc@gmail.com` |
 | Seller | `patrick.tech@kigali.rw` |
 
-Log in via the header "Login" button (works for any account type above) or
-register a new seller via "Start Selling" on the Marketplace page.
+The Main Administrator is the only full-access admin. The Approval Account is a
+sub-administrator with approval permissions only and must set its own password
+after the first sign-in. Log in via the header "Login" button (works for any
+account type above) or register a new seller via "Start Selling" on the
+Marketplace page.
 
 ## Production build
 

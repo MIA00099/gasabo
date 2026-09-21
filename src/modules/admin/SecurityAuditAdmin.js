@@ -2,6 +2,7 @@
  * UNIFIED ADMIN PANEL - Security Audit Logs & System Backups Module
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { showAdminToast } from './adminDialog.js';
 
 export function renderSecurityAuditAdmin(container) {
   function render() {
@@ -15,24 +16,25 @@ export function renderSecurityAuditAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="adm-module-header">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.3rem;">🛡️ System Security Audit Logs & Backups</h2>
-            <p style="color: #64748B; font-size: 0.9rem;">
+            <h2 class="adm-module-title">Security audit logs & backups</h2>
+            <p class="adm-module-copy">
               Complete audit trail of all platform activities, administrative approvals, login sessions, and database backups.
             </p>
           </div>
 
-          <div style="display: flex; gap: 0.75rem;">
+          <div class="adm-toolbar">
             <button id="trigger-backup-btn" class="btn btn-primary">
-              💾 Trigger Immediate Backup Snapshot
+              Create backup snapshot
             </button>
           </div>
         </div>
 
         ${state.error ? `
-          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
-            ⚠️ ${escapeHtml(state.error)}
+          <div class="adm-inline-alert">
+            <strong>Audit log error</strong>
+            ${escapeHtml(state.error)}
           </div>
         ` : ''}
 
@@ -90,9 +92,10 @@ export function renderSecurityAuditAdmin(container) {
     container.querySelector('#trigger-backup-btn')?.addEventListener('click', async () => {
       try {
         const backup = await stateEngine.triggerBackup();
-        alert(`Database backup snapshot created: ${backup.fileName}`);
+        showAdminToast({ title: 'Backup snapshot created', message: backup.fileName });
         stateEngine.loadAuditLogs().catch(() => {});
       } catch (err) {
+        showAdminToast({ title: 'Backup failed', message: err.message || 'Please try again.', tone: 'danger' });
         render();
       }
     });

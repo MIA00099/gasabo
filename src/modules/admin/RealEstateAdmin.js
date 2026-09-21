@@ -2,8 +2,9 @@
  * UNIFIED ADMIN PANEL - Gasabo Real Estate Content Management System (CMS)
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { showAdminConfirm, showAdminToast } from './adminDialog.js';
 
-const PROPERTY_TYPE_LABELS = { house: '🏠 House', plot: '🟩 Plot / Land', commercial: '🏢 Commercial' };
+const PROPERTY_TYPE_LABELS = { house: 'House', plot: 'Plot / Land', commercial: 'Commercial' };
 
 const INQUIRY_TABS = [['all', 'All'], ['NEW', 'New'], ['READ', 'Read'], ['ARCHIVED', 'Archived']];
 const INQUIRY_BADGE = {
@@ -29,22 +30,23 @@ export function renderRealEstateAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="adm-module-header">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.3rem;">🏢 Gasabo Real Estate Content Management</h2>
-            <p style="color: #64748B; font-size: 0.9rem;">
+            <h2 class="adm-module-title">Gasabo Real Estate CMS</h2>
+            <p class="adm-module-copy">
               Manage homepage content, contact details, service cards, and individual property listings.
             </p>
           </div>
 
           <button id="admin-add-property-btn" class="btn btn-primary">
-            ➕ Add Property Listing
+            Add property listing
           </button>
         </div>
 
         ${state.error ? `
-          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
-            ⚠️ ${escapeHtml(state.error)}
+          <div class="adm-inline-alert">
+            <strong>Real estate CMS error</strong>
+            ${escapeHtml(state.error)}
           </div>
         ` : ''}
 
@@ -62,7 +64,7 @@ export function renderRealEstateAdmin(container) {
             </div>
           </div>
           <button id="save-re-hero" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem;">
-            💾 Save Hero Content
+            Save hero content
           </button>
         </div>
 
@@ -99,7 +101,7 @@ export function renderRealEstateAdmin(container) {
           </div>
           <div id="re-sections-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
           <button id="save-re-sections" class="btn btn-secondary btn-sm">
-            💾 Save Company Sections
+            Save company sections
           </button>
         </div>
 
@@ -158,8 +160,9 @@ export function renderRealEstateAdmin(container) {
       const subtitle = container.querySelector('#re-hero-sub').value;
       try {
         await stateEngine.saveRealEstateHero({ title, subtitle });
-        alert('Gasabo Real Estate Hero Content updated successfully!');
+        showAdminToast({ title: 'Hero content saved', message: 'Gasabo Real Estate hero copy was updated.' });
       } catch (err) {
+        showAdminToast({ title: 'Save failed', message: err.message || 'Please try again.', tone: 'danger' });
         render();
       }
     });
@@ -187,9 +190,10 @@ export function renderRealEstateAdmin(container) {
           address: container.querySelector('#re-contact-address').value.trim(),
         });
         await stateEngine.saveRealEstateSection('SERVICES', services);
-        alert('Gasabo Real Estate company sections updated successfully!');
+        showAdminToast({ title: 'Company sections saved', message: 'About, contact, and service content were updated.' });
       } catch (err) {
         error.textContent = err.message || 'Could not save company sections.';
+        showAdminToast({ title: 'Save failed', message: error.textContent, tone: 'danger' });
       }
     });
 
@@ -206,12 +210,19 @@ export function renderRealEstateAdmin(container) {
 
     container.querySelectorAll('.del-property-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to delete this property listing?')) {
-          try {
-            await stateEngine.deleteRealEstateProperty(btn.dataset.id);
-          } catch (err) {
-            render();
-          }
+        const confirmed = await showAdminConfirm({
+          title: 'Delete property listing',
+          message: 'This removes the real estate listing from the CMS.',
+          confirmLabel: 'Delete listing',
+          tone: 'danger',
+        });
+        if (!confirmed) return;
+        try {
+          await stateEngine.deleteRealEstateProperty(btn.dataset.id);
+          showAdminToast({ title: 'Property listing deleted', tone: 'warning' });
+        } catch (err) {
+          showAdminToast({ title: 'Delete failed', message: err.message || 'Please try again.', tone: 'danger' });
+          render();
         }
       });
     });
@@ -229,10 +240,19 @@ export function renderRealEstateAdmin(container) {
     });
     container.querySelectorAll('.re-inq-delete-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Delete this inquiry permanently?')) return;
+        const confirmed = await showAdminConfirm({
+          title: 'Delete real estate inquiry',
+          message: 'This permanently removes the inquiry from the admin inbox.',
+          confirmLabel: 'Delete inquiry',
+          tone: 'danger',
+        });
+        if (!confirmed) return;
         try {
           await stateEngine.deleteRealEstateInquiry(btn.dataset.id);
-        } catch (err) { /* state.error already set */ }
+          showAdminToast({ title: 'Inquiry deleted', tone: 'warning' });
+        } catch (err) {
+          showAdminToast({ title: 'Delete failed', message: err.message || 'Please try again.', tone: 'danger' });
+        }
       });
     });
   }
@@ -249,7 +269,7 @@ function renderInquiriesSection(state) {
 
   return `
     <h3 style="color: #0F172A; font-size: 1.15rem; margin: 2rem 0 1rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-      📨 Inquiries
+      Inquiries
       ${newCount > 0 ? `<span style="background: #DBEAFE; color: #1D4ED8; font-size: 0.75rem; font-weight: 800; padding: 2px 9px; border-radius: 9999px;">${newCount} new</span>` : ''}
       <span style="display: inline-flex; gap: 0.35rem; margin-left: auto; background: #F1F5F9; padding: 3px; border-radius: 10px; border: 1px solid #E2E8F0;">
         ${INQUIRY_TABS.map(([key, label]) => `
@@ -264,8 +284,9 @@ function renderInquiriesSection(state) {
     ${loading && all.length === 0 ? `
       <div style="text-align: center; padding: 2rem; color: #64748B;">Loading inquiries…</div>
     ` : list.length === 0 ? `
-      <div style="text-align: center; padding: 2rem; background: #F8FAFC; border-radius: var(--radius-md); border: 1px dashed #E2E8F0; color: #64748B;">
-        ${filter === 'all' ? 'No inquiries yet. Submissions from the Gasabo "Talk To Gasabo Real Estate" form appear here.' : `No ${filter.toLowerCase()} inquiries.`}
+      <div class="adm-empty-state">
+        <strong>${filter === 'all' ? 'No inquiries yet' : `No ${filter.toLowerCase()} inquiries`}</strong>
+        Submissions from the Gasabo Real Estate contact form appear here.
       </div>
     ` : `
       <div style="display: flex; flex-direction: column; gap: 0.85rem;">
@@ -278,8 +299,8 @@ function renderInquiriesSection(state) {
                   <span class="badge" style="${INQUIRY_BADGE[i.status] || INQUIRY_BADGE.READ} font-size: 0.68rem;">${escapeHtml(i.status)}</span>
                 </div>
                 <div style="font-size: 0.83rem; color: #64748B; margin-top: 0.2rem;">
-                  📞 <a href="tel:${escapeHtml(String(i.phone).replace(/\s+/g, ''))}" style="color: var(--primary); font-weight: 600;">${escapeHtml(i.phone)}</a>
-                  ${i.propertyTitle ? ` &nbsp;•&nbsp; 🏠 ${escapeHtml(i.propertyTitle)}` : ''}
+                  <a href="tel:${escapeHtml(String(i.phone).replace(/\s+/g, ''))}" style="color: var(--primary); font-weight: 600;">${escapeHtml(i.phone)}</a>
+                  ${i.propertyTitle ? ` &nbsp;•&nbsp; ${escapeHtml(i.propertyTitle)}` : ''}
                 </div>
               </div>
               <div style="font-size: 0.75rem; color: #94A3B8; white-space: nowrap;">${new Date(i.createdAt).toLocaleString()}</div>
@@ -313,7 +334,7 @@ function openAddPropertyModal(propertyToEdit = null) {
   let imageUploading = false;
 
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.65); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
+  overlay.className = 'adm-dialog-backdrop';
 
   function renderPreviews() {
     if (!imageUrls.length) return '';
@@ -329,7 +350,7 @@ function openAddPropertyModal(propertyToEdit = null) {
         `).join('')}
       </div>
       <div style="font-size: 0.75rem; color: #64748B; margin-top: 0.35rem;">
-        ${imageUrls.length} photo${imageUrls.length > 1 ? 's' : ''} added${imageUrls.length > 1 ? ' — the first one is the cover.' : '.'}
+        ${imageUrls.length} photo${imageUrls.length > 1 ? 's' : ''} added${imageUrls.length > 1 ? '. The first one is the cover.' : '.'}
       </div>
     `;
   }
@@ -338,22 +359,22 @@ function openAddPropertyModal(propertyToEdit = null) {
     return `
       <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
         <button type="button" id="img-mode-upload-btn" class="btn btn-sm" style="background:${imageMode==='upload'?'var(--primary)':'#F1F5F9'}; color:${imageMode==='upload'?'#fff':'#64748B'};">
-          📁 Upload from Device
+          Upload from device
         </button>
         <button type="button" id="img-mode-url-btn" class="btn btn-sm" style="background:${imageMode==='url'?'var(--primary)':'#F1F5F9'}; color:${imageMode==='url'?'#fff':'#64748B'};">
-          🔗 Paste Image URL
+          Paste image URL
         </button>
       </div>
       ${imageMode === 'upload' ? `
         <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="form-control" ${imageUploading ? 'disabled' : ''}>
-        <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.4rem;">Select one or more photos — JPEG, PNG, WEBP, or GIF, max 5MB each.</div>
+        <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.4rem;">Select one or more photos. JPEG, PNG, WEBP, or GIF, max 5MB each.</div>
         ${imageUploading ? `
-          <div style="margin-top: 0.75rem; color: #64748B; font-size: 0.85rem;">⏳ Uploading...</div>
+          <div style="margin-top: 0.75rem; color: #64748B; font-size: 0.85rem;">Uploading...</div>
         ` : ''}
       ` : `
         <div style="display: flex; gap: 0.5rem;">
           <input type="url" id="p-image-url" class="form-control" placeholder="https://..." style="flex: 1;">
-          <button type="button" id="p-image-url-add" class="btn btn-sm btn-secondary">➕ Add</button>
+          <button type="button" id="p-image-url-add" class="btn btn-sm btn-secondary">Add</button>
         </div>
       `}
       ${renderPreviews()}
@@ -379,10 +400,10 @@ function openAddPropertyModal(propertyToEdit = null) {
         const { urls, failed } = await stateEngine.uploadProductImages(files);
         imageUrls.push(...urls);
         if (failed.length) {
-          overlay.querySelector('#add-property-error').textContent = `⚠️ ${failed.length} photo${failed.length > 1 ? 's' : ''} failed to upload; the rest were added.`;
+          overlay.querySelector('#add-property-error').textContent = `${failed.length} photo${failed.length > 1 ? 's' : ''} failed to upload; the rest were added.`;
         }
       } catch (err) {
-        overlay.querySelector('#add-property-error').textContent = `⚠️ ${err.message || 'Image upload failed. Please try again.'}`;
+        overlay.querySelector('#add-property-error').textContent = err.message || 'Image upload failed. Please try again.';
       } finally {
         imageUploading = false;
         repaint();
@@ -406,10 +427,16 @@ function openAddPropertyModal(propertyToEdit = null) {
   }
 
   overlay.innerHTML = `
-    <div style="background: #fff; border-radius: 20px; padding: 1.75rem 2rem; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto;">
-      <h3 style="color: #0F172A; font-size: 1.2rem; margin-bottom: 1.25rem;">${isEditing ? '✏️ Edit Property Listing' : '➕ Add Property Listing'}</h3>
+    <section class="adm-dialog" role="dialog" aria-modal="true" aria-labelledby="property-dialog-title">
+      <div class="adm-dialog-topline"></div>
+      <div class="adm-dialog-header">
+        <div>
+          <div class="adm-dialog-kicker">Real Estate CMS</div>
+          <h3 id="property-dialog-title" class="adm-dialog-title">${isEditing ? 'Edit property listing' : 'Add property listing'}</h3>
+        </div>
+      </div>
 
-      <form id="add-property-form">
+      <form id="add-property-form" class="adm-dialog-form">
         <div class="form-group">
           <label>Title</label>
           <input name="title" type="text" class="form-control" placeholder="e.g. Modern 4-Bedroom Villa" value="${escapeHtml(propertyToEdit?.title || '')}" required>
@@ -419,9 +446,9 @@ function openAddPropertyModal(propertyToEdit = null) {
           <div class="form-group">
             <label>Type</label>
             <select name="type" class="form-control">
-              <option value="house" ${propertyToEdit?.type === 'house' ? 'selected' : ''}>🏠 House</option>
-              <option value="plot" ${propertyToEdit?.type === 'plot' ? 'selected' : ''}>🟩 Plot / Land</option>
-              <option value="commercial" ${propertyToEdit?.type === 'commercial' ? 'selected' : ''}>🏢 Commercial</option>
+              <option value="house" ${propertyToEdit?.type === 'house' ? 'selected' : ''}>House</option>
+              <option value="plot" ${propertyToEdit?.type === 'plot' ? 'selected' : ''}>Plot / Land</option>
+              <option value="commercial" ${propertyToEdit?.type === 'commercial' ? 'selected' : ''}>Commercial</option>
             </select>
           </div>
           <div class="form-group">
@@ -455,7 +482,7 @@ function openAddPropertyModal(propertyToEdit = null) {
         <div class="form-group">
           <label>YouTube video tour <span style="color:#94A3B8;font-weight:400;">(optional)</span></label>
           <input name="videoUrl" type="url" class="form-control" placeholder="https://www.youtube.com/watch?v=..." value="${escapeHtml(propertyToEdit?.videoId ? `https://www.youtube.com/watch?v=${propertyToEdit.videoId}` : '')}">
-          <div style="font-size:0.78rem;color:#64748B;margin-top:0.3rem;">Paste a YouTube link and a ▶ play badge appears on the listing.</div>
+          <div style="font-size:0.78rem;color:#64748B;margin-top:0.3rem;">Paste a YouTube link and a play badge appears on the listing.</div>
         </div>
 
         <div id="add-property-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
@@ -465,7 +492,7 @@ function openAddPropertyModal(propertyToEdit = null) {
           <button type="submit" id="add-property-submit" class="btn btn-sm btn-primary">${isEditing ? 'Save Changes' : 'Add Listing'}</button>
         </div>
       </form>
-    </div>
+    </section>
   `;
 
   bindImageSectionEvents();
@@ -506,7 +533,7 @@ function openAddPropertyModal(propertyToEdit = null) {
       submitBtn.disabled = false;
       submitBtn.textContent = isEditing ? 'Save Changes' : 'Add Listing';
       const message = err.message || 'Something went wrong. Please try again.';
-      form.querySelector('#add-property-error').textContent = `⚠️ ${message}`;
+      form.querySelector('#add-property-error').textContent = message;
     }
   });
 

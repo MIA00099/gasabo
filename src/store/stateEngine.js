@@ -63,6 +63,7 @@ function normalizeUser(user) {
     role: ROLE_MAP[user.role] || 'guest',
     phone: user.phone || '',
     district: user.district || '',
+    mustChangePassword: !!user.mustChangePassword,
     permissions: user.permissions || {},
   };
 }
@@ -1153,6 +1154,12 @@ class StateEngine {
   async changePassword(currentPassword, newPassword) {
     return this._run('accountForm', async () => {
       await api.post('/auth/change-password', { currentPassword, newPassword });
+      this.data.currentUser = { ...this.data.currentUser, mustChangePassword: false };
+      const session = getSession();
+      if (session?.user) {
+        setSession({ ...session, user: { ...session.user, mustChangePassword: false } });
+      }
+      this.notify();
       return true;
     });
   }
@@ -1480,19 +1487,6 @@ class StateEngine {
     });
   }
 
-  // A second full Administrator - not another Sub-Administrator - is what
-  // breaks the dual-authorization deadlock: with only one Administrator
-  // account, self-approval being blocked means no critical request (like a
-  // Sub-Administrator permission grant) can ever be approved.
-  async createAdministrator(name, email, password) {
-    return this._run('systemUsers', async () => {
-      const { user } = await api.post('/rbac/administrators', { name, email, password });
-      this.data.systemUsers = [...this.data.systemUsers, user];
-      this.notify();
-      return user;
-    });
-  }
-
   async requestDeleteSubAdmin(subAdminId, reason) {
     return this._run('approvalRequests', async () => {
       const { request } = await api.post(`/rbac/sub-admins/${subAdminId}/request-delete`, { reason });
@@ -1502,8 +1496,26 @@ class StateEngine {
     });
   }
 
+  async deleteSubAdmin(subAdminId) {
+    return this._run('systemUsers', async () => {
+      await api.delete(`/rbac/sub-admins/${subAdminId}`);
+      this.data.systemUsers = this.data.systemUsers.filter((u) => u.id !== subAdminId);
+      this.notify();
+      return true;
+    });
+  }
+
   async resetSubAdminPassword(subAdminId) {
     return this._run('systemUsers', () => api.post(`/rbac/sub-admins/${subAdminId}/reset-password`, {}));
+  }
+
+  async toggleSubAdminStatus(subAdminId) {
+    return this._run('systemUsers', async () => {
+      const { status } = await api.post(`/rbac/sub-admins/${subAdminId}/toggle-status`, {});
+      this.data.systemUsers = this.data.systemUsers.map((u) => (u.id === subAdminId ? { ...u, status } : u));
+      this.notify();
+      return status;
+    });
   }
 
   async changeSubAdminEmail(subAdminId, email) {

@@ -2,6 +2,7 @@
  * UNIFIED ADMIN PANEL - User & Role-Based Access Control (RBAC) Module
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { showAdminConfirm, showAdminForm, showAdminPasswordResult, showAdminToast } from './adminDialog.js';
 
 // Mirrors server/src/utils/permissions.ts - the frontend display key (e.g.
 // "product_mgmt", used to render the matrix) back to the module key the
@@ -38,12 +39,39 @@ const PERMISSION_LABELS = {
   product_approval: 'Product Approval Queue',
 };
 
+let rbacUsersRefreshInFlight = false;
+let rbacUsersLastRefreshAt = 0;
+const RBAC_USERS_REFRESH_MS = 10_000;
+
+function isApprovalOnlyUser(user) {
+  const permissions = user?.permissions || {};
+  return user?.role !== 'administrator' &&
+    permissions.approvals === true &&
+    Object.entries(permissions).every(([key, allowed]) => key === 'approvals' ? allowed === true : allowed === false);
+}
+
+function userRoleLabel(user) {
+  if (isApprovalOnlyUser(user)) return 'APPROVAL-ONLY ADMIN';
+  return String(user.role || '').replace('_', ' ').toUpperCase();
+}
+
 export function renderUserRBACAdmin(container) {
   function render() {
     const state = stateEngine.getState();
     const attempted = state.loading.systemUsers !== undefined;
 
-    if (!attempted) stateEngine.loadRbacUsers().catch(() => {});
+    const shouldRefreshUsers =
+      !state.loading.systemUsers &&
+      !rbacUsersRefreshInFlight &&
+      (!attempted || Date.now() - rbacUsersLastRefreshAt > RBAC_USERS_REFRESH_MS);
+
+    if (shouldRefreshUsers) {
+      rbacUsersRefreshInFlight = true;
+      rbacUsersLastRefreshAt = Date.now();
+      stateEngine.loadRbacUsers()
+        .catch(() => {})
+        .finally(() => { rbacUsersRefreshInFlight = false; });
+    }
     // Needed to show the "pending review" banner below - loaded here too
     // (not just from the Multi-Admin Approvals tab) so it's accurate even if
     // this is the first tab opened this session.
@@ -66,35 +94,33 @@ export function renderUserRBACAdmin(container) {
 
     container.innerHTML = `
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="adm-module-header">
           <div>
-            <h2 style="color: #0F172A; font-size: 1.3rem;">🔐 Administrator Roles & Permissions (RBAC)</h2>
-            <p style="color: #64748B; font-size: 0.9rem;">
-              Manage platform administrators, assign roles (Administrator, Sub-Administrator), and scope granular access permissions.
+            <h2 class="adm-module-title">Administrator roles & permissions</h2>
+            <p class="adm-module-copy">
+              Keep one central full Administrator, one fixed approval account, and scoped sub-admin module access.
             </p>
           </div>
           ${isFullAdmin ? `
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="adm-toolbar">
               <button id="add-subadmin-btn" class="btn btn-primary btn-sm">
-                ➕ Add New Sub-Administrator
-              </button>
-              <button id="add-admin-btn" class="btn btn-secondary btn-sm" title="A second Administrator is required to approve critical requests - with only one, dual-authorization approvals can never be resolved.">
-                🛡️ Add New Administrator
+                Add sub-admin
               </button>
             </div>
           ` : ''}
         </div>
 
         ${state.error ? `
-          <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem;">
-            ⚠️ ${escapeHtml(state.error)}
+          <div class="adm-inline-alert">
+            <strong>Access control error</strong>
+            ${escapeHtml(state.error)}
           </div>
         ` : ''}
 
         ${pendingCreateRequests.length > 0 ? `
           <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
             <div style="font-weight: 800; color: #92400E; font-size: 0.9rem; margin-bottom: 0.6rem;">
-              ⏳ Pending Sub-Administrator Creation (${pendingCreateRequests.length})
+              Pending sub-administrator creation (${pendingCreateRequests.length})
             </div>
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
               ${pendingCreateRequests.map(r => `
@@ -121,63 +147,106 @@ export function renderUserRBACAdmin(container) {
               const pendingChangeReq = state.approvalRequests.find(
                 r => r.targetId === u.id && r.status === 'PENDING' && r.actionType === 'CHANGE_ADMIN_PERMISSIONS'
               );
+              const approvalOnly = isApprovalOnlyUser(u);
+              const canEditPermissions = u.role !== 'administrator' && !approvalOnly;
+              const isSuspended = u.status === 'suspended';
+              const isCurrentUser = u.id === state.currentUser?.id;
+              const cardAccent = approvalOnly ? '#059669' : (u.role==='administrator' ? 'var(--accent-gold)' : '#8b5cf6');
+              const badgeColor = approvalOnly ? '#047857' : (u.role==='administrator' ? 'var(--accent-gold)' : '#334155');
               return `
-              <div class="glass-panel" style="padding: 1.25rem 1.4rem; border-radius: 20px; border-top: 4px solid ${u.role==='administrator'?'var(--accent-gold)':'#8b5cf6'};">
+              <div class="glass-panel" style="padding: 1.25rem 1.4rem; border-radius: 20px; border-top: 4px solid ${cardAccent};">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
                   <div>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                       <h3 style="color: #0F172A; font-size: 1.2rem;">${escapeHtml(u.name)}</h3>
-                      <span class="badge" style="background: #F1F5F9; color: ${u.role==='administrator'?'var(--accent-gold)':'#334155'}; font-weight: 800;">
-                        ${u.role.replace('_', ' ').toUpperCase()}
+                      <span class="badge" style="background: #F1F5F9; color: ${badgeColor}; font-weight: 800;">
+                        ${userRoleLabel(u)}
                       </span>
+                      ${u.role !== 'administrator' ? `
+                        <span class="badge" style="background: ${isSuspended ? '#FEF2F2' : '#ECFDF5'}; color: ${isSuspended ? '#991B1B' : '#047857'}; font-weight: 800;">
+                          ${isSuspended ? 'SUSPENDED' : 'ACTIVE'}
+                        </span>
+                      ` : ''}
                     </div>
                     <div style="font-size: 0.85rem; color: #64748B; margin-top: 0.2rem;">
-                      ✉️ ${escapeHtml(u.email)} • 🕒 Last Login: ${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
+                      ${escapeHtml(u.email)} · Last login: ${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
                     </div>
+                    ${approvalOnly ? `
+                      <div style="font-size: 0.78rem; color: #047857; font-weight: 700; margin-top: 0.35rem;">
+                        Approval-only: can approve/reject Multi-Admin requests, with no other module access.
+                      </div>
+                    ` : ''}
+                    ${isSuspended ? `
+                      <div style="font-size: 0.78rem; color: #991B1B; font-weight: 700; margin-top: 0.35rem;">
+                        Deactivated: this account cannot sign in, and existing sessions lose module access immediately.
+                      </div>
+                    ` : ''}
                   </div>
 
                   <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    ${isCurrentUser ? `
+                      <button class="btn btn-sm btn-secondary self-password-btn">
+                        Change my password
+                      </button>
+                    ` : ''}
                     ${u.role !== 'administrator' ? `
-                      <button class="btn btn-sm btn-secondary reset-subadmin-pass-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
-                        🔑 Reset Pass
-                      </button>
-                      <button class="btn btn-sm btn-secondary change-subadmin-email-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}" data-email="${escapeHtml(u.email)}">
-                        ✉️ Change Email
-                      </button>
-                      <button class="btn btn-sm btn-secondary req-perm-change-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
-                        🔒 Request Permission Change (Multi-Admin)
-                      </button>
-                      <button class="btn btn-sm btn-danger del-subadmin-req-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
-                        🔒 Request Removal (Multi-Admin)
-                      </button>
+                      ${isFullAdmin ? `
+                        <button class="btn btn-sm btn-secondary reset-subadmin-pass-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
+                          Reset password
+                        </button>
+                        <button class="btn btn-sm btn-secondary change-subadmin-email-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}" data-email="${escapeHtml(u.email)}">
+                          Change email
+                        </button>
+                        <button class="btn btn-sm toggle-subadmin-status-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}" data-action="${isSuspended ? 'activate' : 'suspend'}" style="background:${isSuspended?'#DCFCE7':'#FEF3C7'}; color:${isSuspended?'#166534':'#92400E'}; border:1px solid ${isSuspended?'#BBF7D0':'#FDE68A'};">
+                          ${isSuspended ? 'Activate' : 'Deactivate'}
+                        </button>
+                      ` : ''}
+                      ${approvalOnly ? `
+                        <span class="badge" style="background: #ECFDF5; color: #047857; font-weight: 800; align-self: center;">Locked to approvals</span>
+                      ` : `
+                        <button class="btn btn-sm btn-secondary req-perm-change-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
+                          Request permission change
+                        </button>
+                      `}
+                      ${isFullAdmin ? `
+                        <button class="btn btn-sm btn-danger del-subadmin-direct-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
+                          Delete account
+                        </button>
+                      ` : `
+                        <button class="btn btn-sm btn-danger del-subadmin-req-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
+                          Request removal
+                        </button>
+                      `}
                     ` : ''}
                   </div>
                 </div>
 
                 ${pendingChangeReq ? `
                   <div style="background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; padding: 0.65rem 0.9rem; border-radius: 10px; font-size: 0.82rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                    ⏳ A permission change for ${escapeHtml(u.name)} is awaiting review in Multi-Admin Approvals - a <em>different</em> Administrator must approve it before it takes effect. The checkboxes below still show the current (unchanged) permissions.
+                    A permission change for ${escapeHtml(u.name)} is awaiting review in Multi-Admin Approvals. A <em>different</em> Administrator must approve it before it takes effect. The checkboxes below still show the current permissions.
                   </div>
                 ` : ''}
 
-                <!-- Permission Toggles Matrix - editable checkboxes for Sub-Administrators
+                <!-- Permission Toggles Matrix - editable checkboxes for ordinary Sub-Administrators
                      (the requester picks the target permission set, submitted with the
-                     approval request); read-only for the Administrator row below, since a
-                     full Administrator's access is hardcoded to "everything" and can't be
-                     reduced (see fullPermissions() in utils/permissions.ts) - there's
-                     nothing here for a request to meaningfully change for them. -->
+                     approval request); read-only for the central Administrator and
+                     approval-only admins, because those roles are intentionally fixed. -->
                 <div style="background: #F8FAFC; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid #E2E8F0;">
                   <div style="font-size: 0.78rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
-                    ${u.role !== 'administrator' ? 'Assigned Module Access Permissions - toggle to set the requested permission set' : 'Assigned Module Access Permissions (Administrators always have full access)'}
+                    ${u.role === 'administrator'
+                      ? 'Central Administrator Permissions (full access)'
+                      : approvalOnly
+                        ? 'Approval-Only Access (fixed to Multi-Admin Approvals)'
+                        : 'Assigned Module Access Permissions - toggle to set the requested permission set'}
                   </div>
 
                   <div class="grid-4" style="gap: 0.75rem;">
                     ${Object.entries(u.permissions).map(([permKey, isAllowed]) => `
-                      <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: ${isAllowed?'#059669':'#94A3B8'}; cursor: ${u.role!=='administrator'?'pointer':'default'};">
-                        ${u.role !== 'administrator' ? `
+                      <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: ${isAllowed?'#059669':'#94A3B8'}; cursor: ${canEditPermissions?'pointer':'default'};">
+                        ${canEditPermissions ? `
                           <input type="checkbox" class="perm-checkbox" data-user-id="${u.id}" data-module="${KEY_TO_MODULE[permKey]}" ${isAllowed ? 'checked' : ''} style="cursor: pointer;">
-                        ` : `<span>${isAllowed ? '✅' : '❌'}</span>`}
-                        <span style="text-transform: capitalize;">${permKey.replace('_', ' ')}</span>
+                        ` : `<span class="adm-perm-state ${isAllowed ? 'is-on' : ''}">${isAllowed ? 'On' : 'Off'}</span>`}
+                        <span>${escapeHtml(PERMISSION_LABELS[permKey] || permKey.replace('_', ' '))}</span>
                       </label>
                     `).join('')}
                   </div>
@@ -206,28 +275,25 @@ export function renderUserRBACAdmin(container) {
       openCreateSubAdminModal();
     });
 
-    container.querySelector('#add-admin-btn')?.addEventListener('click', async () => {
-      if (!confirm('A new Administrator has full, unrestricted access to every module - not scoped permissions like a Sub-Administrator. Create one anyway?')) return;
-      const name = prompt('Enter Administrator Full Name:');
-      if (!name) return;
-      const email = prompt('Enter Email Address:');
-      if (!email) return;
-      const password = prompt('Set an Initial Password (min. 6 characters):');
-      if (!password) return;
-      try {
-        await stateEngine.createAdministrator(name, email, password);
-        alert(`Administrator account created for ${name}. They can now act as the second approver for Multi-Admin approval requests.`);
-      } catch (err) {
-        render();
-      }
+    container.querySelectorAll('.self-password-btn').forEach(btn => {
+      btn.addEventListener('click', () => openSelfPasswordDialog());
     });
 
     container.querySelectorAll('.reset-subadmin-pass-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
+        const confirmed = await showAdminConfirm({
+          title: `Reset password for ${btn.dataset.name}`,
+          message: 'This creates a new temporary password. The current password cannot be viewed or recovered.',
+          detail: 'Share the temporary password through a trusted channel and ask the admin to change it after signing in.',
+          confirmLabel: 'Reset password',
+          tone: 'warning',
+        });
+        if (!confirmed) return;
         try {
           const result = await stateEngine.resetSubAdminPassword(btn.dataset.id);
-          alert(`Temporary password for ${btn.dataset.name}: ${result.tempPassword}\n\n(In production this would be emailed/SMS'd to them instead of shown here.)`);
+          await showAdminPasswordResult({ name: btn.dataset.name, tempPassword: result.tempPassword });
         } catch (err) {
+          showAdminToast({ title: 'Password reset failed', message: err.message || 'Please try again.', tone: 'danger' });
           render();
         }
       });
@@ -235,12 +301,49 @@ export function renderUserRBACAdmin(container) {
 
     container.querySelectorAll('.change-subadmin-email-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const newEmail = prompt(`Enter new email address for ${btn.dataset.name}:`, btn.dataset.email);
-        if (!newEmail || newEmail === btn.dataset.email) return;
+        const data = await showAdminForm({
+          title: `Change email for ${btn.dataset.name}`,
+          message: 'Email is the login identity for this admin account. The change is audited.',
+          submitLabel: 'Update email',
+          fields: [
+            { name: 'email', label: 'New email address', type: 'email', value: btn.dataset.email, required: true, autocomplete: 'email' },
+          ],
+        });
+        if (!data || data.email === btn.dataset.email) return;
         try {
-          await stateEngine.changeSubAdminEmail(btn.dataset.id, newEmail);
-          alert(`Email updated for ${btn.dataset.name}.`);
+          await stateEngine.changeSubAdminEmail(btn.dataset.id, data.email);
+          showAdminToast({ title: 'Email updated', message: `${btn.dataset.name} now signs in with ${data.email}.` });
         } catch (err) {
+          showAdminToast({ title: 'Email update failed', message: err.message || 'Please try again.', tone: 'danger' });
+          render();
+        }
+      });
+    });
+
+    container.querySelectorAll('.toggle-subadmin-status-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const activating = btn.dataset.action === 'activate';
+        const actionLabel = activating ? 'Activate' : 'Deactivate';
+        const consequence = activating
+          ? 'They will be able to sign in again immediately.'
+          : 'They will not be able to sign in, and existing sessions will lose access immediately.';
+        const confirmed = await showAdminConfirm({
+          title: `${actionLabel} ${btn.dataset.name}`,
+          message: consequence,
+          detail: activating ? 'Use this only after you have confirmed the account should regain access.' : 'This is the fastest emergency stop for an admin account.',
+          confirmLabel: activating ? 'Activate account' : 'Deactivate account',
+          tone: activating ? 'default' : 'danger',
+        });
+        if (!confirmed) return;
+        try {
+          await stateEngine.toggleSubAdminStatus(btn.dataset.id);
+          showAdminToast({
+            title: activating ? 'Admin account activated' : 'Admin account deactivated',
+            message: `${btn.dataset.name} ${activating ? 'can sign in again.' : 'can no longer access the admin system.'}`,
+            tone: activating ? 'success' : 'warning',
+          });
+        } catch (err) {
+          showAdminToast({ title: 'Status change failed', message: err.message || 'Please try again.', tone: 'danger' });
           render();
         }
       });
@@ -252,11 +355,22 @@ export function renderUserRBACAdmin(container) {
         // requested and, once approved, applied to the target's permissions.
         const checkboxes = container.querySelectorAll(`.perm-checkbox[data-user-id="${btn.dataset.id}"]`);
         const permissions = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.dataset.module);
-        if (!confirm(`Request this permission set for ${btn.dataset.name}?\n\n${permissions.length ? permissions.join(', ') : '(no access - all permissions revoked)'}\n\nAnother Administrator must approve this before it takes effect.`)) return;
+        const confirmed = await showAdminConfirm({
+          title: `Request permission change for ${btn.dataset.name}`,
+          message: 'This does not change access immediately. A different Administrator or approval-only admin must approve it first.',
+          detail: permissions.length ? `Requested modules: ${permissions.join(', ')}` : 'Requested modules: none. This will revoke all module access if approved.',
+          confirmLabel: 'Submit request',
+          tone: permissions.length ? 'default' : 'warning',
+        });
+        if (!confirmed) return;
         try {
           await stateEngine.requestPermissionChange(btn.dataset.id, btn.dataset.name, permissions);
-          alert(`Approval Request created for modifying permissions of ${btn.dataset.name}. Another Administrator must review and approve this action.`);
+          showAdminToast({
+            title: 'Approval request submitted',
+            message: `Permission change for ${btn.dataset.name} is waiting for secondary approval.`,
+          });
         } catch (err) {
+          showAdminToast({ title: 'Request failed', message: err.message || 'Please try again.', tone: 'danger' });
           render();
         }
       });
@@ -264,11 +378,56 @@ export function renderUserRBACAdmin(container) {
 
     container.querySelectorAll('.del-subadmin-req-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const reason = prompt(`Enter reason for removing Sub-Administrator account (${btn.dataset.name}):`) || 'Sub-Administrator account removal requested.';
+        const data = await showAdminForm({
+          title: `Request removal of ${btn.dataset.name}`,
+          message: 'Account removal is a critical action. It will not execute until another authorized account approves the request.',
+          submitLabel: 'Submit removal request',
+          tone: 'danger',
+          fields: [
+            {
+              name: 'reason',
+              label: 'Reason for removal',
+              type: 'textarea',
+              value: 'Sub-Administrator account removal requested.',
+              required: true,
+              rows: 4,
+            },
+          ],
+        });
+        if (!data) return;
         try {
-          await stateEngine.requestDeleteSubAdmin(btn.dataset.id, reason);
-          alert(`Critical Approval Request created to remove Sub-Administrator ${btn.dataset.name}. Another Administrator must review and approve this action before removal occurs.`);
+          await stateEngine.requestDeleteSubAdmin(btn.dataset.id, data.reason);
+          showAdminToast({
+            title: 'Removal request submitted',
+            message: `${btn.dataset.name} will remain active until a different approver authorizes removal.`,
+            tone: 'warning',
+          });
         } catch (err) {
+          showAdminToast({ title: 'Removal request failed', message: err.message || 'Please try again.', tone: 'danger' });
+          render();
+        }
+      });
+    });
+
+    container.querySelectorAll('.del-subadmin-direct-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const confirmed = await showAdminConfirm({
+          title: `Delete ${btn.dataset.name}`,
+          message: 'This removes the admin account immediately. The user will not be able to sign in again.',
+          detail: 'Use this only from the Main Admin account after confirming the account is no longer needed.',
+          confirmLabel: 'Delete account',
+          tone: 'danger',
+        });
+        if (!confirmed) return;
+        try {
+          await stateEngine.deleteSubAdmin(btn.dataset.id);
+          showAdminToast({
+            title: 'Admin account deleted',
+            message: `${btn.dataset.name} has been removed.`,
+            tone: 'warning',
+          });
+        } catch (err) {
+          showAdminToast({ title: 'Delete failed', message: err.message || 'Please try again.', tone: 'danger' });
           render();
         }
       });
@@ -276,6 +435,35 @@ export function renderUserRBACAdmin(container) {
   }
 
   render();
+}
+
+async function openSelfPasswordDialog() {
+  const data = await showAdminForm({
+    title: 'Change my password',
+    message: 'Update the password for your signed-in admin account.',
+    submitLabel: 'Save password',
+    fields: [
+      { name: 'currentPassword', label: 'Current password', type: 'password', required: true, autocomplete: 'current-password' },
+      { name: 'newPassword', label: 'New password', type: 'password', required: true, minLength: 6, autocomplete: 'new-password' },
+      { name: 'confirmPassword', label: 'Confirm new password', type: 'password', required: true, minLength: 6, autocomplete: 'new-password' },
+    ],
+  });
+  if (!data) return;
+  if (data.newPassword.length < 6) {
+    showAdminToast({ title: 'Password not changed', message: 'New password must be at least 6 characters.', tone: 'danger' });
+    return;
+  }
+  if (data.newPassword !== data.confirmPassword) {
+    showAdminToast({ title: 'Password not changed', message: 'New passwords do not match.', tone: 'danger' });
+    return;
+  }
+
+  try {
+    await stateEngine.changePassword(data.currentPassword, data.newPassword);
+    showAdminToast({ title: 'Password updated', message: 'Use the new password next time you sign in.' });
+  } catch (err) {
+    showAdminToast({ title: 'Password not changed', message: err.message || 'Please check the current password and try again.', tone: 'danger' });
+  }
 }
 
 // Combines account creation + the initial permission request into one modal
@@ -286,16 +474,22 @@ export function renderUserRBACAdmin(container) {
 // MarketplaceAdmin.js.
 function openCreateSubAdminModal() {
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(2,6,23,0.65); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto;';
+  overlay.className = 'adm-dialog-backdrop';
 
   overlay.innerHTML = `
-    <div style="background: #fff; border-radius: 20px; padding: 1.75rem 2rem; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto;">
-      <h3 style="color: #0F172A; font-size: 1.2rem; margin-bottom: 0.25rem;">➕ Request New Sub-Administrator</h3>
-      <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 1.25rem;">
+    <section class="adm-dialog" role="dialog" aria-modal="true" aria-labelledby="create-subadmin-title">
+      <div class="adm-dialog-topline"></div>
+      <div class="adm-dialog-header">
+        <div>
+          <div class="adm-dialog-kicker">Admin workflow</div>
+          <h3 id="create-subadmin-title" class="adm-dialog-title">Request new sub-administrator</h3>
+        </div>
+      </div>
+      <p class="adm-dialog-message">
         Set their account details and initial module access in one step. The account itself now requires a different Administrator's approval too, same as a permission change.
       </p>
 
-      <form id="create-subadmin-form">
+      <form id="create-subadmin-form" class="adm-dialog-form">
         <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.25rem;">
           <input name="name" type="text" placeholder="Full Name" required
             style="padding: 0.65rem 0.9rem; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 0.9rem;">
@@ -317,8 +511,8 @@ function openCreateSubAdminModal() {
           `).join('')}
         </div>
 
-        <div style="background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; padding: 0.65rem 0.9rem; border-radius: 10px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1.25rem;">
-          ⏳ This submits one request for the account <em>and</em> its permissions - nothing is created yet. A <em>different</em> Administrator must approve it in Multi-Admin Approvals before this account exists at all (self-approval isn't allowed).
+        <div class="adm-dialog-note" style="margin: 0 0 1.25rem;">
+          This submits one request for the account and its permissions. Nothing is created until a different Administrator approves it in Multi-Admin Approvals.
         </div>
 
         <div id="create-subadmin-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
@@ -328,7 +522,7 @@ function openCreateSubAdminModal() {
           <button type="submit" id="create-subadmin-submit" class="btn btn-sm btn-primary">Submit Creation Request</button>
         </div>
       </form>
-    </div>
+    </section>
   `;
 
   function close() {
@@ -355,14 +549,15 @@ function openCreateSubAdminModal() {
       // a different Administrator approves it in Multi-Admin Approvals.
       await stateEngine.requestCreateSubAdmin(name, email, password, permissions);
       close();
-      alert(
-        `Request submitted to create a Sub-Administrator account for ${name}${permissions.length ? ` with permissions: ${permissions.join(', ')}` : ' with no initial permissions'}. A different Administrator must approve it in Multi-Admin Approvals before the account actually exists.`
-      );
+      showAdminToast({
+        title: 'Creation request submitted',
+        message: `${name} will be created after secondary approval${permissions.length ? ` with ${permissions.length} module permission(s).` : ' with no initial module access.'}`,
+      });
     } catch (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Creation Request';
       const message = err.message || 'Something went wrong. Please try again.';
-      form.querySelector('#create-subadmin-error').textContent = `⚠️ ${message}`;
+      form.querySelector('#create-subadmin-error').textContent = message;
     }
   });
 

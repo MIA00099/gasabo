@@ -62,10 +62,6 @@ function allowedSupabaseImage(src: string): URL | null {
   }
 }
 
-function preferredFormat(accept = ''): 'avif' | 'webp' {
-  return /\bimage\/avif\b/i.test(accept) ? 'avif' : 'webp';
-}
-
 async function sourceBuffer(src: string): Promise<Buffer | null> {
   const localPath = localUploadPath(src);
   if (localPath) return fs.readFile(localPath);
@@ -85,8 +81,6 @@ imagesRouter.get('/optimized', async (req, res, next) => {
     const src = String(req.query.src || '');
     const width = clampNumber(req.query.w, MIN_WIDTH, MAX_WIDTH, DEFAULT_WIDTH);
     const quality = clampNumber(req.query.q, MIN_QUALITY, MAX_QUALITY, DEFAULT_QUALITY);
-    const format = preferredFormat(req.get('accept') || '');
-
     if (!src) return res.status(400).json({ error: 'Image source is required.' });
 
     const input = await sourceBuffer(src);
@@ -96,16 +90,12 @@ imagesRouter.get('/optimized', async (req, res, next) => {
       .rotate()
       .resize({ width, withoutEnlargement: true });
 
-    if (format === 'avif') {
-      pipeline = pipeline.avif({ quality: Math.min(quality, 72), effort: 4 });
-      res.type('image/avif');
-    } else {
-      pipeline = pipeline.webp({ quality });
-      res.type('image/webp');
-    }
+    // WebP keeps the payload small without the heavy AVIF encode delay that
+    // made gallery next/previous clicks appear stuck on large real-estate photos.
+    pipeline = pipeline.webp({ quality });
+    res.type('image/webp');
 
     res.set('Cache-Control', 'public, max-age=31536000, immutable');
-    res.set('Vary', 'Accept');
     res.send(await pipeline.toBuffer());
   } catch (err) {
     next(err);

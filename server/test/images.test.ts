@@ -42,15 +42,15 @@ describe('GET /api/images/optimized', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/^image\/webp\b/);
     expect(res.headers['cache-control']).toContain('max-age=31536000');
-    expect(res.headers.vary).toContain('Accept');
+    expect(res.headers.vary || '').not.toContain('Accept');
 
     const meta = await sharp(res.body).metadata();
     expect(meta.width).toBe(240);
     expect(meta.format).toBe('webp');
   });
 
-  it('uses AVIF when the browser advertises support', async () => {
-    const src = await writeUploadImage(`optimizer-avif-${Date.now()}.png`);
+  it('keeps WebP even when the browser advertises AVIF support', async () => {
+    const src = await writeUploadImage(`optimizer-webp-${Date.now()}.png`);
 
     const res = await request(app)
       .get('/api/images/optimized')
@@ -58,11 +58,11 @@ describe('GET /api/images/optimized', () => {
       .set('Accept', 'image/avif,image/webp');
 
     expect(res.status).toBe(200);
-    expect(res.headers['content-type']).toMatch(/^image\/avif\b/);
+    expect(res.headers['content-type']).toMatch(/^image\/webp\b/);
 
     const meta = await sharp(res.body).metadata();
     expect(meta.width).toBe(160);
-    expect(meta.format).toBe('heif');
+    expect(meta.format).toBe('webp');
   });
 
   it('rejects sources outside the uploads image allowlist', async () => {

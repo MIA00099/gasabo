@@ -43,6 +43,12 @@ let rbacUsersRefreshInFlight = false;
 let rbacUsersLastRefreshAt = 0;
 const RBAC_USERS_REFRESH_MS = 10_000;
 
+// The whole admin view is remounted whenever stateEngine publishes a loading
+// or data update. Keep permission edits outside the DOM so an in-progress
+// checkbox change is not silently reset by a background RBAC/approval refresh.
+// Each entry is the complete requested module set for one existing sub-admin.
+const permissionDrafts = new Map();
+
 function isApprovalOnlyUser(user) {
   const permissions = user?.permissions || {};
   const allowedApprovalKeys = new Set(['approvals', 'product_approval']);
@@ -154,6 +160,13 @@ export function renderUserRBACAdmin(container) {
               // The Approval Admin approves the Main Admin's request in the
               // separate Multi-Admin Approvals workflow.
               const canEditPermissions = isFullAdmin && u.role !== 'administrator' && !approvalOnly;
+              const savedModules = new Set(
+                Object.entries(u.permissions)
+                  .filter(([, allowed]) => allowed)
+                  .map(([key]) => KEY_TO_MODULE[key])
+                  .filter(Boolean)
+              );
+              const selectedModules = permissionDrafts.get(u.id) || savedModules;
               const isSuspended = u.status === 'suspended';
               const isCurrentUser = u.id === state.currentUser?.id;
               const cardAccent = approvalOnly ? '#059669' : (u.role==='administrator' ? 'var(--accent-gold)' : '#8b5cf6');
@@ -209,8 +222,8 @@ export function renderUserRBACAdmin(container) {
                       ${approvalOnly ? `
                         <span class="badge" style="background: #ECFDF5; color: #047857; font-weight: 800; align-self: center;">Locked to approvals</span>
                       ` : isFullAdmin ? `
-                        <button class="btn btn-sm btn-secondary req-perm-change-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}">
-                          Request permission change
+                        <button class="btn btn-sm btn-secondary req-perm-change-btn" data-id="${u.id}" data-name="${escapeHtml(u.name)}" ${pendingChangeReq ? 'disabled' : ''}>
+                          ${pendingChangeReq ? 'Change pending approval' : 'Request permission change'}
                         </button>
                       ` : ''}
                       ${isFullAdmin ? `
@@ -251,7 +264,7 @@ export function renderUserRBACAdmin(container) {
                     ${Object.entries(u.permissions).map(([permKey, isAllowed]) => `
                       <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: ${isAllowed?'#059669':'#94A3B8'}; cursor: ${canEditPermissions?'pointer':'default'};">
                         ${canEditPermissions ? `
-                          <input type="checkbox" class="perm-checkbox" data-user-id="${u.id}" data-module="${KEY_TO_MODULE[permKey]}" ${isAllowed ? 'checked' : ''} style="cursor: pointer;">
+                          <input type="checkbox" class="perm-checkbox" data-user-id="${u.id}" data-module="${KEY_TO_MODULE[permKey]}" ${selectedModules.has(KEY_TO_MODULE[permKey]) ? 'checked' : ''} ${pendingChangeReq ? 'disabled' : ''} style="cursor: ${pendingChangeReq ? 'not-allowed' : 'pointer'};">
                         ` : `<span class="adm-perm-state ${isAllowed ? 'is-on' : ''}">${isAllowed ? 'On' : 'Off'}</span>`}
                         <span>${escapeHtml(PERMISSION_LABELS[permKey] || permKey.replace('_', ' '))}</span>
                       </label>
@@ -372,6 +385,7 @@ export function renderUserRBACAdmin(container) {
         if (!confirmed) return;
         try {
           await stateEngine.requestPermissionChange(btn.dataset.id, btn.dataset.name, permissions);
+          permissionDrafts.delete(btn.dataset.id);
           showAdminToast({
             title: 'Approval request submitted',
             message: `Permission change for ${btn.dataset.name} is waiting for secondary approval.`,
@@ -380,6 +394,22 @@ export function renderUserRBACAdmin(container) {
           showAdminToast({ title: 'Request failed', message: err.message || 'Please try again.', tone: 'danger' });
           render();
         }
+      });
+    });
+
+    // Persist every checkbox edit immediately in the draft map. A background
+    // state update may replace this DOM tree, but the next render now restores
+    // exactly what the Main Admin selected instead of the old saved roles.
+    container.querySelectorAll('.perm-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        const userId = checkbox.dataset.userId;
+        const selected = new Set(
+          Array.from(container.querySelectorAll(`.perm-checkbox[data-user-id="${userId}"]`))
+            .filter(cb => cb.checked)
+            .map(cb => cb.dataset.module)
+            .filter(Boolean)
+        );
+        permissionDrafts.set(userId, selected);
       });
     });
 

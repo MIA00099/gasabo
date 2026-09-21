@@ -137,6 +137,7 @@ const SPA_ROUTES = new Set([
   '/stores',
   '/post-ad',
   '/auth',
+  '/reset-password',
   '/flash-deals',
   '/help-center',
   '/faqs',

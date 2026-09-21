@@ -190,9 +190,11 @@ describe('Security and fallback status headers', () => {
   });
 
   it.skipIf(!HAS_DIST)('serves known SPA routes as normal pages', async () => {
-    const res = await request(app).get('/flash-deals');
-    expect(res.status).toBe(200);
-    expect(res.headers['x-robots-tag']).toBeUndefined();
+    for (const path of ['/flash-deals', '/reset-password']) {
+      const res = await request(app).get(path);
+      expect(res.status).toBe(200);
+      expect(res.headers['x-robots-tag']).toBeUndefined();
+    }
   });
 
   it.skipIf(!HAS_DIST)('returns a hard 404 for unknown frontend paths', async () => {

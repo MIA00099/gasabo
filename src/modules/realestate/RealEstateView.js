@@ -27,6 +27,24 @@ const TYPE_BADGE = {
   commercial: { bg: RE_GOLD, color: RE_DARK, label: 'Commercial' },
 };
 
+const PROPERTY_DETAIL_OVERLAY_STYLE = [
+  'position: fixed',
+  'inset: 0',
+  'width: 100vw',
+  'height: 100vh',
+  'height: 100dvh',
+  'max-height: 100dvh',
+  'background: #FFFFFF',
+  'z-index: 9999',
+  'overflow-x: hidden',
+  'overflow-y: auto',
+  '-webkit-overflow-scrolling: touch',
+  'overscroll-behavior-y: contain',
+  'touch-action: pan-y',
+  'display: flex',
+  'flex-direction: column',
+].join('; ');
+
 const TESTIMONIALS = [
   { quote: 'Gasabo Real Estate made buying a plot in Nyamata so incredibly easy. Their investment advice gave me full confidence.', name: 'Eric N. - Investor' },
   { quote: 'Their property management services are top tier. I live abroad and they collect rent and maintain my apartments perfectly.', name: 'Jean Claude - Property Owner' },
@@ -875,7 +893,7 @@ export function showToastNotification(msg) {
 export function openPropertyModal(prop, contact, onClose, returnFocusTo) {
   const badge = TYPE_BADGE[prop.type] || TYPE_BADGE.house;
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position: fixed; inset: 0; width: 100vw; height: 100vh; background: #FFFFFF; z-index: 9999; overflow-y: auto; display: flex; flex-direction: column;';
+  overlay.style.cssText = PROPERTY_DETAIL_OVERLAY_STYLE;
 
   const phoneDigits = (contact?.phone || '').replace(/[^\d+]/g, '');
 

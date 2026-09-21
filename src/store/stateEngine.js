@@ -1151,6 +1151,11 @@ class StateEngine {
     return res?.message || '';
   }
 
+  async completePasswordReset(accessToken, newPassword) {
+    const res = await api.post('/auth/reset-password/complete', { accessToken, newPassword });
+    return res?.message || 'Password updated. You can sign in with the new password.';
+  }
+
   async changePassword(currentPassword, newPassword) {
     return this._run('accountForm', async () => {
       await api.post('/auth/change-password', { currentPassword, newPassword });

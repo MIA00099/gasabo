@@ -5,9 +5,14 @@ import { prisma } from '../config/db.js';
 import { signToken, requireAuth } from '../middleware/auth.js';
 import { fullPermissions, permissionsFromModuleList } from '../utils/permissions.js';
 import { logAudit } from '../utils/audit.js';
-import { notifyAdminsWithModulePermission } from '../utils/notify.js';
 import { isEmailTaken } from '../utils/accountEmail.js';
 import { rateLimit } from '../middleware/rateLimit.js';
+import {
+  getSupabaseUserForRecoveryToken,
+  sendSellerPasswordResetLink,
+  signInWithSupabasePassword,
+  updateSupabaseUserPassword,
+} from '../utils/supabaseAuth.js';
 
 export const authRouter = Router();
 
@@ -105,13 +110,29 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
   }
 
   const seller = await prisma.seller.findUnique({ where: { email } });
-  if (seller && (await bcrypt.compare(password, seller.passwordHash))) {
-    if (seller.status === 'SUSPENDED') {
-      return res.status(403).json({ error: 'This seller account has been suspended. Contact support.' });
+  if (seller) {
+    let sellerPasswordMatches = await bcrypt.compare(password, seller.passwordHash);
+    let shouldSyncLocalPassword = false;
+
+    if (!sellerPasswordMatches) {
+      sellerPasswordMatches = await signInWithSupabasePassword(email, password);
+      shouldSyncLocalPassword = sellerPasswordMatches;
     }
-    await prisma.seller.update({ where: { id: seller.id }, data: { lastLoginAt: new Date() } });
+
+    if (sellerPasswordMatches) {
+      if (seller.status === 'SUSPENDED') {
+        return res.status(403).json({ error: 'This seller account has been suspended. Contact support.' });
+      }
+      await prisma.seller.update({
+        where: { id: seller.id },
+        data: {
+          lastLoginAt: new Date(),
+          ...(shouldSyncLocalPassword ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
+        },
+      });
     const authUser = { id: seller.id, email: seller.email, name: seller.businessName, role: 'SELLER' as const };
     return res.json({ token: signToken(authUser), user: { ...authUser, phone: seller.contactPhone, district: seller.district } });
+    }
   }
 
   const user = await prisma.platformUser.findUnique({ where: { email } });
@@ -128,31 +149,27 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
 });
 
 const forgotPasswordSchema = z.object({ email: z.string().email() });
+const resetPasswordCompleteSchema = z.object({
+  accessToken: z.string().min(20),
+  newPassword: z.string().min(6),
+});
 
 // The same answer whichever way it goes. Saying "no account with that email"
 // would turn this into a way to find out who has one.
 const FORGOT_PASSWORD_REPLY =
-  'Password reset request sent. If that email belongs to an active seller account, Seller Support has been notified. ' +
-  'An admin will create a temporary password in Seller Management and contact you. Call 0788350555 if it is urgent.';
+  'If that email belongs to an active seller account, a password reset email has been sent. ' +
+  'Open the email link to choose a new password.';
 
 /**
  * "Forgot password?" on the sign-in screen.
  *
- * That link was an <a href="#"> with no handler bound to it at all: it moved
- * the page a few pixels and did nothing else, so a seller locked out of their
- * account had no route back in short of phoning someone.
- *
- * It cannot email a reset link, because nothing in this app sends email -
- * utils/notify.ts writes Notification rows, and utils/accountEmail.ts only
- * checks address uniqueness. So this closes the loop that does exist: it
- * raises the request with the administrators who hold the SELLERS module, who
- * reset the password from Seller Management (POST /sellers/:id/reset-password)
- * and pass the temporary one to the seller.
- *
  * Public by design - the caller is locked out, so requiring auth would defeat
- * the point. Sellers only: administrators and sub-administrators are reset by
- * another administrator through the RBAC screen, and platform users have no
- * password-reset path yet.
+ * the point. This intentionally returns the same reply for known and unknown
+ * addresses so the endpoint cannot be used to enumerate seller accounts.
+ *
+ * Supabase Auth owns the recovery email and link. This app still owns the
+ * seller login hash, so /reset-password/complete verifies the Supabase
+ * recovery session and syncs the new password into the Seller table.
  */
 authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
   const parsed = forgotPasswordSchema.safeParse(req.body);
@@ -167,19 +184,8 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
   const seller = await prisma.seller.findUnique({ where: { email } });
 
   if (seller && seller.status !== 'SUSPENDED') {
-    // This endpoint is public, so without a guard anyone could pile up
-    // notification rows by submitting the same address repeatedly. One open
-    // request per seller is all an administrator needs to act on.
-    const alreadyPending = await prisma.notification.findFirst({
-      where: { type: 'PASSWORD_RESET_REQUEST', isRead: false, message: { contains: seller.email } },
-    });
-
-    if (!alreadyPending) {
-      await notifyAdminsWithModulePermission('SELLERS', {
-        type: 'PASSWORD_RESET_REQUEST',
-        message: `Password reset request: ${seller.businessName} (${seller.email}). Open Seller Management, click Reset Pass, then give the temporary password to the seller. This request does not change the password until Reset Pass is used.`,
-      });
-
+    try {
+      await sendSellerPasswordResetLink({ email: seller.email, name: seller.businessName });
       await logAudit({
         actorId: seller.id,
         actorType: 'SELLER',
@@ -187,12 +193,74 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
         action: 'PASSWORD_RESET_REQUESTED',
         module: 'Security & Auth',
         targetId: seller.id,
-        details: `${seller.businessName} requested a password reset from the sign-in screen.`,
+        details: `${seller.businessName} requested a Supabase password reset email from the sign-in screen.`,
       });
+    } catch (err) {
+      console.error('[auth] seller password reset email failed:', err);
     }
   }
 
   res.json({ success: true, message: FORGOT_PASSWORD_REPLY });
+});
+
+authRouter.post('/reset-password/complete', async (req, res) => {
+  const parsed = resetPasswordCompleteSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Enter a new password of at least 6 characters.' });
+  }
+
+  const { accessToken, newPassword } = parsed.data;
+
+  let recoveryUser: { id: string; email: string };
+  try {
+    recoveryUser = await getSupabaseUserForRecoveryToken(accessToken);
+  } catch (err) {
+    return res.status(401).json({ error: err instanceof Error ? err.message : 'This reset link is invalid or expired.' });
+  }
+
+  const seller = await prisma.seller.findFirst({
+    where: {
+      email: { equals: recoveryUser.email, mode: 'insensitive' },
+      status: { not: 'SUSPENDED' },
+    },
+  });
+  if (!seller) {
+    return res.status(403).json({ error: 'This reset link is not valid for an active seller account.' });
+  }
+
+  try {
+    await updateSupabaseUserPassword(recoveryUser.id, newPassword);
+  } catch (err) {
+    console.error('[auth] Supabase password update failed:', err);
+    return res.status(502).json({ error: 'Could not update the password. Request a new reset email and try again.' });
+  }
+
+  await prisma.$transaction([
+    prisma.seller.update({
+      where: { id: seller.id },
+      data: { passwordHash: await bcrypt.hash(newPassword, 10) },
+    }),
+    prisma.notification.updateMany({
+      where: {
+        type: 'PASSWORD_RESET_REQUEST',
+        isRead: false,
+        message: { contains: `(${seller.email})` },
+      },
+      data: { isRead: true },
+    }),
+  ]);
+
+  await logAudit({
+    actorId: seller.id,
+    actorType: 'SELLER',
+    actorName: seller.businessName,
+    action: 'PASSWORD_RESET_COMPLETED',
+    module: 'Security & Auth',
+    targetId: seller.id,
+    details: `${seller.businessName} completed password reset from the emailed Supabase link.`,
+  });
+
+  res.json({ success: true, message: 'Password updated. You can sign in with the new password.' });
 });
 
 /**

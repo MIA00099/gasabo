@@ -14,6 +14,7 @@ import {
 import { renderRealEstateView, openPropertyModal } from './modules/realestate/RealEstateView.js';
 import { renderAdminDashboardView } from './modules/admin/AdminDashboardView.js';
 import { renderLoginView } from './components/LoginView.js';
+import { renderResetPasswordView } from './components/ResetPasswordView.js';
 import {
   renderHeaderHtml, bindHeaderEvents,
   renderMobileTabBarHtml, bindMobileTabBarEvents,
@@ -25,7 +26,7 @@ import { getMarketplaceFooterHtml, bindMarketplaceFooterEvents } from './compone
 import { openCategoryDropdown } from './components/dropdownMenu.js';
 import {
   parseLocation, onRouteChange, pushHome, pushPath, pathForRoute,
-  ROUTE_AUTH, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_FLASH_DEALS, ROUTE_HELP_CENTER, ROUTE_FAQS,
+  ROUTE_AUTH, ROUTE_RESET_PASSWORD, ROUTE_HOME, ROUTE_POST_AD, ROUTE_PRODUCT, ROUTE_PRODUCTS, ROUTE_STORES, ROUTE_FLASH_DEALS, ROUTE_HELP_CENTER, ROUTE_FAQS,
   ROUTE_ABOUT, ROUTE_TERMS, ROUTE_PRIVACY, ROUTE_CONTACT,
 } from './store/router.js';
 // No-op in a browser; configures the status bar / splash / Back button when
@@ -567,6 +568,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRealEstateView(appElement);
       } else if (activePortal === 'admin') {
         renderAdminDashboardView(appElement);
+      } else if (state.route.kind === ROUTE_RESET_PASSWORD) {
+        renderResetPasswordView(appElement);
       } else if (activePortal === 'login' || activePortal === 'signup') {
         renderLoginView(appElement, activePortal);
       } else if (state.route.kind === ROUTE_PRODUCT && state.routeListing) {

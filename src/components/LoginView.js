@@ -148,9 +148,8 @@ export function renderLoginView(container, initialMode = 'login') {
                       <div>
                         <p class="text-xs font-bold text-gray-800">Seller password reset</p>
                         <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
-                          Enter the email on your seller account. This sends a reset request to
-                          Seller Support; your password changes only after an admin creates a
-                          temporary password and gives it to you.
+                          Enter the email on your seller account. We will send a secure reset
+                          link so you can choose a new password.
                         </p>
                       </div>
                       <button type="button" id="forgot-close-btn" class="text-gray-400 hover:text-gray-600 shrink-0" aria-label="Close password reset">
@@ -170,7 +169,7 @@ export function renderLoginView(container, initialMode = 'login') {
                           class="flex-1 min-w-0 bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">
                         <button type="button" id="forgot-submit-btn" ${forgotSubmitting ? 'disabled' : ''}
                           class="bg-brand-dark text-white font-bold text-xs px-4 rounded-lg hover:bg-gray-800 transition shrink-0 disabled:opacity-60">
-                          ${forgotSubmitting ? 'Sending request...' : 'Request reset'}
+                          ${forgotSubmitting ? 'Sending email...' : 'Send email'}
                         </button>
                       </div>
                     `}

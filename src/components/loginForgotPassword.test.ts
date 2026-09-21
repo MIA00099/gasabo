@@ -53,15 +53,14 @@ describe('seller forgot password form', () => {
     container.querySelector<HTMLButtonElement>('#forgot-pass-link')!.click();
 
     expect(container.textContent).toContain('Seller password reset');
-    expect(container.textContent).toContain('Seller Support');
-    expect(container.textContent).toContain('password changes only after an admin creates');
-    expect(container.textContent).toContain('temporary password');
+    expect(container.textContent).toContain('send a secure reset');
+    expect(container.textContent).toContain('choose a new password');
   });
 
   it('validates the seller email and sends the reset request', async () => {
     let finish!: () => void;
     mocks.requestPasswordReset.mockReturnValue(new Promise<string>((resolve) => {
-      finish = () => resolve('Password reset request sent. Seller Support has been notified.');
+      finish = () => resolve('If that email belongs to an active seller account, a password reset email has been sent.');
     }));
 
     const container = await renderLogin();
@@ -76,13 +75,12 @@ describe('seller forgot password form', () => {
 
     expect(mocks.requestPasswordReset).toHaveBeenCalledWith('seller@test.local');
     expect(container.querySelector<HTMLButtonElement>('#forgot-submit-btn')!.disabled).toBe(true);
-    expect(container.textContent).toContain('Sending request...');
+    expect(container.textContent).toContain('Sending email...');
 
     finish();
     await flush();
 
-    expect(container.textContent).toContain('Password reset request sent.');
-    expect(container.textContent).toContain('Seller Support has been notified.');
+    expect(container.textContent).toContain('password reset email has been sent');
   });
 });
 

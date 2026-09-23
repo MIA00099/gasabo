@@ -180,6 +180,11 @@ export function renderMarketplaceAdmin(container) {
                         <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isTrending" style="background:${prod.isTrending?'var(--primary-light)':'#F1F5F9'}; color:${prod.isTrending?'var(--primary)':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
                           Trending
                         </button>
+                        <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isRecommended"
+                          title="Show this product in the moving rail beside the Flash Deal box"
+                          style="background:${prod.isRecommended?'#DCFCE7':'#F1F5F9'}; color:${prod.isRecommended?'#166534':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
+                          ${prod.isRecommended ? 'In Flash rail' : 'Flash rail'}
+                        </button>
                         <!-- Flash Deal: sets the homepage countdown for this
                              product. Highlighted while the deal is live. -->
                         <button class="btn btn-sm flash-deal-btn" data-id="${prod.id}"

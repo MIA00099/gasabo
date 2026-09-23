@@ -504,7 +504,11 @@ export function renderMarketplaceView(container) {
     const liveProducts = Array.isArray(state.productCatalogCache) && state.productCatalogCache.length
       ? state.productCatalogCache
       : state.products;
-    const flashProductCards = renderFlashProductRail(liveProducts || []);
+    // Admin-selected products only: isRecommended is reserved for the moving
+    // product rail beside the Flash Deal box. This keeps the rail independent
+    // from Featured/Trending and gives admin explicit control over what moves.
+    const flashRailProducts = (liveProducts || []).filter((product) => product?.isRecommended);
+    const flashProductCards = renderFlashProductRail(flashRailProducts);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {

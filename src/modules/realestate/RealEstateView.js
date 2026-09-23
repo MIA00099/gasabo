@@ -701,6 +701,14 @@ function renderPropertiesView(title, filteredProperties, filters, availableLocat
   `;
 }
 
+function serviceIconHtml(icon) {
+  const value = String(icon || '🏠');
+  if (/^https?:\/\//i.test(value)) {
+    return `<img src="${escapeHtml(value)}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+  }
+  return escapeHtml(value);
+}
+
 function renderServicesView(services) {
   const featured = services.filter(s => s.featured);
   const standard = services.filter(s => !s.featured);
@@ -722,7 +730,7 @@ function renderServicesView(services) {
               <div style="position: relative; height: 240px; border-radius: 20px; overflow: hidden; background: ${RE_DARK}; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.75rem;">
                 <div style="position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(15,23,42,0.85));"></div>
                 <div style="position: relative; z-index: 1;">
-                  <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 0.85rem;">${s.icon}</div>
+                  <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 0.85rem;">${serviceIconHtml(s.icon)}</div>
                   <h4 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem;">${escapeHtml(s.title)}</h4>
                   <p style="color: #cbd5e1; font-size: 0.88rem;">${escapeHtml(s.description)}</p>
                 </div>
@@ -734,7 +742,7 @@ function renderServicesView(services) {
         <div style="background: #F8FAFC; border-radius: 20px; padding: 1rem; border: 1px solid #E2E8F0;">
           ${standard.map(s => `
             <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: 14px;">
-              <div style="width: 48px; height: 48px; border-radius: 14px; background: #fff; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; color: ${RE_BLUE};">${s.icon}</div>
+              <div style="width: 48px; height: 48px; border-radius: 14px; background: #fff; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; color: ${RE_BLUE};">${serviceIconHtml(s.icon)}</div>
               <div>
                 <h4 style="font-size: 1.05rem; font-weight: 700; color: #0F172A; margin-bottom: 0.2rem;">${escapeHtml(s.title)}</h4>
                 <p style="color: #64748B; font-size: 0.9rem;">${escapeHtml(s.description)}</p>

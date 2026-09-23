@@ -103,7 +103,7 @@ export function renderRealEstateAdmin(container) {
               </div>
               <button type="button" id="re-add-service" class="btn btn-primary btn-sm">+ Add service</button>
             </div>
-            <div id="re-services-editor" style="display:flex;flex-direction:column;gap:0.75rem;">
+            <div id="re-services-editor" style="display:none;flex-direction:column;gap:0.75rem;">
               ${(reData.services || []).map((service, index) => serviceEditorHtml(service, index)).join('')}
             </div>
           </div>
@@ -379,6 +379,10 @@ function bindServiceEditor(container) {
 
   editor.querySelectorAll('.re-service-editor-card').forEach(bindCard);
   container.querySelector('#re-add-service')?.addEventListener('click', () => {
+    // Keep the service editor collapsed until the admin explicitly chooses
+    // Add service. Existing service cards become available for editing at the
+    // same time, and the new service form is appended below them.
+    editor.style.display = 'flex';
     const holder = document.createElement('div');
     holder.innerHTML = serviceEditorHtml({ icon: '🏠', title: '', description: '', featured: false }, editor.children.length);
     const card = holder.firstElementChild;

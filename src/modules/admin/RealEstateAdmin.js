@@ -96,8 +96,16 @@ export function renderRealEstateAdmin(container) {
             </div>
           </div>
           <div class="form-group">
-            <label>Services JSON</label>
-            <textarea id="re-services-json" class="form-control" rows="8" spellcheck="false">${escapeHtml(JSON.stringify(reData.services || [], null, 2))}</textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+              <div>
+                <label style="margin-bottom:0.2rem;">Services</label>
+                <div style="font-size:0.78rem;color:#64748B;">Add, edit, feature, reorder, or remove service cards. No JSON editing required.</div>
+              </div>
+              <button type="button" id="re-add-service" class="btn btn-primary btn-sm">+ Add service</button>
+            </div>
+            <div id="re-services-editor" style="display:flex;flex-direction:column;gap:0.75rem;">
+              ${(reData.services || []).map((service, index) => serviceEditorHtml(service, index)).join('')}
+            </div>
           </div>
           <div id="re-sections-error" style="color:#991B1B;font-size:0.85rem;margin-bottom:0.75rem;"></div>
           <button id="save-re-sections" class="btn btn-secondary btn-sm">
@@ -167,15 +175,14 @@ export function renderRealEstateAdmin(container) {
       }
     });
 
+    bindServiceEditor(container);
+
     container.querySelector('#save-re-sections')?.addEventListener('click', async () => {
       const error = container.querySelector('#re-sections-error');
       error.textContent = '';
-      let services;
-      try {
-        services = JSON.parse(container.querySelector('#re-services-json').value || '[]');
-        if (!Array.isArray(services)) throw new Error('Services JSON must be an array.');
-      } catch (err) {
-        error.textContent = err.message || 'Services JSON is invalid.';
+      const services = collectServices(container);
+      if (!services) {
+        error.textContent = 'Every service needs a title and description.';
         return;
       }
 
@@ -258,6 +265,128 @@ export function renderRealEstateAdmin(container) {
   }
 
   render();
+}
+
+
+function serviceEditorHtml(service = {}, index = 0) {
+  const icon = service.icon || '🏠';
+  const isImage = /^https?:\/\//i.test(String(icon));
+  const presets = ['🏠', '🏢', '🏗️', '🔑', '📐', '💰', '🛡️', '🤝'];
+  return `
+    <div class="re-service-editor-card" style="border:1px solid #E2E8F0;border-radius:14px;padding:1rem;background:#F8FAFC;" data-service-index="${index}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.8rem;">
+        <strong style="color:#0F172A;">Service ${index + 1}</strong>
+        <div style="display:flex;gap:0.35rem;">
+          <button type="button" class="btn btn-sm re-service-up" title="Move up">↑</button>
+          <button type="button" class="btn btn-sm re-service-down" title="Move down">↓</button>
+          <button type="button" class="btn btn-sm btn-danger re-service-delete">Delete</button>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" class="form-control re-service-title" value="${escapeHtml(String(service.title || ''))}" placeholder="e.g. Property Management">
+        </div>
+        <div class="form-group">
+          <label>Icon</label>
+          <div style="display:flex;gap:0.45rem;align-items:center;">
+            <div class="re-service-icon-preview" style="width:42px;height:42px;border-radius:10px;background:#fff;border:1px solid #E2E8F0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:1.3rem;flex-shrink:0;">
+              ${isImage ? `<img src="${escapeHtml(String(icon))}" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHtml(String(icon))}
+            </div>
+            <select class="form-control re-service-icon-preset" style="flex:1;">
+              <option value="">Choose icon…</option>
+              ${presets.map((p) => `<option value="${p}" ${p === icon ? 'selected' : ''}>${p}</option>`).join('')}
+            </select>
+            <label class="btn btn-sm btn-secondary" style="cursor:pointer;white-space:nowrap;">
+              Upload
+              <input type="file" class="re-service-icon-upload" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+            </label>
+          </div>
+          <input type="hidden" class="re-service-icon" value="${escapeHtml(String(icon))}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea class="form-control re-service-description" rows="2" placeholder="Describe this service">${escapeHtml(String(service.description || ''))}</textarea>
+      </div>
+      <label style="display:inline-flex;align-items:center;gap:0.5rem;font-size:0.85rem;font-weight:700;color:#334155;cursor:pointer;">
+        <input type="checkbox" class="re-service-featured" ${service.featured ? 'checked' : ''}>
+        Featured service
+      </label>
+    </div>
+  `;
+}
+
+function refreshServiceLabels(editor) {
+  editor.querySelectorAll('.re-service-editor-card').forEach((card, index) => {
+    card.dataset.serviceIndex = String(index);
+    const title = card.querySelector('strong');
+    if (title) title.textContent = `Service ${index + 1}`;
+  });
+}
+
+function collectServices(container) {
+  const cards = [...container.querySelectorAll('.re-service-editor-card')];
+  const services = cards.map((card) => ({
+    icon: card.querySelector('.re-service-icon')?.value || '🏠',
+    title: card.querySelector('.re-service-title')?.value.trim() || '',
+    description: card.querySelector('.re-service-description')?.value.trim() || '',
+    featured: !!card.querySelector('.re-service-featured')?.checked,
+  }));
+  return services.every((s) => s.title && s.description) ? services : null;
+}
+
+function bindServiceEditor(container) {
+  const editor = container.querySelector('#re-services-editor');
+  if (!editor) return;
+
+  const bindCard = (card) => {
+    card.querySelector('.re-service-delete')?.addEventListener('click', () => {
+      card.remove();
+      refreshServiceLabels(editor);
+    });
+    card.querySelector('.re-service-up')?.addEventListener('click', () => {
+      if (card.previousElementSibling) editor.insertBefore(card, card.previousElementSibling);
+      refreshServiceLabels(editor);
+    });
+    card.querySelector('.re-service-down')?.addEventListener('click', () => {
+      if (card.nextElementSibling) editor.insertBefore(card.nextElementSibling, card);
+      refreshServiceLabels(editor);
+    });
+    card.querySelector('.re-service-icon-preset')?.addEventListener('change', (e) => {
+      if (!e.target.value) return;
+      card.querySelector('.re-service-icon').value = e.target.value;
+      card.querySelector('.re-service-icon-preview').textContent = e.target.value;
+    });
+    card.querySelector('.re-service-icon-upload')?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const preview = card.querySelector('.re-service-icon-preview');
+      preview.textContent = '…';
+      try {
+        const { urls, failed } = await stateEngine.uploadProductImages([file]);
+        if (!urls?.[0] || failed?.length) throw new Error('Icon upload failed.');
+        const url = urls[0];
+        card.querySelector('.re-service-icon').value = url;
+        preview.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+        card.querySelector('.re-service-icon-preset').value = '';
+      } catch (err) {
+        preview.textContent = '⚠️';
+        showAdminToast({ title: 'Icon upload failed', message: err.message || 'Please try again.', tone: 'danger' });
+      }
+    });
+  };
+
+  editor.querySelectorAll('.re-service-editor-card').forEach(bindCard);
+  container.querySelector('#re-add-service')?.addEventListener('click', () => {
+    const holder = document.createElement('div');
+    holder.innerHTML = serviceEditorHtml({ icon: '🏠', title: '', description: '', featured: false }, editor.children.length);
+    const card = holder.firstElementChild;
+    editor.appendChild(card);
+    bindCard(card);
+    refreshServiceLabels(editor);
+    card.querySelector('.re-service-title')?.focus();
+  });
 }
 
 function renderInquiriesSection(state) {

@@ -283,15 +283,36 @@ function startHeroSlider(container) {
     hydrateResponsiveImage(slide?.querySelector('img[data-src]'));
   }
 
+  let transitionTimer = null;
+
   function show(index) {
-    current = (index + slides.length) % slides.length;
-    hydrateSlide(current);
-    hydrateSlide(current + 1);
-    slides.forEach((s, i) => s.classList.toggle('active', i === current));
+    const next = (index + slides.length) % slides.length;
+    if (next === current) return;
+
+    hydrateSlide(next);
+    hydrateSlide(next + 1);
+
+    const outgoing = slides[current];
+    const incoming = slides[next];
+
+    // Reset any previous transition state before starting the next right-to-left
+    // pass. Both slides remain fully covering the panel during the animation,
+    // which prevents white gaps and Safari/iOS flicker.
+    if (transitionTimer) clearTimeout(transitionTimer);
+    slides.forEach((slide) => slide.classList.remove('is-leaving'));
+    incoming.classList.add('active');
+    outgoing.classList.add('is-leaving');
+
+    current = next;
     dots.forEach((d, i) => {
       d.classList.toggle('active', i === current);
       d.setAttribute('aria-selected', String(i === current));
     });
+
+    transitionTimer = window.setTimeout(() => {
+      outgoing.classList.remove('active', 'is-leaving');
+      transitionTimer = null;
+    }, 1100);
   }
 
   hydrateSlide(current);

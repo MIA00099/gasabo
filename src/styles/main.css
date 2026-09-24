@@ -4877,30 +4877,45 @@ table {
     inset: 0;
     width: 100%;
     height: 100%;
-    opacity: 0;
+    opacity: 1;
     visibility: hidden;
-    transform: translateX(48%) rotateY(-22deg) scale(0.88);
-    transform-origin: right center;
+    transform: translate3d(100%, 0, 0);
     transition:
-        opacity var(--hero-fade-ms) ease,
         transform 1100ms cubic-bezier(.22, 1, .36, 1),
-        visibility 0s linear var(--hero-fade-ms);
+        visibility 0s linear 1100ms;
     z-index: 1;
     pointer-events: none;
     backface-visibility: hidden;
-    will-change: transform, opacity;
+    -webkit-backface-visibility: hidden;
+    will-change: transform;
 }
 
 .slide.active {
-    opacity: 1;
     visibility: visible;
-    z-index: 2;
-    transform: translateX(0) rotateY(0deg) scale(1);
+    z-index: 3;
+    transform: translate3d(0, 0, 0);
     transition:
-        opacity var(--hero-fade-ms) ease,
         transform 1100ms cubic-bezier(.22, 1, .36, 1),
         visibility 0s linear 0s;
     pointer-events: auto;
+}
+
+/* Animation #2 — Slide Left: the old banner exits left while the next banner
+   enters from the right. Both stay rendered for the full transition so the
+   clipped hero panel never exposes a white frame between slides. */
+.slide.active.is-leaving {
+    z-index: 2;
+    transform: translate3d(-100%, 0, 0);
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #heroSlider .slide,
+    #heroSlider .slide.active,
+    #heroSlider .slide.active.is-leaving {
+        transition: none;
+        transform: translate3d(0, 0, 0);
+    }
 }
 
 .slide.cover-slide {

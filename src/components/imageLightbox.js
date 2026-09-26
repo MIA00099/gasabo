@@ -40,9 +40,11 @@ export function openImageLightbox(images, title, { startIndex = 0, returnFocusTo
 
   const overlay = document.createElement('div');
   overlay.style.cssText =
-    'position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; ' +
-    'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
-    'padding: 0; touch-action: none; overscroll-behavior: contain; overflow: hidden;';
+    'position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; ' +
+    'background: #000; z-index: 2147483647; margin: 0; padding: 0; ' +
+    'display: flex; align-items: center; justify-content: center; ' +
+    'touch-action: none; overscroll-behavior: contain; overflow: hidden; ' +
+    'box-sizing: border-box; transform: none;';
 
   function paint() {
     overlay.innerHTML = `
@@ -56,9 +58,9 @@ export function openImageLightbox(images, title, { startIndex = 0, returnFocusTo
           style="position: fixed; right: 16px; top: 50%; transform: translateY(-50%); z-index: 10000; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.25); width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">&rsaquo;</button>
       ` : ''}
 
-      <div style="position: relative; width: 100%; height: 100%; height: 100dvh; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden;">
+      <div style="position:absolute; inset:0; width:100vw; height:100vh; height:100dvh; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#000;">
         <img src="${escapeHtml(list[idx])}" alt="${escapeHtml(title)}${list.length > 1 ? ` - photo ${idx + 1} of ${list.length}` : ''}"
-          style="display:block; width:100%; height:100%; max-width:100vw; max-height:100dvh; object-fit:contain; object-position:center; user-select:none; -webkit-user-drag:none;">
+          style="display:block; width:100vw; height:100vh; height:100dvh; max-width:none; max-height:none; object-fit:contain; object-position:center; user-select:none; -webkit-user-drag:none;">
 
         <div style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; color: #fff; text-align: center; max-width: 90vw; pointer-events: none;">
           <div style="font-weight: 700; font-size: 0.95rem; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">${escapeHtml(title)}</div>

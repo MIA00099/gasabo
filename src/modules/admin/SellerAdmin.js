@@ -4,8 +4,6 @@
 import { stateEngine } from '../../store/stateEngine.js';
 import { showAdminConfirm, showAdminForm, showAdminToast } from './adminDialog.js';
 
-let resettingSellerId = null;
-let passwordResetResult = null;
 
 export function renderSellerAdmin(container) {
   function render() {
@@ -16,7 +14,6 @@ export function renderSellerAdmin(container) {
 
     const sellers = state.sellers;
     const loading = !!state.loading.sellers || !attempted;
-    const resetRequestCount = sellers.filter((s) => s.passwordResetRequestedAt).length;
 
     container.innerHTML = `
       <div>
@@ -24,38 +21,15 @@ export function renderSellerAdmin(container) {
           <div>
             <h2 class="adm-module-title">Registered sellers</h2>
             <p class="adm-module-copy">
-              Manage verified Rwandan sellers, suspend accounts, reset credentials, and review activity logs. Deleting sellers requires multi-admin approval.
+              Manage verified Rwandan sellers, suspend accounts, review activity logs, and request account deletion. Seller login credentials remain controlled by the seller.
             </p>
           </div>
         </div>
-
-        ${!loading && resetRequestCount > 0 ? `
-          <div id="seller-reset-request-alert" style="background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;padding:1rem 1.25rem;border-radius:12px;margin-bottom:1.5rem;">
-            <div style="font-size:0.92rem;font-weight:900;">${resetRequestCount} seller password reset request${resetRequestCount === 1 ? '' : 's'} pending</div>
-            <div style="font-size:0.8rem;margin-top:0.25rem;">Use the highlighted seller row and click Reset password to create a temporary password.</div>
-          </div>
-        ` : ''}
 
         ${state.error ? `
           <div class="adm-inline-alert">
             <strong>Seller management error</strong>
             ${escapeHtml(state.error)}
-          </div>
-        ` : ''}
-
-        ${passwordResetResult ? `
-          <div id="seller-reset-result" style="background:#F0FDF4;border:1px solid #BBF7D0;color:#14532D;padding:1rem 1.25rem;border-radius:12px;margin-bottom:1.5rem;">
-            <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
-              <div>
-                <div style="font-size:0.92rem;font-weight:800;">Temporary password for ${escapeHtml(passwordResetResult.name)}</div>
-                <div style="font-size:0.8rem;color:#166534;margin-top:0.25rem;">Give this password to the seller. They can sign in with it, then change it from Account settings.</div>
-              </div>
-              <button id="seller-reset-dismiss" type="button" style="border:none;background:transparent;color:#166534;font-weight:800;cursor:pointer;font-size:0.8rem;">Dismiss</button>
-            </div>
-            <div style="display:flex;gap:0.75rem;align-items:center;margin-top:0.75rem;flex-wrap:wrap;">
-              <code id="seller-reset-password-value" style="background:#fff;border:1px solid #86EFAC;border-radius:8px;padding:0.5rem 0.7rem;font-size:0.95rem;font-weight:800;color:#0F172A;letter-spacing:0.02em;">${escapeHtml(passwordResetResult.tempPassword)}</code>
-              <button id="seller-reset-copy" type="button" style="background:#04562D;color:#fff;border:none;border-radius:8px;padding:0.5rem 0.8rem;font-weight:800;font-size:0.8rem;cursor:pointer;">Copy password</button>
-            </div>
           </div>
         ` : ''}
 
@@ -87,12 +61,6 @@ export function renderSellerAdmin(container) {
                       <div>
                         <div style="font-weight: 600; color: #0F172A;">${escapeHtml(s.name)}</div>
                         <div style="font-size: 0.78rem; color: #64748B;">ID: ${s.id}</div>
-                        ${s.passwordResetRequestedAt ? `
-                          <div style="display:inline-flex;align-items:center;gap:0.35rem;margin-top:0.35rem;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;border-radius:9999px;padding:0.25rem 0.55rem;font-size:0.72rem;font-weight:900;">
-                            🔑 Password reset requested
-                          </div>
-                          <div style="font-size:0.72rem;color:#92400E;margin-top:0.25rem;">${escapeHtml(formatResetRequestTime(s.passwordResetRequestedAt))}</div>
-                        ` : ''}
                       </div>
                     </div>
                   </td>
@@ -110,12 +78,6 @@ export function renderSellerAdmin(container) {
                   <td>${new Date(s.joinedDate).toLocaleDateString()}</td>
                   <td class="tbl-actions-col">
                     <div class="adm-action-group">
-                      <button class="btn btn-sm btn-secondary reset-pass-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" ${resettingSellerId === s.id ? 'disabled' : ''}>
-                        ${resettingSellerId === s.id ? 'Resetting...' : 'Reset password'}
-                      </button>
-                      <button class="btn btn-sm btn-secondary change-email-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-email="${escapeHtml(s.email)}">
-                        Change email
-                      </button>
                       <button class="btn btn-sm toggle-status-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}" style="background:${s.status==='active'?'#FEF3C7':'#DCFCE7'}; color:${s.status==='active'?'#92400E':'#166534'}; border:1px solid ${s.status==='active'?'#FDE68A':'#BBF7D0'};">
                         ${s.status==='active' ? 'Suspend' : 'Reactivate'}
                       </button>
@@ -133,66 +95,6 @@ export function renderSellerAdmin(container) {
     `;
 
     // Event Handlers
-    container.querySelector('#seller-reset-dismiss')?.addEventListener('click', () => {
-      passwordResetResult = null;
-      render();
-    });
-
-    container.querySelector('#seller-reset-copy')?.addEventListener('click', async (e) => {
-      const btn = e.currentTarget;
-      const value = container.querySelector('#seller-reset-password-value')?.textContent || '';
-      if (!value) return;
-      try {
-        await navigator.clipboard.writeText(value);
-        btn.textContent = 'Copied';
-      } catch {
-        btn.textContent = 'Select password';
-      }
-    });
-
-    container.querySelectorAll('.reset-pass-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (resettingSellerId) return;
-        resettingSellerId = btn.dataset.id;
-        passwordResetResult = null;
-        render();
-        try {
-          const result = await stateEngine.resetSellerPassword(btn.dataset.id);
-          passwordResetResult = {
-            name: btn.dataset.name,
-            tempPassword: result.tempPassword,
-          };
-        } catch (err) {
-          // stateEngine exposes the server message in state.error; the final
-          // render below paints it in the existing error banner.
-        } finally {
-          resettingSellerId = null;
-          render();
-        }
-      });
-    });
-
-    container.querySelectorAll('.change-email-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const data = await showAdminForm({
-          title: `Change seller email for ${btn.dataset.name}`,
-          message: 'This updates the seller login email and is recorded in the audit log.',
-          submitLabel: 'Update email',
-          fields: [
-            { name: 'email', label: 'New email address', type: 'email', value: btn.dataset.email, required: true, autocomplete: 'email' },
-          ],
-        });
-        if (!data || data.email === btn.dataset.email) return;
-        try {
-          await stateEngine.changeSellerEmail(btn.dataset.id, data.email);
-          showAdminToast({ title: 'Seller email updated', message: `${btn.dataset.name} now signs in with ${data.email}.` });
-        } catch (err) {
-          showAdminToast({ title: 'Email update failed', message: err.message || 'Please try again.', tone: 'danger' });
-          render();
-        }
-      });
-    });
-
     container.querySelectorAll('.toggle-status-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const suspending = btn.textContent.includes('Suspend');

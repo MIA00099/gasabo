@@ -328,7 +328,7 @@ function startHeroSlider(container) {
   //     work), and
   //   - the timer restarts from zero on a manual dot click, so a deliberate
   //     pick is not pulled away a moment later.
-  const HERO_ROTATE_MS = 5000;
+  const HERO_ROTATE_MS = 3000;
   const reduceMotion =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;

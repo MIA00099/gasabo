@@ -199,7 +199,7 @@ function flashProductRailCardHtml(product, duplicate = false) {
   const attrs = duplicate ? ' aria-hidden="true" tabindex="-1"' : ' role="button" tabindex="0"';
   const image = (product.images && product.images[0]) || '';
   const price = Number(product.price) || 0;
-  const label = product.isFeatured ? 'Featured' : product.isTrending ? 'Trending' : 'Product';
+  const label = product.isFeatured ? 'Featured' : product.isTrending ? 'Trending' : 'Selected';
 
   return `
     <div class="flash-promo-product-card view-item-btn" data-id="${escapeHtml(product.id)}"${attrs}>
@@ -230,7 +230,7 @@ function renderFlashProductRail(products = []) {
     return `
       <div class="flash-promo-empty">
         <i class="fa-solid fa-box-open"></i>
-        <span>Products will appear here when listings load.</span>
+        <span>Selected products will appear here soon.</span>
       </div>
     `;
   }
@@ -477,7 +477,7 @@ export function renderMarketplaceView(container) {
     const categoriesAttempted = state.loading.categories !== undefined;
     const productsLoading = !!state.loading.products || !productsAttempted;
 
-    if (!productsAttempted || !categoriesAttempted || state.loading.flashDeals === undefined || state.loading.banners === undefined) {
+    if (!productsAttempted || !categoriesAttempted || state.loading.flashDeals === undefined || state.loading.movingRail === undefined || state.loading.banners === undefined) {
       stateEngine.loadMarketplaceHomeData(filters).catch(() => {});
     }
 
@@ -501,10 +501,7 @@ export function renderMarketplaceView(container) {
       (b) => b.type === 'HERO_SLIDER' && b.status === 'ACTIVE' && (!b.endDate || new Date(b.endDate).getTime() > now),
     );
     const dotCount = heroAds.length;
-    const liveProducts = Array.isArray(state.productCatalogCache) && state.productCatalogCache.length
-      ? state.productCatalogCache
-      : state.products;
-    const flashProductCards = renderFlashProductRail(liveProducts || []);
+    const flashProductCards = renderFlashProductRail(state.movingRailProducts || []);
 
     // Sub-tab handling: Stores, Catalog, Seller Portal
     if (activeTab === 'stores') {

@@ -175,6 +175,7 @@ function initialData({ currentUser, currentLang, route }) {
     productCatalogCache: [],
     productsFilterKey: productFilterKey(),
     flashDeals: [],
+    movingRailProducts: [],
     myProducts: [],
     pendingProducts: [],
     categories: [],
@@ -755,9 +756,10 @@ class StateEngine {
     const needProducts = force || this.data.loading.products === undefined;
     const needCategories = !force && this.data.loading.categories === undefined;
     const needFlashDeals = force || this.data.loading.flashDeals === undefined;
+    const needMovingRail = force || this.data.loading.movingRail === undefined;
     const needBanners = force || this.data.loading.banners === undefined;
 
-    if (!needProducts && !needCategories && !needFlashDeals && !needBanners) return;
+    if (!needProducts && !needCategories && !needFlashDeals && !needMovingRail && !needBanners) return;
 
     this._marketplaceHomeDataLoading = true;
 
@@ -772,6 +774,7 @@ class StateEngine {
       if (needProducts) nextLoading.products = true;
       if (needCategories) nextLoading.categories = true;
       if (needFlashDeals) nextLoading.flashDeals = true;
+      if (needMovingRail) nextLoading.movingRail = true;
       if (needBanners) nextLoading.banners = true;
       this.data.loading = nextLoading;
       this.notify();
@@ -790,10 +793,11 @@ class StateEngine {
         needProducts ? api.get(`/products${qs ? `?${qs}` : ''}`) : Promise.resolve(null),
         needCategories ? api.get('/categories') : Promise.resolve(null),
         needFlashDeals ? api.get('/products/flash-deals') : Promise.resolve(null),
+        needMovingRail ? api.get('/products/moving-rail') : Promise.resolve(null),
         needBanners ? api.get('/advertisements') : Promise.resolve(null),
       ];
 
-      const [prodsRes, catsRes, flashRes, banRes] = await Promise.allSettled(promises);
+      const [prodsRes, catsRes, flashRes, railRes, banRes] = await Promise.allSettled(promises);
 
       // Whether this refresh is actually worth rendering. A cold load always
       // is - the loading flags below have to flip off to clear the skeleton,
@@ -835,6 +839,13 @@ class StateEngine {
           if (force) changed = true;
         }
       }
+      if (needMovingRail && railRes.status === 'fulfilled' && railRes.value?.products) {
+        const next = railRes.value.products;
+        if (!force || !sameJson(this.data.movingRailProducts, next)) {
+          this.data.movingRailProducts = next;
+          if (force) changed = true;
+        }
+      }
       if (needBanners && banRes.status === 'fulfilled' && banRes.value?.banners) {
         const next = banRes.value.banners;
         if (!force || !sameJson(this.data.banners, next)) {
@@ -848,6 +859,7 @@ class StateEngine {
         if (needProducts) doneLoading.products = false;
         if (needCategories) doneLoading.categories = false;
         if (needFlashDeals) doneLoading.flashDeals = false;
+        if (needMovingRail) doneLoading.movingRail = false;
         if (needBanners) doneLoading.banners = false;
         this.data.loading = doneLoading;
       }
@@ -1066,6 +1078,11 @@ class StateEngine {
         value: current ? !current[flag] : true,
       });
       this.data.products = this.data.products.map((p) => (p.id === productId ? product : p));
+      if (flag === 'isMovingRail') {
+        const remaining = this.data.movingRailProducts.filter((p) => p.id !== productId);
+        this.data.movingRailProducts = product.isMovingRail && isPublicProduct(product)
+          ? [product, ...remaining].slice(0, 40) : remaining;
+      }
       this.notify();
       return product;
     });

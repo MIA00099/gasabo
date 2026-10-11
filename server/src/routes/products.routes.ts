@@ -38,6 +38,7 @@ function serializeProduct(p: any) {
     isFeatured: p.isFeatured,
     isTrending: p.isTrending,
     isRecommended: p.isRecommended,
+    isMovingRail: p.isMovingRail,
     flashDealEndsAt: p.flashDealEndsAt ?? null,
     postedDate: p.createdAt,
     expiryDate: p.expiresAt,
@@ -130,6 +131,17 @@ productsRouter.get('/pending', requireAuth, requireExclusivePermission('PRODUCT_
     where: { status: 'PENDING' },
     include: { seller: true, category: true, ...WITH_LIKES },
     orderBy: { createdAt: 'asc' },
+  });
+  res.json({ products: products.map(serializeProduct) });
+});
+
+// Products selected for the moving strip alongside the Flash Deals card.
+productsRouter.get('/moving-rail', async (_req, res) => {
+  const products = await prisma.product.findMany({
+    where: { status: 'ACTIVE', isMovingRail: true, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+    include: { seller: true, category: true, ...WITH_LIKES },
+    orderBy: { createdAt: 'desc' },
+    take: 40,
   });
   res.json({ products: products.map(serializeProduct) });
 });
@@ -665,7 +677,7 @@ productsRouter.patch('/:id/flash-deal', requireAuth, requirePermission('PRODUCTS
 });
 
 const flagSchema = z.object({
-  flag: z.enum(['isFeatured', 'isTrending', 'isRecommended']),
+  flag: z.enum(['isFeatured', 'isTrending', 'isRecommended', 'isMovingRail']),
   value: z.boolean(),
 });
 
@@ -675,6 +687,10 @@ productsRouter.patch('/:id/flags', requireAuth, requirePermission('PRODUCTS'), a
 
   const product = await prisma.product.findUnique({ where: { id: req.params.id } });
   if (!product) return res.status(404).json({ error: 'Product not found.' });
+  if (parsed.data.flag === 'isMovingRail' && parsed.data.value &&
+      (product.status !== 'ACTIVE' || (product.expiresAt && product.expiresAt <= new Date()))) {
+    return res.status(400).json({ error: 'Approve this product before adding it to the moving rail.' });
+  }
 
   const updated = await prisma.product.update({
     where: { id: product.id },

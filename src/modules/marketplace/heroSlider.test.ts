@@ -196,10 +196,10 @@ describe('flash deals card', () => {
     expect(HOME).toContain('class="flash-home-row"');
     expect(HOME).toContain('class="flash-promo-panel"');
     expect(HOME).toContain('class="flash-promo-marquee"');
-    expect(HOME).toContain('state.productCatalogCache');
+    expect(HOME).toContain('state.movingRailProducts');
     expect(HOME).toContain('FLASH_RAIL_MIN_ITEMS = 8');
     expect(HOME).toContain('slice(0, FLASH_RAIL_MIN_ITEMS)');
-    expect(HOME).toContain('renderFlashProductRail(liveProducts || [])');
+    expect(HOME).toContain('renderFlashProductRail(state.movingRailProducts || [])');
     expect(HOME).toContain('class="flash-promo-product-card view-item-btn"');
     expect(HOME).not.toContain('renderFlashPromoImages(state.banners || [])');
     expect(HOME, 'FLASH_PROMO ads should not feed the storefront rail').not.toContain("b.type === 'FLASH_PROMO'");

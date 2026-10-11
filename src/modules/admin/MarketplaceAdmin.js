@@ -188,6 +188,12 @@ export function renderMarketplaceAdmin(container) {
                           style="background:${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ?'#FEF3C7':'#F1F5F9'}; color:${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ?'#B45309':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
                           ${prod.flashDealEndsAt && new Date(prod.flashDealEndsAt) > new Date() ? 'Deal active' : 'Flash deal'}
                         </button>
+                        <button class="btn btn-sm flag-btn" data-id="${prod.id}" data-flag="isMovingRail"
+                          aria-pressed="${!!prod.isMovingRail}"
+                          title="Show this product in the moving strip beside Flash Deals"
+                          style="background:${prod.isMovingRail?'var(--primary-light)':'#F1F5F9'}; color:${prod.isMovingRail?'var(--primary)':'#64748B'}; padding: 2px 6px; font-size: 0.75rem;">
+                          ${prod.isMovingRail ? 'In moving rail' : 'Add to moving rail'}
+                        </button>
                       </div>
                       <div style="display: flex; gap: 4px; align-items: center; margin-top: 4px;">
                         <!-- Five clickable stars. Clicking the one already set
@@ -381,7 +387,9 @@ export function renderMarketplaceAdmin(container) {
       btn.addEventListener('click', async () => {
         try {
           await stateEngine.toggleProductFlag(btn.dataset.id, btn.dataset.flag);
-        } catch (err) { /* state.error already set, re-render shows it */ }
+        } catch (err) {
+          showAdminToast({ title: 'Could not update product', message: err.message || 'Please try again.', tone: 'danger' });
+        }
       });
     });
 

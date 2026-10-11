@@ -112,6 +112,7 @@ model Product {
   isFeatured           Boolean       @default(false)
   isTrending           Boolean       @default(false)
   isRecommended        Boolean       @default(false)
+  isMovingRail         Boolean       @default(false)
   // When set and in the future, this product is an active Flash Deal: it
   // shows on the homepage flash card counting down to this exact time, and
   // drops off automatically once it passes. Null = not a flash deal. Set by
@@ -138,6 +139,7 @@ model Product {
   @@index([status, district, createdAt])
   @@index([sellerId, createdAt])
   @@index([status, flashDealEndsAt])
+  @@index([status, isMovingRail, createdAt])
 }
 
 // A buyer tapping the heart on a listing. Rows rather than a counter on

@@ -55,14 +55,36 @@ async function executeApprovedAction(req: {
     return 'Seller account and all listed products removed.';
   }
   if (req.actionType === 'DELETE_CATEGORY' && req.targetId) {
-    const productsUsingCategory = await prisma.product.count({ where: { categoryId: req.targetId } });
-    if (productsUsingCategory > 0) {
-      throw new Error(
-        `Category still has ${productsUsingCategory} product(s) listed under it. Reassign or remove those products before it can be deleted.`
-      );
-    }
-    await prisma.category.delete({ where: { id: req.targetId } });
-    return 'Category deleted.';
+    // Keep seller listings intact. Category deletion is approved separately,
+    // then all affected products move to a neutral category atomically.
+    return prisma.$transaction(async (tx) => {
+      const category = await tx.category.findUnique({ where: { id: req.targetId! } });
+      if (!category) throw new Error('Category was already removed.');
+
+      const productCount = await tx.product.count({ where: { categoryId: category.id } });
+      if (productCount > 0) {
+        let fallback = await tx.category.findFirst({
+          where: { OR: [
+            { name: { equals: 'Other', mode: 'insensitive' } },
+            { slug: 'other' },
+          ], id: { not: category.id } },
+        });
+        if (!fallback) {
+          const last = await tx.category.aggregate({ _max: { order: true } });
+          fallback = await tx.category.create({
+            data: { name: 'Other', slug: 'other', iconUrl: '📦', order: (last._max.order ?? -1) + 1 },
+          });
+        }
+        await tx.product.updateMany({
+          where: { categoryId: category.id },
+          data: { categoryId: fallback.id },
+        });
+      }
+      await tx.category.delete({ where: { id: category.id } });
+      return productCount > 0
+        ? `Category deleted; ${productCount} product(s) moved to Other without deleting listings.`
+        : 'Category deleted.';
+    });
   }
   if (req.actionType === 'CHANGE_ADMIN_PERMISSIONS' && req.targetId) {
     if (req.newPermissions === null) {

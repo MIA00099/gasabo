@@ -130,7 +130,7 @@ export function renderLoginView(container, initialMode = 'login') {
                   </div>
                 </div>
 
-                <div class="flex items-center justify-between text-xs pt-1">
+                <div class="auth-options-row flex items-center justify-between text-xs pt-1">
                   <label class="flex items-center gap-2 cursor-pointer text-gray-600 transition-colors hover:text-gray-900">
                     <input type="checkbox" class="accent-brand-green rounded" checked>
                     <span>Remember me</span>
@@ -163,7 +163,7 @@ export function renderLoginView(container, initialMode = 'login') {
                       </p>
                     ` : `
                       ${forgotError ? `<p class="text-[11px] text-red-600">${escapeHtml(forgotError)}</p>` : ''}
-                      <div class="flex gap-2">
+                      <div class="auth-reset-fields flex gap-2">
                         <input type="email" id="auth-forgot-email" placeholder="you@example.com"
                           value="${escapeHtml(formData.forgotEmail)}"
                           class="flex-1 min-w-0 bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg outline-none text-xs focus:border-brand-green focus:ring-1 focus:ring-brand-green">

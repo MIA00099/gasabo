@@ -369,6 +369,17 @@ export function renderProductDetailPage(container, product, handlers = {}) {
                     <div class="text-xs text-gray-600 flex items-center gap-1">
                       <i class="fa-solid fa-location-dot text-brand-green"></i> ${escapeHtml(product.district || 'Rwanda')}
                     </div>
+                    ${product.sellerPhone && product.sellerPhone.trim() ? `
+                      <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                        <i class="fa-solid fa-phone text-brand-green" aria-hidden="true"></i>
+                        <span class="text-gray-600 font-semibold">Seller contact:</span>
+                        <a href="tel:${escapeHtml(product.sellerPhone.replace(/[^0-9+]/g, ''))}"
+                          class="font-bold text-brand-green underline underline-offset-2 select-text"
+                          aria-label="Seller phone number ${escapeHtml(product.sellerPhone)}">${escapeHtml(product.sellerPhone)}</a>
+                        <button type="button" class="product-seller-copy-phone text-xs font-semibold border border-gray-300 bg-white rounded-lg px-2 py-1 hover:bg-gray-50"
+                          data-phone="${escapeHtml(product.sellerPhone)}" title="Copy seller phone number">Copy number</button>
+                      </div>
+                    ` : ''}
                   </div>
                 </div>
               </div>

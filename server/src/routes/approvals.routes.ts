@@ -59,7 +59,7 @@ async function executeApprovedAction(req: {
     // then all affected products move to a neutral category atomically.
     return prisma.$transaction(async (tx) => {
       const category = await tx.category.findUnique({ where: { id: req.targetId! } });
-      if (!category) throw new Error('Category was already removed.');
+      if (!category) return 'Category was already removed; outdated approval request reconciled. No products or other categories were changed.';
 
       const productCount = await tx.product.count({ where: { categoryId: category.id } });
       if (productCount > 0) {

@@ -33,6 +33,19 @@ export function renderSellerAdmin(container) {
           </div>
         ` : ''}
 
+        <div class="seller-directory-search" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:18px 0 14px;">
+          <label for="seller-directory-query" style="flex:1 1 280px;max-width:520px;">
+            <span style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:7px;">Find a seller</span>
+            <input id="seller-directory-query" type="search" autocomplete="off"
+              placeholder="Search name, email, phone, district or seller ID"
+              aria-label="Search registered sellers"
+              style="width:100%;max-width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:12px 14px;font:inherit;font-size:16px;background:white;color:#0F172A;" />
+          </label>
+          <span id="seller-directory-count" role="status" aria-live="polite" style="color:#64748B;font-size:0.85rem;align-self:flex-end;padding-bottom:12px;">
+            ${loading ? 'Loading sellers...' : `${sellers.length} seller(s)`}
+          </span>
+        </div>
+
         <div class="custom-table-container">
           <table class="custom-table">
             <thead>
@@ -87,12 +100,34 @@ export function renderSellerAdmin(container) {
                     </div>
                   </td>
                 </tr>
-              `).join('')}
+              `).join('')}\n              ${!loading && sellers.length ? `<tr id="seller-directory-empty" hidden><td colspan="7" style="text-align:center;padding:2rem;color:#64748B;">No sellers match your search.</td></tr>` : ''}
             </tbody>
           </table>
         </div>
       </div>
     `;
+
+    const searchInput = container.querySelector('#seller-directory-query');
+    const searchCount = container.querySelector('#seller-directory-count');
+    const searchEmpty = container.querySelector('#seller-directory-empty');
+    const sellerRows = Array.from(container.querySelectorAll('.seller-directory-row'));
+    searchInput?.addEventListener('input', () => {
+      const term = searchInput.value.trim().toLocaleLowerCase();
+      let visible = 0;
+      sellerRows.forEach((row) => {
+        const matches = !term || row.textContent.toLocaleLowerCase().includes(term);
+        row.hidden = !matches;
+        row.style.display = matches ? '' : 'none';
+        if (matches) visible++;
+      });
+      if (searchEmpty) {
+        searchEmpty.hidden = visible !== 0;
+        searchEmpty.style.display = visible ? 'none' : '';
+      }
+      if (searchCount) searchCount.textContent = term
+        ? `${visible} of ${sellerRows.length} sellers found`
+        : `${sellerRows.length} seller(s)`;
+    });
 
     // Event Handlers
     container.querySelectorAll('.toggle-status-btn').forEach(btn => {

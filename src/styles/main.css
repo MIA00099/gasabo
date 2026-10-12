@@ -6751,3 +6751,81 @@ body {
     font-size: 0.75rem;
   }
 }
+
+
+/* Seller and admin mobile/tablet stability: prevent sideways page dragging
+   while keeping vertical scrolling and internal data-table scrolling usable. */
+@media (max-width: 1023px) {
+  html, body, #app, .main-wrapper {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  .seller-dash-wrap {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: clamp(12px, 3vw, 24px);
+    touch-action: pan-y;
+  }
+  .seller-dash-wrap > *,
+  .seller-dash-wrap form,
+  .seller-dash-wrap form > *,
+  .seller-dash-wrap .flex > *,
+  .seller-dash-wrap .grid > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .seller-dash-wrap input,
+  .seller-dash-wrap textarea,
+  .seller-dash-wrap select {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  .seller-dash-wrap img { max-width: 100%; }
+  .seller-dash-wrap .overflow-x-auto,
+  .custom-table-container {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+  .seller-dash-wrap .overflow-x-auto > table,
+  .custom-table-container > table {
+    width: max-content;
+    min-width: 100%;
+  }
+  .seller-dash-wrap #ad-type-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .seller-dash-wrap #ad-type-group button {
+    justify-content: center;
+    min-width: 0;
+    min-height: 42px;
+    white-space: normal;
+  }
+  .seller-dash-wrap #create-product-form .lg\\:w-\\[58\\%\\],
+  .seller-dash-wrap #create-product-form .lg\\:w-\\[42\\%\\] {
+    width: 100%;
+  }
+}
+@media (max-width: 640px) {
+  .seller-dash-wrap > .bg-white:first-child { padding: 16px; }
+  .seller-dash-wrap h2 { overflow-wrap: anywhere; }
+  .seller-dash-wrap #create-product-form input,
+  .seller-dash-wrap #create-product-form select,
+  .seller-dash-wrap #create-product-form textarea {
+    font-size: 16px; /* avoid iOS auto-zoom while entering product details */
+    min-height: 44px;
+  }
+  .seller-dash-wrap #create-product-form textarea { min-height: 110px; }
+  .seller-dash-wrap #create-product-form .border-dashed {
+    min-height: 180px;
+    padding: 14px;
+  }
+  .seller-dash-wrap #create-product-form .border-dashed .grid {
+    width: 100%;
+  }
+}

@@ -594,6 +594,19 @@ export function renderProductDetailPage(container, product, handlers = {}) {
   bindImageLightboxGestures(frame, openCurrentImageLightbox);
   container.querySelector('#detail-zoom-btn')?.addEventListener('click', openCurrentImageLightbox);
 
+  // Desktop visitors can copy the seller number even when tel: is unsupported.
+  container.querySelector('.product-seller-copy-phone')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const phone = button.dataset.phone || '';
+    try {
+      await navigator.clipboard.writeText(phone);
+      button.textContent = 'Copied!';
+      setTimeout(() => { if (button.isConnected) button.textContent = 'Copy number'; }, 1800);
+    } catch {
+      button.textContent = phone;
+    }
+  });
+
   // ---- Share --------------------------------------------------------------
   container.querySelector('#detail-share-btn')?.addEventListener('click', () => {
     openShareModal({

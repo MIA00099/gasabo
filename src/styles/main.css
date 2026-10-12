@@ -6829,3 +6829,62 @@ body {
     width: 100%;
   }
 }
+
+
+/* Authentication pages: fit narrow phones and iOS keyboard without lateral
+   dragging or clipping password recovery and registration fields. */
+#app-container, #app-container .auth-card, #auth-main-form {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+#app-container .auth-card { overflow-wrap: anywhere; }
+#auth-main-form input, #auth-main-form select, #auth-main-form textarea {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 767px) {
+  #app-container:has(.auth-card) {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100dvh;
+    padding: 18px 12px 96px;
+    align-items: flex-start;
+    overflow-x: clip;
+  }
+  #app-container .auth-card {
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+  #auth-main-form .auth-options-row {
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+  #auth-main-form #forgot-pass-link {
+    white-space: normal;
+    text-align: left;
+    max-width: 100%;
+  }
+  #auth-main-form .auth-reset-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  #auth-main-form .auth-reset-fields input {
+    width: 100%;
+  }
+  #auth-main-form #forgot-submit-btn {
+    min-height: 44px;
+    width: 100%;
+  }
+  #auth-main-form input:not([type="checkbox"]),
+  #auth-main-form select,
+  #auth-main-form textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+}

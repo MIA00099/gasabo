@@ -7,10 +7,9 @@ export function getHomeProductSections({ products = [], flashDeals = [], moreLim
   const allFlashDeals = Array.isArray(flashDeals) ? flashDeals : [];
 
   const spotlightProducts = allProducts.filter(isSpotlightProduct);
-  const spotlightIds = new Set(spotlightProducts.map((product) => product.id).filter(Boolean));
-  const regularProducts = allProducts.filter((product) => (
-    !isSpotlightProduct(product) && !spotlightIds.has(product.id)
-  ));
+  // Featured and trending listings must still appear in their real category.
+  // Spotlight is a promotional view, not an alternative product category.
+  const regularProducts = allProducts;
   // Flash Deals are an independent promotion: if an admin sets a countdown on
   // a product, the Flash Deals panel should work even when that product is
   // also Featured or Trending. The spotlight-only rule only applies to the
@@ -21,6 +20,6 @@ export function getHomeProductSections({ products = [], flashDeals = [], moreLim
     spotlightProducts,
     visibleFlashDeals,
     featuredDeal: visibleFlashDeals[0] || null,
-    moreProducts: regularProducts.slice(0, moreLimit),
+    moreProducts: regularProducts,
   };
 }

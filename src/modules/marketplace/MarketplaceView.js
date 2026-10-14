@@ -893,10 +893,10 @@ export function renderMarketplaceView(container) {
                      </div>
 
                      <div class="home-more-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                         ${moreProducts.map((prod) => productCardHtml(prod)).join('')}
+                         ${moreProducts.slice(0, 50).map((prod) => productCardHtml(prod)).join('')}
                      </div>
 
-                     ${state.products.length > spotlightProducts.length + moreProducts.length ? `
+                     ${state.products.length > 50 ? `
                        <div class="flex justify-center mt-3">
                            <button type="button" id="home-view-all-btn-2"
                              class="bg-brand-dark text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-gray-800 transition">

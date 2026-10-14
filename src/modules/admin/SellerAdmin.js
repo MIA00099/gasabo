@@ -65,7 +65,7 @@ export function renderSellerAdmin(container) {
               ` : sellers.length === 0 ? `
                 <tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">No sellers registered yet.</td></tr>
               ` : sellers.map(s => `
-                <tr>
+                <tr class="seller-directory-row">
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                       <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center;">

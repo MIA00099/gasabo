@@ -13,7 +13,7 @@ import { getHomeProductSections, isSpotlightProduct } from './homeProductSection
 
 // Beyond this the homepage stops being a homepage. The catalog is what the
 // "View all" button below the grid is for.
-const HOME_MAX_MORE = 50;
+const HOME_MAX_MORE = 15;
 
 const HERO_IMAGE_FITS = new Set(['fill', 'cover', 'contain']);
 const HERO_IMAGE_POSITIONS = new Set([
@@ -506,14 +506,12 @@ export function renderMarketplaceView(container) {
       spotlightProducts,
       visibleFlashDeals,
       featuredDeal,
-      moreProducts: allHomeProducts,
+      moreProducts,
     } = getHomeProductSections({
       products: state.products,
       flashDeals: state.flashDeals,
       moreLimit: HOME_MAX_MORE,
     });
-
-    const moreProducts = allHomeProducts.slice(0, HOME_MAX_MORE);
 
     // Hero slider images an admin uploaded in the ads section - these are the
     // whole slider. Delete them all and the panel is empty, which is the point:
@@ -854,7 +852,7 @@ export function renderMarketplaceView(container) {
                  nowhere to appear, and anything a seller posted after the
                  fifth was invisible from the front page. -->
              ${moreProducts.length > 0 ? (() => {
-               const catSections = []; // Show each of the first 50 listings once in the grid below.
+               const catSections = groupProductsBySection(moreProducts, state.categories);
 
                const catSectionsHtml = catSections.map((sec, i) => `
                  <section class="compact-container px-3 sm:px-4 lg:px-6 mt-5 shrink-0">
@@ -883,6 +881,8 @@ export function renderMarketplaceView(container) {
                `).join('');
 
                return `
+                 ${catSectionsHtml}
+
                  <section class="compact-container px-3 sm:px-4 lg:px-6 mt-6 shrink-0">
                      <div class="flex items-baseline justify-between mb-2">
                          <h2 class="text-base font-black text-gray-900">${t('ui_more_products')}</h2>

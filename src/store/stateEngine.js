@@ -991,6 +991,7 @@ class StateEngine {
       });
       this.data.myProducts = this.data.myProducts.map((p) => (p.id === productId ? product : p));
       this.data.products = this.data.products.map((p) => (p.id === productId ? product : p));
+      this.data.productCatalogCache = this.data.productCatalogCache.map((p) => (p.id === productId ? product : p));
       this.notify();
       return product;
     });
@@ -1036,6 +1037,7 @@ class StateEngine {
       await api.delete(`/products/${productId}`);
       this.data.myProducts = this.data.myProducts.filter((p) => p.id !== productId);
       this.data.products = this.data.products.filter((p) => p.id !== productId);
+      this.data.productCatalogCache = this.data.productCatalogCache.filter((p) => p.id !== productId);
       this.notify();
     });
   }
@@ -1066,6 +1068,7 @@ class StateEngine {
     return this._run('products', async () => {
       const { product } = await api.patch(`/products/${productId}/flash-deal`, { endsAt });
       this.data.products = this.data.products.map((p) => (p.id === productId ? product : p));
+      this.data.productCatalogCache = this.data.productCatalogCache.map((p) => (p.id === productId ? product : p));
       const dealEndsAt = product.flashDealEndsAt ? new Date(product.flashDealEndsAt).getTime() : 0;
       const isActiveDeal = dealEndsAt > Date.now() && isPublicProduct(product);
       const withoutCurrent = (this.data.flashDeals || []).filter((p) => p.id !== product.id);
@@ -1078,12 +1081,13 @@ class StateEngine {
   }
   async toggleProductFlag(productId, flag) {
     return this._run('products', async () => {
-      const current = this.data.products.find((p) => p.id === productId);
+      const current = this.data.productCatalogCache.find((p) => p.id === productId) || this.data.products.find((p) => p.id === productId);
       const { product } = await api.patch(`/products/${productId}/flags`, {
         flag,
         value: current ? !current[flag] : true,
       });
       this.data.products = this.data.products.map((p) => (p.id === productId ? product : p));
+      this.data.productCatalogCache = this.data.productCatalogCache.map((p) => (p.id === productId ? product : p));
       this.notify();
       return product;
     });

@@ -746,6 +746,24 @@ class StateEngine {
    * into parallel requests and updates state with a single notification to
    * prevent multiple rapid re-renders / re-paints on cold load.
    */
+  // Fetch the complete public inventory in bounded pages. A single /products
+  // response is capped by the API, which previously made category counts
+  // disagree with the related-products view.
+  async fetchMarketplaceInventory(filters = {}) {
+    const params = new URLSearchParams(filters);
+    const products = [];
+    const pageSize = 100;
+    for (let offset = 0; ; offset += pageSize) {
+      params.set('limit', String(pageSize));
+      params.set('offset', String(offset));
+      const response = await api.get(`/products?${params.toString()}`);
+      const page = Array.isArray(response?.products) ? response.products : [];
+      products.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return { products };
+  }
+
   async loadMarketplaceHomeData(filters = {}, { force = false } = {}) {
     if (this._marketplaceHomeDataLoading) return;
     // Cold load: fetch whatever has not been attempted. Forced refresh (the
@@ -787,7 +805,7 @@ class StateEngine {
       const qs = params.toString();
 
       const promises = [
-        needProducts ? api.get(`/products${qs ? `?${qs}` : ''}`) : Promise.resolve(null),
+        needProducts ? this.fetchMarketplaceInventory(Object.fromEntries(params)) : Promise.resolve(null),
         needCategories ? api.get('/categories') : Promise.resolve(null),
         needFlashDeals ? api.get('/products/flash-deals') : Promise.resolve(null),
         needBanners ? api.get('/advertisements') : Promise.resolve(null),
@@ -875,7 +893,7 @@ class StateEngine {
     }
 
     try {
-      const { products } = await api.get(`/products${qs ? `?${qs}` : ''}`);
+      const { products } = await this.fetchMarketplaceInventory(Object.fromEntries(params));
       const catalogChanged = isAllProductFilter(normalized) && !sameJson(this.data.productCatalogCache, products);
 
       this.data.products = products;

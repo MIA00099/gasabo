@@ -63,6 +63,9 @@ productsRouter.get('/', async (req, res) => {
   const rawLimit = Number(req.query.limit);
   const limit = Number.isFinite(rawLimit) ? Math.min(100, Math.max(1, Math.floor(rawLimit))) : 60;
 
+  const rawOffset = Number(req.query.offset);
+  const offset = Number.isFinite(rawOffset) ? Math.max(0, Math.floor(rawOffset)) : 0;
+
   const products = await prisma.product.findMany({
     where: {
       status: 'ACTIVE',
@@ -104,6 +107,7 @@ productsRouter.get('/', async (req, res) => {
     // before, they were saved but the catalog ignored them, so marking a listing
     // featured had no visible effect.
     orderBy: [{ isFeatured: 'desc' }, { isTrending: 'desc' }, { createdAt: 'desc' }],
+    skip: offset,
     take: limit,
   });
 

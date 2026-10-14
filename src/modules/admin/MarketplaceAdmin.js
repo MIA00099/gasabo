@@ -36,7 +36,8 @@ export function renderMarketplaceAdmin(container) {
     let activeTab = state.ui.marketplaceAdminTab || firstAllowedTab;
     if (!tabPerms[activeTab]) activeTab = firstAllowedTab;
 
-    if (tabPerms.products && state.loading.products === undefined) stateEngine.loadProducts().catch(() => {});
+    if (tabPerms.products && !state.productCatalogCache?.length && !state.loading.products) stateEngine.loadProducts().catch(() => {});
+    const adminProducts = state.productCatalogCache?.length ? state.productCatalogCache : state.products;
     if (tabPerms.categories && state.loading.categories === undefined) stateEngine.loadCategories().catch(() => {});
     if (tabPerms.banners && state.loading.banners === undefined) stateEngine.loadBanners().catch(() => {});
     // Loaded unconditionally (not just when that tab is active) so the
@@ -62,7 +63,7 @@ export function renderMarketplaceAdmin(container) {
             ` : ''}
             ${tabPerms.products ? `
               <button id="mkt-adm-products" class="btn btn-sm" style="color:${activeTab==='products'?'#fff':'#64748B'}; background:${activeTab==='products'?'var(--primary)':'transparent'};">
-                Products (${state.products.length})
+                Products (${adminProducts.length})
               </button>
             ` : ''}
             ${tabPerms.categories ? `
@@ -154,7 +155,7 @@ export function renderMarketplaceAdmin(container) {
                 </tr>
               </thead>
               <tbody>
-                ${state.products.map(prod => `
+                ${adminProducts.map(prod => `
                   <tr>
                     <td>
                       <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -372,7 +373,7 @@ export function renderMarketplaceAdmin(container) {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         const value = Number(btn.dataset.rating);
-        const current = (state.products.find((p) => p.id === id) || {}).rating || 0;
+        const current = (adminProducts.find((p) => p.id === id) || {}).rating || 0;
         // Clicking the star that is already the rating clears it - otherwise
         // there is no way back to unrated once a listing has been rated.
         const next = current === value ? null : value;

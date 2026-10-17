@@ -49,7 +49,7 @@ export function openImageLightbox(images, title, { startIndex = 0, returnFocusTo
   function paint() {
     overlay.innerHTML = `
       <button type="button" data-modal-close id="lightbox-close-btn" title="Close" aria-label="Close image viewer"
-        style="position: fixed; top: 16px; right: 16px; z-index: 10000; background: rgba(0, 0, 0, 0.6); color: #fff; border: 1px solid rgba(255,255,255,0.25); width: 44px; height: 44px; border-radius: 50%; font-size: 1.25rem; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px);">✕</button>
+        style="position: fixed; top: 16px; right: 16px; z-index: 10000; background: #dc2626; color: #fff; border: 2px solid #fff; width: 60px; height: 60px; border-radius: 50%; font-size: 2rem; font-weight: 800; box-shadow: 0 4px 18px rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px);">✕</button>
 
       ${list.length > 1 ? `
         <button type="button" id="lightbox-prev-btn" aria-label="Previous photo"

@@ -235,9 +235,8 @@ function renderFlashProductRail(products = []) {
     `;
   }
 
-  const padded = railProducts.length >= FLASH_RAIL_MIN_ITEMS
-    ? railProducts
-    : Array.from({ length: FLASH_RAIL_MIN_ITEMS }, (_, i) => railProducts[i % railProducts.length]);
+  // Fill each repeated cycle beyond the visible viewport to prevent a blank pause.
+  const padded = Array.from({ length: Math.max(16, railProducts.length) }, (_, i) => railProducts[i % railProducts.length]);
 
   return padded.map((product) => flashProductRailCardHtml(product)).join('') +
     padded.map((product) => flashProductRailCardHtml(product, true)).join('');

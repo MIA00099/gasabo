@@ -892,7 +892,7 @@ export function renderMarketplaceView(container) {
                      </div>
 
                      <div class="home-more-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                         ${moreProducts.slice(0, 50).map((prod) => productCardHtml(prod)).join('')}
+                         ${moreProducts.slice(0, 49).map((prod) => productCardHtml(prod)).join('')}
                      </div>
 
                      ${state.products.length > 50 ? `

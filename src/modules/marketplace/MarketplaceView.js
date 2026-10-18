@@ -159,8 +159,8 @@ function productCardHtml(prod) {
               </button>
             </div>
             <div class="flex items-end gap-1.5 mb-1">
-                <span class="font-bold text-sm text-brand-dark leading-none">RWF ${prod.price.toLocaleString()}</span>
-                ${was ? `<span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF ${was.toLocaleString()}</span>` : ''}
+                <span class="font-bold text-sm text-brand-dark leading-none">RWF ${prod.price.toLocaleString('en-US')}</span>
+                ${was ? `<span class="text-[9px] text-gray-400 line-through leading-none pb-[1px]">RWF ${was.toLocaleString('en-US')}</span>` : ''}
             </div>
             ${prod.rating ? `
               <div class="flex flex-wrap items-center gap-1 text-[9px] text-yellow-400 min-w-0">
@@ -217,7 +217,7 @@ function flashProductRailCardHtml(product, duplicate = false) {
       <div class="flash-promo-product-info">
         <span>${label}</span>
         <strong>${escapeHtml(product.title)}</strong>
-        <em>RWF ${price.toLocaleString()}</em>
+        <em>RWF ${price.toLocaleString('en-US')}</em>
       </div>
     </div>
   `;
@@ -771,7 +771,7 @@ export function renderMarketplaceView(container) {
                       </div>
                       <div class="flash-product-info">
                         <h3>${escapeHtml(featuredDeal.title)}</h3>
-                        <span class="flash-product-price">RWF ${Number(featuredDeal.price).toLocaleString()}</span>
+                        <span class="flash-product-price">RWF ${Number(featuredDeal.price).toLocaleString('en-US')}</span>
                       </div>
                     </div>
                   ` : `
@@ -1049,7 +1049,7 @@ export function renderMarketplaceView(container) {
         if (!prod) return;
         openShareModal({
           title: prod.title,
-          text: `Check out "${prod.title}" (${prod.currency || 'RWF'} ${prod.price.toLocaleString()}) on Kigali Market!`,
+          text: `Check out "${prod.title}" (${prod.currency || 'RWF'} ${prod.price.toLocaleString('en-US')}) on Kigali Market!`,
           url: pathForListing(ROUTE_PRODUCT, prod.id),
           image: prod.images && prod.images[0] ? prod.images[0] : null,
           price: prod.price,
@@ -1092,8 +1092,8 @@ function flashDealPageCardHtml(deal, t) {
         </div>
         <h3>${escapeHtml(deal.title)}</h3>
         <div class="flash-page-price-row">
-          <strong>RWF ${price.toLocaleString()}</strong>
-          ${was > price ? `<span>RWF ${was.toLocaleString()}</span>` : ''}
+          <strong>RWF ${price.toLocaleString('en-US')}</strong>
+          ${was > price ? `<span>RWF ${was.toLocaleString('en-US')}</span>` : ''}
         </div>
         <button type="button" class="flash-page-card-btn">
           ${t('ui_view_deal')} <i class="fa-solid fa-arrow-right"></i>

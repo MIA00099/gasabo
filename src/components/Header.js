@@ -78,7 +78,8 @@ export function renderHeaderHtml(ctx) {
   // item (Vehicles, Real Estate) or a search shortcut (Services, Jobs), so
   // nothing appears twice.
   const alreadyInNav = /vehicle|car|auto|motorcycle|moto|bike|real[\s_-]?estate|propert|house|land|plot|service|job|employ|career|vacanc/i;
-  const navCategories = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(c.name));
+  const othersCategory = isRealEstate ? null : categories.find((c) => /^others?$/i.test(String(c.name || '').trim()));
+  const navCategories = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(c.name) && c.id !== othersCategory?.id);
 
   return `
     <!-- Top strip: the three languages, and nothing else.
@@ -267,6 +268,9 @@ export function renderHeaderHtml(ctx) {
             <li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="jobs">
               <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
             </li>
+            ${othersCategory ? `<li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="others">
+              <button type="button" class="${selectedCategory === othersCategory.id ? navLinkActive : navLink} nav-category-item" data-cat-id="${escapeHtml(othersCategory.id)}">Others</button>
+            </li>` : ''}
           </ul>
         </div>
 

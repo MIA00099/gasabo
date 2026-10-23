@@ -78,7 +78,7 @@ export function renderHeaderHtml(ctx) {
   // item (Vehicles, Real Estate) or a search shortcut (Services, Jobs), so
   // nothing appears twice.
   const alreadyInNav = /vehicle|car|auto|motorcycle|moto|bike|real[\s_-]?estate|propert|house|land|plot|service|job|employ|career|vacanc/i;
-  const othersCategory = isRealEstate ? null : categories.find((c) => /^others?$/i.test(String(c.name || '').trim()));
+  const othersCategory = isRealEstate ? null : categories.find((c) => /^others?$/i.test(String(c.name || c.label || '').normalize('NFKC').trim()));
   const navCategories = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(c.name) && c.id !== othersCategory?.id);
 
   return `

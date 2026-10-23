@@ -749,7 +749,7 @@ class StateEngine {
   // Fetch the complete public inventory in bounded pages. A single /products
   // response is capped by the API, which previously made category counts
   // disagree with the related-products view.
-  async fetchMarketplaceInventory(filters = {}) {
+  async fetchMarketplaceInventory(filters = {}, { onFirstPage } = {}) {
     const params = new URLSearchParams(filters);
     const products = [];
     const pageSize = 100;
@@ -759,6 +759,9 @@ class StateEngine {
       const response = await api.get(`/products?${params.toString()}`);
       const page = Array.isArray(response?.products) ? response.products : [];
       products.push(...page);
+      // Allow the initial product grid to appear before later pages arrive.
+      // Do not publish incomplete inventory into the complete catalog cache.
+      if (offset === 0 && onFirstPage) onFirstPage([...products]);
       if (page.length < pageSize) break;
     }
     return { products };
@@ -766,25 +769,13 @@ class StateEngine {
 
   async loadMarketplaceHomeData(filters = {}, { force = false } = {}) {
     if (this._marketplaceHomeDataLoading) return;
-    // Cold load: fetch whatever has not been attempted. Forced refresh (the
-    // tab-return auto-refresh): re-fetch products, flash deals and banners, but
-    // not categories - they are stable and the slowest query, and re-pulling
-    // them on every tab focus is wasted work.
     const needProducts = force || this.data.loading.products === undefined;
     const needCategories = !force && this.data.loading.categories === undefined;
     const needFlashDeals = force || this.data.loading.flashDeals === undefined;
     const needBanners = force || this.data.loading.banners === undefined;
-
     if (!needProducts && !needCategories && !needFlashDeals && !needBanners) return;
 
     this._marketplaceHomeDataLoading = true;
-
-    // A forced refresh keeps the current page on screen and swaps the new data
-    // in with the SINGLE notify at the end - no loading flags flipped, so it
-    // neither flashes a skeleton nor triggers a second re-render. This is what
-    // fixes the "shaking": the old refresh fired three separate loaders whose
-    // loading/data/done notifies re-rendered the whole page ~7 times. A cold
-    // load still shows the loading state first.
     if (!force) {
       const nextLoading = { ...this.data.loading };
       if (needProducts) nextLoading.products = true;
@@ -802,75 +793,69 @@ class StateEngine {
       if (productFilters.category && productFilters.category !== 'all') params.set('category', productFilters.category);
       if (productFilters.district && productFilters.district !== 'all') params.set('district', productFilters.district);
       if (productFilters.search) params.set('search', productFilters.search);
-      const qs = params.toString();
 
-      const promises = [
-        needProducts ? this.fetchMarketplaceInventory(Object.fromEntries(params)) : Promise.resolve(null),
-        needCategories ? api.get('/categories') : Promise.resolve(null),
-        needFlashDeals ? api.get('/products/flash-deals') : Promise.resolve(null),
-        needBanners ? api.get('/advertisements') : Promise.resolve(null),
-      ];
-
-      const [prodsRes, catsRes, flashRes, banRes] = await Promise.allSettled(promises);
-
-      // Whether this refresh is actually worth rendering. A cold load always
-      // is - the loading flags below have to flip off to clear the skeleton,
-      // and there is no "before" to compare against. A forced (tab-return)
-      // refresh only is if the server actually returned something different:
-      // skipping notify() when it did not is what stops the "shaking" - main.js's
-      // renderApp() rebuilds the ENTIRE header and view on every notify, which
-      // tears down and reloads every product image, and unconditionally resets
-      // the hero slider to slide one and restarts its clock (see
-      // startHeroSlider). Without this, coming back to the tab after 30+
-      // seconds visibly snapped the whole page - hero included - back to its
-      // starting state even when not one row on the server had changed, which
-      // for an ordinary browsing session is the common case, not the rare one.
-      let changed = !force;
-
-      if (needProducts && prodsRes.status === 'fulfilled' && prodsRes.value?.products) {
-        const next = prodsRes.value.products;
-        const productsChanged = !sameJson(this.data.products, next);
-        const filterChanged = this.data.productsFilterKey !== nextProductsKey;
-        if (isAllProductFilter(productFilters) && !sameJson(this.data.productCatalogCache, next)) {
-          this.data.productCatalogCache = next;
+      // Cold navigation progressively publishes independent results. Forced
+      // background refreshes deliberately publish only once, avoiding repeated
+      // full-page rebuilds and hero-slider/image resets.
+      const publish = (field, result, loadingKey, apply) => {
+        if (result) apply(result);
+        if (!force) {
+          this.data.loading = { ...this.data.loading, [loadingKey]: false };
+          this.notify();
         }
-        if (!force || productsChanged || filterChanged) {
-          this.data.products = next;
+      };
+      const tasks = [];
+      if (needProducts) {
+        const firstPage = force ? undefined : (products) => {
+          this.data.products = products;
           this.data.productsFilterKey = nextProductsKey;
-          if (isAllProductFilter(productFilters)) {
-            this.data.productCatalogCache = next;
+          this.data.loading = { ...this.data.loading, products: false };
+          this.notify();
+        };
+        tasks.push(this.fetchMarketplaceInventory(Object.fromEntries(params), { onFirstPage: firstPage })
+          .then((res) => {
+            const next = res.products;
+            const changed = !sameJson(this.data.products, next) || this.data.productsFilterKey !== nextProductsKey;
+            if (changed) {
+              this.data.products = next;
+              this.data.productsFilterKey = nextProductsKey;
+            }
+            if (isAllProductFilter(productFilters)) this.data.productCatalogCache = next;
+            if (!force) {
+              this.data.loading = { ...this.data.loading, products: false };
+              if (changed) this.notify();
+            }
+            return changed;
+          }).catch(() => {
+            if (!force && this.data.loading.products) {
+              this.data.loading = { ...this.data.loading, products: false };
+              this.notify();
+            }
+            return false;
+          }));
+      }
+      const loadSection = (needed, url, key, stateKey, responseKey) => {
+        if (!needed) return;
+        tasks.push(api.get(url).then((res) => {
+          if (!Array.isArray(res?.[responseKey])) {
+            if (!force) publish(key, null, key, () => {});
+            return false;
           }
-          if (force) changed = true;
-        }
-      }
-      if (needCategories && catsRes.status === 'fulfilled' && catsRes.value?.categories) {
-        this.data.categories = catsRes.value.categories;
-      }
-      if (needFlashDeals && flashRes.status === 'fulfilled' && flashRes.value?.products) {
-        const next = flashRes.value.products;
-        if (!force || !sameJson(this.data.flashDeals, next)) {
-          this.data.flashDeals = next;
-          if (force) changed = true;
-        }
-      }
-      if (needBanners && banRes.status === 'fulfilled' && banRes.value?.banners) {
-        const next = banRes.value.banners;
-        if (!force || !sameJson(this.data.banners, next)) {
-          this.data.banners = next;
-          if (force) changed = true;
-        }
-      }
-
-      if (!force) {
-        const doneLoading = { ...this.data.loading };
-        if (needProducts) doneLoading.products = false;
-        if (needCategories) doneLoading.categories = false;
-        if (needFlashDeals) doneLoading.flashDeals = false;
-        if (needBanners) doneLoading.banners = false;
-        this.data.loading = doneLoading;
-      }
-
-      if (changed) this.notify();
+          const next = res[responseKey];
+          const changed = !sameJson(this.data[stateKey], next);
+          if (changed) this.data[stateKey] = next;
+          if (!force) publish(key, res, key, () => {});
+          return changed;
+        }).catch(() => {
+          if (!force) publish(key, null, key, () => {});
+          return false;
+        }));
+      };
+      loadSection(needCategories, '/categories', 'categories', 'categories', 'categories');
+      loadSection(needFlashDeals, '/products/flash-deals', 'flashDeals', 'flashDeals', 'products');
+      loadSection(needBanners, '/advertisements', 'banners', 'banners', 'banners');
+      const results = await Promise.all(tasks);
+      if (force && results.some(Boolean)) this.notify();
     } finally {
       this._marketplaceHomeDataLoading = false;
     }

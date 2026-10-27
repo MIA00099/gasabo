@@ -1176,6 +1176,22 @@ class StateEngine {
     });
   }
 
+  async updateMainAdminName(name) {
+    if (this.data.currentUser?.role !== 'admin') {
+      throw new Error('Only the main administrator can change their name.');
+    }
+    return this._run('accountForm', async () => {
+      const { user } = await api.patch('/auth/admin/name', { name });
+      this.data.currentUser = { ...this.data.currentUser, name: user.name };
+      const session = getSession();
+      if (session?.user) {
+        setSession({ ...session, user: { ...session.user, name: user.name } });
+      }
+      this.notify();
+      return user;
+    });
+  }
+
   async updateSellerProfile({ name, phone }) {
     return this._run('accountForm', async () => {
       const { user } = await api.patch('/auth/profile', { name, phone });

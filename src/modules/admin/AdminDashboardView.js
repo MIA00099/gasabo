@@ -162,6 +162,11 @@ export function renderAdminDashboardView(container) {
           <div class="adm-sidebar-footer" style="padding: 1rem 0.5rem 0 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: #64748B;">
             <div style="font-weight: 700; color: #ffffff; margin-bottom: 2px;">${escapeHtml(currentUser.name)}</div>
             <div style="text-transform: uppercase; font-size: 10px; font-weight: 800; color: #4ADE80;">● ${currentUser.role.replace('_', ' ')}</div>
+            ${currentUser.role === 'admin' ? `
+              <button id="adm-edit-name-btn" style="margin-top: 0.75rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #ffffff; padding: 6px 0; border-radius: 9999px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                Edit my name
+              </button>
+            ` : ''}
             <button id="adm-change-password-btn" style="margin-top: 0.75rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #ffffff; padding: 6px 0; border-radius: 9999px; font-size: 11px; font-weight: 700; cursor: pointer;">
               Change password
             </button>
@@ -248,6 +253,10 @@ export function renderAdminDashboardView(container) {
       });
     });
 
+    container.querySelector('#adm-edit-name-btn')?.addEventListener('click', () => {
+      openMainAdminNameDialog();
+    });
+
     container.querySelector('#adm-change-password-btn')?.addEventListener('click', () => {
       openAdminSelfPasswordDialog();
     });
@@ -269,6 +278,29 @@ export function renderAdminDashboardView(container) {
   }
 
   render();
+}
+
+async function openMainAdminNameDialog() {
+  if (stateEngine.getState().currentUser?.role !== 'admin') return;
+  const currentName = stateEngine.getState().currentUser.name;
+  const data = await showAdminForm({
+    title: 'Edit my name',
+    message: 'Change your administrator display name. Your email and permissions stay the same.',
+    submitLabel: 'Save name',
+    fields: [{ name: 'name', label: 'Display name', type: 'text', required: true, value: currentName, minLength: 2 }],
+  });
+  if (!data) return;
+  const name = String(data.name || '').trim();
+  if (name.length < 2 || name.length > 100) {
+    showAdminToast({ title: 'Name not changed', message: 'Enter a name between 2 and 100 characters.', tone: 'danger' });
+    return;
+  }
+  try {
+    await stateEngine.updateMainAdminName(name);
+    showAdminToast({ title: 'Name updated', message: 'Your new name has been saved.' });
+  } catch (err) {
+    showAdminToast({ title: 'Name not changed', message: err.message || 'Please try again.', tone: 'danger' });
+  }
 }
 
 async function openAdminSelfPasswordDialog() {

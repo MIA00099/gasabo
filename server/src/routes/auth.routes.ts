@@ -420,6 +420,31 @@ authRouter.post('/change-password', requireAuth, async (req, res) => {
   res.json({ success: true });
 });
 
+// Only the main administrator can update their own display name.
+authRouter.patch('/admin/name', requireAuth, async (req, res) => {
+  const claim = req.user!;
+  if (claim.role !== 'ADMINISTRATOR') {
+    return res.status(403).json({ error: 'Only the main administrator can change their name.' });
+  }
+  const parsed = z.object({ name: z.string().trim().min(2).max(100) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Name must be between 2 and 100 characters.' });
+  const admin = await prisma.administrator.findUnique({ where: { id: claim.id } });
+  if (!admin) return res.status(401).json({ error: 'Administrator account not found. Please sign in again.' });
+  const updated = await prisma.administrator.update({
+    where: { id: admin.id },
+    data: { name: parsed.data.name },
+  });
+  await logAudit({
+    actorId: updated.id,
+    actorType: 'ADMINISTRATOR',
+    actorName: updated.name,
+    action: 'ADMIN_PROFILE_UPDATED',
+    module: 'Account',
+    details: 'Main administrator updated their own display name.',
+  });
+  res.json({ user: { id: updated.id, email: updated.email, name: updated.name, role: 'ADMINISTRATOR' } });
+});
+
 const updateSellerProfileSchema = z.object({
   name: z.string().min(2).optional(),
   phone: z.string().min(6).optional(),

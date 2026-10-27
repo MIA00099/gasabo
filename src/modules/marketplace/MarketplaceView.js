@@ -101,6 +101,9 @@ function groupProductsBySection(products, categories) {
 
   const getPriority = (name) => {
     const n = String(name || '').toLowerCase().trim();
+    // Keep the catch-all category at the very end of homepage product rows.
+    // This does not change product category IDs or the order of other rows.
+    if (n === 'others' || n === 'other') return Number.MAX_SAFE_INTEGER;
     if (/electronics/i.test(n)) return 1;
     if (/vehicle|car|auto/i.test(n)) return 2;
     if (/house|estate|property/i.test(n)) return 3;

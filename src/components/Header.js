@@ -79,14 +79,13 @@ export function renderHeaderHtml(ctx) {
   // nothing appears twice.
   const alreadyInNav = /vehicle|car|auto|motorcycle|moto|bike|real[\s_-]?estate|propert|house|land|plot|service|job|employ|career|vacanc/i;
   const othersCategory = isRealEstate ? null : categories.find((c) => /^others?$/i.test(String(c.name || c.label || '').normalize('NFKC').trim()));
-  // Keep Baby Kids immediately after Jobs, while Others remains the last
-  // category before More. Do not change category IDs or database ordering.
-  const navCategories = isRealEstate ? [] : categories
-    .filter((c) => !alreadyInNav.test(c.name) && c.id !== othersCategory?.id)
-    .sort((a, b) => {
-      const isBabyKids = (c) => /^baby\s*(?:&|and)?\s*kids$/i.test(String(c.name || c.label || '').trim());
-      return Number(isBabyKids(b)) - Number(isBabyKids(a));
-    });
+  // The desktop navigation has a deliberately curated, stable category order.
+  // Other categories remain accessible in the More dropdown.
+  const featuredNavNames = ['baby kids', 'tools', 'agriculture', 'electronics', 'spare parts'];
+  const navCategories = isRealEstate ? [] : featuredNavNames
+    .map((name) => categories.find((c) => String(c.name || c.label || '').trim().toLowerCase() === name))
+    .filter(Boolean);
+
 
   return `
     <!-- Top strip: the three languages, and nothing else.
@@ -289,12 +288,12 @@ export function renderHeaderHtml(ctx) {
               ${escapeHtml(formatCategoryName(c.name))}
             </button>
           `).join('')}
-          ${othersCategory ? `<button type="button" class="${selectedCategory === othersCategory.id ? navLinkActive : navLink} nav-category-item shrink-0" data-cat-id="${escapeHtml(othersCategory.id)}">Others</button>` : ''}
         </div>
 
         <!-- RIGHT: pinned, always visible. More opens the full category list
              (the overflow included). -->
         <div class="nav-right-group flex items-center gap-2 sm:gap-4 shrink-0 h-full">
+          ${othersCategory ? `<button type="button" class="${selectedCategory === othersCategory.id ? navLinkActive : navLink} nav-category-item shrink-0 hidden lg:inline-flex" data-cat-id="${escapeHtml(othersCategory.id)}">Others</button>` : ''}
           <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
             class="${navLink} gap-1 shrink-0">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
           <button type="button" id="header-post-ad-btn"

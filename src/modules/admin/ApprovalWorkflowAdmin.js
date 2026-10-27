@@ -57,19 +57,8 @@ export function renderApprovalWorkflowAdmin(container) {
           </div>
         ` : ''}
 
-        <!-- CRITICAL SECURITY ALERT BANNER -->
-        <div style="background: #fff5f5; border: 1px solid #fed7d7; border-left: 4px solid #ef4444; padding: 0.9rem 1.1rem; border-radius: 14px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.85rem;">
-          <div class="adm-side-icon" style="background:#fee2e2;color:#dc2626;border-color:#fecaca;">HI</div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px; color: #991b1b; margin-bottom: 1px;">
-              Dual-Authorization Security Policy Active
-            </div>
-            <div style="font-size: 12px; color: #7f1d1d;">
-              High-risk actions stay pending until confirmed by a different account with Multi-Admin Approvals clearance.
-            </div>
-          </div>
-        </div>
-
+        <!-- Policy guidance is informational, not an active security alert.
+             The real pending-request count and error state are shown above. -->
         <!-- SUB-TAB SWITCHER: Pending Requests vs Approval History - two
              separate views instead of stacking both on one long page. -->
         <div class="adm-segmented" style="margin-bottom: 1.25rem; width: fit-content;">

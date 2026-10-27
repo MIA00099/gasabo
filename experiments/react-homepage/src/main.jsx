@@ -42,6 +42,38 @@ function ProductCard({ item }) {
   </article>;
 }
 
+function HeroSlider({ banners, onShop }) {
+  const [index, setIndex] = useState(0);
+  const now = Date.now();
+  const ads = (banners.data?.banners || []).filter(ad =>
+    ad.type === 'HERO_SLIDER' && ad.status === 'ACTIVE' &&
+    (!ad.startDate || Date.parse(ad.startDate) <= now) &&
+    (!ad.endDate || Date.parse(ad.endDate) > now)
+  );
+  useEffect(() => setIndex(0), [banners.data]);
+  useEffect(() => {
+    if (ads.length < 2) return undefined;
+    const timer = setInterval(() => setIndex(i => (i + 1) % ads.length), 5000);
+    return () => clearInterval(timer);
+  }, [ads.length]);
+  const active = ads[index] || ads[0];
+  return <section className="market-hero" aria-label="Marketplace promotions">
+    <div className="hero-copy">
+      <h1>Discover great deals on Kigali Market</h1>
+      <p>Explore products from sellers across Rwanda.</p>
+      <button className="shop-button" onClick={onShop}>Shop now</button>
+    </div>
+    <div className="hero-promo">
+      {banners.status === 'loading' && <div className="hero-loading" role="status" aria-label="Loading promotions" />}
+      {banners.status === 'error' && <p>Promotions are temporarily unavailable.</p>}
+      {banners.status === 'ready' && (active ? <div className="hero-slide">
+        {active.targetUrl ? <a href={active.targetUrl}><img src={active.image} alt={active.title || 'Promotion'} fetchPriority="high" /></a> : <img src={active.image} alt={active.title || 'Promotion'} fetchPriority="high" />}
+        {ads.length > 1 && <div className="hero-dots">{ads.map((ad, i) => <button key={ad.id} aria-label={`Show promotion ${i + 1}`} aria-current={i === index ? 'true' : undefined} onClick={() => setIndex(i)} />)}</div>}
+      </div> : <div className="hero-empty">KIGALI MARKET</div>)}
+    </div>
+  </section>;
+}
+
 function Home() {
   // These requests resolve independently. Neither blocks the other section.
   const categories = useResource('/categories');
@@ -56,6 +88,7 @@ function Home() {
   if (selectedCategory !== 'all') productParams.set('category', selectedCategory);
   const products = useResource('/products?' + productParams.toString());
   const flashDeals = useResource('/products/flash-deals');
+  const banners = useResource('/advertisements');
 
   const categoryItems = categories.data?.categories || [];
   const allProducts = products.data?.products || [];
@@ -74,7 +107,7 @@ function Home() {
   }, [visibleProducts, categoryItems]);
   return <main>
     <header className="header"><strong>Kigali Market</strong><span>React migration experiment · not production</span></header>
-    <div className="hero"><h1>Discover Kigali Market</h1><p>Browse products from sellers in Rwanda.</p></div>
+    <HeroSlider banners={banners} onShop={() => document.getElementById("search-products")?.focus()} />
     <Section title="Categories" resource={categories} select={data => data.categories}
       render={items => <div className="chips"><button className={selectedCategory === 'all' ? 'chip active' : 'chip'} onClick={() => setSelectedCategory('all')}>All categories</button>{items.map(item => <button key={item.id} className={selectedCategory === item.id ? 'chip active' : 'chip'} onClick={() => setSelectedCategory(item.id)}>{item.name}</button>)}</div>} />
     <Section title="Flash deals" resource={flashDeals} select={data => data.products}

@@ -37,7 +37,14 @@ export function renderMarketplaceAdmin(container) {
     if (!tabPerms[activeTab]) activeTab = firstAllowedTab;
 
     if (tabPerms.products && !state.productCatalogCache?.length && !state.loading.products) stateEngine.loadProducts().catch(() => {});
-    const adminProducts = state.productCatalogCache?.length ? state.productCatalogCache : state.products;
+    const adminProducts = [...(state.productCatalogCache?.length ? state.productCatalogCache : state.products)]
+      .sort((a, b) => {
+        const aDate = Date.parse(a.postedDate);
+        const bDate = Date.parse(b.postedDate);
+        const aTime = Number.isFinite(aDate) ? aDate : -Infinity;
+        const bTime = Number.isFinite(bDate) ? bDate : -Infinity;
+        return bTime - aTime;
+      });
     if (tabPerms.categories && state.loading.categories === undefined) stateEngine.loadCategories().catch(() => {});
     if (tabPerms.banners && state.loading.banners === undefined) stateEngine.loadBanners().catch(() => {});
     // Loaded unconditionally (not just when that tab is active) so the

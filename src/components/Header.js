@@ -268,9 +268,6 @@ export function renderHeaderHtml(ctx) {
             <li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="jobs">
               <button type="button" id="nav-link-jobs" class="${navLink}">${escapeHtml(t('ui_jobs'))}</button>
             </li>
-            ${othersCategory ? `<li class="nav-fixed-item h-full flex items-center shrink-0" data-nav-action="others">
-              <button type="button" class="${selectedCategory === othersCategory.id ? navLinkActive : navLink} nav-category-item" data-cat-id="${escapeHtml(othersCategory.id)}">Others</button>
-            </li>` : ''}
           </ul>
         </div>
 
@@ -285,6 +282,7 @@ export function renderHeaderHtml(ctx) {
               ${escapeHtml(formatCategoryName(c.name))}
             </button>
           `).join('')}
+          ${othersCategory ? `<button type="button" class="${selectedCategory === othersCategory.id ? navLinkActive : navLink} nav-category-item shrink-0" data-cat-id="${escapeHtml(othersCategory.id)}">Others</button>` : ''}
         </div>
 
         <!-- RIGHT: pinned, always visible. More opens the full category list

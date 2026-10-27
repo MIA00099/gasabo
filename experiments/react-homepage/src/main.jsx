@@ -45,17 +45,20 @@ function ProductCard({ item }) {
 function Home() {
   // These requests resolve independently. Neither blocks the other section.
   const categories = useResource('/categories');
-  const products = useResource('/products?offset=0&limit=12');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [page, setPage] = useState(0);
+  useEffect(() => { const id = setTimeout(() => setDebouncedQuery(query.trim()), 300); return () => clearTimeout(id); }, [query]);
+  useEffect(() => setPage(0), [debouncedQuery, selectedCategory]);
+  const productParams = new URLSearchParams({ offset: String(page * 12), limit: '12' });
+  if (debouncedQuery) productParams.set('search', debouncedQuery);
+  if (selectedCategory !== 'all') productParams.set('category', selectedCategory);
+  const products = useResource('/products?' + productParams.toString());
   const flashDeals = useResource('/products/flash-deals');
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const categoryItems = categories.data?.categories || [];
   const allProducts = products.data?.products || [];
-  const visibleProducts = useMemo(() => allProducts.filter(item => {
-    const matchesCategory = selectedCategory === 'all' || item.categoryId === selectedCategory;
-    const matchesSearch = item.title?.toLowerCase().includes(query.trim().toLowerCase());
-    return matchesCategory && matchesSearch;
-  }), [allProducts, selectedCategory, query]);
+  const visibleProducts = allProducts;
   const groupedProducts = useMemo(() => {
     const groups = new Map();
     for (const item of visibleProducts) {
@@ -75,9 +78,10 @@ function Home() {
       render={items => <div className="chips"><button className={selectedCategory === 'all' ? 'chip active' : 'chip'} onClick={() => setSelectedCategory('all')}>All categories</button>{items.map(item => <button key={item.id} className={selectedCategory === item.id ? 'chip active' : 'chip'} onClick={() => setSelectedCategory(item.id)}>{item.name}</button>)}</div>} />
     <Section title="Flash deals" resource={flashDeals} select={data => data.products}
       render={items => items.length ? <div className="cards">{items.map(item => <ProductCard key={item.id} item={item} />)}</div> : <p>No active flash deals.</p>} />
-    <section className="section"><label htmlFor="search-products">Search loaded products</label><input id="search-products" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search products..." /></section>
+    <section className="section"><label htmlFor="search-products">Search marketplace</label><input id="search-products" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search products..." /></section>
     <Section title="Marketplace products" resource={products} select={data => data.products}
-      render={() => groupedProducts.length ? groupedProducts.map(([name, items]) => <div key={name} className="category-group"><h3>{name}</h3><div className="cards">{items.map(item => <ProductCard key={item.id} item={item} />)}</div></div>) : <p>No matching products in this initial sample.</p>} />
+      render={() => groupedProducts.length ? groupedProducts.map(([name, items]) => <div key={name} className="category-group"><h3>{name}</h3><div className="cards">{items.map(item => <ProductCard key={item.id} item={item} />)}</div></div>) : <p>No matching products.</p>} />
+    <nav className="pagination" aria-label="Product pages"><button disabled={page === 0 || products.status === 'loading'} onClick={() => setPage(p => Math.max(0, p - 1))}>Previous</button><span>Page {page + 1}</span><button disabled={products.status !== 'ready' || allProducts.length < 12} onClick={() => setPage(p => p + 1)}>Next</button></nav>
   </main>;
 }
 

@@ -32,19 +32,30 @@ function Section({ title, resource, select, render }) {
   </section>;
 }
 
+function ProductCard({ item }) {
+  const image = Array.isArray(item.images) ? item.images[0] : null;
+  return <article className="card">
+    {typeof image === 'string' && image.startsWith('/') && <img className="product-image" src={image} alt="" loading="lazy" />}
+    <strong>{item.title}</strong>
+    <p>{item.price != null ? Number(item.price).toLocaleString('en-RW') + ' RWF' : 'Price on request'}</p>
+    <small>{item.district || ''}</small>
+  </article>;
+}
+
 function Home() {
   // These requests resolve independently. Neither blocks the other section.
   const categories = useResource('/categories');
-  const products = useResource('/products?page=1&limit=12');
+  const products = useResource('/products?offset=0&limit=12');
+  const flashDeals = useResource('/products/flash-deals');
   return <main>
     <header className="header"><strong>Kigali Market</strong><span>React migration experiment · not production</span></header>
     <div className="hero"><h1>Discover Kigali Market</h1><p>Browse products from sellers in Rwanda.</p></div>
     <Section title="Categories" resource={categories} select={data => data.categories}
       render={items => <div className="chips">{items.map(item => <span key={item.id} className="chip">{item.name}</span>)}</div>} />
-    <Section title="Latest products" resource={products} select={data => data.products}
-      render={items => <div className="cards">{items.map(item => <article className="card" key={item.id}>
-        <strong>{item.title}</strong><p>{item.price != null ? Number(item.price).toLocaleString('en-RW') + ' RWF' : 'Price on request'}</p>
-      </article>)}</div>} />
+    <Section title="Flash deals" resource={flashDeals} select={data => data.products}
+      render={items => items.length ? <div className="cards">{items.map(item => <ProductCard key={item.id} item={item} />)}</div> : <p>No active flash deals.</p>} />
+    <Section title="Marketplace products" resource={products} select={data => data.products}
+      render={items => <div className="cards">{items.map(item => <ProductCard key={item.id} item={item} />)}</div>} />
   </main>;
 }
 

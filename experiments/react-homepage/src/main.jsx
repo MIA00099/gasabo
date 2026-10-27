@@ -45,6 +45,8 @@ function ProductCard({ item }) {
 function Home() {
   // These requests resolve independently. Neither blocks the other section.
   const categories = useResource('/categories');
+  const [query, setQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(0);
   useEffect(() => { const id = setTimeout(() => setDebouncedQuery(query.trim()), 300); return () => clearTimeout(id); }, [query]);
@@ -54,8 +56,7 @@ function Home() {
   if (selectedCategory !== 'all') productParams.set('category', selectedCategory);
   const products = useResource('/products?' + productParams.toString());
   const flashDeals = useResource('/products/flash-deals');
-  const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+
   const categoryItems = categories.data?.categories || [];
   const allProducts = products.data?.products || [];
   const visibleProducts = allProducts;

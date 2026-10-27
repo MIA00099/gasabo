@@ -3,7 +3,12 @@ import path from 'path';
 import crypto from 'crypto';
 import { prisma } from '../config/db.js';
 
-const BACKUP_DIR = path.resolve('server', 'backups');
+// In production, require an explicitly mounted persistent volume.
+// Writing to Railway's application filesystem can lose backups on redeploy.
+const configuredBackupDir = process.env.BACKUP_DIR?.trim();
+const BACKUP_DIR = configuredBackupDir
+  ? path.resolve(configuredBackupDir)
+  : path.resolve('server', 'backups');
 
 const TABLES = {
   administrators: () => prisma.administrator.findMany({ orderBy: { createdAt: 'asc' } }),
@@ -21,6 +26,12 @@ const TABLES = {
 };
 
 export async function createDatabaseBackup(actor: { id: string; name: string; role: string }) {
+  if (process.env.NODE_ENV === 'production' && !configuredBackupDir) {
+    throw new Error('Backup storage is not configured. Mount a persistent volume and set BACKUP_DIR to its absolute path before creating backups.');
+  }
+  if (process.env.NODE_ENV === 'production' && !path.isAbsolute(configuredBackupDir!)) {
+    throw new Error('BACKUP_DIR must be an absolute path to a persistent volume.');
+  }
   await fs.mkdir(BACKUP_DIR, { recursive: true });
 
   const tableEntries = await Promise.all(

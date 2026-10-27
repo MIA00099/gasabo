@@ -391,6 +391,7 @@ export function renderRealEstateView(container) {
         ${activeTab === 'home' ? renderHomeView(reData, properties) : ''}
         ${activeTab === 'properties' ? renderPropertiesView(propertiesTitle, filteredProperties, filters, availableLocations) : ''}
         ${activeTab === 'services' ? renderServicesView(reData.services || []) : ''}
+        ${activeTab === 'service-detail' ? renderServiceDetailView((reData.services || [])[Number(state.ui.realEstateServiceIndex)]) : ''}
         ${activeTab === 'about' ? renderAboutView(reData) : ''}
       </div>
       ${gasaboFooterHtml(reData.contact)}
@@ -402,6 +403,15 @@ export function renderRealEstateView(container) {
     container.querySelector('#re-logo-home')?.addEventListener('click', (e) => {
       e.preventDefault();
       stateEngine.setUI({ realEstateTab: 'home' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    container.querySelector('#re-all-services-btn')?.addEventListener('click', () => {
+      stateEngine.setUI({ realEstateTab: 'services', realEstateServiceIndex: null });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    container.querySelector('#re-service-contact-btn')?.addEventListener('click', () => {
+      stateEngine.setUI({ realEstateTab: 'about' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
@@ -449,11 +459,14 @@ export function renderRealEstateView(container) {
                 iconHtml: '<i class="fa-regular fa-circle-check" style="color:#1D4ED8"></i>',
               })),
             ],
-            // Every entry lands on the services page - there are no per-service
-            // pages to send anyone to, and inventing routes that 404 would be
-            // worse than a menu that scrolls you to the list.
-            onSelect: () => {
-              stateEngine.setUI({ realEstateTab: 'services' });
+            onSelect: (id) => {
+              if (id === '__all') {
+                stateEngine.setUI({ realEstateTab: 'services', realEstateServiceIndex: null });
+              } else {
+                const index = Number(id);
+                if (!Number.isInteger(index) || !services[index]) return;
+                stateEngine.setUI({ realEstateTab: 'service-detail', realEstateServiceIndex: index });
+              }
               window.scrollTo({ top: 0, behavior: 'smooth' });
             },
           });
@@ -707,6 +720,26 @@ function serviceIconHtml(icon) {
     return `<img src="${escapeHtml(value)}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
   }
   return escapeHtml(value);
+}
+
+function renderServiceDetailView(service) {
+  if (!service) return renderServicesView([]);
+  return `
+    <section style="padding: 3rem 1.5rem 5rem; background: #fff; min-height: 55vh;">
+      <div style="max-width: 900px; margin: 0 auto;">
+        <button type="button" id="re-all-services-btn" style="border: 0; background: none; color: ${RE_BLUE}; font-weight: 700; cursor: pointer; margin-bottom: 2rem;">
+          <i class="fa-solid fa-arrow-left"></i> All services
+        </button>
+        <div style="color: ${RE_GOLD}; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 800;">Gasabo Real Estate · Our Expertise</div>
+        <div style="display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0;">
+          <div style="width: 64px; height: 64px; border-radius: 16px; background: #EFF6FF; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: ${RE_BLUE};">${serviceIconHtml(service.icon)}</div>
+          <h1 style="font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; color: #0F172A; margin: 0;">${escapeHtml(service.title || service.name || 'Our service')}</h1>
+        </div>
+        <p style="font-size: 1.15rem; line-height: 1.85; color: #475569; max-width: 75ch;">${escapeHtml(service.description || 'Contact our team to learn more about this service.')}</p>
+        <button type="button" id="re-service-contact-btn" class="btn btn-primary" style="margin-top: 2rem;">Contact Us <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </section>
+  `;
 }
 
 function renderServicesView(services) {

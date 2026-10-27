@@ -79,7 +79,14 @@ export function renderHeaderHtml(ctx) {
   // nothing appears twice.
   const alreadyInNav = /vehicle|car|auto|motorcycle|moto|bike|real[\s_-]?estate|propert|house|land|plot|service|job|employ|career|vacanc/i;
   const othersCategory = isRealEstate ? null : categories.find((c) => /^others?$/i.test(String(c.name || c.label || '').normalize('NFKC').trim()));
-  const navCategories = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(c.name) && c.id !== othersCategory?.id);
+  // Keep Baby Kids immediately after Jobs, while Others remains the last
+  // category before More. Do not change category IDs or database ordering.
+  const navCategories = isRealEstate ? [] : categories
+    .filter((c) => !alreadyInNav.test(c.name) && c.id !== othersCategory?.id)
+    .sort((a, b) => {
+      const isBabyKids = (c) => /^baby\s*(?:&|and)?\s*kids$/i.test(String(c.name || c.label || '').trim());
+      return Number(isBabyKids(b)) - Number(isBabyKids(a));
+    });
 
   return `
     <!-- Top strip: the three languages, and nothing else.

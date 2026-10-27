@@ -239,7 +239,6 @@ export function renderMarketplaceAdmin(container) {
                 <tr>
                   <th>Icon</th>
                   <th>Category Name</th>
-                  <th>Order</th>
                   <th>Listed Products</th>
                   <th>Status</th>
                   <th class="tbl-actions-col">Actions</th>
@@ -250,7 +249,6 @@ export function renderMarketplaceAdmin(container) {
                   <tr>
                     <td>${renderCategoryIcon(cat.icon, { size: 34, alt: cat.name })}</td>
                     <td><strong style="color: #0F172A;">${escapeHtml(cat.name)}</strong></td>
-                    <td>${cat.order}</td>
                     <td>${cat.count} Products</td>
                     <td>
                       <span class="badge badge-active">ENABLED</span>

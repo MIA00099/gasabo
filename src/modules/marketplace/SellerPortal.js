@@ -680,6 +680,14 @@ function renderSellerDashboardView(container, sellerUser) {
       stateEngine.setUI({ sellerDashboardTab: 'active', productAdType: 'product', authIntent: '', productImages: [] });
     });
 
+    // Persist the seller's explicit category selection across reactive
+    // dashboard re-renders (image uploads, image removal, loading updates).
+    // Otherwise ensureCategoryForAdType() can restore the previous/default
+    // category even though the seller selected a different one.
+    container.querySelector('#p-category')?.addEventListener('change', (event) => {
+      productFormValues.category = event.target.value;
+    });
+
     container.querySelectorAll('.ad-type-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const nextType = normalizeAdType(btn.dataset.adType);
@@ -786,7 +794,7 @@ function renderSellerDashboardView(container, sellerUser) {
       const chosenImages = submitState.ui.productImages || [];
       const allowedCategories = getCategoryChoices(submitState.categories, submitAdType);
 
-      if (submitAdType !== 'product' && !allowedCategories.some((allowed) => allowed.id === category)) {
+      if (!allowedCategories.some((allowed) => allowed.id === category)) {
         captureProductFormValues(container);
         stateEngine.data.error = submitCopy.missingCategoryMessage;
         stateEngine.notify();

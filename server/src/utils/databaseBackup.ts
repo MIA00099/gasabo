@@ -32,7 +32,7 @@ export async function createDatabaseBackup(actor: { id: string; name: string; ro
   if (process.env.NODE_ENV === 'production' && !path.isAbsolute(configuredBackupDir!)) {
     throw new Error('BACKUP_DIR must be an absolute path to a persistent volume.');
   }
-  await fs.mkdir(BACKUP_DIR, { recursive: true });
+  await fs.mkdir(BACKUP_DIR, { recursive: true, mode: 0o700 });
 
   const tableEntries = await Promise.all(
     Object.entries(TABLES).map(async ([name, loader]) => [name, await loader()] as const),
@@ -53,8 +53,29 @@ export async function createDatabaseBackup(actor: { id: string; name: string; ro
 
   const fileName = `kigalimarket-backup-${createdAt.replace(/[:.]/g, '-')}-${id.slice(0, 8)}.json`;
   const filePath = path.join(BACKUP_DIR, fileName);
-  await fs.writeFile(filePath, JSON.stringify(payload, null, 2), { encoding: 'utf8', mode: 0o600 });
-  await fs.chmod(filePath, 0o600).catch(() => {});
+  const temporaryPath = path.join(BACKUP_DIR, `.${fileName}.tmp`);
+  const contents = JSON.stringify(payload, null, 2);
+  const sha256 = crypto.createHash('sha256').update(contents).digest('hex');
 
-  return { id, createdAt, fileName, filePath, counts };
+  // Never leave a partially written file with the final backup name.
+  try {
+    await fs.writeFile(temporaryPath, contents, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+    await fs.rename(temporaryPath, filePath);
+    await fs.chmod(filePath, 0o600);
+    // Verify the completed snapshot before reporting success.
+    const saved = await fs.readFile(filePath, 'utf8');
+    if (crypto.createHash('sha256').update(saved).digest('hex') !== sha256) {
+      throw new Error('Backup verification failed: saved file checksum differs.');
+    }
+    const parsed = JSON.parse(saved) as { id?: string; counts?: Record<string, number> };
+    if (parsed.id !== id || !parsed.counts || Object.keys(parsed.counts).length !== Object.keys(TABLES).length) {
+      throw new Error('Backup verification failed: incomplete snapshot.');
+    }
+  } catch (error) {
+    await fs.unlink(temporaryPath).catch(() => {});
+    await fs.unlink(filePath).catch(() => {});
+    throw error;
+  }
+
+  return { id, createdAt, fileName, filePath, counts, sha256 };
 }

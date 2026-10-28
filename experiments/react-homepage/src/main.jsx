@@ -9,18 +9,19 @@ async function getJson(path, signal) {
 }
 
 function useResource(path) {
-  const [result, setResult] = useState({ status: 'loading', data: null });
+  const [result, setResult] = useState({ status: 'loading', data: null, path });
   useEffect(() => {
     const controller = new AbortController();
-    setResult({ status: 'loading', data: null });
+    setResult({ status: 'loading', data: null, path });
     getJson(path, controller.signal)
-      .then(data => setResult({ status: 'ready', data }))
+      .then(data => { if (!controller.signal.aborted) setResult({ status: 'ready', data, path }); })
       .catch(error => {
-        if (!controller.signal.aborted) setResult({ status: 'error', message: error.message });
+        if (!controller.signal.aborted) setResult({ status: 'error', message: error.message, path });
       });
     return () => controller.abort();
   }, [path]);
-  return result;
+  // Do not render stale results while React is committing a new query.
+  return result.path === path ? result : { status: 'loading', data: null, path };
 }
 
 function Section({ title, resource, select, render }) {
@@ -35,6 +36,7 @@ function Section({ title, resource, select, render }) {
 function ProductCard({ item }) {
   const image = Array.isArray(item.images) ? item.images[0] : null;
   const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => setImageFailed(false), [image]);
   return <article className="card">
     <div className="product-media">{typeof image === 'string' && image && !imageFailed ? <img className="product-image" src={image} alt={item.title} loading="lazy" onError={() => setImageFailed(true)} /> : <span className="no-photo">No image available</span>}{item.isFeatured && <span className="product-badge">Featured</span>}{!item.isFeatured && item.isTrending && <span className="product-badge">Trending</span>}</div>
     <a className="product-link" href={'/product/' + encodeURIComponent(item.id)}>{item.title}</a>
@@ -82,8 +84,9 @@ function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(0);
-  useEffect(() => { const id = setTimeout(() => setDebouncedQuery(query.trim()), 300); return () => clearTimeout(id); }, [query]);
-  useEffect(() => setPage(0), [debouncedQuery, selectedCategory]);
+  useEffect(() => { const id = setTimeout(() => { setDebouncedQuery(query.trim()); setPage(0); }, 300); return () => clearTimeout(id); }, [query]);
+  // Reset pagination in the same user action as the filter change, avoiding
+  // an unnecessary request for the old page under the new filter.
   const productParams = new URLSearchParams({ offset: String(page * 12), limit: '12' });
   if (debouncedQuery) productParams.set('search', debouncedQuery);
   if (selectedCategory !== 'all') productParams.set('category', selectedCategory);
@@ -91,7 +94,7 @@ function Home() {
   const flashDeals = useResource('/products/flash-deals');
   const banners = useResource('/advertisements');
 
-  const categoryItems = categories.data?.categories || [];
+  const categoryItems = useMemo(() => categories.data?.categories || [], [categories.data]);
   const allProducts = products.data?.products || [];
   const visibleProducts = allProducts;
   const groupedProducts = useMemo(() => {
@@ -112,7 +115,7 @@ function Home() {
     <div className="experiment-notice">React homepage experiment — not production</div>
     <HeroSlider banners={banners} onShop={() => document.getElementById("search-products")?.focus()} />
     <Section title="Categories" resource={categories} select={data => data.categories}
-      render={items => <div className="chips"><button className={selectedCategory === 'all' ? 'chip active' : 'chip'} onClick={() => setSelectedCategory('all')}>All categories</button>{items.map(item => <button key={item.id} className={selectedCategory === item.id ? 'chip active' : 'chip'} onClick={() => setSelectedCategory(item.id)}>{item.name}</button>)}</div>} />
+      render={items => <div className="chips"><button className={selectedCategory === 'all' ? 'chip active' : 'chip'} onClick={() => { setSelectedCategory('all'); setPage(0); }}>All categories</button>{items.map(item => <button key={item.id} className={selectedCategory === item.id ? 'chip active' : 'chip'} onClick={() => { setSelectedCategory(item.id); setPage(0); }}>{item.name}</button>)}</div>} />
     <Section title="Flash deals" resource={flashDeals} select={data => data.products}
       render={items => items.length ? <div className="flash-layout"><div className="flash-lead"><span className="flash-label">Limited-time offers</span><ProductCard item={items[0]} /></div><div className="flash-rail">{items.slice(1, 5).map(item => <ProductCard key={item.id} item={item} />)}</div></div> : <p>No active flash deals.</p>} />
     <section className="section"><label htmlFor="search-products">Search marketplace</label><input id="search-products" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search products..." /></section>

@@ -151,6 +151,7 @@ export function renderMarketplaceAdmin(container) {
             <table class="custom-table">
               <thead>
                 <tr>
+                  <th style="width: 56px; text-align: center;">#</th>
                   <th>Product</th>
                   <th>Category</th>
                   <th>Price</th>
@@ -162,8 +163,9 @@ export function renderMarketplaceAdmin(container) {
                 </tr>
               </thead>
               <tbody>
-                ${adminProducts.map(prod => `
+                ${adminProducts.map((prod, index) => `
                   <tr>
+                    <td style="text-align: center; font-weight: 600; color: #64748B;">${index + 1}</td>
                     <td>
                       <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
@@ -240,10 +242,11 @@ export function renderMarketplaceAdmin(container) {
             </button>
           </div>
 
-          <div class="custom-table-container">
-            <table class="custom-table">
+          <div class="custom-table-container" style="width: 100%; max-width: 1120px; margin-left: auto; margin-right: auto; overflow-x: auto;">
+            <table class="custom-table" style="width: 100%;">
               <thead>
                 <tr>
+                  <th style="width: 56px; text-align: center;">#</th>
                   <th>Icon</th>
                   <th>Category Name</th>
                   <th>Listed Products</th>
@@ -252,8 +255,9 @@ export function renderMarketplaceAdmin(container) {
                 </tr>
               </thead>
               <tbody>
-                ${state.categories.map(cat => `
+                ${state.categories.map((cat, index) => `
                   <tr>
+                    <td style="text-align: center; font-weight: 600; color: #64748B;">${index + 1}</td>
                     <td>${renderCategoryIcon(cat.icon, { size: 34, alt: cat.name })}</td>
                     <td><strong style="color: #0F172A;">${escapeHtml(cat.name)}</strong></td>
                     <td>${cat.count} Products</td>

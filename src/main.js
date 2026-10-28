@@ -388,8 +388,15 @@ document.addEventListener('DOMContentLoaded', () => {
           ].filter((item) => hiddenNavActions.has(item.action));
 
           const alreadyInNav = /vehicle|car|auto|motorcycle|moto|bike|real[\s_-]?estate|propert|house|land|plot|service|job|employ|career|vacanc/i;
-          const rest = (s.categories || []).filter((c) => !alreadyInNav.test(c.name));
-          const listToShow = rest.length > 0 ? rest : (s.categories || []);
+          // A category visible in the measured navigation must not be repeated in More.
+          const visibleCategoryIds = new Set(
+            [...document.querySelectorAll('#header-mount .nav-cat-fill .nav-category-item')]
+              .filter((el) => !el.hidden && el.getClientRects().length > 0)
+              .map((el) => el.dataset.catId),
+          );
+          const listToShow = (s.categories || []).filter((c) =>
+            !alreadyInNav.test(String(c.name || '')) && !visibleCategoryIds.has(String(c.id))
+          );
           openCategoryDropdown(anchor, {
             categories: listToShow,
             selectedId: s.ui.marketplaceFilters?.selectedCategory || 'all',

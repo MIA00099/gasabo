@@ -2,6 +2,7 @@
  * UNIFIED ADMIN PANEL - Gasabo Real Estate Content Management System (CMS)
  */
 import { stateEngine } from '../../store/stateEngine.js';
+import { api, resolveMediaUrl } from '../../api/client.js';
 import { showAdminConfirm, showAdminToast } from './adminDialog.js';
 
 const PROPERTY_TYPE_LABELS = { house: 'House', plot: 'Plot / Land', commercial: 'Commercial' };
@@ -270,7 +271,7 @@ export function renderRealEstateAdmin(container) {
 
 function serviceEditorHtml(service = {}, index = 0) {
   const icon = service.icon || '🏠';
-  const isImage = /^https?:\/\//i.test(String(icon));
+  const isImage = /^(https?:\/\/|\/uploads\/)/i.test(String(icon));
   const presets = ['🏠', '🏢', '🏗️', '🔑', '📐', '💰', '🛡️', '🤝'];
   return `
     <div class="re-service-editor-card" style="border:1px solid #E2E8F0;border-radius:14px;padding:1rem;background:#F8FAFC;" data-service-index="${index}">
@@ -291,7 +292,7 @@ function serviceEditorHtml(service = {}, index = 0) {
           <label>Icon</label>
           <div style="display:flex;gap:0.45rem;align-items:center;">
             <div class="re-service-icon-preview" style="width:42px;height:42px;border-radius:10px;background:#fff;border:1px solid #E2E8F0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:1.3rem;flex-shrink:0;">
-              ${isImage ? `<img src="${escapeHtml(String(icon))}" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHtml(String(icon))}
+              ${isImage ? `<img src="${escapeHtml(resolveMediaUrl(String(icon)))}" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHtml(String(icon))}
             </div>
             <select class="form-control re-service-icon-preset" style="flex:1;">
               <option value="">Choose icon…</option>
@@ -362,17 +363,43 @@ function bindServiceEditor(container) {
       const file = e.target.files?.[0];
       if (!file) return;
       const preview = card.querySelector('.re-service-icon-preview');
+      const uploadInput = e.target;
+      const previousPreview = preview.innerHTML;
+      const previousIcon = card.querySelector('.re-service-icon').value;
+      uploadInput.disabled = true;
       preview.textContent = '…';
       try {
-        const { urls, failed } = await stateEngine.uploadProductImages([file]);
-        if (!urls?.[0] || failed?.length) throw new Error('Icon upload failed.');
-        const url = urls[0];
-        card.querySelector('.re-service-icon').value = url;
-        preview.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+        // Avoid stateEngine.uploadProductImages here: its global loading notifications
+        // rerender the entire admin form and detach the editor during upload.
+        const { url } = await api.uploadFile('/uploads', file);
+        if (!url) throw new Error('Icon upload returned no image URL.');
+        const iconInput = card.querySelector('.re-service-icon');
+        iconInput.value = url;
+        preview.innerHTML = `<img src="${escapeHtml(resolveMediaUrl(url))}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
         card.querySelector('.re-service-icon-preset').value = '';
+        const services = collectServices(container);
+        if (services) {
+          try {
+            // Persist valid edits immediately so selecting an icon is sufficient.
+            await stateEngine.saveRealEstateSection('SERVICES', services);
+            showAdminToast({ title: 'Service icon saved', message: 'The new icon was saved to Gasabo Real Estate.' });
+          } catch (saveError) {
+            // Restore the previous icon; the server did not accept the change.
+            if (card.isConnected) {
+              iconInput.value = previousIcon;
+              preview.innerHTML = previousPreview;
+            }
+            throw saveError;
+          }
+        } else {
+          showAdminToast({ title: 'Icon uploaded', message: 'Complete every service title and description, then select Save Company Sections to save your changes.' });
+        }
       } catch (err) {
-        preview.textContent = '⚠️';
-        showAdminToast({ title: 'Icon upload failed', message: err.message || 'Please try again.', tone: 'danger' });
+        if (card.isConnected) preview.innerHTML = previousPreview;
+        showAdminToast({ title: 'Service icon not saved', message: err.message || 'Please try again.', tone: 'danger' });
+      } finally {
+        uploadInput.disabled = false;
+        uploadInput.value = '';
       }
     });
   };

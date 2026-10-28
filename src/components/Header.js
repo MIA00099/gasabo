@@ -78,13 +78,18 @@ export function renderHeaderHtml(ctx) {
   // item (Vehicles, Real Estate) or a search shortcut (Services, Jobs), so
   // nothing appears twice.
   const alreadyInNav = /vehicle|car|auto|motorcycle|moto|bike|real[\s_-]?estate|propert|house|land|plot|service|job|employ|career|vacanc/i;
-  const othersCategory = isRealEstate ? null : categories.find((c) => /^others?$/i.test(String(c.name || c.label || '').normalize('NFKC').trim()));
-  // The desktop navigation has a deliberately curated, stable category order.
-  // Other categories remain accessible in the More dropdown.
+  // Every eligible category is a candidate for the available navigation width.
+  // Prioritize the familiar first five, then fill unused desktop space with the rest.
   const featuredNavNames = ['baby kids', 'tools', 'agriculture', 'electronics', 'spare parts'];
-  const navCategories = isRealEstate ? [] : featuredNavNames
-    .map((name) => categories.find((c) => String(c.name || c.label || '').trim().toLowerCase() === name))
-    .filter(Boolean);
+  const eligible = isRealEstate ? [] : categories.filter((c) => !alreadyInNav.test(String(c.name || c.label || '')));
+  const priority = (c) => {
+    const name = String(c.name || c.label || '').trim().toLowerCase();
+    const index = featuredNavNames.indexOf(name);
+    return index === -1 ? (name === 'others' ? 999 : 100) : index;
+  };
+  const navCategories = eligible.map((c, index) => ({ c, index }))
+    .sort((a, b) => priority(a.c) - priority(b.c) || a.index - b.index)
+    .map(({ c }) => c);
 
 
   return `
@@ -393,7 +398,7 @@ export function bindHeaderEvents(root, handlers) {
   fitNavCategories(root);
   requestAnimationFrame(() => fitNavCategories(root));
   setTimeout(() => fitNavCategories(root), 120);
-  // 'More' opens the full category list - the overflow included.
+  // 'More' opens only the overflow, not categories already visible in the bar.
   on('#nav-link-more', 'click', (e) => openMore?.(e.currentTarget));
   // The way back into a seller's or admin's own dashboard from the shop.
   on('#header-dashboard-btn', 'click', goDashboard);

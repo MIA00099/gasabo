@@ -298,7 +298,6 @@ export function renderHeaderHtml(ctx) {
         <!-- RIGHT: pinned, always visible. More opens the full category list
              (the overflow included). -->
         <div class="nav-right-group flex items-center gap-2 sm:gap-4 shrink-0 h-full">
-          ${othersCategory ? `<button type="button" class="${selectedCategory === othersCategory.id ? navLinkActive : navLink} nav-category-item shrink-0 hidden lg:inline-flex" data-cat-id="${escapeHtml(othersCategory.id)}">Others</button>` : ''}
           <button type="button" id="nav-link-more" aria-haspopup="menu" aria-expanded="false"
             class="${navLink} gap-1 shrink-0">${escapeHtml(t('ui_more'))} <i class="fa-solid fa-chevron-down text-[8px]"></i></button>
           <button type="button" id="header-post-ad-btn"

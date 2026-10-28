@@ -34,10 +34,11 @@ function Section({ title, resource, select, render }) {
 
 function ProductCard({ item }) {
   const image = Array.isArray(item.images) ? item.images[0] : null;
+  const [imageFailed, setImageFailed] = useState(false);
   return <article className="card">
-    {typeof image === 'string' && image.startsWith('/') && <img className="product-image" src={image} alt="" loading="lazy" />}
+    <div className="product-media">{typeof image === 'string' && image && !imageFailed ? <img className="product-image" src={image} alt={item.title} loading="lazy" onError={() => setImageFailed(true)} /> : <span className="no-photo">No image available</span>}{item.isFeatured && <span className="product-badge">Featured</span>}{!item.isFeatured && item.isTrending && <span className="product-badge">Trending</span>}</div>
     <a className="product-link" href={'/product/' + encodeURIComponent(item.id)}>{item.title}</a>
-    <p>{item.price != null ? Number(item.price).toLocaleString('en-RW') + ' RWF' : 'Price on request'}</p>
+    <p className="product-price">{item.price != null ? 'RWF ' + Number(item.price).toLocaleString('en-US') : 'Price on request'}</p>
     <small>{item.district || ''}</small>
   </article>;
 }
@@ -106,12 +107,14 @@ function Home() {
     });
   }, [visibleProducts, categoryItems]);
   return <main>
-    <header className="header"><strong>Kigali Market</strong><span>React migration experiment · not production</span></header>
+    <div className="top-strip"><span>EN · RW</span><span>Buy and sell across Rwanda</span></div>
+    <header className="header"><a className="brand" href="/">Kigali Market</a><nav aria-label="Primary navigation" className="main-nav"><a href="/">Home</a><a href="/products">Products</a><a href="/stores">Stores</a><a href="/realestate">Real Estate</a></nav><a className="header-account" href="/#/auth">Sign in</a></header>
+    <div className="experiment-notice">React homepage experiment — not production</div>
     <HeroSlider banners={banners} onShop={() => document.getElementById("search-products")?.focus()} />
     <Section title="Categories" resource={categories} select={data => data.categories}
       render={items => <div className="chips"><button className={selectedCategory === 'all' ? 'chip active' : 'chip'} onClick={() => setSelectedCategory('all')}>All categories</button>{items.map(item => <button key={item.id} className={selectedCategory === item.id ? 'chip active' : 'chip'} onClick={() => setSelectedCategory(item.id)}>{item.name}</button>)}</div>} />
     <Section title="Flash deals" resource={flashDeals} select={data => data.products}
-      render={items => items.length ? <div className="cards">{items.map(item => <ProductCard key={item.id} item={item} />)}</div> : <p>No active flash deals.</p>} />
+      render={items => items.length ? <div className="flash-layout"><div className="flash-lead"><span className="flash-label">Limited-time offers</span><ProductCard item={items[0]} /></div><div className="flash-rail">{items.slice(1, 5).map(item => <ProductCard key={item.id} item={item} />)}</div></div> : <p>No active flash deals.</p>} />
     <section className="section"><label htmlFor="search-products">Search marketplace</label><input id="search-products" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search products..." /></section>
     <Section title="Marketplace products" resource={products} select={data => data.products}
       render={() => groupedProducts.length ? groupedProducts.map(([name, items]) => <div key={name} className="category-group"><h3>{name}</h3><div className="cards">{items.map(item => <ProductCard key={item.id} item={item} />)}</div></div>) : <p>No matching products.</p>} />

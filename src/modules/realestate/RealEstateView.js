@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from '../../api/client.js';
 /**
  * GASABO REAL ESTATE - Property Listings Site
  * Rebuilt to match the "gasabo_real_estate" reference mockup: a property
@@ -716,8 +717,8 @@ function renderPropertiesView(title, filteredProperties, filters, availableLocat
 
 function serviceIconHtml(icon) {
   const value = String(icon || '🏠');
-  if (/^https?:\/\//i.test(value)) {
-    return `<img src="${escapeHtml(value)}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+  if (/^(https?:\/\/|\/uploads\/)/i.test(value)) {
+    return `<img src="${escapeHtml(resolveMediaUrl(value))}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
   }
   return escapeHtml(value);
 }

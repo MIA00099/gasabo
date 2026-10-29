@@ -1,7 +1,7 @@
 import { API_BASE } from '../api/client.js';
 
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-const AUTO_EAGER_IMAGE_COUNT = 6;
+const AUTO_EAGER_IMAGE_COUNT = 0;
 let renderedImageCount = 0;
 const OPTIMIZABLE_EXT = /\.(?:jpe?g|png|webp)(?:[?#].*)?$/i;
 

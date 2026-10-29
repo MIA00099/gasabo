@@ -44,7 +44,7 @@ export function renderStoresPage(container) {
 
     // Filter options come from the sellers actually on the page - a seller in
     // Musanze must be reachable, and a category nobody trades in is dead UI.
-    const allCategories = [...new Set(stores.flatMap((s) => s.categories || []))].sort();
+    const allCategories = [...new Set(stores.flatMap((s) => (s.products || []).map((p) => p.category).filter(Boolean)))].sort();
     const allDistricts = [...new Set(stores.map((s) => s.district).filter(Boolean))].sort();
 
     const filteredStores = stores.filter((store) => {
@@ -53,11 +53,17 @@ export function renderStoresPage(container) {
         store.phone.includes(searchFilter) ||
         store.district.toLowerCase().includes(searchFilter.toLowerCase());
 
-      const matchCat = categoryFilter === 'all' || store.categories.includes(categoryFilter);
+      const matchCat = categoryFilter === 'all' || (store.products || []).some((p) => p.category === categoryFilter);
       const matchDist = districtFilter === 'all' || store.district.toLowerCase() === districtFilter.toLowerCase();
 
       return matchSearch && matchCat && matchDist;
     });
+
+    // Preserve focus and caret while the results refresh on every keystroke.
+    const previousSearch = container.querySelector('#seller-search');
+    const restoreSearchFocus = document.activeElement === previousSearch;
+    const caretStart = restoreSearchFocus ? previousSearch.selectionStart : null;
+    const caretEnd = restoreSearchFocus ? previousSearch.selectionEnd : null;
 
     container.innerHTML = `
       <div class="bg-[#F4F7F6] py-6 px-4 min-h-screen">
@@ -178,14 +184,14 @@ export function renderStoresPage(container) {
                   <div class="flex items-center justify-between mb-3">
                     <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Store Inventory</span>
                     <div class="flex gap-1.5">
-                      ${store.categories.map((c) => `<span class="bg-gray-100 text-gray-600 text-[10px] font-semibold px-2 py-0.5 rounded-md">${escapeHtml(c)}</span>`).join('')}
+                      ${(categoryFilter === 'all' ? store.categories : [categoryFilter]).map((c) => `<span class="bg-gray-100 text-gray-600 text-[10px] font-semibold px-2 py-0.5 rounded-md">${escapeHtml(c)}</span>`).join('')}
                     </div>
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    ${store.products.length === 0 ? `
+                    ${(categoryFilter === 'all' ? store.products : store.products.filter((p) => p.category === categoryFilter)).length === 0 ? `
                       <p class="col-span-full text-xs text-gray-500 text-center py-4">This seller has no active listings right now.</p>
-                    ` : store.products.map((p) => `
+                    ` : (categoryFilter === 'all' ? store.products : store.products.filter((p) => p.category === categoryFilter)).map((p) => `
                       <div class="bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-brand-green shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group product-item-btn" data-id="${p.id}">
                         <div>
                           <div class="relative w-full h-40 bg-gray-100 overflow-hidden flex items-center justify-center">
@@ -229,6 +235,12 @@ export function renderStoresPage(container) {
         </div>
       </div>
     `;
+
+    if (restoreSearchFocus) {
+      const nextSearch = container.querySelector('#seller-search');
+      nextSearch?.focus({ preventScroll: true });
+      if (caretStart !== null && caretEnd !== null) nextSearch?.setSelectionRange(caretStart, caretEnd);
+    }
 
     // Bind event handlers
     const searchInput = container.querySelector('#seller-search');

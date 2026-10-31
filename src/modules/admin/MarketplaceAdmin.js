@@ -147,6 +147,11 @@ export function renderMarketplaceAdmin(container) {
           `}
         ` : activeTab === 'products' ? `
           <!-- PRODUCTS MANAGEMENT -->
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:1rem;">
+            <label for="admin-product-search" style="font-weight:600;">Search products</label>
+            <input id="admin-product-search" type="search" placeholder="Search title, seller, category or product ID" autocomplete="off" style="flex:1; min-width:220px; padding:10px 12px; border:1px solid #CBD5E1; border-radius:8px;" />
+            <span id="admin-product-search-count" aria-live="polite">${adminProducts.length} products</span>
+          </div>
           <div class="custom-table-container">
             <table class="custom-table">
               <thead>
@@ -164,13 +169,13 @@ export function renderMarketplaceAdmin(container) {
               </thead>
               <tbody>
                 ${adminProducts.map((prod, index) => `
-                  <tr>
+                  <tr class="admin-product-row" data-search="${escapeHtml([prod.title, prod.sellerName, prod.category, prod.id, prod.district].join(' ').toLocaleLowerCase())}">
                     <td style="text-align: center; font-weight: 600; color: #64748B;">${index + 1}</td>
                     <td>
                       <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <img src="${prod.images[0]}" alt="${escapeHtml(prod.title)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
                         <div>
-                          <div style="font-weight: 600; color: #0F172A;">${escapeHtml(prod.title)}</div>
+                          <button type="button" class="admin-view-product" data-id="${escapeHtml(prod.id)}" style="font-weight:600; color:#0F766E; text-align:left; text-decoration:underline; background:none; border:0; padding:0; cursor:pointer;">${escapeHtml(prod.title)}</button>
                           <div style="font-size: 0.78rem; color: #64748B;">Posted: ${new Date(prod.postedDate).toLocaleDateString()}</div>
                         </div>
                       </div>
@@ -224,6 +229,7 @@ export function renderMarketplaceAdmin(container) {
                     </td>
                     <td class="tbl-actions-col">
                       <div style="display: flex; gap: 4px;">
+                        <button class="btn btn-sm admin-view-product" data-id="${escapeHtml(prod.id)}">View details</button>
                         <button class="btn btn-sm btn-danger del-prod-btn" data-id="${prod.id}">
                           Delete
                         </button>
@@ -325,6 +331,27 @@ export function renderMarketplaceAdmin(container) {
         `}
       </div>
     `;
+
+    // Search only toggles existing rows; no rerender or focus loss on each keystroke.
+    const productSearch = container.querySelector("#admin-product-search");
+    productSearch?.addEventListener("input", () => {
+      const query = productSearch.value.trim().toLocaleLowerCase();
+      let visible = 0;
+      container.querySelectorAll(".admin-product-row").forEach(row => {
+        const matches = row.dataset.search.includes(query);
+        row.hidden = !matches;
+        row.style.display = matches ? "" : "none";
+        if (matches) visible++;
+      });
+      const count = container.querySelector("#admin-product-search-count");
+      if (count) count.textContent = `${visible} of ${adminProducts.length} products`;
+    });
+    container.querySelectorAll(".admin-view-product").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const prod = adminProducts.find(item => String(item.id) === btn.dataset.id);
+        if (prod) showProductDetails(prod, btn);
+      });
+    });
 
     // Event Handlers
     container.querySelector('#mkt-adm-pending')?.addEventListener('click', () => stateEngine.setUI({ marketplaceAdminTab: 'pending' }));
@@ -548,6 +575,38 @@ export function renderMarketplaceAdmin(container) {
 // The lightbox this module used to define lives in
 // src/components/imageLightbox.js now - the storefront gallery needs the
 // same viewer behind its expand control, and two copies would drift.
+
+function showProductDetails(prod, trigger) {
+  const overlay = document.createElement('div');
+  overlay.className = 'fixed inset-0 z-[12000] flex items-center justify-center p-4';
+  overlay.style.background = 'rgba(15,23,42,.7)';
+  overlay.innerHTML = `
+    <section role="dialog" aria-modal="true" aria-labelledby="admin-product-detail-title" style="background:white;border-radius:16px;max-width:650px;width:100%;max-height:90vh;overflow:auto;padding:24px;box-shadow:0 20px 60px #0003;">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:start;">
+        <h2 id="admin-product-detail-title" style="font-size:1.3rem;font-weight:700;">${escapeHtml(prod.title)}</h2>
+        <button type="button" class="admin-product-detail-close btn btn-sm" aria-label="Close product details">Close</button>
+      </div>
+      <div style="display:flex;gap:8px;overflow-x:auto;margin:16px 0;">
+        ${(prod.images || []).map(image => `<img src="${escapeHtml(image)}" alt="${escapeHtml(prod.title)}" loading="lazy" style="width:150px;height:130px;object-fit:cover;border-radius:8px;flex-shrink:0;">`).join('')}
+      </div>
+      <dl style="display:grid;grid-template-columns:minmax(100px,1fr) 2fr;gap:10px;overflow-wrap:anywhere;">
+        <dt>Price</dt><dd>${Number(prod.price || 0).toLocaleString()} RWF</dd>
+        <dt>Category</dt><dd>${escapeHtml(prod.category || 'General')}</dd>
+        <dt>Seller</dt><dd>${escapeHtml(prod.sellerName || 'Unknown')}</dd>
+        <dt>District</dt><dd>${escapeHtml(prod.district || 'Not specified')}</dd>
+        <dt>Status</dt><dd>${escapeHtml(prod.status || 'Unknown')}</dd>
+        <dt>Posted</dt><dd>${prod.postedDate && !Number.isNaN(Date.parse(prod.postedDate)) ? new Date(prod.postedDate).toLocaleString() : 'Unknown'}</dd>
+        <dt>Product ID</dt><dd>${escapeHtml(String(prod.id))}</dd>
+        <dt>Description</dt><dd style="white-space:pre-wrap;">${escapeHtml(prod.description || 'No description')}</dd>
+      </dl>
+    </section>`;
+  document.body.appendChild(overlay);
+  const close = () => { overlay.remove(); trigger?.focus(); };
+  overlay.querySelector('.admin-product-detail-close').addEventListener('click', close);
+  overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+  overlay.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); close(); } });
+  overlay.querySelector('.admin-product-detail-close').focus();
+}
 
 function escapeHtml(str) {
   if (!str) return '';

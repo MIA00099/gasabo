@@ -89,6 +89,7 @@ export function responsiveImageAttrs(src, {
 
   const attrs = [
     defer ? `src="${TRANSPARENT_PIXEL}"` : `src="${escapeAttr(displaySrc)}"`,
+    canOptimize ? `data-original-src="${escapeAttr(source)}"` : '',
     defer ? `data-src="${escapeAttr(displaySrc)}"` : '',
     defer && srcset ? `data-srcset="${escapeAttr(srcset)}"` : '',
     defer && srcset ? `data-sizes="${escapeAttr(sizes)}"` : '',
@@ -105,6 +106,23 @@ export function responsiveImageAttrs(src, {
   ].filter(Boolean);
 
   return attrs.join(' ');
+}
+
+// If the optimization service is unavailable, show the stored original instead
+// of leaving a broken image. Capture works for dynamically rendered SPA images.
+if (typeof document !== 'undefined') {
+  document.addEventListener('error', (event) => {
+    const img = event.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    const original = img.dataset.originalSrc;
+    if (!original) return;
+    delete img.dataset.originalSrc; // retry only once
+    img.removeAttribute('srcset');
+    img.removeAttribute('sizes');
+    img.removeAttribute('data-srcset');
+    img.removeAttribute('data-sizes');
+    img.src = original;
+  }, true);
 }
 
 export function hydrateResponsiveImage(img) {

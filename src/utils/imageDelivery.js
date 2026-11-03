@@ -94,6 +94,10 @@ export function responsiveImageAttrs(src, {
     defer && srcset ? `data-sizes="${escapeAttr(sizes)}"` : '',
     !defer && srcset ? `srcset="${escapeAttr(srcset)}"` : '',
     !defer && srcset ? `sizes="${escapeAttr(sizes)}"` : '',
+    // If the optimization endpoint fails, retry the original stored image once.
+    // Clear srcset first: otherwise the browser can keep choosing the broken variant.
+    canOptimize ? `data-original-src="${escapeAttr(source)}"` : '',
+    canOptimize ? 'onerror="if(this.dataset.originalSrc){const original=this.dataset.originalSrc;delete this.dataset.originalSrc;this.removeAttribute(\'srcset\');this.removeAttribute(\'sizes\');this.src=original;}"' : '',
     `alt="${escapeAttr(alt)}"`,
     width ? `width="${Math.round(Number(width))}"` : '',
     height ? `height="${Math.round(Number(height))}"` : '',

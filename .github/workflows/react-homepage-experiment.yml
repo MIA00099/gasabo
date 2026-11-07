@@ -1,0 +1,27 @@
+name: React homepage experiment build
+on:
+  pull_request:
+    paths:
+      - 'experiments/react-homepage/**'
+      - '.github/workflows/react-homepage-experiment.yml'
+  push:
+    branches:
+      - experiment/react-homepage-migration
+    paths:
+      - 'experiments/react-homepage/**'
+      - '.github/workflows/react-homepage-experiment.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experiments/react-homepage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build React experiment
+        run: npm run build
